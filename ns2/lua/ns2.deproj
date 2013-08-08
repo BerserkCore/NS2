@@ -457,6 +457,9 @@
     <filename>Weapons\Alien\EtherealGate.lua</filename>
   </file>
   <file>
+    <filename>EventTester.lua</filename>
+  </file>
+  <file>
     <filename>Exo.lua</filename>
   </file>
   <file>
@@ -638,6 +641,9 @@
   </file>
   <file>
     <filename>Hud\GUIEvent.lua</filename>
+  </file>
+  <file>
+    <filename>GUIEventTester.lua</filename>
   </file>
   <file>
     <filename>GUIEvolveHelp.lua</filename>
@@ -1433,9 +1439,6 @@
   </file>
   <file>
     <filename>RecycleMixin.lua</filename>
-  </file>
-  <file>
-    <filename>RegenerationMixin.lua</filename>
   </file>
   <file>
     <filename>Render.lua</filename>

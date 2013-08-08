@@ -63,7 +63,9 @@ function BoneWall:OnKill(attacker, doer, point, direction)
 
     self:TriggerEffects("death")
     DestroyEntity(self)
-
+    
+    TEST_EVENT("BoneWall killed")
+    
 end
 
 function BoneWall:OnCreate()
@@ -93,7 +95,9 @@ function BoneWall:OnInitialized()
     
     // Make the structure kinematic so that the player will collide with it.
     self:SetPhysicsType(PhysicsType.Kinematic)
-
+    
+    TEST_EVENT("BoneWall created")
+    
 end
 
 function Infestation:GetSurfaceOverride()

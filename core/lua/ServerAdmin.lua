@@ -28,8 +28,14 @@ if Server then
     WriteDefaultConfigFile(serverAdminFileName, defaultConfig)
     
     local settings = LoadConfigFile(serverAdminFileName) or defaultConfig
-    assert(settings.groups, "No groups defined in " .. serverAdminFileName)
-    assert(settings.users, "No users defined in " .. serverAdminFileName)
+    
+    if not settings.groups then
+        Shared.Message("No groups defined in " .. serverAdminFileName)
+    end
+    
+    if not settings.users then
+        Shared.Message("No users defined in " .. serverAdminFileName)
+    end
     
     local function GetGroupCanRunCommand(groupName, commandName)
     

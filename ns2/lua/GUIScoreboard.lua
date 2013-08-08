@@ -156,7 +156,7 @@ function GUIScoreboard:Initialize()
     self.connectionProblemsIcon:SetColor(Color(1, 0, 0, 1))
     self.connectionProblemsIcon:SetIsVisible(false)
     
-    self.connectionProblemsDetector = CreateTokenBucket(2, 10)
+    self.connectionProblemsDetector = CreateTokenBucket(8, 20)
     
     self.mousePressed = { LMB = { Down = nil }, RMB = { Down = nil } }
 
@@ -432,16 +432,33 @@ function GUIScoreboard:Update(deltaTime)
     local numberOfDroppedMovesTotal = Shared.GetNumDroppedMoves()
     if numberOfDroppedMovesTotal ~= self.droppedMoves then
     
-        self.connectionProblemsDetector:RemoveTokens((numberOfDroppedMovesTotal - self.droppedMoves) * 2)
+        self.connectionProblemsDetector:RemoveTokens(numberOfDroppedMovesTotal - self.droppedMoves)
         self.droppedMoves = numberOfDroppedMovesTotal
         
     end
     
-    local connectionProblemsDetected = self.connectionProblemsDetector:GetNumberOfTokens() < 5 or Client.GetConnectionProblems()
+    local tooManyDroppedMoves = self.connectionProblemsDetector:GetNumberOfTokens() < 6
+    local connectionProblems = Client.GetConnectionProblems()
+    local connectionProblemsDetected = tooManyDroppedMoves or connectionProblems
     
     self.connectionProblemsIcon:SetIsVisible(connectionProblemsDetected)
     if connectionProblemsDetected then
-        self.connectionProblemsIcon:SetColor(Color(1, 0, 0, 0.5 + ((math.cos(Shared.GetTime() * 10) + 1) / 2) * 0.5))
+    
+        local alpha = 0.5 + (((math.cos(Shared.GetTime() * 10) + 1) / 2) * 0.5)
+        local useColor = Color(0, 0, 0, alpha)
+        if tooManyDroppedMoves and connectionProblems then
+            useColor.g = 1
+        elseif tooManyDroppedMoves then
+        
+            useColor.r = 1
+            useColor.g = 1
+            
+        elseif connectionProblems then
+            useColor.r = 1
+        end
+        
+        self.connectionProblemsIcon:SetColor(useColor)
+        
     end
     
 end

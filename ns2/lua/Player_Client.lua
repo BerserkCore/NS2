@@ -2087,7 +2087,10 @@ function Player:OnVortexClient()
 
     self:SetEthereal(true)
     if self:GetIsLocalPlayer() then
+    
         StartSoundEffectForPlayer(kVortexed2DStart, self)
+        TEST_EVENT("Player Vortex start sound played")
+        
     end
     
 end
@@ -2096,7 +2099,10 @@ function Player:OnVortexEndClient()
 
     self:SetEthereal(false)
     if self:GetIsLocalPlayer() then
+    
         StartSoundEffectForPlayer(kVortexed2DEnd, self)
+        TEST_EVENT("Player Vortex end sound played")
+        
     end
     
 end

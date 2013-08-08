@@ -806,6 +806,22 @@ button.bottomleft
     left: 80px;
 }
 
+button.update
+{
+    height: 58px;
+    width: 256px;
+    border-width: 0px;
+    
+    vertical-align: bottom;
+    top: 4px;
+    font-name: fonts/AgencyFB_medium.fnt;
+    text-color: #8bb4c1;
+    text-padding: 16px;
+    
+    bottom: 0px;
+    right: 840;
+}
+
 button.refresh
 {
     height: 58px;
@@ -819,7 +835,7 @@ button.refresh
     text-padding: 16px;
     
     bottom: 0px;
-    right: 744;
+    right: 584;
 }
 
 button.create_server
@@ -1558,6 +1574,18 @@ form.filter_form slidebar
     left: 400px;
 }
 
+font.filter_custom_content_hint
+{
+    text-color: #FFDD00;
+    opacity: 0;
+    font-name: fonts/AgencyFB_small.fnt;
+    horizontal-align: left;
+    left: 350px;
+    vertical-align: bottom;
+    vertical-text-align: bottom;
+    text-align: center;
+}
+
 .filter_favorites
 {
     top: 16px;
@@ -1604,17 +1632,6 @@ font.filter_description
     text-align: right;
     vertical-text-align: center;
     vertical-align: center;    
-}
-
-font.filter_custom_content_hint
-{
-    text-color: #FFDD00;
-    opacity: 0;
-    font-name: fonts/AgencyFB_small.fnt;
-    horizontal-align: center;
-    vertical-align: bottom;
-    vertical-text-align: bottom;
-    text-align: center;
 }
 
 font.auto_join_text

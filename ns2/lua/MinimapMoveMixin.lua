@@ -77,31 +77,29 @@ function OverheadUI_MapMoveView(xc, yc)
 
 end
 
-// Called when commander is jumping to a world position (jumping to an alert, etc.)
+// Called when commander is jumping to a world position (jumping to an alert, etc.).
 function MinimapMoveMixin:SetWorldScrollPosition(x, z)
 
     local heightmap = GetHeightmap()
-
     if heightmap then
-   
-        self.minimapNormX = heightmap:GetMapX( z )
-        self.minimapNormY = heightmap:GetMapY( x )
+    
+        self.minimapNormX = heightmap:GetMapX(z)
+        self.minimapNormY = heightmap:GetMapY(x)
         self.setScrollPosition = true
         
     end
     
 end
 
-// Called when minimap is clicked or scrolled. 0,0 is upper left, 1,1 is lower right
+// Called when minimap is clicked or scrolled. 0, 0 is upper left, 1, 1 is lower right.
 function MinimapMoveMixin:SetScrollPosition(x, y)
 
     local heightmap = GetHeightmap()
-    
     if heightmap then
     
         self.minimapNormX = x
         self.minimapNormY = y
-
+        
         self.setScrollPosition = true
         
     end

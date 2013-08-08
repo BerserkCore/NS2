@@ -109,6 +109,8 @@ function Blink:OnSecondaryAttack(player)
             
             self.secondaryAttacking = true
             
+            TEST_EVENT("Blink started")
+            
         end
         
     end
@@ -120,7 +122,10 @@ end
 function Blink:OnSecondaryAttackEnd(player)
 
     if player.ethereal then
+    
         self:SetEthereal(player, false)
+        TEST_EVENT("Blink ended, button released")
+        
     end
     
     Ability.OnSecondaryAttackEnd(self, player)
@@ -188,7 +193,10 @@ function Blink:ProcessMoveOnWeapon(player, input)
     
     // End blink mode if out of energy
     if player:GetEnergy() == 0 and player.ethereal then
+    
         self:SetEthereal(player, false)
+        TEST_EVENT("Blink ended, out of energy")
+        
     end
     
 end

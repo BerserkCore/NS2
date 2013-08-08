@@ -58,7 +58,7 @@ function Weapon:SetWeaponWorldState(state)
             
             self.weaponWorldStateTime = Shared.GetTime()
             
-            function DestroyWorldWeapon()
+            local function DestroyWorldWeapon()
             
                 // We need to make sure this callback is still valid. It is possible
                 // for this weapon to be dropped and picked up before this callback fires off

@@ -194,6 +194,7 @@ function InitTechTreeMaterialOffsets()
     kTechIdToMaterialOffset[kTechId.Attack] = 123
     kTechIdToMaterialOffset[kTechId.Cancel] = 124
     kTechIdToMaterialOffset[kTechId.ShadePhantomMenu] = 125
+    kTechIdToMaterialOffset[kTechId.Hallucination] = 125
     kTechIdToMaterialOffset[kTechId.ShadePhantomStructuresMenu] = 126
     kTechIdToMaterialOffset[kTechId.BuildMenu] = 128
     kTechIdToMaterialOffset[kTechId.AdvancedMenu] = 129 

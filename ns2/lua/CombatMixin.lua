@@ -13,8 +13,8 @@ Script.Load("lua/DamageTypes.lua")
 CombatMixin = { }
 CombatMixin.type = "Combat"
 
-// after 2 seconds of no "combat action" the entity is flagged as not in combat
-local kCombatTimeOut = 5
+// after X seconds of no "combat action" the entity is flagged as not in combat
+local kCombatTimeOut = 1.5
 
 local kDamageCameraShakeAmount = 0.10
 local kDamageCameraShakeSpeed = 5

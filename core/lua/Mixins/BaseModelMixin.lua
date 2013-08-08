@@ -320,27 +320,27 @@ end
 local function UpdateBoneCoords(self, forceUpdate)
 
     PROFILE("BaseModelMixin:UpdateBoneCoords")
-
+    
     if not (self.fullyUpdated or forceUpdate) then
         return
     end
     
     UpdatePoseParameters(self, forceUpdate)
-
+    
     local model = Shared_GetModel(self.modelIndex)
     
     if model ~= nil and self.physicsType ~= _dynamicPhysicsType then
         self.animationState:GetBoneCoords(model, self.poseParams, self.boneCoords)
     end
-
-    local modelCoords    
+    
+    local modelCoords = nil
     local physicsModel = self.physicsModel
     if self.physicsType == PhysicsType.Dynamic and physicsModel then
         modelCoords = physicsModel:GetCoords()
     else
-        modelCoords = self:GetCoords()    
+        modelCoords = self:GetCoords()
     end
-
+    
     local OnAdjustModelCoords = self.OnAdjustModelCoords
     if OnAdjustModelCoords then
         self._modelCoords = OnAdjustModelCoords(self, modelCoords)
@@ -349,7 +349,7 @@ local function UpdateBoneCoords(self, forceUpdate)
     end
     
     UpdatePhysicsModelCoords(self, forceUpdate)
-
+    
 end
 
 local function ResetAnimationState(self)
@@ -1135,12 +1135,18 @@ end
  */
 function BaseModelMixin:SetPhysicsType(physicsType)
 
+    // Update the bone coords before changing physics type so that the physics
+    // model coords are updated.
+    if self.physicsModel ~= nil then
+        UpdateBoneCoords(self, true)
+    end
+    
     self.physicsType = physicsType
     
     if self.physicsModel ~= nil then
         UpdatePhysicsModelSimulation(self)
     end
-        
+    
 end
 
 function BaseModelMixin:SetPhysicsCollisionRep(collisionRep)

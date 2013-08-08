@@ -65,6 +65,11 @@ Crag.kHealEffectInterval = 1
 
 Crag.kHealWaveDuration = 8
 
+Crag.kHealPercentage = 0.05
+Crag.kMinHeal = 10
+Crag.kMaxHeal = 60
+Crag.kHealWaveMultiplier = 2.5
+
 local networkVars =
 {
     // For client animations
@@ -198,17 +203,14 @@ function Crag:PerformHealing()
 
     PROFILE("Crag:PerformHealing")
 
-    // acquire up to kMaxTargets healable targets inside range, players first ( TODO: use triggers)
     local targets = GetEntitiesWithMixinForTeamWithinRange("Live", self:GetTeamNumber(), self:GetOrigin(), Crag.kHealRadius)
+    table.removevalue(targets, self)
     local entsHealed = 0
     
-    for _,target in ipairs(targets) do
+    for _, target in ipairs(targets) do
+    
         local healAmount = self:TryHeal(target)
         entsHealed = entsHealed + ((healAmount > 0 and 1) or 0)
-        
-        if entsHealed >= Crag.kMaxTargets then
-            break
-        end
     
     end
 
@@ -220,14 +222,18 @@ end
 
 function Crag:TryHeal(target)
 
-    local heal = Crag.kHealAmount
+    local heal = math.min(target:GetMaxHealth() * Crag.kHealPercentage + Crag.kMinHeal, Crag.kMaxHeal)
     
     if self.healWaveActive then
-        heal = Crag.kHealWaveAmount
+        heal = heal * Crag.kHealWaveMultiplier
     end
 
-    local amountHealed = target:AddHealth(heal)
-    return amountHealed
+    if target:GetHealthScalar() ~= 1 and target:RegisterHealer(self, Shared.GetTime() + Crag.kHealInterval) then
+        local amountHealed = target:AddHealth(heal)
+        return amountHealed
+    else
+        return 0
+    end
     
 end
 

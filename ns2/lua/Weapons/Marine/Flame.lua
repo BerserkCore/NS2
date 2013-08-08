@@ -20,7 +20,7 @@ Flame.kFireWallEffect     = PrecacheAsset("cinematics/marine/flamethrower/burnin
 Flame.kDamageRadius       = 1.8
 Flame.kLifeTime           = 5.6
 Flame.kThinkTime          = .6
-Flame.kDamage             = 16
+Flame.kDamage             = 8
 
 local networkVars = { }
 
@@ -53,12 +53,7 @@ function Flame:OnInitialized()
         local endPosition = self:GetOrigin() - Vector(0, 10, 0)
         
         local trace = Shared.TraceRay(startPosition, endPosition, CollisionRep.Damage, PhysicsMask.Bullets,  EntityFilterAll())        
-        local distanceToGround = math.abs((trace.endPoint - startPosition):GetLength())
-
         local cinematicName = Flame.kFireEffect
-        if distanceToGround > 0.2 then
-            cinematicName = Flame.kFireWallEffect
-        end
         
         self.fireEffect:SetCinematic(cinematicName)
         self.fireEffect:SetRepeatStyle(Cinematic.Repeat_Endless)
@@ -76,9 +71,9 @@ function Flame:OnDestroy()
 
 	if Client then	
 	
-		 Client.DestroyCinematic(self.fireEffect)
-         self.fireEffect = nil
-	
+        Client.DestroyCinematic(self.fireEffect)
+        self.fireEffect = nil
+        
 	end
 	
 	ScriptActor.OnDestroy(self)
@@ -90,7 +85,7 @@ function Flame:GetDeathIconIndex()
 end
 
 function Flame:GetDamageType()
-    return kFlameLauncherDamageType
+    return kFlamethrowerDamageType
 end
     
 if Server then
@@ -130,8 +125,12 @@ if Server then
 	    
 	    for index, ent in ipairs(ents) do
         
-            local toEnemy = GetNormalizedVector(ent:GetModelOrigin() - self:GetOrigin())
-            self:DoDamage(Flame.kDamage, ent, ent:GetModelOrigin(), toEnemy)
+            if ent ~= self:GetOwner() or GetGamerules():GetFriendlyFire() then
+            
+                local toEnemy = GetNormalizedVector(ent:GetModelOrigin() - self:GetOrigin())
+                self:DoDamage(Flame.kDamage, ent, ent:GetModelOrigin(), toEnemy)
+                
+            end  
             
 	    end
         

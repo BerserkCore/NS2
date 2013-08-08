@@ -41,6 +41,8 @@ function AmmoPack:OnTouch(recipient)
         StartSoundEffectAtOrigin(AmmoPack.kPickupSound, recipient:GetOrigin())
     end
     
+    TEST_EVENT("Commander AmmoPack picked up")
+    
 end
 
 function AmmoPack:GetIsValidRecipient(recipient)
@@ -82,6 +84,8 @@ function WeaponAmmoPack:OnTouch(recipient)
     local weapon = recipient:GetActiveWeapon()
     weapon:GiveReserveAmmo(self.ammoPackSize)
     StartSoundEffectAtOrigin(AmmoPack.kPickupSound, recipient:GetOrigin())
+    
+    TEST_EVENT("Dropped AmmoPack picked up")
     
 end
 

@@ -116,6 +116,15 @@ function CommandStation:GetUseAttachPoint()
     return kLoginAttachPoint
 end
 
+function CommandStation:GetCanBeUsed(player, useSuccessTable)
+
+    // Cannot be used if the team already has a Commander (but can still be used to build).
+    if self:GetIsBuilt() and GetTeamHasCommander(self:GetTeamNumber()) then
+        useSuccessTable.useSuccess = false
+    end
+    
+end
+
 function CommandStation:GetCanRecycleOverride()
     return not self:GetIsOccupied()
 end

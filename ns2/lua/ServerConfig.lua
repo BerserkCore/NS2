@@ -67,7 +67,8 @@ end
 local function UpdateServerConfig()
 
     if Shared.GetSystemTime() - lastKeyValueUpdateTime >= kKeyValueUpdateRate then
-    
+
+        // This isn't used by the server browser, but it is used by stats monitoring systems    
         Server.SetKeyValue("tickrate", ToString(math.floor(Server.GetFrameRate())))
         Server.SetKeyValue("ent_count", ToString(Shared.GetEntitiesWithClassname("Entity"):GetSize()))
         lastKeyValueUpdateTime = Shared.GetSystemTime()

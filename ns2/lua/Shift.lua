@@ -403,6 +403,13 @@ end
 
 if Server then
 
+    function Shift:OnTeleportEnd()
+    
+        self.remainingFindEggSpotAttempts = 300
+        self.eggSpots = {}
+    
+    end
+
     function Shift:OnUpdate(deltaTime)
     
         PROFILE("Shift:OnUpdate")

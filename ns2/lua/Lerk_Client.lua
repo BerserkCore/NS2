@@ -55,7 +55,7 @@ end
 
 function Lerk:PlayerCameraCoordsAdjustment(cameraCoords)
 
-    if not gEnableTilt then 
+    if not Client.GetOptionBoolean("CameraAnimation", false) then 
         return cameraCoords 
     end
 

@@ -177,8 +177,8 @@ local function FindWeldOrder(self, entitiesNearby)
                 // Weld friendly players if their armor is below 75%.
                 // Weld non-players when they are below 50%.
                 weldAble = HasMixin(entity, "Weldable")
-                weldAble = weldAble and ((entity:isa("Player") and not entity:isa("Spectator")) and entity:GetArmorScalar() < 0.75) or
-                           (not entity:isa("Player") and entity:GetArmorScalar() < 0.5)
+                weldAble = weldAble and (((entity:isa("Player") and not entity:isa("Spectator")) and entity:GetArmorScalar() < 0.75) or
+                           (not entity:isa("Player") and entity:GetArmorScalar() < 0.5))
                 
             end
             

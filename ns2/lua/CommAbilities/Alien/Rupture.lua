@@ -43,10 +43,12 @@ function Rupture:Perform()
     
         local enemies = GetEntitiesForTeamWithinRange("Marine", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), Rupture.kRadius)
         
-        for _, entity in ipairs(enemies) do        
-            entity:SetRuptured()        
+        TEST_EVENT("Rupture triggered")
+        
+        for _, entity in ipairs(enemies) do
+            entity:SetRuptured()
         end
-
+        
     elseif Client then
     
         // apply rupture to all marines nearby
@@ -57,8 +59,10 @@ function Rupture:Perform()
             local viewCinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
             viewCinematic:SetCinematic(Rupture.kRuptureViewEffect)
             
+            TEST_EVENT("Rupture blocked vision")
+            
         end
-
+        
     end
     
 end

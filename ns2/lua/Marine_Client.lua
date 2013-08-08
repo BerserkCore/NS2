@@ -89,18 +89,20 @@ function PlayerUI_GetSensorBlipInfo()
                     // Compute screen xy to draw blip
                     local screenPos = Client.WorldToScreen(blipOrigin)
 
+                    /*
                     local trace = Shared.TraceRay(eyePos, blipOrigin, CollisionRep.LOS, PhysicsMask.Bullets, EntityFilterTwo(player, entity))                               
                     local obstructed = ((trace.fraction ~= 1) and ((trace.entity == nil) or trace.entity:isa("Door"))) 
                     
                     if not obstructed and entity and not entity:GetIsVisible() then
                         obstructed = true
                     end
+                    */
                     
                     // Add to array (update numElementsPerBlip in GUISensorBlips:UpdateBlipList)
                     table.insert(blips, screenPos.x)
                     table.insert(blips, screenPos.y)
                     table.insert(blips, drawRadius)
-                    table.insert(blips, obstructed)
+                    table.insert(blips, true)
                     table.insert(blips, blipName)
 
                 end
@@ -561,6 +563,7 @@ function Marine:BuyMenu(structure)
     if self:GetTeamNumber() ~= 0 and Client.GetLocalPlayer() == self then
     
         if not self.buyMenu then
+        
             self.buyMenu = GetGUIManager():CreateGUIScript("GUIMarineBuyMenu")
             
             MarineUI_SetHostStructure(structure)
@@ -568,6 +571,9 @@ function Marine:BuyMenu(structure)
             if structure then
                 self.buyMenu:SetHostStructure(structure)
             end
+            
+            TEST_EVENT("Marine buy menu displayed")
+            
         end
         
     end

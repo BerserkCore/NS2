@@ -257,6 +257,9 @@ function Spectator:OnProcessMove(input)
             
         end
         
+        // This flag must be cleared inside OnProcessMove. See explaination in Commander:OverrideInput().
+        self.setScrollPosition = false
+        
     end
     
     self:OnUpdatePlayer(input.time)
@@ -450,7 +453,7 @@ if Client then
     
         if self.specMode == Spectator.kSpectatorMode.Overhead then
         
-            -- Move to position if minimap clicked
+            // Move to position if minimap clicked.
             if self.setScrollPosition then
             
                 input.move.x = 0
@@ -459,14 +462,12 @@ if Client then
                 
                 input.commands = bit.bor(input.commands, Move.Minimap)
                 
-                -- Put in yaw and pitch because they are 16 bits
-                -- each. Without them we get a "settling" after
-                -- clicking the minimap due to differences after
-                -- sending to the server
+                // Put in yaw and pitch because they are 16 bits
+                // each. Without them we get a "settling" after
+                // clicking the minimap due to differences after
+                // sending to the server
                 input.yaw = self.minimapNormX
                 input.pitch = self.minimapNormY
-                
-                self.setScrollPosition = false
                 
             else
                 AdjustInputForInversion(input)

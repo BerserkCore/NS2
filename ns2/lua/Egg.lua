@@ -72,8 +72,6 @@ AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(TeleportMixin, networkVars)
 
 if Server then
-
-    local gLifeFormEggs = {}
     
     local function SortByTechId(entId1, entId2)
         
@@ -82,29 +80,6 @@ if Server then
     
         return ent1 and ent2 and ent1:GetTechId() > ent2:GetTechId()
         
-    end
-
-    function RegisterLifeFormEgg(egg)
-    
-        table.insert(gLifeFormEggs, egg:GetId())
-        table.sort(gLifeFormEggs, SortByTechId)
-    
-    end
-    
-    function LifeFormEggOnEntityChanged(oldId, newId)
-    
-        if table.contains(gLifeFormEggs, oldId) then
-            
-            if not newId then
-                table.removevalue(gLifeFormEggs, oldId)
-            end
-            
-        end
-    
-    end
-    
-    function GetLifeFormEggs()
-        return gLifeFormEggs
     end
 
 end
@@ -216,6 +191,8 @@ function Egg:GetTechAllowed(techId, techNode, player)
 
     if techId == kTechId.Cancel then
         allowed = true
+    else
+        allowed = allowed and self.empty
     end
     
     return allowed, canAfford
@@ -238,7 +215,6 @@ function Egg:OnResearchComplete(techId)
 
     if techId == kTechId.GorgeEgg or techId == kTechId.LerkEgg  or techId == kTechId.FadeEgg  or techId == kTechId.OnosEgg then
         self:UpgradeToTechId(techId)
-        RegisterLifeFormEgg(self)
     end
     
     return success
@@ -339,9 +315,8 @@ local function GestatePlayer(self, player, fromTechId)
     
     newPlayer:DropToFloor()
     
-    local techIds = player:GetUpgrades()
-    
-    table.insert(techIds, self:GetGestateTechId())
+    local techIds = { self:GetGestateTechId() } // player:GetUpgrades()    
+    //table.insert(techIds, self:GetGestateTechId())
 
     newPlayer:SetGestationData(techIds, fromTechId, 1, 1)
     

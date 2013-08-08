@@ -20,7 +20,7 @@ function WriteDefaultConfigFile(fileName, defaultConfig)
         configFile:write(json.encode(defaultConfig, { indent = true }))
         
     end
-            
+    
     io.close(configFile)
     
 end
@@ -32,7 +32,10 @@ function LoadConfigFile(fileName)
     local openedFile = io.open("config://" .. fileName, "r")
     if openedFile then
     
-        local parsedFile = json.decode(openedFile:read("*all")) or { }
+        local parsedFile, _, errStr = json.decode(openedFile:read("*all"))
+        if errStr then
+            Shared.Message("Error while opening " .. fileName .. ": " .. errStr)
+        end
         io.close(openedFile)
         return parsedFile
         
@@ -45,11 +48,14 @@ end
 function SaveConfigFile(fileName, data)
 
     Shared.Message("Saving " .. "config://" .. fileName)
-
+    
     local openedFile = io.open("config://" .. fileName, "w+")
+    
     if openedFile then
+    
         openedFile:write(json.encode(data, { indent = true }))
         io.close(openedFile)
+        
     end
     
 end

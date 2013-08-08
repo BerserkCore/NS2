@@ -15,8 +15,13 @@ WriteDefaultConfigFile(mapCycleFileName, defaultConfig)
 
 local cycle = LoadConfigFile(mapCycleFileName) or defaultConfig
 
-assert(type(cycle.time) == 'number')
-assert(type(cycle.maps) == 'table')
+if type(cycle.time) ~= "number" then
+    Shared.Message("No cycle time defined in MapCycle.json")
+end
+
+if type(cycle.maps) ~= "table" then
+    Shared.Message("No maps defined in MapCycle.json")
+end
 
 function MapCycle_GetMapCycle()
     return cycle
@@ -38,17 +43,34 @@ local function StartMap(map)
 
     local mods = { }
     
-    // Copy the global defined mods
+    // Copy the global defined mods.
     if type(cycle.mods) == "table" then
-        table.copy(cycle.mods, mods, true)    
+        table.copy(cycle.mods, mods, true)
     end
     
     local mapName = GetMapName(map)
     if type(map) == "table" and type(map.mods) == "table" then
-        table.copy(map.mods, mods, true)    
+        table.copy(map.mods, mods, true)
     end
-    Server.StartWorld(mods, mapName)
-
+    
+    // Verify the map exists on the file system.
+    local found = false
+    for i = 1, Server.GetNumMaps() do
+    
+        local name = Server.GetMapName(i)
+        if mapName == name then
+        
+            found = true
+            break
+            
+        end
+        
+    end
+    
+    if found then
+        Server.StartWorld(mods, mapName)
+    end
+    
 end
 
 /**

@@ -12,7 +12,6 @@ Script.Load("lua/CloakableMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/FireMixin.lua")
 Script.Load("lua/UmbraMixin.lua")
-Script.Load("lua/RegenerationMixin.lua")
 Script.Load("lua/CatalystMixin.lua")
 Script.Load("lua/ScoringMixin.lua")
 Script.Load("lua/Alien_Upgrade.lua")
@@ -115,7 +114,6 @@ function Alien:OnCreate()
     
     InitMixin(self, FireMixin)
     InitMixin(self, UmbraMixin)
-    InitMixin(self, RegenerationMixin)
     InitMixin(self, CatalystMixin)
     InitMixin(self, EnergizeMixin)
     InitMixin(self, FeintMixin)
@@ -402,14 +400,23 @@ function Alien:GetRecuperationRate()
     end    
 
     local scalar = ConditionalValue(self:GetGameEffectMask(kGameEffect.OnFire), kOnFireEnergyRecuperationScalar, 1)
-    scalar = scalar * ConditionalValue(self.darkVisionOn, kAlienVisionEnergyRegenMod, 1)
-    
+
     if GetHasAdrenalineUpgrade(self) then
         return scalar * Alien.kEnergyAdrenalineRecuperationRate
-    else    
+    else
         return scalar * Alien.kEnergyRecuperationRate
     end
     
+end
+
+function Alien:OnGiveUpgrade(techId)
+
+    if techId == kTechId.Camouflage then
+        TEST_EVENT("Camouflage evolved")
+    elseif techId == kTechId.Regeneration then
+        TEST_EVENT("Regeneration evolved")
+    end
+
 end
 
 function Alien:GetMaxEnergy()

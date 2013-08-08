@@ -40,6 +40,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/TriggerMixin.lua")
 Script.Load("lua/TargettingMixin.lua")
+Script.Load("lua/CatalystMixin.lua")
 
 class 'Hydra' (ScriptActor)
 
@@ -87,6 +88,7 @@ AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
+AddMixinNetworkVars(CatalystMixin, networkVars)
 
 function Hydra:OnCreate()
 
@@ -121,6 +123,7 @@ function Hydra:OnCreate()
     InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
+    InitMixin(self, CatalystMixin)
     
     self.alerting = false
     self.attacking = false

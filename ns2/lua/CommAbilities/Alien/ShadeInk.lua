@@ -128,10 +128,12 @@ end
 if Server then
 
     function ShadeInk:OnCreate()
-
+    
         self.numHives = Clamp(Shared.GetEntitiesWithClassname("Hive"):GetSize(), 0, 3)
         CommanderAbility.OnCreate(self)
-
+        
+        TEST_EVENT("Shade Ink created")
+        
     end
     
 end

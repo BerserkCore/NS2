@@ -117,14 +117,22 @@ function Armory:ResupplyPlayer(player)
 
         self:TriggerEffects("armory_health", {effecthostcoords = Coords.GetTranslation(player:GetOrigin())})
         
+        TEST_EVENT("Armory resupplied health/armor")
+        
         resuppliedPlayer = true
         
-        if HasMixin(player, "ParasiteAble") then
+        if HasMixin(player, "ParasiteAble") and player:GetIsParasited() then
+        
             player:RemoveParasite()
+            TEST_EVENT("Armory removed Parasite")
+            
         end
         
-        if player:isa("Marine") then
+        if player:isa("Marine") and player.poisoned then
+        
             player.poisoned = false
+            TEST_EVENT("Armory cured Poison")
+            
         end
         
     end
@@ -141,6 +149,8 @@ function Armory:ResupplyPlayer(player)
                 self:TriggerEffects("armory_ammo", {effecthostcoords = Coords.GetTranslation(player:GetOrigin())})
                 
                 resuppliedPlayer = true
+                
+                TEST_EVENT("Armory resupplied health/armor")
                 
                 break
                 

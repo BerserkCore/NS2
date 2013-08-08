@@ -36,8 +36,11 @@ function NanoShield:Perform()
     local closest = self:GetClosestFromTable(entities, CheckFunc)
     
     if closest then
+    
         closest:ActivateNanoShield()
         self.success = true
+        TEST_EVENT("NanoShield activated")
+        
     end
 
 end

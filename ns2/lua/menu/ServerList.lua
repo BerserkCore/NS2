@@ -185,7 +185,7 @@ local function RenderServerList(self)
 
     local renderPosition = 0
     
-    local serverListWidth = self:GetWidth()    
+    local serverListWidth = self:GetWidth()
     local serverListSize = #self.serverEntries
     local numServers = #self.tableData
     local lastSelectedServerId = MainMenu_GetSelectedServer()
@@ -196,21 +196,23 @@ local function RenderServerList(self)
     
         for i = 1, numServers - serverListSize do
             table.insert(self.serverEntries, CreateMenuElement(self, 'ServerEntry', false))
-        end   
- 
+        end
+        
     elseif serverListSize > numServers then
     
         for i = 1, serverListSize - numServers do
+        
             self.serverEntries[#self.serverEntries]:Uninitialize()
             table.remove(self.serverEntries, #self.serverEntries)
+            
         end
         
     end
-
-    for i = 1, #self.tableData do   
-
+    
+    for i = 1, #self.tableData do
+    
         local serverEntry = self.serverEntries[i]
-
+        
         if CheckShowTableEntry(self, self.tableData[i]) then
         
             serverEntry:SetIsVisible(true)
@@ -307,8 +309,22 @@ function ServerList:AddEntry(serverEntry)
     table.insert(self.tableData, serverEntry)
     RenderServerList(self)
     
-    // dont sort here
-    //self:Sort(self.tableData)
+end
+
+function ServerList:UpdateEntry(serverEntry)
+
+    for s = 1, #self.tableData do
+    
+        if self.tableData[s].serverId == serverEntry.serverId then
+        
+            self.tableData[s] = serverEntry
+            break
+            
+        end
+        
+    end
+    
+    RenderServerList(self)
     
 end
 

@@ -68,10 +68,6 @@ kClogsPerHive = 10
 kWebStalkPerHive = 2
 kCystInfestDuration = 37.5
 
-// per second
-kAlienVisionCost = 0
-kAlienVisionEnergyRegenMod = 1
-
 kSentriesPerBattery = 3
 
 kDefaultStructureCost = 10
@@ -221,14 +217,21 @@ kPlayerWeldRate = 30
 kStructureWeldRate = 125
 kDoorWeldTime = 15
 
-kAlienRegenerationTime = 2
-
-kAlienInnateRegenerationPercentage  = 0.02
-kAlienInfestationRegenerationPercentage = 0.05
 kHealingBedStructureRegen     = 5 // Health per second
 
-// for Regeneration evolution:
-kAlienRegenerationPerSecond = 20
+kAlienRegenerationTime = 1
+
+kAlienInnateRegenerationPercentage  = 0.02
+kAlienMinInnateRegeneration = 1
+kAlienMaxInnateRegeneration = 20
+
+// used for hive healing and regeneration upgrade
+kAlienRegenerationPercentage = 0.09
+kAlienMinRegeneration = 10
+kAlienMaxRegeneration = 120
+
+// when in combat self healing (innate healing or through upgrade) is multiplied with this value
+kAlienRegenerationCombatModifier = 0.2
 
 kCarapaceSpeedReduction = 0.0
 kSkulkCarapaceSpeedReduction = 0 //0.08

@@ -8,6 +8,24 @@
 
 kGeneralEffectData = 
 {
+    vortexed_start =
+    {
+        vortexEffects = 
+        {
+            {parented_cinematic = "cinematics/alien/fade/vortex.cinematic"},
+            {sound = "sound/NS2.fev/alien/fade/vortex_start", done = true},   
+        }
+    },
+    
+    vortexed_end =
+    {
+        vortexEndEffects =
+        {
+            {cinematic = "cinematics/alien/fade/vortex_destroy.cinematic"},
+            {sound = "sound/NS2.fev/alien/fade/vortex_end", done = true}, 
+        }
+    },
+
     heal =
     {        
         healEffects =
@@ -20,14 +38,17 @@ kGeneralEffectData =
             {parented_cinematic = "cinematics/alien/heal_big.cinematic", classname = "Shift", done = true},
             {parented_cinematic = "cinematics/alien/heal.cinematic", isalien = true, done = true},
         },
-        
+    },    
+
+    heal_sound =
+    {        
         healSoundEffects =
         {   
             {sound = "", classname = "Commander", done = true},
             {sound = "", classname = "ReadyRoomPlayer", done = true},
             {sound = "", silenceupgrade = true, done = true},
-            {sound = "sound/NS2.fev/alien/common/regeneration", isalien = true, world_space = true, done = true},        
-            {sound = "sound/NS2.fev/marine/structures/mac/weld", isalien = false, world_space = true, done = true},  
+            {sound = "sound/NS2.fev/alien/common/regeneration_ability", isalien = true, done = true},        
+            {sound = "sound/NS2.fev/marine/structures/mac/weld", isalien = false, done = true},  
         }
     },
     
@@ -176,14 +197,6 @@ kGeneralEffectData =
         {
             {cinematic = "cinematics/marine/structures/disrupt.cinematic", classname = "ARC", done = true},
             {cinematic = "cinematics/marine/structures/disrupt.cinematic", classname = "Structure", done = true}
-        }
-    },
-    
-    vortexed_end =
-    {
-        vortexEndEffects =
-        {
-            {cinematic = "cinematics/alien/fade/vortex_destroy.cinematic"},
         }
     },
     

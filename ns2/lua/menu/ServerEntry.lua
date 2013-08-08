@@ -33,7 +33,7 @@ function SelectServerEntry(entry)
     entry.scriptHandle.selectServer:SetBackgroundPosition(Vector(0, topOffSet, 0), true)
     entry.scriptHandle.selectServer:SetIsVisible(true)
     MainMenu_SelectServer(entry:GetId())
-                
+    
 end
 
 class 'ServerEntry' (MenuElement)
@@ -41,9 +41,10 @@ class 'ServerEntry' (MenuElement)
 function ServerEntry:Initialize()
 
     self:DisableBorders()
+    
     MenuElement.Initialize(self)
-
-    // has no children, but just to keep sure, we do that.
+    
+    // Has no children, but just to keep sure, we do that.
     self:SetChildrenIgnoreEvents(true)
     
     local eventCallbacks =
@@ -68,8 +69,10 @@ function ServerEntry:Initialize()
         end,
         
         OnMouseOut = function(self)
+        
             self.scriptHandle.highlightServer:SetIsVisible(false)
             self.favorite:SetColor(kFavoriteColor)
+            
         end,
         
         OnMouseDown = function(self, key, doubleClick)
@@ -77,29 +80,40 @@ function ServerEntry:Initialize()
             if GUIItemContainsPoint(self.favorite, Client.GetCursorPosScreen()) then
             
                 if not self.serverData.favorite then
+                
                     self.favorite:SetTexture(kFavoriteTexture)
                     self.serverData.favorite = true
                     SetServerFavorite(self.serverData.address, true)
+                    
                 else
+                
                     self.favorite:SetTexture(kNonFavoriteTexture)
                     self.serverData.favorite = false
                     SetServerFavorite(self.serverData.address, false)
-                end    
-            
+                    
+                end
+                
             else
-        
+            
                 SelectServerEntry(self)
                 
                 if doubleClick then
                 
-                    if (self.timeOfLastClick ~= nil and (Shared.GetTime() < self.timeOfLastClick + .3)) then
+                    if (self.timeOfLastClick ~= nil and (Shared.GetTime() < self.timeOfLastClick + 0.3)) then
                         self.scriptHandle:ProcessJoinServer()
                     end
+                    
+                else
+                
+                    local function RefreshCallback(serverIndex)
+                        MainMenu_OnServerRefreshed(serverIndex)
+                    end
+                    Client.RefreshServer(self:GetId(), RefreshCallback)
                     
                 end
                 
                 self.timeOfLastClick = Shared.GetTime()
-            
+                
             end
             
         end

@@ -23,7 +23,7 @@ function Weapon:Dropped(prevOwner)
 end
 
 function Weapon:GetPreventCameraAnimation(player)
-    return not Client.GetOptionBoolean("CameraAnimation", true)
+    return not Client.GetOptionBoolean("CameraAnimation", false)
 end
 
 function Weapon:UpdateDropped()

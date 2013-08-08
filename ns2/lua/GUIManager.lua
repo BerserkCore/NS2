@@ -83,14 +83,12 @@ function GUIManager:CreateGUIScript(scriptName)
 
     local createdScript = SharedCreate(scriptName)
     
-    
-    
     if createdScript ~= nil then
         table.insert(self.scripts, createdScript)
     end
     
     return createdScript
-
+    
 end
 
 // Only ever create one of this named script.

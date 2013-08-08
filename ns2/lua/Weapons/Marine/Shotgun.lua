@@ -191,7 +191,7 @@ function Shotgun:FirePrimary(player)
     local startPoint = player:GetEyePos()
     
     self:TriggerEffects("shotgun_attack")
-
+    
     for bullet = 1, numberBullets do
     
         if not kSpreadVectors[bullet] then
@@ -239,6 +239,8 @@ function Shotgun:FirePrimary(player)
         end
         
     end
+    
+    TEST_EVENT("Shotgun primary attack")
     
 end
 

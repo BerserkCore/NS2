@@ -14,15 +14,6 @@ kAlienWeaponEffects =
     {
     },
     
-    vortex_destroy =
-    {
-        vortexDestroyEffects =
-        {
-            {sound = "sound/NS2.fev/alien/fade/vortex_end"},
-            {cinematic = "cinematics/alien/fade/vortex_destroy.cinematic"},
-        }    
-    },
-    
     spit_hit =
     {
         spitHitEffects =

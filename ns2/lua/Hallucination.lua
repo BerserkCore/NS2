@@ -388,9 +388,11 @@ function Hallucination:GetMaxSpeed()
     return self.maxSpeed
 end
 
+/*
 function Hallucination:GetSurfaceOverride()
     return "hallucination"
 end
+*/
 
 function Hallucination:GetCanReposition()
     return GetHallucinationCanMove(self.assignedTechId)
@@ -469,13 +471,15 @@ function Hallucination:OnUpdateAnimationInput(modelMixin)
         moveState = GetMoveName(self.assignedTechId)
     end
 
-    if self.isStructure then
-        modelMixin:SetAnimationInput("built", true) 
-    end
+    modelMixin:SetAnimationInput("built", true)
 
     modelMixin:SetAnimationInput("move", moveState) 
     OnUpdateAnimationInputCustom(self, self.assignedTechId, modelMixin, moveState)
 
+end
+
+function Hallucination:OnUpdatePoseParameters()
+    self:SetPoseParam("grow", 1)    
 end
 
 if Server then

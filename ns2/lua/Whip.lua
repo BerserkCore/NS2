@@ -74,11 +74,11 @@ Whip.kFuryDamageBoost = .1          // 10% extra damage
 
 // Whacking; throwing back grenades that comes into whackRange
 // need a little bit extra range to avoid getting hit by grenades going right at it
-Whip.kWhackRange = Whip.kRange -1
+Whip.kWhackRange = 6.5
 // performance; we track grenades that are close enough every tick, but we update the
 // grenade list only 3 times per second. Grenades travel 15m/sec, so we grab those
 // inside 10m + whackRange and put them onto our list
-Whip.kWhackInterrestRange = Whip.kWhackRange + 10
+Whip.kWhackInterrestRange = Whip.kWhackRange + 3
 
 // range inside which a mature whip will select targets. If the target is inside Whip.kRange, it will
 // get hit by a standard attack. If its longer, it will get targeted by a bombard.
@@ -417,7 +417,17 @@ function Whip:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("Whip:OnUpdateAnimationInput")  
     
-    modelMixin:SetAnimationInput("activity", ((self.slapping or self.whacking) and "primary") or (self.bombarding and "secondary") or "none" )
+    local activity = "none"
+
+    if self.slapping then
+        activity = "primary"
+    elseif self.whacking then
+        activity = "whack"
+    elseif self.bombarding then
+        activity = "secondary"
+    end 
+    
+    modelMixin:SetAnimationInput("activity", activity)
     modelMixin:SetAnimationInput("rooted", self.rooted)
     modelMixin:SetAnimationInput("move", self.moving and "run" or "idle")
     

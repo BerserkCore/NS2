@@ -473,6 +473,14 @@ local function GetBlinkAlpha(time, color)
     
 end
 
+local blinkInterval = .5
+local function BlinkDark(time, color, teamType)
+
+    local anim = (time % (blinkInterval * 2)) / (blinkInterval * 2)
+    return ConditionalValue(anim < .5, Color(.3, .3, .3, 1), color)
+
+end
+
 local blipPos = Vector(0, 0, 0) // Simple optimization to prevent unnecessary Vector creation inside the function.
 local blipRotation = Vector(0, 0, 0) // Simple optimization to prevent unnecessary Vector creation inside the function.
 local function UpdateStaticBlips(self, deltaTime)
@@ -545,7 +553,7 @@ local function UpdateStaticBlips(self, deltaTime)
         
         if underAttack then
             if spectating or blipTeam == kMinimapBlipTeam.Friendly then
-                blip:SetColor(GetBlinkAlpha(Shared.GetTime(), blipColor))
+                blip:SetColor(BlinkDark(Shared.GetTime(), blipColor))
             end
         end
         

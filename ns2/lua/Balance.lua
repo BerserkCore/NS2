@@ -336,7 +336,7 @@ kStabDamage = 160
 kStabDamageType = kDamageType.Puncture
 kStabEnergyCost = 20
 
-kVortexEnergyCost = 60
+kVortexEnergyCost = 40
 
 kStartBlinkEnergyCost = 8
 kBlinkEnergyCost = 40

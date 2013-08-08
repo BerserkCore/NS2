@@ -56,7 +56,14 @@ function Checkbox:SetValue(value)
         value = true
     elseif value == "false" then
         value = false
-    end    
+    elseif type(value) ~= "boolean" then
+    
+        // NOTE: This may happen if some bad data gets into a save file.
+        // Better to print warning to the log than generate a script error in this case.
+        Shared.Message("Warning: value is not a boolean (defaulting to true). " .. Script.CallStack())
+        value = true
+        
+    end
     
     FormElement.SetValue(self, value)
 

@@ -61,18 +61,17 @@ float4 BloomCurvePS(PS_DeferredPass_Input input) : COLOR0
  
 float4 DownSamplePS(PS_DeferredPass_Input input) : COLOR0
 {
-	return tex2D( inputTextureSampler, input.texCoord );
+	return tex2D(inputTextureSampler, input.texCoord);
  }
 
 float4 CompositePS(PS_DeferredPass_Input input) : COLOR0
 {
-	return tex2D( inputTextureSampler1, input.texCoord) + tex2D( inputTextureSampler2, input.texCoord);
+	return tex2D(inputTextureSampler, input.texCoord);
 }
 
 float4 FinalCompositePS(PS_DeferredPass_Input input) : COLOR0
 {
-	return tex2D(inputTextureSampler1,  input.texCoord) +
-		   tex2D( inputTextureSampler2, input.texCoord);
+	return tex2D(inputTextureSampler,  input.texCoord);
 }
 
 technique BloomCurve
@@ -108,6 +107,9 @@ technique Composite
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 CompositePS();
         CullMode            = None;
+        AlphaBlendEnable    = True;
+        SrcBlend            = One;
+        DestBlend           = One;
     }
 }
 

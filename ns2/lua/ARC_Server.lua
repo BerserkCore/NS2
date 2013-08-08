@@ -243,6 +243,8 @@ local function PerformAttack(self)
             self:ClearOrders()
         end
         
+        TEST_EVENT("ARC attacked entity")
+        
     end
     
 end
@@ -284,6 +286,7 @@ function ARC:OnTag(tagName)
     elseif tagName == "attack_end" then
         self:SetMode(ARC.kMode.Targeting)
     elseif tagName == "deploy_end" then
+    
         // Clear orders when deployed so new ARC attack order will be used
         self.deployMode = ARC.kDeployMode.Deployed
         self:ClearOrders()
@@ -300,6 +303,8 @@ function ARC:OnTag(tagName)
         self:SetMaxArmor(kARCDeployedArmor)
         self:SetArmor(self.deployedArmor)
         
+        TEST_EVENT("ARC Deployed")
+        
     elseif tagName == "undeploy_end" then
     
         self.deployMode = ARC.kDeployMode.Undeployed
@@ -309,12 +314,16 @@ function ARC:OnTag(tagName)
         self:SetMaxArmor(kARCArmor)
         self:SetArmor(self.undeployedArmor)
         
+        TEST_EVENT("ARC Undeployed")
+        
     end
     
 end
 
 function ARC:AdjustPathingPitch(newLocation, pitch)
+
     local angles = self:GetAngles()
     angles.pitch = pitch
     self:SetAngles(angles)
+    
 end

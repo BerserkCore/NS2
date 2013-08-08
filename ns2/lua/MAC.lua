@@ -419,7 +419,10 @@ function MAC:ProcessWeldOrder(deltaTime)
 
     // Not allowed to weld after taking damage recently.
     if Shared.GetTime() - self:GetTimeLastDamageTaken() <= 1.0 then
+    
+        TEST_EVENT("MAC cannot weld after taking damage")
         return
+        
     end
     
     if self.timeOfLastWeld == 0 or time > self.timeOfLastWeld + kWeldRate then

@@ -555,7 +555,50 @@ function LiveMixin:OnUpdateAnimationInput(modelMixin)
     
 end
 
-if Client then
+if Server then
+
+    local function UpdateHealerTable(self)
+
+        local cleanupIds = {}
+        local numHealers = 0
+        
+        local now = Shared.GetTime()
+        for entityId, timeExpired in pairs(self.healerTable) do
+        
+            if timeExpired <= now then
+                table.insertunique(cleanupIds, entityId)    
+            else
+                numHealers = numHealers + 1
+            end
+        
+        end
+        
+        for _, cleanupId in ipairs(cleanupIds) do
+            self.healerTable[cleanupId] = nil
+        end
+        
+        return numHealers
+        
+    end    
+
+    function LiveMixin:RegisterHealer(healer, expireTime)
+
+        if not self.healerTable then
+            self.healerTable = {}
+        end
+        
+        local numHealers = UpdateHealerTable(self)
+
+        if numHealers >= 3 then
+            return false
+        else
+            self.healerTable[healer:GetId()] = expireTime
+            return true
+        end
+
+    end
+
+elseif Client then
 
     local function ActualHealthArmorIsLower(self)        
         return self.health < self.healthClient or self.armor < self.armorClient        
@@ -753,6 +796,14 @@ function LiveMixin:OnUpdateRender()
         
         self:TriggerEffects("heal_sound", { isalien = GetIsAlienUnit(self) })
     
+    end
+
+end
+
+function LiveMixin:OnEntityChange(oldId, newId)
+
+    if self.healerTable and self.healerTable[oldId] then
+        self.healerTable[oldId] = nil
     end
 
 end

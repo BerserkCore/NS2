@@ -31,7 +31,7 @@ function AiGrenadeWhackAttackType:GetClassName()
 end
 
 function AiGrenadeWhackAttackType:IsValid()
-    return ( not HasMixin(self.aiEntity, "Fire") or not self.aiEntity:GetIsOnFire() ) and (not HasMixin(self.aiEntity, "Maturity") or self.aiEntity:GetMaturityLevel() == kMaturityLevel.Mature) and self:ValidateTarget(self:GetTarget())
+    return ( not HasMixin(self.aiEntity, "Fire") or not self.aiEntity:GetIsOnFire() ) and self:ValidateTarget(self:GetTarget())
 end
 
 function AiGrenadeWhackAttackType:ValidateTarget(target)
@@ -93,26 +93,18 @@ function AiGrenadeWhackAttackType:StartAttackOnTarget(target)
     
 end
 
-local function GetWhackDirection(whip, grenadePos)
+local function GetWhackDirection(whip, grenadePos, grenadeVel)
 
-    local friendlies = GetEntitiesForTeamWithinRange("ScriptActor", whip:GetTeamNumber(), grenadePos, 30)
+    local returnDirection = Vector(-grenadeVel)
     
-    local numVectors = 0
-    local vectorSum = Vector(0,0,0)
-    
-    for _, friendly in ipairs(friendlies) do
-    
-        numVectors = numVectors + 1
-        // TODO: probably assign priorities? like hive and players twice as important
-        vectorSum = vectorSum + GetNormalizedVector( grenadePos - friendly:GetOrigin() )
-    
-    end
-    
-    if numVectors ~= 0 then    
-        return GetNormalizedVector( vectorSum / numVectors )  
-    end
+    local addRandom = Vector( (math.random() - .5) * .1, 0, (math.random() - .5) * .1)
 
-    return GetNormalizedVector(grenadePos - whip:GetOrigin())  
+    returnDirection.y = 0
+    returnDirection = returnDirection + addRandom
+    returnDirection = GetNormalizedVector(returnDirection)
+    returnDirection.y = 0.4
+    
+    return returnDirection
 
 end
 
@@ -125,29 +117,22 @@ function AiGrenadeWhackAttackType:OnHit()
     if grenade and grenade:isa("Grenade") then
     
         local range = (grenade:GetOrigin() - self.aiEntity:GetOrigin()):GetLength() 
-        if range < Whip.kRange then
+
+        // fling it away from friendly units
+        local awayFromFriendlies = GetWhackDirection(self.aiEntity, grenade:GetOrigin(), grenade:GetVelocity())
+        local whackVelocity = awayFromFriendlies * grenade:GetVelocity():GetLength()
         
-            // fling it away from friendly units
-            local awayFromFriendlies = GetWhackDirection(self.aiEntity, grenade:GetOrigin())
-            awayFromFriendlies.y = math.max(0.5, awayFromFriendlies.y)
-            
-            //DebugLine(grenade:GetOrigin(),  grenade:GetOrigin() + awayFromFriendlies * 3, 4, 1, 1, 1, 1)
-            
-            local whackVelocity = awayFromFriendlies * grenade:GetVelocity():GetLength()
-            
-            if whackVelocity:GetLength() < kMinWhackSpeed then
-            
-                // need to fling it back with enough speed
-                local player = grenade:GetOwner()
-                if player then 
-                    whackVelocity = Ballistics.GetAimDirection(grenade:GetOrigin(), player:GetEngagementPoint(), kWhackSpeed) * kWhackSpeed
-                end
-                
+        if whackVelocity:GetLength() < kMinWhackSpeed then
+        
+            // need to fling it back with enough speed
+            local player = grenade:GetOwner()
+            if player then 
+                whackVelocity = Ballistics.GetAimDirection(grenade:GetOrigin(), player:GetEngagementPoint(), kWhackSpeed) * kWhackSpeed
             end
             
-            grenade:Whack(whackVelocity)
-            
         end
+        
+        grenade:Whack(whackVelocity)
         
     end
     

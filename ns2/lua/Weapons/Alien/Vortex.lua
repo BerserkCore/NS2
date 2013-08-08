@@ -25,6 +25,8 @@ Vortex.kPrimaryEnergyCost = kVortexEnergyCost
 local kRange = 2.6
 Vortex.kStabDuration = 1
 
+kVortexDuration = 4
+
 local kAnimationGraph = PrecacheAsset("models/alien/fade/fade_view.animation_graph")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/vortex.surface_shader")
@@ -37,31 +39,33 @@ function Vortex:OnCreate()
     self.primaryAttacking = false
     
     if Server then
-        self.etherealGateId = Entity.invalidId
+    
+        self.vortexTargetId = Entity.invalidId
         InitMixin(self, EntityChangeMixin)
+        
     end
 
 end
 
 function Vortex:OnEntityChange(oldId, newId)
 
-    if oldId == self.etherealGateId then
-        self.etherealGateId = Entity.invalidId
+    if oldId == self.vortexTargetId then
+        self.vortexTargetId = Entity.invalidId
     end
     
 end
 
-function Vortex:DestroyOldGate()
+function Vortex:FreeOldTarget()
 
-    if self.etherealGateId ~= Entity.invalidId then
+    if self.vortexTargetId ~= Entity.invalidId then
     
-        local oldGate = Shared.GetEntity(self.etherealGateId)
-        if oldGate then
-            DestroyEntity(oldGate)
+        local oldTarget = Shared.GetEntity(self.vortexTargetId)
+        if oldTarget and HasMixin(oldTarget, "VortexAble") then
+            oldTarget:FreeVortexed()
         end
         
-        self.etherealGateId = Entity.invalidId
-    
+        self.vortexTargetId = Entity.invalidId
+        
     end
 
 end
@@ -137,16 +141,23 @@ end
 local function PerformVortex(self)
 
     local player = self:GetParent()
-    if player then
+    if player and Server then
     
         local didHit, hitObject, endPoint, surface = AttackMeleeCapsule(self, player, 0, kRange)
         
-        local gate = CreateEntity(EtherealGate.kMapName, endPoint, player:GetTeamNumber())
+        local vortexAbles = GetEntitiesWithMixinForTeamWithinRange("VortexAble", GetEnemyTeamNumber(player:GetTeamNumber()), endPoint, kRange)
+        Shared.SortEntitiesByDistance(endPoint, vortexAbles)
         
-        if Server and gate then
+        for _, vortexAble in ipairs(vortexAbles) do
         
-            self:DestroyOldGate()
-            self.etherealGateId = gate:GetId()
+            if not vortexAble:GetIsVortexed() and (not HasMixin(vortexAble, "NanoShieldAble") or not vortexAble:GetIsNanoShielded()) then   
+ 
+                self:FreeOldTarget()
+                vortexAble:SetVortexDuration(kVortexDuration)
+                self.vortexTargetId = vortexAble:GetId()
+                break
+                
+            end    
         
         end
         

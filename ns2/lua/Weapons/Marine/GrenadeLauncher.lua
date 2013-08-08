@@ -198,6 +198,8 @@ local function ShootGrenade(self, player)
         
     end
     
+    TEST_EVENT("Grenade Launcher primary attack")
+    
 end
 
 function GrenadeLauncher:FirePrimary(player)

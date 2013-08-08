@@ -208,6 +208,18 @@ local function BurnSporesAndUmbra(self, startPoint, endPoint)
 
 end
 
+local function CreateFlame(self, player, position)
+
+    // create flame entity, but prevent spamming:
+    local nearbyFlames = GetEntitiesForTeamWithinRange("Flame", self:GetTeamNumber(), position, 1.5)    
+
+    if table.count(nearbyFlames) == 0 then
+        local flame = CreateEntity(Flame.kMapName, position, player:GetTeamNumber())
+        flame:SetOwner(player)
+    end
+
+end
+
 local function ApplyConeDamage(self, player)
     
     local barrelPoint = self:GetBarrelPoint() - Vector(0, 0.4, 0)
@@ -245,8 +257,14 @@ local function ApplyConeDamage(self, player)
                 local lineTrace = Shared.TraceRay(startPoint, startPoint + remainingRange * fireDirection, CollisionRep.LOS, PhysicsMask.Melee, EntityFilterOne(player))
                 
                 if lineTrace.fraction < 0.8 then
+                
                     fireDirection = fireDirection + trace.normal * 0.55
                     fireDirection:Normalize()
+                    
+                    if Server then
+                        CreateFlame(self, player, lineTrace.endPoint)
+                    end
+                    
                 end
                 
             end
@@ -305,6 +323,7 @@ local function ShootFlame(self, player)
         normalCoords.origin = trace.endPoint
         range = range - 3
         
+        /*
         if GetIsPointOnInfestation(trace.endPoint) then
         
             local nearbyCysts = GetEntitiesForTeamWithinRange("Cyst", GetEnemyTeamNumber(self:GetTeamNumber()), trace.endPoint, 9)
@@ -319,10 +338,13 @@ local function ShootFlame(self, player)
             end
             
         end
+        */
         
     end
     
     ApplyConeDamage(self, player)
+    
+    TEST_EVENT("Flamethrower primary attack")
     
 end
 

@@ -74,8 +74,8 @@ Hive.kTriggerCatalyst2DSound = PrecacheAsset("sound/NS2.fev/alien/commander/cata
 Hive.kTriggerCatalystSound = PrecacheAsset("sound/NS2.fev/alien/commander/catalyze_3D")
 
 Hive.kHealRadius = 12.7     // From NS1
-Hive.kHealthPercentage = .08
-Hive.kHealthUpdateTime = 1
+Hive.kHealthPercentage = kAlienRegenerationPercentage
+Hive.kHealthUpdateTime = kAlienRegenerationTime
 
 if Server then
     Script.Load("lua/Hive_Server.lua")
@@ -155,6 +155,14 @@ if Client then
 
     function Hive:GetHelpArrowsCinematicName()
         return kHelpArrowsCinematicName
+    end
+    
+end
+
+function Hive:GetCanBeUsed(player, useSuccessTable)
+
+    if not self:GetIsBuilt() then
+        useSuccessTable.useSuccess = false
     end
     
 end

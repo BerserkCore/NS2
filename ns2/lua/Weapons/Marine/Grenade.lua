@@ -60,7 +60,8 @@ end
 if Server then
 
     function Grenade:ProcessHit(targetHit, surface)
-        if targetHit and (HasMixin(targetHit, "Live") and GetGamerules():CanEntityDoDamageTo(self, targetHit)) and self:GetOwner() ~= targetHit then
+        if targetHit and (HasMixin(targetHit, "Live") and GetGamerules():CanEntityDoDamageTo(self, targetHit)) and self:GetOwner() ~= targetHit and 
+           (not targetHit:isa("Whip") or targetHit:GetIsOnFire()) then
             self:Detonate(targetHit)            
         else
             if self:GetVelocity():GetLength() > 2 then
@@ -132,10 +133,7 @@ if Server then
         end
         
         // Prolong thinktime a bit to give it time to get out of range
-        // when we prep it, there is half a second left until it gets hit, 
-        // and we need it to travel at least one second after that to get out
-        // of range properly
-        self.endOfLife = math.max(self.endOfLife, Shared.GetTime() + 1.5)
+        self.endOfLife = math.max(self.endOfLife, Shared.GetTime() + 2)
         self.prepTime = Shared.GetTime()
         
     end

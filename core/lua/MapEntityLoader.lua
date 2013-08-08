@@ -163,6 +163,10 @@ AddFunctionContract(LoadBillboard, { Arguments = { "string", "string", "table" }
 
 local function LoadStaticProp(className, groupName, values)
 
+    if values.model == "" then
+        return
+    end
+
     local coords = values.angles:GetCoords(values.origin)
     
     coords.xAxis = coords.xAxis * values.scale.x

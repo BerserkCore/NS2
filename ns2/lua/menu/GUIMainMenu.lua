@@ -40,14 +40,6 @@ local kMaxAcceleration = 1.4
 local kDisplayModes = { "windowed", "fullscreen", "fullscreen-windowed" }
 local kAmbientOcclusionModes = { "off", "medium", "high" }
 local kInfestationModes = { "minimal", "rich" }
-
-// Mods that can be running on a server and still be considered pure
-local kPureMods =
-    {
-        //["5fd7a38"] = true, // ns2stats
-        //["5e544df"] = true, // insight dev build
-        //["5f42a0c"] = true  // badges
-    }
     
 local kLocales =
     {
@@ -65,6 +57,7 @@ function GUIMainMenu:Initialize()
     GUIAnimatedScript.Initialize(self)
     
     Shared.Message("Main Menu Initialized at Version: " .. Shared.GetBuildNumber())
+    Shared.Message("Steam Id: " .. Client.GetSteamId())
     
     // provides a set of functions required for window handling
     AddMenuMixin(self)
@@ -404,18 +397,23 @@ local function FinishWindowAnimations(self)
     self:GetBackground():EndAnimations()
 end    
 
-local function RefreshServerList(self)
+local function UpdateServerList(self)
 
     self.numServers = 0
-    self.refreshingServerList = true
     Client.RebuildServerList()
-    self.playWindow.refreshButton:SetText("REFRESHING...")
+    self.playWindow.updateButton:SetText("UPDATING...")
     self.playWindow:ResetSlideBar()
-    self.timeRefreshButtonPressed = Shared.GetTime()
+    self.timeUpdateButtonPressed = Shared.GetTime()
     self.selectServer:SetIsVisible(false)
     self.serverList:ClearChildren()
-    // needs to be done here because the server IDs will change
+    // Needs to be done here because the server IDs will change.
     self:ResetServerSelection()
+    
+end
+
+local function RefreshServerList(self)
+
+    
     
 end
 
@@ -590,7 +588,7 @@ local function CreateFilterForm(self)
     end )
     
     self.filterCustomContentHint = CreateMenuElement(self.filterForm, "Font")
-    self.filterCustomContentHint:SetText("community content")
+    self.filterCustomContentHint:SetText(Locale.ResolveString("SERVERBROWSER_SHOWING_MODDED_HINT"))
     self.filterCustomContentHint:SetCSSClass("filter_custom_content_hint")
     self.filterCustomContentHint:SetIsVisible(false)
 
@@ -680,6 +678,7 @@ local function CreateFilterForm(self)
     
         self.scriptHandle.serverList:SetFilter(7, FilterModded(self:GetValue()))
         self.scriptHandle.filterCustomContentHint:SetIsVisible(GetFiltersAllowCommunityContent(self.scriptHandle))
+        Client.SetOptionString("filter_modded", ToString(self:GetValue()))
         
     end )
     
@@ -720,7 +719,7 @@ local function CreateFilterForm(self)
     self.filterHasPlayers:SetValue(Client.GetOptionString("filter_hasplayers", "false"))
     self.filterFull:SetValue(Client.GetOptionString("filter_full", "false"))
     self.filterMaxPing:SetValue(tonumber(Client.GetOptionString("filter_maxping", "1")) or 1)
-    self.filterModded:SetValue(true)
+    self.filterModded:SetValue(Client.GetOptionString("filter_modded", "false"))
     self.filterRookie:SetValue(Client.GetOptionString("filter_rookie", "false"))
     self.filterFavorites:SetValue(Client.GetOptionString("filter_favorites", "false"))
     
@@ -728,15 +727,26 @@ end
 
 function GUIMainMenu:CreateServerListWindow()
 
+    local update = CreateMenuElement(self.playWindow, "MenuButton")
+    update:SetCSSClass("update")
+    update:SetText("UPDATE")
+    self.playWindow.updateButton = update
+    update:AddEventCallbacks({
+        OnClick = function()
+            UpdateServerList(self)
+        end
+    })
+    
     local refresh = CreateMenuElement(self.playWindow, "MenuButton")
     refresh:SetCSSClass("refresh")
     refresh:SetText("REFRESH")
     self.playWindow.refreshButton = refresh
-    refresh:AddEventCallbacks({ 
-        OnClick = function() 
-            RefreshServerList(self) 
-        end 
+    refresh:AddEventCallbacks({
+        OnClick = function()
+            RefreshServerList(self)
+        end
     })
+    refresh:SetIsVisible(false)
     
     self.joinServerButton = CreateMenuElement(self.playWindow, "MenuButton")
     self.joinServerButton:SetCSSClass("apply")
@@ -752,15 +762,15 @@ function GUIMainMenu:CreateServerListWindow()
     self.blinkingArrow:SetCSSClass("blinking_arrow")
     self.blinkingArrow:GetBackground():SetInheritsParentStencilSettings(false)
     self.blinkingArrow:GetBackground():SetStencilFunc(GUIItem.Always)
-
+    
     self.selectServer = CreateMenuElement(self.playWindow:GetContentBox(), "Image")
     self.selectServer:SetCSSClass("select_server")
     self.selectServer:SetIsVisible(false)
     self.selectServer:SetIgnoreEvents(true)
-
-    self.serverRowNames = CreateMenuElement(self.playWindow, "Table")    
+    
+    self.serverRowNames = CreateMenuElement(self.playWindow, "Table")
     self.serverList = CreateMenuElement(self.playWindow:GetContentBox(), "ServerList")
-
+    
     local columnClassNames =
     {
         "favorite",
@@ -772,13 +782,11 @@ function GUIMainMenu:CreateServerListWindow()
         "rate",
         "ping"
     }
- 
     
     local rowNames = { { "FAVORITE", "PRIVATE", "NAME", "GAME", "MAP", "PLAYERS", "PERF.", "PING" } }
-
-    -- closure
-    local serverList   = self.serverList
-
+    
+    local serverList = self.serverList
+    
     local entryCallbacks = {
         { OnClick = function() UpdateSortOrder(1) serverList:SetComparator( SortByFavorite ) end },
         { OnClick = function() UpdateSortOrder(2) serverList:SetComparator( SortByPrivate ) end },
@@ -796,14 +804,16 @@ function GUIMainMenu:CreateServerListWindow()
     self.serverRowNames:SetEntryCallbacks(entryCallbacks)
     self.serverRowNames:SetRowPattern( { RenderServerNameEntry, RenderServerNameEntry, RenderServerNameEntry, RenderServerNameEntry, RenderServerNameEntry, RenderServerNameEntry, RenderServerNameEntry, RenderServerNameEntry, } )
     self.serverRowNames:SetTableData(rowNames)
-
-    self.playWindow:AddEventCallbacks({ 
-        OnShow = function() 
-            // Default to sorting by ping!
+    
+    self.playWindow:AddEventCallbacks({
+        OnShow = function()
+        
+            // Default to no sorting.
             sortedColumn = nil
             entryCallbacks[6].OnClick()
             self.playWindow:ResetSlideBar()
-            RefreshServerList(self) 
+            UpdateServerList(self)
+            
         end
     })
     
@@ -1239,7 +1249,7 @@ local function InitOptions(optionElements)
     local ambientOcclusion = Client.GetOptionString("graphics/display/ambient-occlusion", kAmbientOcclusionModes[1])
     local infestation = Client.GetOptionString("graphics/infestation", "rich")
     local fovAdjustment = Client.GetOptionFloat("graphics/display/fov-adjustment", 0)
-    local cameraAnimation       = Client.GetOptionBoolean("CameraAnimation", true) and "ON" or "OFF"
+    local cameraAnimation       = Client.GetOptionBoolean("CameraAnimation", false) and "ON" or "OFF"
     
     local minimapZoom = Client.GetOptionFloat( "minimap-zoom", 0.75 )
     local armorType = Client.GetOptionString( "armorType", "" )
@@ -1787,19 +1797,44 @@ function GUIMainMenu:CreateOptionWindow()
   
 end
 
-/**
- * Returns true if the whitespace deliminated list of mods contains any mods that
- * are not in the kPureMods table.
- */
-local function GetIsModded(mods)
+local function BuildServerEntry(serverIndex)
 
-    for mod in mods:gmatch("%w+") do
-        if not kPureMods[mod] then
-            return true
-        end
+    local mods = Client.GetServerKeyValue(serverIndex, "mods")
+    
+    local serverEntry = { }
+    serverEntry.name = Client.GetServerName(serverIndex)
+    serverEntry.mode = Client.GetServerGameMode(serverIndex)
+    serverEntry.map = GetTrimmedMapName(Client.GetServerMapName(serverIndex))
+    serverEntry.numPlayers = Client.GetServerNumPlayers(serverIndex)
+    serverEntry.maxPlayers = Client.GetServerMaxPlayers(serverIndex)
+    serverEntry.ping = Client.GetServerPing(serverIndex)
+    serverEntry.address = Client.GetServerAddress(serverIndex)
+    serverEntry.requiresPassword = Client.GetServerRequiresPassword(serverIndex)
+    serverEntry.rookieFriendly = Client.GetServerHasTag(serverIndex, "rookie")
+    serverEntry.friendsOnServer = false
+    serverEntry.lanServer = false
+    serverEntry.tickrate = Client.GetServerTickRate(serverIndex)
+    serverEntry.serverId = serverIndex
+    serverEntry.modded = Client.GetServerIsModded(serverIndex)
+    serverEntry.favorite = GetIsServerFavorite(serverEntry.address)
+    
+    // Change name to display "rookie friendly" at the end of the line.
+    if serverEntry.rookieFriendly then
+    
+        local maxLen = 34
+        local separator = ConditionalValue(string.len(serverEntry.name) > maxLen, "... ", " ")
+        serverEntry.name = serverEntry.name:sub(0, maxLen) .. separator  .. Locale.ResolveString("ROOKIE_FRIENDLY")
+        
+    else
+    
+        local maxLen = 50
+        local separator = ConditionalValue(string.len(serverEntry.name) > maxLen, "... ", " ")
+        serverEntry.name = serverEntry.name:sub(0, maxLen) .. separator
+        
     end
-    return false
-
+    
+    return serverEntry
+    
 end
 
 function GUIMainMenu:Update(deltaTime)
@@ -1841,52 +1876,23 @@ function GUIMainMenu:Update(deltaTime)
         
         if self.playWindow:GetIsVisible() then
         
-            if self.timeRefreshButtonPressed and self.timeRefreshButtonPressed + 4 < Shared.GetTime() then
+            if self.timeUpdateButtonPressed and self.timeUpdateButtonPressed + 4 < Shared.GetTime() then
             
-                self.playWindow.refreshButton:SetText("REFRESH")
-                self.timeRefreshButtonPressed = nil
-            
+                self.playWindow.updateButton:SetText("UPDATE")
+                self.timeUpdateButtonPressed = nil
+                
             end
-        
+            
             if not Client.GetServerListRefreshed() then
             
                 for s = 0, Client.GetNumServers() - 1 do
                 
                     if s + 1 > self.numServers then
                     
-                        local mods = Client.GetServerKeyValue(s, "mods")
-                        
-                        local serverEntry = {}
-                        serverEntry.name = Client.GetServerName(s)
-                        serverEntry.mode = Client.GetServerGameMode(s)
-                        serverEntry.map = GetTrimmedMapName(Client.GetServerMapName(s))
-                        serverEntry.numPlayers = Client.GetServerNumPlayers(s)
-                        serverEntry.maxPlayers = Client.GetServerMaxPlayers(s)
-                        serverEntry.ping = Client.GetServerPing(s)
-                        serverEntry.address = Client.GetServerAddress(s)
-                        serverEntry.requiresPassword = Client.GetServerRequiresPassword(s)
-                        serverEntry.rookieFriendly = Client.GetServerHasTag(s, "rookie")
-                        serverEntry.friendsOnServer = false
-                        serverEntry.lanServer = false
-                        serverEntry.tickrate = tonumber(Client.GetServerKeyValue(s, "tickrate")) or 30
-                        serverEntry.serverId = s
-                        serverEntry.modded = GetIsModded(mods)
-                        serverEntry.favorite = GetIsServerFavorite(serverEntry.address)
-                    
-                        self.numServers = self.numServers + 1
-                        
-                        // Change name to display "rookie friendly" at the end of the line
-                        if serverEntry.rookieFriendly then
-                            local maxLen = 34
-                            local separator = ConditionalValue(string.len(serverEntry.name) > maxLen, "... ", " ")
-                            serverEntry.name = serverEntry.name:sub(0, maxLen) .. separator  .. Locale.ResolveString("ROOKIE_FRIENDLY")
-                        else
-                            local maxLen = 50
-                            local separator = ConditionalValue(string.len(serverEntry.name) > maxLen, "... ", " ")
-                            serverEntry.name = serverEntry.name:sub(0, maxLen) .. separator     
-                        end
-                        
+                        local serverEntry = BuildServerEntry(s)
                         self.serverList:AddEntry(serverEntry)
+                        
+                        self.numServers = self.numServers + 1
                         
                     end
                     
@@ -1895,23 +1901,25 @@ function GUIMainMenu:Update(deltaTime)
             end
             
         end
-
-        self:UpdateFindPeople(deltaTime)        
+        
+        self:UpdateFindPeople(deltaTime)
         self.playNowWindow:UpdateLogic(self)
-
+        
         self.fpsDisplay:SetText(string.format("FPS: %.0f", Client.GetFrameRate()))
         
         if self.updateAutoJoin then
-            
+        
             if not self.timeLastAutoJoinUpdate or self.timeLastAutoJoinUpdate + 10 < Shared.GetTime() then
             
-                Client.RefreshServer(gSelectedServerNum)
+                Client.RefreshServer(MainMenu_GetSelectedServer())
                 
                 if MainMenu_GetSelectedIsFull() then
                     self.timeLastAutoJoinUpdate = Shared.GetTime()
                 else
+                
                     MainMenu_JoinSelected()
                     self.autoJoinWindow:SetIsVisible(false)
+                    
                 end
                 
             end
@@ -1919,6 +1927,13 @@ function GUIMainMenu:Update(deltaTime)
         end
         
     end
+    
+end
+
+function GUIMainMenu:OnServerRefreshed(serverIndex)
+
+    local serverEntry = BuildServerEntry(serverIndex)
+    self.serverList:UpdateEntry(serverEntry)
     
 end
 

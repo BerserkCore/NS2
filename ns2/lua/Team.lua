@@ -51,13 +51,10 @@ function Team:AddPlayer(player)
 
     if player ~= nil and player:isa("Player") then
     
+        // Update scores when switching teams.
+        player:SetRequestsScores(true)
         local id = player:GetId()
-        
-        if id ~= Entity.invalidId then
-            return table.insertunique( self.playerIds, id )
-        else
-            Print("Team:AddPlayer(player): Player is valid but id is -1, skipping.")
-        end
+        return table.insertunique(self.playerIds, id)
         
     else
         Print("Team:AddPlayer(): Entity must be player (was %s)", SafeClassName(player))
@@ -79,6 +76,8 @@ local function UpdateRespawnQueueTeamBalance(self)
         table.insertunique(self.respawnQueue, spawnPlayer:GetId())
         
         spawnPlayer:SetWaitingForTeamBalance(false)
+        
+        TEST_EVENT("Auto-team balance, out of queue")
         
     end
     
@@ -304,6 +303,7 @@ function Team:PutPlayerInRespawnQueue(player)
         
         UpdateRespawnQueueTeamBalance(self)
         
+        TEST_EVENT("Auto-team balance, in queue")
         
     else
     
@@ -313,6 +313,7 @@ function Team:PutPlayerInRespawnQueue(player)
         if self.OnRespawnQueueChanged then
             self:OnRespawnQueueChanged()
         end
+        
     end
     
 end
@@ -350,7 +351,10 @@ end
 function Team:ClearRespawnQueue()
 
     for p = 1, #self.respawnQueueTeamBalance do
-        self.respawnQueueTeamBalance[p]:SetWaitingForTeamBalance(false)
+    
+        local player = Shared.GetEntity(self.respawnQueueTeamBalance[p])
+        player:SetWaitingForTeamBalance(false)
+        
     end
     
     table.clear(self.respawnQueueTeamBalance)

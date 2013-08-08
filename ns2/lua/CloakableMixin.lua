@@ -11,7 +11,7 @@ Script.Load("lua/FunctionContracts.lua")
 CloakableMixin = CreateMixin( CloakableMixin )
 CloakableMixin.type = "Cloakable"
 
-CloakableMixin.kCloakRate = 0.5
+CloakableMixin.kCloakRate = 1
 CloakableMixin.kUnCloakRate = 3
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/cloaked.surface_shader")
@@ -23,7 +23,7 @@ if Client then
     Client_GetLocalPlayer = Client.GetLocalPlayer
 end
 
-local kCloakedMaxSpeed = 4
+local kCloakedMaxSpeed = 3
 
 // This is needed so alien structures can be cloaked, but not marine structures
 CloakableMixin.expectedCallbacks =
@@ -212,7 +212,7 @@ elseif Client then
         
         end
         
-        local showMaterial = true
+        local showMaterial = not areEnemies
         local model = self:GetRenderModel()
     
         if model then
@@ -223,16 +223,7 @@ elseif Client then
                     self.cloakedMaterial = AddMaterial(model, "cinematics/vfx_materials/cloaked.material")
                 end
                 
-                if areEnemies then
-                    if self.GetSpeedScalar then
-                        self.cloakedMaterial:SetParameter("cloakAmount", self.cloakedFraction * self:GetSpeedScalar() * 0.02)
-                    else
-                        self.cloakedMaterial:SetParameter("cloakAmount", 0)
-                    end
-                    
-                else
-                   self.cloakedMaterial:SetParameter("cloakAmount", self.cloakedFraction)
-                end    
+                self.cloakedMaterial:SetParameter("cloakAmount", self.cloakedFraction)   
             
             else
             
@@ -265,38 +256,72 @@ elseif Client then
 end
 
 function CloakableMixin:OnScan()
+
+    if self.fullyCloaked then
+        TEST_EVENT("Uncloaked from Scan")
+    end
+    
     self:TriggerUncloak()
+    
 end
 
 function CloakableMixin:PrimaryAttack()
+
+    if self.fullyCloaked then
+        TEST_EVENT("Uncloaked from Primary Attack")
+    end
+    
     self:TriggerUncloak()
+    
 end
 
 function CloakableMixin:SecondaryAttack()
 
-    //$AS Check to make sure we have a secondary weapon active
-    // this way we do not trigger 
     local weapon = self:GetActiveWeapon()
     if weapon and weapon:GetHasSecondary(self) then
+    
+        if self.fullyCloaked then
+            TEST_EVENT("Uncloaked from Secondary Attack")
+        end
+        
         self:TriggerUncloak()
+        
     end
     
 end
 
 function CloakableMixin:OnTakeDamage(damage, attacker, doer, point)
+
+    if self.fullyCloaked then
+        TEST_EVENT("Uncloaked from taking damage")
+    end
+    
     self:TriggerUncloak()
+    
 end
 
 function CloakableMixin:OnCapsuleTraceHit(entity)
 
     if GetAreEnemies(self, entity) then
+    
+        if self.fullyCloaked then
+            TEST_EVENT("Uncloaked from being touched")
+        end
+        
         self:TriggerUncloak()
+        
     end
     
 end
 
 function CloakableMixin:OnJump()
+
+    if self.fullyCloaked then
+        TEST_EVENT("Uncloaked from jumping")
+    end
+    
     self:TriggerUncloak()
+    
 end
 
 function CloakableMixin:OnClampSpeed(input, velocity)
@@ -305,11 +330,25 @@ function CloakableMixin:OnClampSpeed(input, velocity)
     
     if self:GetIsCloaked() and bit.band(input.commands, Move.Jump) == 0 and (self.GetIsOnSurface and self:GetIsOnSurface()) then
     
-        local moveSpeed = velocity:GetLength()        
-        if moveSpeed > kCloakedMaxSpeed then        
-            velocity:Scale(kCloakedMaxSpeed / moveSpeed)            
+        local moveSpeed = velocity:GetLength()
+        if moveSpeed > kCloakedMaxSpeed then
+            velocity:Scale(kCloakedMaxSpeed / moveSpeed)
         end
         
     end
     
+end
+
+if Client then
+
+    function CloakableMixin:OnGetIsVisible(visibleTable)
+
+        local player = Client.GetLocalPlayer()    
+
+        if self:GetIsCloaked() and GetAreEnemies(self, player) then
+            visibleTable.Visible = false
+        end    
+        
+    end
+
 end

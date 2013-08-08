@@ -124,6 +124,10 @@ local function GetServerState()
     
 end
 
+local function DecToHex( id )
+    return string.format("%x", tonumber(id))
+end
+
 local function OnWebRequest(actions)
 
     if actions.request == "getbanlist" then
@@ -142,7 +146,7 @@ local function OnWebRequest(actions)
         MapCycle_SetMapCycle( json.decode(actions.data) )
         return ""
     elseif actions.request == "installmod" then
-        Server.InstallMod( actions.modid )
+        Server.InstallMod( DecToHex(actions.modid) )
         return ""
     elseif actions.request == "getmods" then
         local url = "http://www.unknownworlds.com/spark/browse_workshop.php?appid=4920"

@@ -51,7 +51,7 @@ local function UpdateAutoJoin(playNowWindow)
             
             // Favor servers with low ping. But ignore ping when it is small enough.
             // Ignore LAN servers for this process.
-            if not possibleServer.isLANServer and (possibleServer.ping < bestServer.ping or possibleServer.ping <= 80) then
+            if not possibleServer.isLANServer and (not bestServer or (possibleServer.ping < bestServer.ping or possibleServer.ping <= 80)) then
             
                 bestServer = bestServer or possibleServer
                 // Favor servers that are at least half full.
@@ -235,7 +235,8 @@ end
 
 local function ShowServerWindow(self)
 
-    self.playWindow.refreshButton:SetIsVisible(true)
+    self.playWindow.updateButton:SetIsVisible(true)
+    //self.playWindow.refreshButton:SetIsVisible(true)
     self.joinServerButton:SetIsVisible(true)
     self.highlightServer:SetIsVisible(true)
     self.selectServer:SetIsVisible(true)
@@ -243,13 +244,15 @@ local function ShowServerWindow(self)
     self.serverList:SetIsVisible(true)
     self.filterForm:SetIsVisible(true)
     
-    // Re-enable slide bar
+    // Re-enable slide bar.
     self.playWindow:SetSlideBarVisible(true)
     self.playWindow:ResetSlideBar()
+    
 end
 
 local function HideServerWindow(self)
 
+    self.playWindow.updateButton:SetIsVisible(false)
     self.playWindow.refreshButton:SetIsVisible(false)
     self.joinServerButton:SetIsVisible(false)
     self.highlightServer:SetIsVisible(false)
@@ -257,11 +260,11 @@ local function HideServerWindow(self)
     self.serverRowNames:SetIsVisible(false)
     self.serverList:SetIsVisible(false)
     self.filterForm:SetIsVisible(false)
-
-    // hide it, but make sure it's at the top position    
+    
+    // Hide it, but make sure it's at the top position.
     self.playWindow:SetSlideBarVisible(false)
     self.playWindow:ResetSlideBar()
-
+    
 end
 
 function GUIMainMenu:SetPlayContentInvisible(cssClass)

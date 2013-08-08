@@ -677,7 +677,7 @@ function Skulk:GetIsOnSurface()
 end
 
 function Skulk:GetIsAffectedByAirFriction()
-    return self:GetIsJumping() or not self:GetIsOnSurface()
+    return not self:GetIsOnSurface()
 end
 
 function Skulk:AdjustGravityForce(input, gravity)

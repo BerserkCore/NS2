@@ -43,15 +43,12 @@ function VortexAbleMixin:__initmixin()
     
 end
 
-if Server then
+function VortexAbleMixin:OnVortexClient()
+    self:TriggerEffects("vortexed_start")
+end
 
-    function VortexAbleMixin:OnVortex()
-        self:TriggerEffects("vortexed_start", {classname = self:GetClassName()})
-    end
-
-    function VortexAbleMixin:OnVortexEnd()
-    end
-
+function VortexAbleMixin:OnVortexEndClient()
+    self:TriggerEffects("vortexed_end")
 end
 
 function VortexAbleMixin:GetIsVortexed()
@@ -59,6 +56,11 @@ function VortexAbleMixin:GetIsVortexed()
 end
 
 function VortexAbleMixin:FreeVortexed()
+    
+    if self:GetIsVortexed() and self.OnVortexEnd then
+        self:OnVortexEnd()
+    end
+
     self.remainingVortexDuration = 0
     self.vortexed = false
 end
@@ -150,18 +152,12 @@ local function SharedUpdate(self, deltaTime)
             
                 if self:GetIsVortexed() then
                 
-                    if self.OnVortexClient then
-                        self:OnVortexClient()
-                    end
+                    self:OnVortexClient()
                     
                 else
                 
-                    if self.OnVortexEndClient then
-                        self:OnVortexEndClient()
-                    end
-                    
-                    self:TriggerEffects("vortexed_end", { effecthostcoords = Coords.GetTranslation(self:GetOrigin() + kVortexEffectOffset) })
-                    
+                    self:OnVortexEndClient()
+
                 end
                 
                 self.vortexedClient = self:GetIsVortexed()

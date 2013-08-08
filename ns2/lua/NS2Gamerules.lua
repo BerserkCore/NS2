@@ -844,6 +844,8 @@ if Server then
                         SendTeamMessage(self.team2, kTeamMessageTypes.TeamsUnbalanced)
                         Print("Auto-team balance enabled")
                         
+                        TEST_EVENT("Auto-team balance enabled")
+                        
                     end
                     
                 end
@@ -867,6 +869,8 @@ if Server then
             SendTeamMessage(self.team1, kTeamMessageTypes.TeamsBalanced)
             SendTeamMessage(self.team2, kTeamMessageTypes.TeamsBalanced)
             Print("Auto-team balance disabled")
+            
+            TEST_EVENT("Auto-team balance disabled")
             
         end
         

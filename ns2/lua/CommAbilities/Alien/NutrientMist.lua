@@ -27,8 +27,11 @@ if Server then
     function NutrientMist:OnInitialized()
     
         CommanderAbility.OnInitialized(self)
-        //StartSoundEffectAtOrigin(Hive.kTriggerCatalyst2DSound, self:GetOrigin())
-    
+        
+        // never show for marine commander
+        local mask = bit.bor(kRelevantToTeam1Unit, kRelevantToTeam2Unit, kRelevantToReadyRoom, kRelevantToTeam2Commander)
+        self:SetExcludeRelevancyMask(mask)
+
     end
 
 end

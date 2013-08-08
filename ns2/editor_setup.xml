@@ -306,8 +306,7 @@
 	</class>
 	
 	<class name="marine"> <parent>base_marine</parent><model><file>models/marine/male/male.model</file></model></class>
-	
-	<!--
+
 	<class name="exo">
 		<parent>base_marine</parent>
 		<model><file>models/marine/exosuit/exosuit_cm.model</file></model>
@@ -316,7 +315,6 @@
             <choice label="Dual Minigun" value="2"/>
         </parameter>
 	</class>
-	-->
 	
 	<class name="skulk"> <parent>base_alien</parent><model><file>models/alien/skulk/skulk.model</file></model></class>
 	<class name="gorge"> <parent>base_alien</parent><model><file>models/alien/gorge/gorge.model</file></model></class>

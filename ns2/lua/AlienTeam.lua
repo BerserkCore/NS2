@@ -208,7 +208,6 @@ function AlienTeam:OnEntityChange(oldEntityId, newEntityId)
     // Check if the oldEntityId matches any client's built structure and
     // handle the change.
     
-    LifeFormEggOnEntityChanged(oldEntityId, newEntityId)
     self:UpdateClientOwnedStructures(oldEntityId)
     self:UpdateCloakablesChanged(oldEntityId, newEntityId)
     
@@ -259,10 +258,11 @@ function AlienTeam:GetHasAbilityToRespawn()
     
 end
 
-local function AssignPlayerToEgg(self, player)
+local function AssignPlayerToEgg(self, player, enemyTeamPosition)
 
     local success = false
     
+    // prioritize shift eggs first
     if not success then
     
         local shifts = GetEntitiesForTeam("Shift", self:GetTeamNumber())
@@ -283,64 +283,73 @@ local function AssignPlayerToEgg(self, player)
         
     end
     
+    // if no shift eggs found, use non-preevolved eggs sorted by "critical hives position"
     if not success then
     
-        local eggs = GetEntitiesForTeam("Egg", self:GetTeamNumber())
-        local spawnOrigin = player:GetOrigin()
-        
-        local function SortByLastDamageTaken(hive1, hive2)
-            return hive1:GetTimeLastDamageTaken() > hive1:GetTimeLastDamageTaken()
+        local lifeFormEgg = nil
+    
+        if not enemyTeamPosition then
+            enemyTeamPosition = player:GetOrigin()
         end
-        
-        // use hive under attack if any
-        local hives = GetEntitiesForTeam("Hive", self:GetTeamNumber())
-        table.sort(hives, SortByLastDamageTaken)
-
-        for _, hive in ipairs(hives) do
-            if hive:GetTimeLastDamageTaken() + 15 > Shared.GetTime() then
-                spawnOrigin = hive:GetOrigin()
-            end
-        end
-        
-        Shared.SortEntitiesByDistance(spawnOrigin, eggs)
+    
+        local eggs = GetEntitiesForTeam("Egg", self:GetTeamNumber())        
+        Shared.SortEntitiesByDistance(enemyTeamPosition, eggs)
         
         // Find the closest egg, doesn't matter which Hive owns it.
         for _, egg in ipairs(eggs) do
         
             // Any unevolved egg is fine as long as it is free.
-            if egg:GetIsFree() and egg:GetGestateTechId() == kTechId.Skulk then
+            if egg:GetIsFree() then
             
-                egg:SetQueuedPlayerId(player:GetId())
-                success = true
-                break
+                if egg:GetGestateTechId() == kTechId.Skulk then
+            
+                    egg:SetQueuedPlayerId(player:GetId())
+                    success = true
+                    break
+                
+                elseif lifeFormEgg == nil then
+                    lifeFormEgg = egg
+                end
                 
             end
             
         end
         
-    end
-    
-    // chose a pre-evolved egg in case no others are available    
-    if not success then
-    
-        for _,eggId in ipairs(GetLifeFormEggs()) do
+        // use life form egg
+        if not success and lifeFormEgg then
         
-            local egg = Shared.GetEntity(eggId)
-            
-            if egg and egg:GetIsFree() then
-            
-                egg:SetQueuedPlayerId(player:GetId())
-                success = true
-                break
-                
-            end
-            
+            lifeFormEgg:SetQueuedPlayerId(player:GetId())
+            success = true
+
         end
-    
+        
     end
     
     return success
     
+end
+
+local function GetCriticalHivePosition(self)
+
+    // get position of enemy team, ignore commanders
+    local numPositions = 0
+    local teamPosition = Vector(0, 0, 0)
+    
+    for _, player in ipairs( GetEntitiesForTeam("Player", GetEnemyTeamNumber(self:GetTeamNumber())) ) do
+
+        if (player:isa("Marine") or player:isa("Exo")) and player:GetIsAlive() then
+        
+            numPositions = numPositions + 1
+            teamPosition = teamPosition + player:GetOrigin()
+        
+        end
+
+    end
+    
+    if numPositions > 0 then    
+        return teamPosition / numPositions    
+    end
+
 end
 
 local function UpdateSpawnWave(self)
@@ -356,6 +365,9 @@ local function UpdateSpawnWave(self)
     if self.timeNextWave ~= nil and self.timeNextWave < Shared.GetTime() then
     
         local alienSpectators = GetEntitiesForTeam("AlienSpectator", self:GetTeamNumber())
+        
+        local enemyTeamPosition = GetCriticalHivePosition(self)
+        
         for i = 1, #alienSpectators do
         
             local alienSpectator = alienSpectators[i]
@@ -373,7 +385,7 @@ local function UpdateSpawnWave(self)
                     // Player has no egg assigned, check for free egg.
                     if egg == nil then
                     
-                        local success = AssignPlayerToEgg(self, alienSpectator)
+                        local success = AssignPlayerToEgg(self, alienSpectator, enemyTeamPosition)
                         
                         // We have no eggs currently, makes no sense to check for every spectator now.
                         if not success then

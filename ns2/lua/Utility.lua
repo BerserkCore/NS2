@@ -2160,3 +2160,16 @@ function EnableAtmosphericDensity()
     end
 
 end
+
+local TimedRunStackDepth = 0
+function TimedRun( label,func )
+    local startTime = Shared.GetSystemTime()
+    TimedRunStackDepth = TimedRunStackDepth + 1
+    func()
+    local spaces = ""
+    for i = 1,TimedRunStackDepth do
+        spaces = spaces..".."
+    end
+    Print("TIME %s%fs %s", spaces, Shared.GetSystemTime()-startTime, label)
+    TimedRunStackDepth = TimedRunStackDepth - 1
+end

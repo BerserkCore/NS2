@@ -417,4 +417,14 @@ local function AutoBalance(client, enabled, playerCount, seconds)
     end
     
 end
-CreateServerAdminCommand("Console_sv_autobalance", AutoBalance, "<true/false> <player count> <seconds>, Toggles auto team balance. The player count and seconds are optional. Count defaults to 2 over balance to enable. Defaults to 10 second wait to enable.")
+CreateServerAdminCommand("Console_sv_autobalance", AutoBalance, "<true/false> <player count> <seconds>, Toggles auto team balance. \
+                                                                The player count and seconds are optional. Count defaults to 2 over balance to enable. Defaults to 10 second wait to enable.")
+
+local function EnableEventTesting(client, enabled)
+
+    enabled = not (enabled == "false")
+    SetEventTestingEnabled(enabled)
+    ServerAdminPrint(client, "Event testing " .. (enabled and "enabled" or "disabled"))
+    
+end
+CreateServerAdminCommand("Console_sv_test_events", EnableEventTesting, "<true/false>, Toggles event testing mode")

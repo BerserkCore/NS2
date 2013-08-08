@@ -24,6 +24,10 @@ function Skulk:OnInitLocalClient()
 
 end
 
+function Skulk:GetHeadAttachpointName()
+    return "Bone_Tongue"
+end
+
 function Skulk:UpdateMisc(input)
 
     Alien.UpdateMisc(self, input)
@@ -39,15 +43,10 @@ function Skulk:UpdateMisc(input)
 
 end
 
-function Skulk:GetHeadAttachpointName()
-    return "Bone_Tongue"
-end
-
-local gEnableTilt = true
 // Tilt the camera based on the wall the Skulk is attached to.
 function Skulk:PlayerCameraCoordsAdjustment(cameraCoords)
 
-    if self.wallWalkingNormalCurrent and gEnableTilt then
+    if self.wallWalkingNormalCurrent and Client.GetOptionBoolean("CameraAnimation", false) then
     
         local viewModelTiltAngles = Angles()
         viewModelTiltAngles:BuildFromCoords(cameraCoords)
@@ -75,13 +74,5 @@ function Skulk:PlayerCameraCoordsAdjustment(cameraCoords)
 end
 
 function Skulk:GetSpeedDebugSpecial()
-    return ConditionalValue(self:GetCanJump(), self:GetJumpTiming(), nil)
+    return 0
 end
-
-function OnCommandSkulkViewTilt(enableTilt)
-
-    gEnableTilt = enableTilt ~= "false"
-
-end
-
-Event.Hook("Console_skulk_view_tilt",   OnCommandSkulkViewTilt)

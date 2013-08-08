@@ -15,8 +15,11 @@ function Alien:TriggerEnzyme(duration)
     self.timeWhenEnzymeExpires = duration + Shared.GetTime()
 end
 
-function Alien:SetEMPBlasted()    
-    self.empBlasted = true    
+function Alien:SetEMPBlasted()
+
+    TEST_EVENT("Alien Player EMP Blasted")
+    self.empBlasted = true
+    
 end
 
 function Alien:Reset()
@@ -63,10 +66,21 @@ function Alien:UpdateAutoHeal()
 
     PROFILE("Alien:UpdateAutoHeal")
 
-    if self:GetIsHealable() and not self:GetIsInCombat() and ( not self.timeLastAlienAutoHeal or self.timeLastAlienAutoHeal + kAlienRegenerationTime <= Shared.GetTime() ) then
+    if self:GetIsHealable() and ( not self.timeLastAlienAutoHeal or self.timeLastAlienAutoHeal + kAlienRegenerationTime <= Shared.GetTime() ) then
 
-        local healRate = ConditionalValue(GetHasRegenerationUpgrade(self), kAlienInnateRegenerationPercentage * 3, kAlienInnateRegenerationPercentage)
-        self:AddHealth(math.max(1, self:GetMaxHealth() * healRate), false, false, true)  
+        local healRate = 1
+        
+        if GetHasRegenerationUpgrade(self) then            
+            healRate = Clamp(kAlienRegenerationPercentage * self:GetMaxHealth(), kAlienMinRegeneration, kAlienMaxRegeneration)            
+        else
+            healRate = Clamp(kAlienInnateRegenerationPercentage * self:GetMaxHealth(), kAlienMinInnateRegeneration, kAlienMaxInnateRegeneration) 
+        end
+        
+        if self:GetIsInCombat() then
+            healRate = healRate * kAlienRegenerationCombatModifier
+        end
+
+        self:AddHealth(healRate, false, false, not GetHasRegenerationUpgrade(self))  
         self.timeLastAlienAutoHeal = Shared.GetTime()
     
     end 

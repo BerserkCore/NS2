@@ -254,11 +254,11 @@ end
 
 function MainMenu_GetDLCs()
 
-    local dlcs = {}
+    local dlcs = { }
     for i = 1, 4 do
     
         local enabled = "disabled"
-        table.insert(dlcs, string.format("dlc_%d_%s", i, enabled)  )
+        table.insert(dlcs, string.format("dlc_%d_%s", i, enabled))
         
     end
     
@@ -268,6 +268,10 @@ end
 
 function MainMenu_GetMapNameList()
     return mapnames
+end
+
+function MainMenu_OnServerRefreshed(serverIndex)
+    gMainMenu:OnServerRefreshed(serverIndex)
 end
 
 /**

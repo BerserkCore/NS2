@@ -101,6 +101,8 @@ local function Detonate(self, armFunc)
     
     DestroyEntity(self)
     
+    TEST_EVENT("Mine detonated")
+    
 end
 
 local function Arm(self)
@@ -140,7 +142,10 @@ local function CheckEntityExplodesMine(self, entity)
     end
     
     if entity:isa("Fade") and entity:GetIsBlinking() then
+    
+        TEST_EVENT("Blinking Fade doesn't detonate mine")
         return false
+        
     end
     
     local minePos = self:GetEngagementPoint()
@@ -212,6 +217,8 @@ if Server then
         Arm(self)
         
         ScriptActor.OnKill(self, attacker, doer, point, direction)
+        
+        TEST_EVENT("Mine arms on destruction")
         
     end
     
