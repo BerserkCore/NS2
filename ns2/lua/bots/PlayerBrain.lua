@@ -6,6 +6,8 @@
 Script.Load("lua/bots/BotUtils.lua")
 Script.Load("lua/bots/BotDebug.lua")
 
+gBotDebug:AddBoolean("debugall", false)
+
 //----------------------------------------
 //  Globals
 //----------------------------------------
@@ -37,6 +39,10 @@ function PlayerBrain:GetShouldDebug(bot)
 end
 
 function PlayerBrain:Update(bot, move)
+
+    if gBotDebug:Get("spam") then
+        Print("PlayerBrain:Update")
+    end
 
     if not bot:GetPlayer():isa( self:GetExpectedPlayerClass() )
     or bot:GetPlayer():GetTeamNumber() ~= self:GetExpectedTeamNumber() then
@@ -82,10 +88,9 @@ function PlayerBrain:Update(bot, move)
         bestAction.perform(move)
         self.lastAction = bestAction
 
-        // TEMP TEMP
-        if self.debug then
+        if self.debug or gBotDebug:Get("debugall") then
             Shared.DebugColor( 0, 1, 0, 1 )
-            Shared.DebugText( bestAction.name, bot:GetPlayer():GetOrigin()+Vector(0,1,0), 0.0 )
+            Shared.DebugText( bestAction.name, bot:GetPlayer():GetEyePos()+Vector(-1,0,0), 0.0 )
         end
     end
 

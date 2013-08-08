@@ -72,8 +72,6 @@ function PlayingTeam:Initialize(teamName, teamNumber)
 
     self.eventListeners = {}
 
-    self.brain = TeamBrain()
-    self.brain:Initialize(teamName.."-Brain", teamNumber)
 
 end
 
@@ -747,6 +745,19 @@ function PlayingTeam:TechRemoved(entity)
     
 end
 
+function PlayingTeam:GetTeamBrain()
+
+    // we have bots, need a team brain
+    // lazily init team brain
+    if self.brain == nil then
+        self.brain = TeamBrain()
+        self.brain:Initialize(self.teamName.."-Brain", self:GetTeamNumber())
+    end
+
+    return self.brain
+            
+end
+
 function PlayingTeam:Update(timePassed)
 
     PROFILE("PlayingTeam:Update")
@@ -758,12 +769,25 @@ function PlayingTeam:Update(timePassed)
     self:UpdateVotes()
     
     if GetGamerules():GetGameStarted() then
+
         self:UpdateResourceTowers()
+
+        if #gServerBots > 0 then
+
+
+            self.brain:Update(timePassed)
+
+        end
+
+    else
+
+        // deinit team brain
+        if self.brain ~= nil then
+            self.brain = nil
+        end
+
     end
         
-    if #gServerBots > 0 and self.brain then
-        self.brain:Update(timePassed)
-    end
     
 end
 
@@ -1073,6 +1097,9 @@ end
 function PlayingTeam:OnEntityChange(oldId, newId)
 
     Team.OnEntityChange( self, oldId, newId )
-    self.brain:OnEntityChange( oldId, newId )
+
+    if self.brain then
+        self.brain:OnEntityChange( oldId, newId )
+    end
 
 end

@@ -70,6 +70,10 @@ end
 //----------------------------------------
 function CommanderBot:GenerateMove()
 
+    if gBotDebug:Get("spam") then
+        Print("CommanderBot:GenerateMove")
+    end
+
     local player = self:GetPlayer()
     local playerClass = player:GetClassName()
     local stationClass = kTeam2StationClassName[ player:GetTeamNumber() ]

@@ -137,6 +137,10 @@ end
  */
 function PlayerBot:GenerateMove()
 
+    if gBotDebug:Get("spam") then
+        Print("PlayerBot:GenerateMove")
+    end
+
     self:_LazilyInitBrain()
 
     local player = self:GetPlayer()

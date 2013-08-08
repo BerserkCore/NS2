@@ -807,16 +807,18 @@ local kSetNameMessage =
 }
 Shared.RegisterNetworkMessage("SetName", kSetNameMessage)
 
+-- Adding 1 to kMaxChatLength here to account for the zero terminated string.
 local kChatClientMessage =
 {
     teamOnly = "boolean",
-    message = string.format("string (%d)", kMaxChatLength)
+    message = string.format("string (%d)", kMaxChatLength + 1)
 }
 
 function BuildChatClientMessage(teamOnly, chatMessage)
     return { teamOnly = teamOnly, message = chatMessage }
 end
 
+-- Adding 1 to kMaxChatLength here to account for the zero terminated string.
 local kChatMessage =
 {
     teamOnly = "boolean",
@@ -824,7 +826,7 @@ local kChatMessage =
     locationId = "integer (-1 to 1000)",
     teamNumber = "integer (" .. kTeamInvalid .. " to " .. kSpectatorIndex .. ")",
     teamType = "integer (" .. kNeutralTeamType .. " to " .. kAlienTeamType .. ")",
-    message = string.format("string (%d)", kMaxChatLength)
+    message = string.format("string (%d)", kMaxChatLength + 1)
 }
 
 function BuildChatMessage(teamOnly, playerName, playerLocationId, playerTeamNumber, playerTeamType, chatMessage)

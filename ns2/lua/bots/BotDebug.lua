@@ -19,6 +19,11 @@ end
 
 function BotDebug:AddBoolean(varName, defaultVal)
 
+    if self.vars[varName] ~= nil then
+        // do not re-add, ie. when hotloading
+        return
+    end
+
     self.vars[varName] = defaultVal
 
     Event.Hook( string.format("Console_bot_%s", varName),
@@ -35,6 +40,11 @@ end
 
 function BotDebug:AddFloat(varName, defaultVal)
 
+    if self.vars[varName] ~= nil then
+        // do not re-add, ie. when hotloading
+        return
+    end
+
     self.vars[varName] = defaultVal
 
     Event.Hook( string.format("Console_bot_%s", varName),
@@ -48,6 +58,8 @@ end
 
 gBotDebug = BotDebug()
 gBotDebug:Initialize()
+
+gBotDebug:AddBoolean("spam", false)
 
 //----------------------------------------
 //  Console commands

@@ -21,16 +21,16 @@ local kBurn1PCinematic = PrecacheAsset("cinematics/marine/flamethrower/burn_1p.c
 
 local kBurnUpdateRate = 0.5
 
-local fireCinematicTable = { }
-fireCinematicTable["Hive"] = kBurnHugeCinematic
-fireCinematicTable["CommandStation"] = kBurnHugeCinematic
-fireCinematicTable["Clog"] = kBurnSmallCinematic
-fireCinematicTable["Onos"] = kBurnBigCinematic
-fireCinematicTable["MAC"] = kBurnSmallCinematic
-fireCinematicTable["Drifter"] = kBurnSmallCinematic
-fireCinematicTable["Sentry"] = kBurnSmallCinematic
-fireCinematicTable["Egg"] = kBurnSmallCinematic
-fireCinematicTable["Embryo"] = kBurnSmallCinematic
+local kFireCinematicTable = { }
+kFireCinematicTable["Hive"] = kBurnHugeCinematic
+kFireCinematicTable["CommandStation"] = kBurnHugeCinematic
+kFireCinematicTable["Clog"] = kBurnSmallCinematic
+kFireCinematicTable["Onos"] = kBurnBigCinematic
+kFireCinematicTable["MAC"] = kBurnSmallCinematic
+kFireCinematicTable["Drifter"] = kBurnSmallCinematic
+kFireCinematicTable["Sentry"] = kBurnSmallCinematic
+kFireCinematicTable["Egg"] = kBurnSmallCinematic
+kFireCinematicTable["Embryo"] = kBurnSmallCinematic
 
 local function GetOnFireCinematic(ent, firstPerson)
 
@@ -38,8 +38,17 @@ local function GetOnFireCinematic(ent, firstPerson)
         return kBurn1PCinematic
     end
     
-    return fireCinematicTable[ent:GetClassName()] or kBurnMedCinematic
+    return kFireCinematicTable[ent:GetClassName()] or kBurnMedCinematic
     
+end
+
+local kFireLoopingSound = { }
+kFireLoopingSound["Entity"] = PrecacheAsset("sound/NS2.fev/common/fire_small")
+kFireLoopingSound["Onos"] = PrecacheAsset("sound/NS2.fev/common/fire_large")
+kFireLoopingSound["Hive"] = PrecacheAsset("sound/NS2.fev/common/fire_large")
+
+local function GetOnFireSound(entClassName)
+    return kFireLoopingSound[entClassName] or kFireLoopingSound["Entity"]
 end
 
 FireMixin.networkVars =
@@ -51,7 +60,7 @@ FireMixin.networkVars =
 function FireMixin:__initmixin()
 
     self.numStacks = 0
-
+    
     if Server then
     
         self.fireAttackerId = Entity.invalidId
@@ -62,6 +71,10 @@ function FireMixin:__initmixin()
         
         self.isOnFire = false
         
+        self.onFireSound = Server.CreateEntity(SoundEffect.kMapName)
+        self.onFireSound:SetAsset(GetOnFireSound(self:GetClassName()))
+        self.onFireSound:SetParent(self)
+        
     end
     
 end
@@ -70,6 +83,13 @@ function FireMixin:OnDestroy()
 
     if self:GetIsOnFire() then
         self:SetGameEffectMask(kGameEffect.OnFire, false)
+    end
+    
+    if Server then
+    
+        -- The onFireSound was already destroyed at this point, clear the reference.
+        self.onFireSound = nil
+        
     end
     
 end
@@ -302,13 +322,19 @@ end
 function FireMixin:OnGameEffectMaskChanged(effect, state)
 
     if effect == kGameEffect.OnFire and state then
-        self:TriggerEffects("fire_start")
+    
+        if Server and not self.onFireSound:GetIsPlaying() then
+            self.onFireSound:Start()
+        end
+        
     elseif effect == kGameEffect.OnFire and not state then
     
         self.fireAttackerId = Entity.invalidId
         self.fireDoerId = Entity.invalidId
         
-        self:TriggerEffects("fire_stop")
+        if Server then
+            self.onFireSound:Stop()
+        end
         
         self.timeLastStackAdded         = 0
         self.numStacks                  = 0

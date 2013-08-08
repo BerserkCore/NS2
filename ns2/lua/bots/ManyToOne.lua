@@ -103,9 +103,9 @@ function ManyToOne:DebugDump(item2string, group2string)
     Print("-- group-to-item table --")
     for group, items in pairs(self.group2items) do
 
-        local s = ToString(group) .. " <-- { "
+        local s = group2string(group) .. " <-- { "
         for item,_ in pairs(items) do
-            s = s .. ToString(item) .. ", "
+            s = s .. item2string(item) .. ", "
 
             // do a sanity check here
             assert( self.item2group[item] == group )
@@ -118,7 +118,7 @@ function ManyToOne:DebugDump(item2string, group2string)
     Print("-- item-to-group table --")
     for item, group in pairs(self.item2group) do
 
-        Print("%s --> %s", ToString(item), ToString(group))
+        Print("%s --> %s", item2string(item), group2string(group))
 
         assert( self.group2items[group][item] == true )
 

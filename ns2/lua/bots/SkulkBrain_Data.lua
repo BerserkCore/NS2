@@ -157,7 +157,7 @@ local function PerformAttack( eyePos, mem, bot, brain, move )
     
         // mem is too far to be relevant, so move towards it
         bot:GetMotion():SetDesiredViewTarget(nil)
-        bot:GetMotion():SetDesiredMoveTarget(mem.origin)
+        bot:GetMotion():SetDesiredMoveTarget(mem.lastSeenPos)
 
     end
     
@@ -234,7 +234,7 @@ kSkulkBrainActions =
             if Shared.GetEntity(bestMem.entId) ~= nil then
                 dist = GetDistanceToTouch( eyePos, Shared.GetEntity(bestMem.entId) )
             else
-                dist = eyePos:GetDistance( bestMem.origin )
+                dist = eyePos:GetDistance( bestMem.lastSeenPos )
             end
 
             weight = EvalLPF( dist, {

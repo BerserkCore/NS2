@@ -82,7 +82,7 @@ kAlienComBrainActions =
                     local success = brain:ExecuteTechId( com, kTechId.Harvester, targetRP:GetOrigin(), com )
                     if success then
                         // reset the last cyst position for the next chaining
-                        brain.lastCystId = nil
+                        brain.lastPlacedCystPos = nil
                     end
                 end
             end}
@@ -112,7 +112,7 @@ kAlienComBrainActions =
                 local offset = Vector(0,1,0)
                 local success = brain:ExecuteTechId( com, kTechId.Cyst, cystPos, com )
                 if success then
-                    brain.lastCystPos = cystPos
+                    brain.lastPlacedCystPos = cystPos
                 end
             end }
 
@@ -127,16 +127,8 @@ kAlienComBrainActions =
         local weight = 0.0
         local targetTP = nil
 
-        local numHarvsNeeded = 0
-        if sdb:Get("numHives") == 1 then
-            numHarvsNeeded = 3
-        elseif sdb:Get("numHives") == 2 then
-            numHarvsNeeded = 5
-        else
-            numHarvsNeeded = 8
-        end
-
-        if sdb:Get("numHarvesters") >= numHarvsNeeded then
+        if sdb:Get("numHarvesters") >= sdb:Get("numHarvsForHive") 
+            or sdb:Get("overdueForHive") then
 
             // Find a hive slot!
             targetTP = sdb:Get("techPointToTake")
@@ -177,6 +169,10 @@ function CreateAlienComSenses()
     local s = BrainSenses()
     s:Initialize()
 
+    s:Add("gameMinutes", function(db)
+            return (Shared.GetTime() - GetGamerules():GetGameStartTime()) / 60.0
+            end)
+
     s:Add("doableTechIds", function(db)
             return db.bot.brain:GetDoableTechIds( db.bot:GetPlayer() )
             end)
@@ -191,6 +187,32 @@ function CreateAlienComSenses()
 
     s:Add("numHarvesters", function(db)
             return GetNumEntitiesOfType("Harvester", kAlienTeamType)
+            end)
+
+    s:Add("numHarvsForHive", function(db)
+
+            if db:Get("numHives") == 1 then
+                return 3
+            elseif db:Get("numHives") == 2 then
+                return 5
+            else
+                return 8
+            end
+            
+            return 0
+
+            end)
+
+    s:Add("overdueForHive", function(db)
+
+            if db:Get("numHives") == 1 then
+                return db:Get("gameMinutes") > 7
+            elseif db:Get("numHives") == 2 then
+                return db:Get("gameMinutes") > 14
+            else
+                return false
+            end
+
             end)
 
     s:Add("numHives", function(db)
@@ -247,14 +269,17 @@ function CreateAlienComSenses()
 
             // due to pathing hysteresis issues, we want to use the last built cyst pos
             // and not choose based on nearest euclidian
-            local lastCystPos = db.bot.brain.lastCystPos
+            local lastPlacedCystPos = db.bot.brain.lastPlacedCystPos
 
-            if lastCystPos ~= nil then
+            if lastPlacedCystPos ~= nil then
 
                 // make sure the cyst is still there
-                local cysts = GetEntitiesForTeamWithinRange( "Cyst", kAlienTeamType, lastCystPos, 2.0 )
-                if #cysts > 1 then
-                    return lastCystPos
+                local cysts = GetEntitiesForTeamWithinRange( "Cyst", kAlienTeamType, lastPlacedCystPos, 2.0 )
+                if #cysts >= 1 then
+                    return lastPlacedCystPos
+                else
+                    // the cyst must be destroyed - clear the state
+                    db.bot.brain.lastPlacedCystPos = nil
                 end
             end
 
@@ -313,7 +338,7 @@ function CreateAlienComSenses()
 
                 if lastInfestorPos ~= nil then
 
-                    DebugPrint("finding path from %s to %s", ToString(lastInfestorPos), ToString(rpPos))
+                    // DebugPrint("finding path from %s to %s", ToString(lastInfestorPos), ToString(rpPos))
                     local pathPoints = {}
                     local reachable = Pathing.GetPathPoints( lastInfestorPos, rpPos, pathPoints )
 

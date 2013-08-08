@@ -8,8 +8,8 @@
 
 class 'GUIVoteMenu' (GUIScript)
 
-local kBackgroundColor = Color(0.0, 0.0, 0.0, 0.7)
-local kTitleColor = Color(0.7, 0.7, 0.7, 1)
+local kBackgroundColor = Color(0.0, 0.0, 0.0, 0.4)
+local kTitleColor = Color(0.7, 0.7, 0.7, 0.6)
 local kTitleTextColor = Color(1, 1, 1, 1)
 local kYesBackgroundColor = Color(0, 0.3, 0, 0.4)
 local kVotedYesColor = Color(0, 0.6, 0, 0.7)

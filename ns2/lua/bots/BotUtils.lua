@@ -199,8 +199,7 @@ function GetTeamBrain(teamNum)
 
     local team = GetGamerules():GetTeam(teamNum)
     assert(team)
-    assert(team.brain)
-    return team.brain
+    return team:GetTeamBrain()
 
 end
 

@@ -9,9 +9,6 @@ Script.Load("lua/bots/BrainSenses.lua")
 //  Nothing in this file should affect other game state, except where it is used.
 //----------------------------------------
 
-kAimJitterScale = 0.8
-kFireDistance = 40.0
-
 //----------------------------------------
 //  Phase gates
 //----------------------------------------
@@ -103,11 +100,16 @@ end
 //  Utility perform function used by multiple wants
 //----------------------------------------
 
-local function PerformAttackEntity( eyePos, target, bot, brain, move )
+local function PerformAttackEntity( eyePos, target, lastSeenPos, bot, brain, move )
 
     assert(target ~= nil )
 
-    local aimPos = GetBestAimPoint( target )
+    if not target.GetIsSighted then
+        Print("attack target has no GetIsSighted: %s", target:GetClassName() )
+    end
+
+    local sighted = target:GetIsSighted()
+    local aimPos = sighted and GetBestAimPoint( target ) or lastSeenPos
     local dist = GetDistanceToTouch( eyePos, target )
     local doFire = false
 
@@ -123,7 +125,7 @@ local function PerformAttackEntity( eyePos, target, bot, brain, move )
 
     else
 
-        if dist > kFireDistance then
+        if dist > 40.0 then
             // close in on it first without firing
             bot:GetMotion():SetDesiredMoveTarget( aimPos )
             doFire = false
@@ -149,7 +151,7 @@ local function PerformAttackEntity( eyePos, target, bot, brain, move )
         // jitter view target a little bit, if they are moving at all
         local jitter = Vector(0,0,0)
         if HasMixin(target, "BaseMove") then
-            jitter = Vector( math.random(), math.random(), math.random() ) * kAimJitterScale
+            jitter = Vector( math.random(), math.random(), math.random() ) * 0.8
         end
         bot:GetMotion():SetDesiredViewTarget( aimPos+jitter )
         move.commands = AddMoveCommand( move.commands, Move.PrimaryAttack )
@@ -158,12 +160,12 @@ local function PerformAttackEntity( eyePos, target, bot, brain, move )
     end
     
     // Draw a red line to show what we are trying to attack
-    if gBotDebug:Get("marinedraw") then
+    if gBotDebug:Get("debugall") or brain.debug then
 
         if doFire then
             DebugLine( eyePos, aimPos, 0.0,   1,0,0,1, true)
         else
-            DebugLine( eyePos, aimPos, 0.0,   1,0.5,0,0, true)
+            DebugLine( eyePos, aimPos, 0.0,   1,0.5,0,1, true)
         end
 
     end
@@ -181,7 +183,7 @@ local function PerformAttack( eyePos, mem, bot, brain, move )
 
     if target ~= nil then
 
-        PerformAttackEntity( eyePos, target, bot, brain, move )
+        PerformAttackEntity( eyePos, target, mem.lastSeenPos, bot, brain, move )
 
     else
 
@@ -410,7 +412,7 @@ kMarineBrainActions =
         local threat = sdb:Get("biggestThreat")
         local weight = 0.0
 
-        if sdb:Get("weaponReady") and threat.memory ~= nil then
+        if threat ~= nil and sdb:Get("weaponReady") then
 
             weight = EvalLPF( threat.distance, {
                         { 0.0, EvalLPF( threat.urgency, {
@@ -420,7 +422,8 @@ kMarineBrainActions =
                         { 10.0, EvalLPF( threat.urgency, {
                             {0, 0},
                             {10, 5} })},
-                        { 100.0, 0.0 } })
+                        // Never let it drop too low - ie. keep it always above explore
+                        { 100.0, 0.1 } })
         end
 
 
@@ -469,11 +472,13 @@ kMarineBrainActions =
             perform = function(move)
                 if order then
 
+                    brain.teamBrain:UnassignBot(bot)
+
                     local target = Shared.GetEntity(order:GetParam())
 
                     if target ~= nil and order:GetType() == kTechId.Attack then
 
-                        PerformAttackEntity( marine:GetEyePos(), target, bot, brain, move )
+                        PerformAttackEntity( marine:GetEyePos(), target, order:GetLocation(), bot, brain, move )
 
                     elseif target ~= nil and GetIsUseOrder(order) then
 
@@ -502,10 +507,10 @@ kMarineBrainActions =
         local pos = marine:GetOrigin()
 
         local kPingLifeTime = 30.0
+        local pingPos = db:Get("comPingPosition")
 
-        if db:Get("comPingElapsed") ~= nil and db:Get("comPingElapsed") < kPingLifeTime then
+        if pingPos ~= nil and db:Get("comPingElapsed") ~= nil and db:Get("comPingElapsed") < kPingLifeTime then
 
-            local pingPos = db:Get("comPingPosition")
 
             if brain.lastReachedPingPos ~= nil and pingPos:GetDistance(brain.lastReachedPingPos) < 1e-2 then
                 // we already reached this ping - ignore it
@@ -681,8 +686,8 @@ kMarineBrainActions =
     //  
     //----------------------------------------
     CreateExploreAction( 0.05, function( pos, targetPos, bot, brain, move )
-            if gBotDebug:Get("marinedraw") then
-                DebugLine(pos, targetPos+Vector(0,1,0), 0.0,     0,0,1,1, true)
+            if gBotDebug:Get("debugall") or brain.debug then
+                DebugLine(bot:GetPlayer():GetEyePos(), targetPos+Vector(0,1,0), 0.0,     0,0,1,1, true)
             end
             PerformMove(pos, targetPos, bot, brain, move)
             end ),
@@ -712,7 +717,7 @@ local function GetAttackUrgency(bot, mem)
     // See if we know whether if it is alive or not
     local target = Shared.GetEntity(mem.entId)
     if not HasMixin(target, "Live") or not target:GetIsAlive() then
-        return 0.0
+        return nil
     end
 
     // for load-balancing
@@ -723,6 +728,16 @@ local function GetAttackUrgency(bot, mem)
                 end
                 return false
             end)
+
+    // Closer --> more urgent
+
+    local closeBonus = 0
+    local dist = bot:GetPlayer():GetOrigin():GetDistance( mem.lastSeenPos )
+
+    if dist < 15 then
+        // Do not modify numOthers here
+        closeBonus = 10/math.max(0.01, dist)
+    end
 
     //----------------------------------------
     // Passives - not an immediate threat, but attack them if you got nothing better to do
@@ -741,8 +756,14 @@ local function GetAttackUrgency(bot, mem)
         [kMinimapBlipType.TunnelEntrance] = numOthers >= 1 and 0.2 or 0.5
     }
 
+    if bot.brain.debug then
+        if mem.btype == kMinimapBlipType.Hive then
+            Print("got Hive, urgency = %f", passiveUrgencies[mem.btype])
+        end
+    end
+
     if passiveUrgencies[ mem.btype ] ~= nil then
-        return passiveUrgencies[ mem.btype ]
+        return passiveUrgencies[ mem.btype ] + closeBonus
     end
 
     //----------------------------------------
@@ -769,25 +790,17 @@ local function GetAttackUrgency(bot, mem)
 
     if urgTable[ mem.btype ] then
 
-        /* This vis check is expesnvie.
-        if GetBotCanSeeTarget( bot:GetPlayer(), target ) then
-            numOthers = 0
-            if bot.brain.debug then
-                DebugPrint("can shoot active threat, ignoring load")
-            end
-        end
-        */
-        // Do a cheaper thing where we just attack anything too close to ignore
-        if bot:GetPlayer():GetOrigin():GetDistance( target:GetOrigin() ) < 15 then
+        // For nearby active threads, respond no matter what - regardless of how many others are around
+        if dist < 15 then
             numOthers = 0
         end
 
         urgTable = EvalActiveUrgenciesTable(numOthers)
-        return urgTable[ mem.btype ]
+        return urgTable[ mem.btype ] + closeBonus
 
     end
 
-    return 0.0
+    return nil
 
 end
 
@@ -846,9 +859,14 @@ function CreateMarineBrainSenses()
                 end)
             local dist = nil
             if maxMem ~= nil then
-                dist = marine:GetEyePos():GetDistance(maxMem.origin)
+                if db.bot.brain.debug then
+                    Print("max mem type = %s", EnumToString(kMinimapBlipType, maxMem.btype))
+                end
+                dist = marine:GetEyePos():GetDistance(maxMem.lastSeenPos)
+                return {urgency = maxUrgency, memory = maxMem, distance = dist}
+            else
+                return nil
             end
-            return {urgency = maxUrgency, memory = maxMem, distance = dist}
             end)
 
     s:Add("nearestArmory", function(db)
@@ -880,7 +898,7 @@ function CreateMarineBrainSenses()
 
             local pingTime = GetGamerules():GetTeam1():GetCommanderPingTime()
 
-            if pingTime ~= nil and pingTime < Shared.GetTime() then
+            if pingTime > 0 and pingTime ~= nil and pingTime < Shared.GetTime() then
                 return Shared.GetTime() - pingTime
             else
                 return nil
@@ -889,21 +907,33 @@ function CreateMarineBrainSenses()
             end)
 
     s:Add("comPingPosition", function(db)
-            return GetGamerules():GetTeam1():GetCommanderPingPosition()
+            local rawPos = GetGamerules():GetTeam1():GetCommanderPingPosition()
+            // the position is usually up in the air somewhere, so pretend we did a commander pick to put it somewhere sensible
+            local trace = GetCommanderPickTarget(
+                db.bot:GetPlayer(), // not right, but whatever
+                rawPos,
+                true, // worldCoords Specified
+                false, // isBuild
+                true // ignoreEntities
+                )
+
+            if trace ~= nil and trace.fraction < 1 then
+                return trace.endPoint
+            else
+                return  nil
+            end
+
             end)
 
     s:Add("comPingXZDist", function(db)
             local marine = db.bot:GetPlayer()
-            local delta = db:Get("comPingPosition") - marine:GetOrigin()
-            return delta:GetLengthXZ()
+            if db:Get("comPingPosition") ~= nil then
+                local delta = db:Get("comPingPosition") - marine:GetOrigin()
+                return delta:GetLengthXZ()
+            end
             end)
 
     return s
 
 end
 
-//----------------------------------------
-//  
-//----------------------------------------
-Print("MarineBrain_Data loaded. kAimJitterScale = %f", kAimJitterScale)
-gBotDebug:AddBoolean("marinedraw", false)

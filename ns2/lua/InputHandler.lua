@@ -82,6 +82,7 @@ local _keyBinding =
     B = InputKey.B,
     N = InputKey.N,
     M = InputKey.M,
+    V = InputKey.V,
     ESC = InputKey.Escape,
     Space = InputKey.Space
 }
@@ -356,7 +357,6 @@ local function GenerateMove()
             move.commands = bit.bor(move.commands, Move.Weapon5)
         end
         if _keyPressed[ _keyBinding.QuickSwitch ] then
-            Print("Adding quick switch")
             move.commands = bit.bor(move.commands, Move.QuickSwitch)
         end
         

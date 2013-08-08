@@ -359,7 +359,7 @@ function DebugLine(startPoint, endPoint, lifetime, r, g, b, a, forceSharedAPI)
     
 end
 
-function DebugCircle(center, radius, normal, lifetime, r, g, b, a)
+function DebugCircle(center, radius, normal, lifetime, r, g, b, a, forceSharedAPI)
 
     local xMag = math.abs(normal.x)
     local yMag = math.abs(normal.y)
@@ -382,21 +382,21 @@ function DebugCircle(center, radius, normal, lifetime, r, g, b, a)
         local angle = 2 * i * math.pi / 16
         local point = center + radius*math.cos(angle)*side + radius*math.sin(angle)*up
         
-        DebugLine(lastPoint, point, lifetime, r, g, b, a)
+        DebugLine(lastPoint, point, lifetime, r, g, b, a, forceSharedAPI)
         lastPoint = point
     
     end
 
 end
 
-function DebugWireSphere( center, radius, lifetime, r, g, b, a )
+function DebugWireSphere( center, radius, lifetime, r, g, b, a, forceSharedAPI )
 
     local numCircles = 8
     for i = 1, numCircles do
     
         local rads = (i-1)*math.pi/numCircles
         local normal = Vector(math.cos(rads), math.sin(rads), 0)
-        DebugCircle( center, radius, normal, lifetime, r, g, b, a )
+        DebugCircle( center, radius, normal, lifetime, r, g, b, a, forceSharedAPI )
 
     end
     
@@ -414,15 +414,19 @@ function DebugPoint(point, size, lifetime, r, g, b, a)
     
 end
 
-function DebugCapsule(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime)
+function DebugCapsule(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime, forceSharedAPI)
 
-    if Client and not Shared.GetIsRunningPrediction() then
+    if (Client or forceSharedAPI) and not Shared.GetIsRunningPrediction() then
         Shared.DebugCapsule(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime)
     elseif Server then
         // TODO - get rid of this eventually
         Server.SendNetworkMessage("DebugCapsule", BuildDebugCapsuleMessage(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime), true)
     end
     
+end
+
+function DebugSolidSphere( center, radius, lifetime, forceSharedAPI )
+    DebugCapsule( center, center, radius, 0.0, lifetime, forceSharedAPI )
 end
 
 // Takes an array of four values - RGB (0-255 each) and makes them into a 4-byte int for use with Flash.

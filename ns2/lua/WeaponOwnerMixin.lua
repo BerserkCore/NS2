@@ -32,7 +32,8 @@ WeaponOwnerMixin.networkVars =
     processMove = "boolean",
     activeWeaponId = "entityid",
     timeOfLastWeaponSwitch = "time",
-    weaponsWeight = "float (0 to " .. WeaponOwnerMixin.kMaxWeaponsWeight .. " by 0.01)"
+    weaponsWeight = "float (0 to " .. WeaponOwnerMixin.kMaxWeaponsWeight .. " by 0.01)",
+    quickSwitchSlot = "integer (0 to 10)"
 }
 
 function WeaponOwnerMixin:__initmixin()
@@ -41,7 +42,7 @@ function WeaponOwnerMixin:__initmixin()
     self.activeWeaponId = Entity.invalidId
     self.timeOfLastWeaponSwitch = 0
     self.weaponsWeight = 0
-    self.prevHudSlot = 1
+    self.quickSwitchSlot = 1
     
 end
 
@@ -127,7 +128,7 @@ end
 
 // Returns true if we switched to weapon or if weapon is already active. Returns false if we 
 // don't have that weapon.
-function WeaponOwnerMixin:SetActiveWeapon(weaponMapName)
+function WeaponOwnerMixin:SetActiveWeapon(weaponMapName, keepQuickSwitchSlot)
 
     local foundWeapon = nil
     for i = 0, self:GetNumChildren() - 1 do
@@ -162,8 +163,14 @@ function WeaponOwnerMixin:SetActiveWeapon(weaponMapName)
                 activeWeapon:SetIsVisible(false)
                 previousWeaponName = activeWeapon:GetMapName()
                 local hudSlot = activeWeapon:GetHUDSlot()
-                if hudSlot > 0 then
-                    self.prevHudSlot = hudSlot
+
+                if keepQuickSwitchSlot == nil then
+                    keepQuickSwitchSlot = false
+                end
+
+                if hudSlot > 0 and not keepQuickSwitchSlot then
+                    //DebugPrint("setting prev hud slot to %d, %s", hudSlot, Script.CallStack())
+                    self.quickSwitchSlot = hudSlot
                 end
                 
             end
@@ -199,8 +206,27 @@ function WeaponOwnerMixin:SetActiveWeapon(weaponMapName)
 
 end
 
+function WeaponOwnerMixin:SetQuickSwitchTarget(weaponMapName)
+
+    for i = 0, self:GetNumChildren() - 1 do
+    
+        local child = self:GetChildAtIndex(i)
+        if child:isa("Weapon") and child:GetMapName() == weaponMapName then
+
+            self.quickSwitchSlot = child:GetHUDSlot()
+            return
+            
+        end
+        
+    end
+
+    Print("ERROR: Could not find weapon %s", weaponMapName)
+
+end
+
 function WeaponOwnerMixin:QuickSwitchWeapon()
-    self:SwitchWeapon(self.prevHudSlot)
+    //DebugPrint("switching to hud slot %d", self.quickSwitchSlot)
+    self:SwitchWeapon(self.quickSwitchSlot)
 end
 
 function WeaponOwnerMixin:GetActiveWeapon()

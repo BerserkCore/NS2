@@ -1,6 +1,9 @@
 
 Script.Load("lua/bots/BotUtils.lua")
+Script.Load("lua/bots/BotDebug.lua")
 Script.Load("lua/bots/ManyToOne.lua")
+
+gBotDebug:AddBoolean("debugteam")
 
 class 'TeamBrain'
 
@@ -22,24 +25,31 @@ local function GetSightedMapBlips(keepFunc, teamNum)
 
 end
 
-local function CreateMemory(blip)
-
-    return
-    {
-        entId = blip:GetOwnerEntityId(),
-        btype = blip:GetType(),
-        origin = blip:GetOrigin(),
-        lastSeenTime = Shared.GetTime(),
-    }
-
-end
-
 local function UpdateMemory(mem, blip)
 
     assert( mem.entId == blip:GetOwnerEntityId() )
-    mem.btype = blip:GetType()  // ents do change type, such as aliens changing lifeform
-    mem.origin = blip:GetOrigin()
+
+    local ent = Shared.GetEntity(blip:GetOwnerEntityId())
+
+    if ent ~= nil and ent.GetIsSighted and ent:GetIsSighted() then
+        mem.btype = blip:GetType()  // ents do change type, such as aliens changing lifeform
+        mem.lastSeenPos = ent:GetOrigin()
+    end
+    // otherwise, do not update it - keep the last known position/type
     mem.lastSeenTime = Shared.GetTime()
+
+end
+
+local function CreateMemory(blip)
+
+    local mem =
+    {
+        entId = blip:GetOwnerEntityId(),
+        lastSeenPos = blip:GetOrigin(),
+        btype = blip:GetType()
+    }
+    UpdateMemory( mem, blip )
+    return mem
 
 end
 
@@ -106,7 +116,44 @@ function TeamBrain:OnEntityChange(oldId, newId)
 
 end
 
+function TeamBrain:DebugDraw()
+
+    // TEMP
+    if self.teamNumber ~= kMarineTeamType then
+        return
+    end
+
+    for id,mem in pairs(self.entId2memory) do
+
+        local lostTime = Shared.GetTime() - mem.lastSeenTime
+        local ent = Shared.GetEntity(mem.entId)
+        assert( ent ~= nil )
+
+        Shared.DebugColor(0,1,1,1)
+        Shared.DebugText( string.format("-- %s %0.2f (%d)",
+                    ent:GetClassName(), lostTime,
+                    self.assignments:GetNumAssignedTo(mem.entId)),
+                mem.lastSeenPos, 0.0 )
+
+        for playerId,_ in pairs(self.assignments:GetItems(mem.entId)) do
+            local player = Shared.GetEntity(playerId)
+            if player ~= nil then
+                local playerPos = player:GetOrigin()
+                local ofs = Vector(0,1,0)
+                DebugLine( mem.lastSeenPos+ofs, playerPos+ofs, 0.0,
+                        0.5,0.5,0.5,1,   true )
+            end
+        end
+
+    end
+
+end
+
 function TeamBrain:Update(dt)
+
+    if gBotDebug:Get("spam") then
+        Print("TeamBrain:Update")
+    end
 
     local currBlips = GetSightedMapBlips(nil, self.teamNumber)
 
@@ -126,13 +173,56 @@ function TeamBrain:Update(dt)
     // remove entId2memory that no longer exist
     // NOTE: This is technically cheating a little, ie. letting us know instantly when things no longer exist 
 
-    for id, rem in pairs(self.entId2memory) do
+    local removedIds = {}
+
+    for id, mem in pairs(self.entId2memory) do
         if Shared.GetEntity(id) == nil then
             self.assignments:RemoveGroup(id)
+            table.insert(removedIds, id)
         end
     end
 
+    for _,id in ipairs(removedIds) do
+        self.entId2memory[id] = nil
+    end
+
+    //----------------------------------------
+    //  Remove memories that have been investigated (ie. a marine went to the last known pos),
+    //  but it has been a while since we last saw it
+    //----------------------------------------
+    removedIds = {}
+
+    for memEntId, mem in pairs(self.entId2memory) do
+
+        local ent = Shared.GetEntity(memEntId)
+        assert( ent ~= nil )
+        local entPos = ent:GetOrigin()
+        local memTooOld = (Shared.GetTime() - mem.lastSeenTime) > 5.0
+
+        for playerId,_ in ipairs(self.assignments:GetItems(mem.entId)) do
+
+            local player = Shared.GetEntity(playerId)
+            local playerPos = player:GetOrigin()
+            local didInvestigate = mem.lastSeenPos:GetDistance(playerPos) < 4.0
+
+            if didInvestigate and memTooOld then
+                table.insert(removedIds, memEntId)
+                break
+            end
+
+        end
+
+    end
+
+    for _,id in ipairs(removedIds) do
+        self.entId2memory[id] = nil
+    end
+
     //DebugPrint("%s mem has %d blips", self.label, GetTableSize(self.entId2memory) )
+
+    if gBotDebug:Get("debugall") or gBotDebug:Get("debugteam") then
+        self:DebugDraw()
+    end
 
 end
 

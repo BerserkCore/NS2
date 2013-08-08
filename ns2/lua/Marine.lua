@@ -777,13 +777,13 @@ function Marine:OnUseTarget(target)
     if target and HasMixin(target, "Construct") and ( target:GetCanConstruct(self) or (target.CanBeWeldedByBuilder and target:CanBeWeldedByBuilder()) ) then
     
         if activeWeapon and activeWeapon:GetMapName() ~= Builder.kMapName then
-            self:SetActiveWeapon(Builder.kMapName)
+            self:SetActiveWeapon(Builder.kMapName, true)
             self.weaponBeforeUse = activeWeapon:GetMapName()
         end
         
     else
         if activeWeapon and activeWeapon:GetMapName() == Builder.kMapName and self.weaponBeforeUse then
-            self:SetActiveWeapon(self.weaponBeforeUse)
+            self:SetActiveWeapon(self.weaponBeforeUse, true)
         end    
     end
 

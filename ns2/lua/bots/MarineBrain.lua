@@ -22,6 +22,10 @@ end
 
 function MarineBrain:Update( bot, move )
 
+    if gBotDebug:Get("spam") then
+        Print("MarineBrain:Update")
+    end
+
     PlayerBrain.Update( self, bot, move )
 
     local marine = bot:GetPlayer()

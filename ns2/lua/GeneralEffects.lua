@@ -473,27 +473,6 @@ kGeneralEffectData =
         },
     },
     
-    // Unit catches on fire. Called on server only.
-    fire_start =
-    {
-        fireStartEffects =
-        {
-            {parented_sound = "sound/NS2.fev/common/fire_large", classname = "Hive", done = true},
-            {parented_sound = "sound/NS2.fev/common/fire_large", classname = "Onos", done = true},
-            {parented_sound = "sound/NS2.fev/common/fire_small"},
-        },
-    },
-    
-    fire_stop =
-    {
-        fireStopEffects =
-        {
-            {stop_sound = "sound/NS2.fev/common/fire_large", classname = "Hive", done = true},
-            {stop_sound = "sound/NS2.fev/common/fire_large", classname = "Onos", done = true},
-            {stop_sound = "sound/NS2.fev/common/fire_small"},
-        },
-    },
-    
     infestation_grown =
     {
     },

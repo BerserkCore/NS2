@@ -119,7 +119,7 @@ function CreateUpgradeStructureAction( techId, weightIfCanDo, existingTechId )
             // but if we have the upgrade already, halve the weight
             // TODO THIS DOES NOT WORK WTFFF
             if existingTechId ~= nil then
-                DebugPrint("Checking if %s exists..", EnumToString(kTechId, existingTechId))
+//                DebugPrint("Checking if %s exists..", EnumToString(kTechId, existingTechId))
                 if GetTechTree(com:GetTeamNumber()):GetHasTech(existingTechId) then
                     DebugPrint("halving weight for already having %s", name)
                     weight = weight * 0.5
