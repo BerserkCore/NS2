@@ -1,0 +1,33 @@
+<shader>
+	
+	<inputs>
+		<input name="normalMap" 		 type="texture" address="wrap" />
+		<input name="transmissionColor"  type="float3">(1, 1, 1)</input>
+		<input name="scale1"             type="float">0.01</input>
+		<input name="scale2"             type="float">0.01</input>
+		<input name="speed1"             type="float">0.1</input>
+		<input name="speed2"             type="float">0.1</input>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float2 offset = float2(time, 0);
+			material.transmissionColor = transmissionColor;
+			
+			float3 normal = scale1 * DecodeNormal( tex2D(normalMap, input.texCoord * 2 + offset * speed1) ) + 
+				            scale2 * DecodeNormal( tex2D(normalMap, input.texCoord + offset.yx * speed2) );
+							
+			material.ssDistortion = normal.xy;
+		}
+	]]>		
+	</code>
+
+</shader>

@@ -65,6 +65,7 @@
 				material.emissive   = 0;
 			}
 			
+			material.id = 1; // to make it glow on Alien vision
 			
 		}
 	]]>

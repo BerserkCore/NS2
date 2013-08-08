@@ -49,20 +49,19 @@
 			
 			const float3 tint = float3(.4, .42, .12);
 			const float3 tint2 = float3(10, 5, 1);
-			
-			float3 bubbles = tex2D( emissiveMap, texCoord * 6).rgb;
-			float3 Noisenormal = DecodeNormal( tex2D( normalMap, texCoord * 6 + float2( time * -.04, time * -.04) ) );
-			float3 albedo1 = tex2D( albedoMap, texCoord * 4 + float2( time * .041, time * -.01) ).rgb;
-			float3 albedo2 = tex2D( albedoMap, texCoord * 1.5  * float2(10, 9) + float2( time * .02, time * -.01) ).rgb;
-			float3 noise = tex2D( albedoMap, (texCoord * 3  + float2(0, time * -.03)) * float2(.01, 0.03) ).rgb;
+		
+			float3 bubbles = tex2D( emissiveMap, texCoord * 6+ (DecodeNormal( tex2D(normalMap, input.texCoord * 3 + float2(time * -.01, time * .03)) ).xy * 0.02)).rgb;
+			float3 albedo1 = tex2D( albedoMap, texCoord * 4 + float2( time * .041, time * -.01) +(DecodeNormal( tex2D(normalMap, input.texCoord + float2( time * -.02, time * -.02)) ).xy * 0.02) ).rgb;
+			float3 albedo2 = tex2D( albedoMap, texCoord  * float2(13, 9) ).rgb;
 			float3 noise2 = tex2D( albedoMap, (texCoord * 2 + float2(0, time * -.02))).rgb;  
+			float3 Noisenormal = DecodeNormal( tex2D( normalMap, input.texCoord * 6 + float2( time * -.01, time * .01) ) );
+			float3 mask = pow(tex2D(opacityMap, texCoord + (DecodeNormal( tex2D(normalMap, input.texCoord + float2(time * .01, time * -.01)) ).xy * 0.02)).rgb, 2);
 			
-			float3 mask = pow(tex2D(opacityMap, texCoord).rgb, 2);
-			
-			material.albedo = (albedo1 * noise + albedo2) * tint;
-			material.emissive = bubbles * noise2 * noise2 * tint2;
+			material.albedo = (albedo1 * noise2 + albedo2) * tint;
+			material.emissive = bubbles * noise2 *mask  * tint2;
 			material.opacity = (albedo1 + albedo2) * mask * intensity;
-			material.tsNormal = Noisenormal;
+			material.tsNormal= Noisenormal ;
+			material.gloss    = 100;
 			
 		}
 	]]>		

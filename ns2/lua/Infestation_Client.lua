@@ -10,6 +10,9 @@
 
 Script.Load("lua/Infestation_Client_SparserBlobPatterns.lua")
 
+Shared.PrecacheSurfaceShader("materials/infestation/infestation_shell.surface_shader")
+Shared.PrecacheSurfaceShader("materials/infestation/Infestation.surface_shader")
+
 local math_sin              = math.sin
 local Shared_GetTime        = Shared.GetTime
 local Shared_GetEntity      = Shared.GetEntity

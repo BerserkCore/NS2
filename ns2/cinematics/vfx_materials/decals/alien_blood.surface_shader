@@ -6,11 +6,14 @@
 		<input name="specularMap" type="texture" address="wrap" />
 		<input name="opacityMap" type="texture" address="wrap" />
 		<input name="emissiveMap" type="texture" address="wrap" />
+		<input name="endTime" type="float">0.0</input>
+		<input name="scale" type="float">0.0</input>
 	</inputs>
 
 	<params>
 		<param name="alphaTest">true</param>
 		<param name="vsNormal">true</param>
+		<param name="osPosition">true</param>
 	</params>
 
 	<code>
@@ -24,16 +27,35 @@
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 			const float3 tint = float3(4, 20, 1);
+			
+			float intensity = 1.0;
+
+			if (endTime != 0) {
+				intensity = clamp( (endTime - time)/1, 0, 1);			
+			}
+			
+			float2 texCoord = input.texCoord;
+			
+			if (scale != 0) {
+				
+				float smoothEdge = abs(input.osPosition.y / scale) * 0.5;
+				texCoord.x = clamp(texCoord.x + smoothEdge, -1, 1);
+				texCoord.y = clamp(texCoord.y - smoothEdge, -1, 1);
+				
+				float distance = length(input.osPosition);				
+				intensity *= clamp(1 - (distance / (scale * 0.5)) * (abs(input.osPosition.y) / (scale * 0.5)), 0, 1);
+				
+			}
 					
-			float4 specularGloss = tex2D(specularMap, input.texCoord);
-			float4 glowPoints = tex2D(emissiveMap, input.texCoord*6);
-			float4 glowPoints2 = tex2D(emissiveMap, input.texCoord*2+ float2(time * .01, time * 0.01) );
-			material.albedo 	= tex2D(albedoMap, input.texCoord).rgb;
-			material.tsNormal 	= DecodeNormal( tex2D(normalMap, input.texCoord) );
-			material.specular	= specularGloss.rgb ;
-			material.gloss		= specularGloss.a;
-			material.emissive	= glowPoints.rgb * glowPoints2.rgb  *tint;
-			material.opacity    = tex2D(opacityMap, input.texCoord).r;
+			float4 specularGloss = tex2D(specularMap, texCoord);
+			float4 glowPoints = tex2D(emissiveMap, texCoord*6);
+			float4 glowPoints2 = tex2D(emissiveMap, texCoord*2+ float2(time * .01, time * 0.01) );
+			material.albedo 	= tex2D(albedoMap, texCoord).rgb;
+			material.tsNormal 	= DecodeNormal( tex2D(normalMap, texCoord) );
+			material.specular	= specularGloss.rgb * intensity;
+			material.gloss		= specularGloss.a * intensity;
+			material.emissive	= glowPoints.rgb * glowPoints2.rgb * tint;
+			material.opacity    = tex2D(opacityMap, texCoord).r* intensity;
 			
 		}
 	]]>		

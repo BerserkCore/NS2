@@ -113,8 +113,8 @@ local function GetSmallIconPixelCoordinates(itemTechId)
         gSmallIconIndex[kTechId.Welder] = 10
         gSmallIconIndex[kTechId.LayMines] = 21
         gSmallIconIndex[kTechId.DualMinigunExosuit] = 26
-        gSmallIconIndex[kTechId.ClawRailgunExosuit] = 26
-        gSmallIconIndex[kTechId.DualRailgunExosuit] = 26
+        gSmallIconIndex[kTechId.ClawRailgunExosuit] = 38
+        gSmallIconIndex[kTechId.DualRailgunExosuit] = 38
     
     end
     

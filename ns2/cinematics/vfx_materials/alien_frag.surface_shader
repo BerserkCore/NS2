@@ -38,14 +38,14 @@
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 		
-			float fadout	    = time*1.8;
+			float fadout	    = input.shaderParam.x;
 			float f             = 1-fadout;
 
 			float param         = tex2D(blendMap, input.texCoord).a; // speading parameter
 			float textureSpeed  = 2;
 			float destroySpeed  = 2.5;
-			const float3 tint = float3(.2, 24, 18);
-			float3 fireGlow	=tex2D(fireglowMap, input.texCoord*5 ).rgb* tint;
+			const float3 tint = float3(.2, 90, 50);
+			float3 fireGlow	=tex2D(fireglowMap, input.texCoord*3 ).rgb* tint;
 			float3 fireGlow2 = tex2D(fireglowMap, input.texCoord*8+ float2(time * -1, time * 1)).rgb* tint;
 
 
@@ -60,15 +60,15 @@
 			// Blending
 			if (blend + f > .4)
 			{
-				material.albedo = tex2D(albedoMap, input.texCoord).rgb;
+				material.albedo = tex2D(albedoMap, input.texCoord).rgb+(fireGlow*fireGlow2);
 
 			} else {
-			    material.albedo = tex2D(overlayMap, input.texCoord * 4).rgb;
+			    material.albedo = tex2D(overlayMap, input.texCoord * 4).rgb +(fireGlow*fireGlow2);
 			}
 
 			// Opacity
 			material.opacity = opacity  + f ;
-			material.emissive   = ((tex2D(emissiveMap, input.texCoord).rgb )+(fireGlow*fireGlow2)) * f * glowIntensity;
+			material.emissive   = ((tex2D(emissiveMap, input.texCoord).rgb )) * f * glowIntensity;
 			
 		}
 	]]>

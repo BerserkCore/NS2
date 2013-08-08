@@ -127,8 +127,8 @@ kHealthPointsPerArmor = 2
 kHeavyHealthPerArmor = 1
 
 kFlameableMultiplier = 7
-kCorrodeDamagePlayerArmorScalar = 0.1
-kCorrodeDamageExoArmorScalar = 0.2
+kCorrodeDamagePlayerArmorScalar = 0.13
+kCorrodeDamageExoArmorScalar = 0.23
 
 // deal only 60% of damage to friendlies
 kFriendlyFireScalar = 0.6

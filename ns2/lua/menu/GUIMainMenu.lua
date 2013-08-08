@@ -1308,7 +1308,7 @@ local function InitOptions(optionElements)
     local infestation           = Client.GetOptionString("graphics/infestation", "rich")
     local fovAdjustment         = Client.GetOptionFloat("graphics/display/fov-adjustment", 0)
     local cameraAnimation       = Client.GetOptionBoolean("CameraAnimation", false) and "ON" or "OFF"
-    //local decalLifeTime         = Client.GetOptionFloat("graphics/decallifetime", 0.2)
+    local decalLifeTime         = Client.GetOptionFloat("graphics/decallifetime", 0.2)
     
     local minimapZoom = Client.GetOptionFloat( "minimap-zoom", 0.75 )
     local armorType = Client.GetOptionString( "armorType", "" )
@@ -1386,7 +1386,7 @@ local function InitOptions(optionElements)
     optionElements.FOVAdjustment:SetValue(fovAdjustment)
     optionElements.MinimapZoom:SetValue(minimapZoom)
     optionElements.ArmorType:SetValue(armorType)
-    //optionElements.DecalLifeTime:SetValue(decalLifeTime)
+    optionElements.DecalLifeTime:SetValue(decalLifeTime)
     optionElements.CameraAnimation:SetValue(cameraAnimation)
     optionElements.ParticleQuality:SetOptionActive( table.find(kParticleQualityModes, particleQuality) ) 
     
@@ -1870,13 +1870,13 @@ function GUIMainMenu:CreateOptionWindow()
                 type    = "select",
                 values  = { "LOW", "HIGH" },
                 callback = autoApplyCallback
-            },     /*       
+            },            
             {
                 name    = "DecalLifeTime",
                 label   = "DECAL LIFE TIME",
                 type    = "slider",
                 sliderCallback = OnDecalLifeTimeChanged,
-            },    */
+            },    
             {
                 name    = "Infestation",
                 label   = "INFESTATION",

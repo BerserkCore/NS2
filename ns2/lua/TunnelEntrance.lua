@@ -32,6 +32,7 @@ Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/ObstacleMixin.lua")
 
 Script.Load("lua/Tunnel.lua")
 
@@ -43,7 +44,8 @@ TunnelEntrance.kModelName = PrecacheAsset("models/alien/tunnel/mouth.model") Pre
 local kAnimationGraph = PrecacheAsset("models/alien/tunnel/mouth.animation_graph")
 
 local networkVars = { 
-    connected = "boolean"
+    connected = "boolean",
+    timeLastInteraction = "time"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -88,6 +90,8 @@ function TunnelEntrance:OnCreate()
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
     
+    InitMixin(self, ObstacleMixin)
+    
     if Server then
         InitMixin(self, InfestationTrackerMixin)
         self.connected = false
@@ -98,6 +102,8 @@ function TunnelEntrance:OnCreate()
     self:SetLagCompensated(false)
     self:SetPhysicsType(PhysicsType.Kinematic)
     self:SetPhysicsGroup(PhysicsGroup.MediumStructuresGroup)
+    
+    self.timeLastInteraction = 0
     
 end
 
@@ -124,6 +130,10 @@ function TunnelEntrance:OnInitialized()
         
     end
 
+end
+
+local function GetRecentlyUsed(self)    
+    return self.timeLastInteraction + 0.2 > Shared.GetTime()    
 end
 
 function TunnelEntrance:GetOwnerClientId()
@@ -255,12 +265,30 @@ if Server then
             local tunnelEntity = Shared.GetEntity(self.tunnelId)
             if tunnelEntity then    
                 tunnelEntity:MovePlayerToTunnel(player, self)
+                self.timeLastInteraction = Shared.GetTime()
+                player:SetVelocity(Vector(0, 0, 0))
             end
         
         end
 
     end
+    
+    function TunnelEntrance:OnPlayerExited(player)
+        self.timeLastInteraction = Shared.GetTime()
+    end
 
 end   
+
+function TunnelEntrance:OnUpdateAnimationInput(modelMixin)
+
+    modelMixin:SetAnimationInput("open", self.connected)
+    modelMixin:SetAnimationInput("player_out", GetRecentlyUsed(self))
+    
+end
+
+function TunnelEntrance:GetEngagementPointOverride()
+    return self:GetOrigin() + Vector(0, 0.25, 0)
+end
+
 
 Shared.LinkClassToMap("TunnelEntrance", TunnelEntrance.kMapName, networkVars)

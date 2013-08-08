@@ -30,13 +30,13 @@ function GUIInsight_PenTool:Initialize()
     lineColors = table.array(8)
     
     worldLines = GUIManager:CreateLinesItem()
-    worldLines:SetLayer(kGUILayerInsight)
+    worldLines:SetLayer(kGUILayerCountDown)
     
     --mapLines = GUIManager:CreateLinesItem()
     --mapLines:SetLayer(kGUILayerInsight)
     
     screenLines = GUIManager:CreateLinesItem()
-    screenLines:SetLayer(kGUILayerInsight)
+    screenLines:SetLayer(kGUILayerCountDown)
     
     self.hasDrawn = false
     

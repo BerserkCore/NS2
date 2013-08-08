@@ -39,7 +39,7 @@ local function CreateVisionElement(self)
 
     local guiItem = GetGUIManager():CreateGraphicItem()
     
-    if not PlayerUI_IsACommander() then
+    if not PlayerUI_IsOverhead() then
         guiItem:SetBlendTechnique(GUIItem.Add)
     end
     
@@ -89,7 +89,7 @@ function GUIEggDisplay:Update(deltaTime)
     
     end
 
-    local size = ConditionalValue(PlayerUI_IsACommander(), GUIEggDisplay.kVisionCommExtents, GUIEggDisplay.kVisionExtents)
+    local size = ConditionalValue(PlayerUI_IsOverhead(), GUIEggDisplay.kVisionCommExtents, GUIEggDisplay.kVisionExtents)
     
     for index, currentVision in ipairs(unitVisions) do   
     

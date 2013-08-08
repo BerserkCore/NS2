@@ -28,6 +28,7 @@ local networkVars =
 {
     timeChargeStarted = "time",
     railgunAttacking = "boolean",
+    lockCharging = "boolean",
     timeOfLastShot = "time"
 }
 
@@ -47,6 +48,7 @@ function Railgun:OnCreate()
     
     self.timeChargeStarted = 0
     self.railgunAttacking = false
+    self.lockCharging = false
     self.timeOfLastShot = 0
     
     if Client then
@@ -74,10 +76,14 @@ end
 
 function Railgun:OnPrimaryAttack(player)
 
-    if not self.railgunAttacking then
-        self.timeChargeStarted = Shared.GetTime()
+    if not self.lockCharging then
+    
+        if not self.railgunAttacking then
+            self.timeChargeStarted = Shared.GetTime()
+        end
+        self.railgunAttacking = true
+        
     end
-    self.railgunAttacking = true
     
 end
 
@@ -129,13 +135,48 @@ function Railgun:GetTracerEffectFrequency()
 end
 
 function Railgun:GetDeathIconIndex()
-    return kDeathMessageIcon.Minigun
+    return kDeathMessageIcon.Railgun
 end
 
-local function GetChargeAmount(self)
+function Railgun:GetChargeAmount()
+    return math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime)
+end
 
-    local chargeAmt = math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime)
-    return self.railgunAttacking and chargeAmt or 0
+local function TriggerSteamEffect(self, player)
+
+    if self:GetIsLeftSlot() then
+        player:TriggerEffects("railgun_steam_left")
+    elseif self:GetIsRightSlot() then
+        player:TriggerEffects("railgun_steam_right")
+    end
+    
+end
+
+local function ExecuteShot(self, startPoint, endPoint, player)
+
+    // Filter ourself out of the trace so that we don't hit ourselves.
+    local filter = EntityFilterTwo(player, self)
+    local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+    
+    if trace.fraction < 1 then
+    
+        local direction = (trace.endPoint - startPoint):GetUnit()
+        
+        local impactPoint = trace.endPoint - GetNormalizedVector(endPoint - startPoint) * kHitEffectOffset
+        local surfaceName = trace.surface
+        
+        local effectFrequency = self:GetTracerEffectFrequency()
+        local showTracer = ConditionalValue(GetIsVortexed(player), false, math.random() < effectFrequency)
+        
+        self:ApplyBulletGameplayEffects(player, trace.entity, trace.endPoint, direction, kRailgunDamage + (kRailgunChargeDamage * self:GetChargeAmount()), trace.surface, showTracer)
+        
+        if Client and showTracer then
+            TriggerFirstPersonTracer(self, trace.endPoint)
+        end
+        
+    end
+    
+    return trace
     
 end
 
@@ -152,35 +193,30 @@ local function Shoot(self, leftSide)
         local viewAngles = player:GetViewAngles()
         local shootCoords = viewAngles:GetCoords()
         
-        // Filter ourself out of the trace so that we don't hit ourselves.
-        local filter = EntityFilterTwo(player, self)
         local startPoint = player:GetEyePos()
         
         local spreadDirection = CalculateSpread(shootCoords, kRailgunSpread, NetworkRandom)
         
         local endPoint = startPoint + spreadDirection * kRailgunRange
+        local trace = ExecuteShot(self, startPoint, endPoint, player)
         
-        local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+        // If the shot hit a wall, continue shooting through the wall.
+        if not trace.entity then
         
-        if trace.fraction < 1 then
-        
-            local direction = (trace.endPoint - startPoint):GetUnit()
-            
-            local impactPoint = trace.endPoint - GetNormalizedVector(endPoint - startPoint) * kHitEffectOffset
-            local surfaceName = trace.surface
-            
-            local effectFrequency = self:GetTracerEffectFrequency()
-            local showTracer = ConditionalValue(GetIsVortexed(player), false, math.random() < effectFrequency)
-            
-            self:ApplyBulletGameplayEffects(player, trace.entity, trace.endPoint, direction, kRailgunDamage + (kRailgunChargeDamage * GetChargeAmount(self)), trace.surface, showTracer)
-            
-            if Client and showTracer then
-                TriggerFirstPersonTracer(self, trace.endPoint)
-            end
+            // Start a little bit on the other side of the wall.
+            local newStartPoint = trace.endPoint + shootCoords.zAxis * 0.5
+            local newEndPoint = newStartPoint + shootCoords.zAxis * 1
+            ExecuteShot(self, newStartPoint, newEndPoint, player)
             
         end
         
+        if Client then
+            TriggerSteamEffect(self, player)
+        end
+        
         self.timeOfLastShot = Shared.GetTime()
+        
+        self.lockCharging = true
         
     end
     
@@ -224,7 +260,7 @@ function Railgun:OnUpdateRender()
 
     PROFILE("Railgun:OnUpdateRender")
     
-    local chargeAmount = GetChargeAmount(self)
+    local chargeAmount = self.railgunAttacking and self:GetChargeAmount() or 0
     local parent = self:GetParent()
     if parent and parent:GetIsLocalPlayer() then
     
@@ -259,10 +295,22 @@ function Railgun:OnTag(tagName)
 
     PROFILE("Railgun:OnTag")
     
-    if self:GetIsLeftSlot() and tagName == "l_shoot" then
-        Shoot(self, true)
-    elseif not self:GetIsLeftSlot() and tagName == "r_shoot" then
-        Shoot(self, false)
+    if self:GetIsLeftSlot() then
+    
+        if tagName == "l_shoot" then
+            Shoot(self, true)
+        elseif tagName == "l_shoot_end" then
+            self.lockCharging = false
+        end
+        
+    elseif not self:GetIsLeftSlot() then
+    
+        if tagName == "r_shoot" then
+            Shoot(self, false)
+        elseif tagName == "r_shoot_end" then
+            self.lockCharging = false
+        end
+        
     end
     
 end
@@ -280,7 +328,7 @@ end
 function Railgun:UpdateViewModelPoseParameters(viewModel)
 
     local chargeParam = "charge_" .. (self:GetIsLeftSlot() and "l" or "r")
-    local chargeAmount = GetChargeAmount(self)
+    local chargeAmount = self.railgunAttacking and self:GetChargeAmount() or 0
     viewModel:SetPoseParam(chargeParam, chargeAmount)
     
 end

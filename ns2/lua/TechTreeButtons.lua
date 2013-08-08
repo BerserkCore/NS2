@@ -143,8 +143,10 @@ function InitTechTreeMaterialOffsets()
     kTechIdToMaterialOffset[kTechId.Camouflage] = 66
     kTechIdToMaterialOffset[kTechId.Leap] = 67
     kTechIdToMaterialOffset[kTechId.BileBomb] = 68
-    kTechIdToMaterialOffset[kTechId.GorgeTunnel] = 28
-    kTechIdToMaterialOffset[kTechId.GorgeTunnelTech] = 28
+    kTechIdToMaterialOffset[kTechId.GorgeTunnel] = 103
+    kTechIdToMaterialOffset[kTechId.GorgeTunnelTech] = 103
+    kTechIdToMaterialOffset[kTechId.Babbler] = 115
+    kTechIdToMaterialOffset[kTechId.BabblerEgg] = 115
     kTechIdToMaterialOffset[kTechId.WebTech] = 102
     kTechIdToMaterialOffset[kTechId.Web] = 102
     kTechIdToMaterialOffset[kTechId.Spores] = 69
@@ -166,7 +168,7 @@ function InitTechTreeMaterialOffsets()
     kTechIdToMaterialOffset[kTechId.Weapons3] = 82
     kTechIdToMaterialOffset[kTechId.UpgradeRoboticsFactory] = 83
     kTechIdToMaterialOffset[kTechId.DualMinigunTech] = 84
-    kTechIdToMaterialOffset[kTechId.ClawRailgunTech] = 84
+    kTechIdToMaterialOffset[kTechId.ClawRailgunTech] = 116
     kTechIdToMaterialOffset[kTechId.DualRailgunTech] = 84
     kTechIdToMaterialOffset[kTechId.ShotgunTech] = 85
     kTechIdToMaterialOffset[kTechId.Shotgun] = 85

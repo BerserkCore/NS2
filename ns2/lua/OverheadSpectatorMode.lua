@@ -55,7 +55,7 @@ function OverheadSpectatorMode:Uninitialize(spectator)
     -- Either a raytrace to the ground (better value)
     -- Or use the heightmap if the ray goes off the map
     local trace = GetCommanderPickTarget(spectator, spectator:GetOrigin(), true, false, false)
-    local traceHeight = trace.endPoint.y
+    local traceHeight = trace.endPoint.y + 2
     local mapHeight = GetHeightmap():GetElevation(position.x, position.z) - 8
     
     -- Assume the trace is off the map if it's far from the heightmap

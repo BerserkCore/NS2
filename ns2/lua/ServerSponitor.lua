@@ -222,7 +222,7 @@ function ServerSponitor:OnEndMatch(winningTeam)
             avgPlayers1         = stats1.avgNumPlayersSum / stats1.numPlayerCountSamples,
             avgPlayers2         = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
             avgRookies1         = stats1.avgNumRookiesSum / stats1.numPlayerCountSamples,
-            avgRookies2         = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
+            avgRookies2         = stats2.avgNumRookiesSum / stats2.numPlayerCountSamples,
             totalTResMined1     = stats1.team:GetTotalTeamResourcesFromTowers(),
             totalTResMined2     = stats2.team:GetTotalTeamResourcesFromTowers(),
         })
@@ -262,7 +262,7 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
         local targetOrigin = target:GetOrigin()
         local attackerTeamType = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType)
 
-        local jsonData = json.encode(
+        local jsonData, jsonError = json.encode(
         {
             matchId        = self.matchId,
             time           = Shared.GetGMTString(false),
@@ -283,7 +283,23 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
             targetLifeTime = string.format("%.2f", Shared.GetTime() - target:GetCreationTime()),
         })
 
-        Shared.SendHTTPRequest( kSponitor2Url.."kill", "POST", {data=jsonData} )
+        if jsonData then
+
+            Shared.SendHTTPRequest( kSponitor2Url.."kill", "POST", {data=jsonData} )
+
+        else
+
+            // the encoder returned nil, so there was an error. Post it to Spon2.
+            jsonData = json.encode(
+            {
+                launchId = -1,
+                time = Shared.GetGMTString(false),
+                type = "killpost",
+                text = jsonError,
+            })
+            Shared.SendHTTPRequest( kSponitor2Url.."kill", "POST", {data=jsonData} )
+
+        end
 
         if attacker:isa("Player") and target:isa("Player") then
         

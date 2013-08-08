@@ -60,6 +60,8 @@
 			// Opacity
 			material.opacity = (opacity + f - 0.5) * tex2D(opacityMap, input.texCoord); 
 			
+			material.id = 1; // to make it glow on Alien vision
+			
 		}
 	]]>
 	</code>

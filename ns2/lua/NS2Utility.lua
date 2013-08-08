@@ -11,6 +11,29 @@ Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 Script.Load("lua/FunctionContracts.lua")
 
+function GetIsTechUseable(techId, teamNum)
+
+    local useAble = false
+    local techTree = GetTechTree(teamNum)
+    if techTree then
+    
+        local techNode = techTree:GetTechNode(techId)
+        if techNode then
+        
+            useAble = techNode:GetAvailable()
+
+            if techNode:GetIsResearch() then
+                useAble = techNode:GetResearched() and techNode:GetHasTech()
+            end
+        
+        end
+    
+    end
+    
+    return useAble == true
+
+end
+
 if Server then
     Script.Load("lua/NS2Utility_Server.lua")
 end

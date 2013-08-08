@@ -36,6 +36,7 @@ local kUpVector = Vector(0, 1, 0)
 local kTolerance = 0.9
 local kCheckDistance = 1.5
 local kVerticalOffset = 0.3
+local kVerticalSpace = 2
 
 local kCheckDirections = 
 {
@@ -78,6 +79,15 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
         
         end
 
+    end
+    
+    // check also if there is enough place above
+    if valid then
+    
+        local extents = Vector(kCheckDistance, 0.5, kCheckDistance)
+        local trace =  Shared.TraceBox(extents, position + Vector(0, 0.1, 0), position + Vector(0, kVerticalSpace, 0), CollisionRep.Move, PhysicsMask.Movement, EntityFilterAll())
+        valid = valid and trace.fraction == 1
+    
     end
     
     return valid

@@ -3299,6 +3299,62 @@ function PlayerUI_GetShowGiveDamageIndicator()
     
 end
 
+local kEggDisplayRange = 30
+local kEggDisplayOffset = Vector(0, 0.8, 0)
+function PlayerUI_GetEggDisplayInfo()
+
+    local eggDisplay = {}
+    
+    local player = Client.GetLocalPlayer()
+    local animOffset = kEggDisplayOffset + kEggDisplayOffset * math.sin(Shared.GetTime() * 3) * 0.2
+    
+    if player then
+    
+        local eyePos = player:GetEyePos()
+        for index, egg in ipairs(GetEntitiesWithinRange("Egg", player:GetEyePos(), kEggDisplayRange)) do
+        
+            local techId = egg:GetGestateTechId()
+            
+            if techId and (techId == kTechId.Gorge or techId == kTechId.Lerk or techId == kTechId.Fade or techId == kTechId.Onos) then
+            
+                local normToEntityVec = GetNormalizedVector(egg:GetOrigin() - eyePos)
+                local normViewVec = player:GetViewAngles():GetCoords().zAxis
+               
+                local dotProduct = normToEntityVec:DotProduct(normViewVec)
+                
+                if dotProduct > 0 then                
+                    table.insert(eggDisplay, { Position = Client.WorldToScreen(egg:GetOrigin() + animOffset), TechId = techId } )                
+                end
+            
+            end
+        
+        end
+        
+        if PlayerUI_IsOverhead() then
+        
+            for index, egg in ipairs(GetEntitiesWithinRange("Embryo", player:GetEyePos(), kEggDisplayRange)) do
+            
+                local techId = egg:GetGestationTechId()
+
+                local normToEntityVec = GetNormalizedVector(egg:GetOrigin() - eyePos)
+                local normViewVec = player:GetViewAngles():GetCoords().zAxis
+               
+                local dotProduct = normToEntityVec:DotProduct(normViewVec)
+                
+                if dotProduct > 0 then                
+                    table.insert(eggDisplay, { Position = Client.WorldToScreen(egg:GetOrigin() + animOffset), TechId = techId } )                
+                end
+            
+            end
+        
+        end
+        
+    end
+    
+    return eggDisplay
+
+end
+
 local function GetDamageEffectType(self)
 
     if self:isa("Marine") then

@@ -568,6 +568,7 @@ if Server then
     function Shift:PerformActivation(techId, position, normal, commander)
     
         local success = false
+        local continue = true
         
         if GetIsTeleport(techId) then
         
@@ -578,9 +579,10 @@ if Server then
 
         elseif techId == kTechId.ShiftHatch then
             success = self:TriggerHatch()
+            continue = false
         end
         
-        return success, true
+        return success, continue
         
     end
     

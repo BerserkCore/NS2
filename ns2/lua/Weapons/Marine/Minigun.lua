@@ -51,7 +51,7 @@ local networkVars =
 {
     minigunAttacking = "private boolean",
     shooting = "boolean",
-    heatAmount = "private float (0 to 1 by 0.01)",
+    heatAmount = "float (0 to 1 by 0.01)",
     overheated = "private boolean",
     spinSoundId = "entityid",
     heatUISoundId = "private entityid"

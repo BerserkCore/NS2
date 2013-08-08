@@ -18,6 +18,8 @@ kGorgeHealth = 150	kGorgeArmor = 70	kGorgePointValue = 7
 kLerkHealth = 125	kLerkArmor = 50	kLerkPointValue = 15
 kFadeHealth = 250	kFadeArmor = 50	kFadePointValue = 20
 kOnosHealth = 1300	kOnosArmor = 500	kOnosPointValue = 30
+
+kMarineWeaponHealth = 400
 		
 kEggHealth = 350	kEggArmor = 0	kEggPointValue = 2
 kMatureEggHealth = 350	kMatureEggArmor = 25

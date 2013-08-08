@@ -186,17 +186,31 @@ kDamageEffects =
         }
     },
     
+    alien_blood_ground =
+    {
+        alienGroundBloodDecal =
+        {
+            {decal = "cinematics/vfx_materials/decals/alien_blood_ground.material", scale = 2, done = true}
+        }
+    },
+    
     damage_decal =
     {
         damageDecals = 
         {
                   
-            // marine blood
-            {decal = "cinematics/vfx_materials/decals/marine_blood_01.material", scale = 2, surface = "armor", done = true},   
-            {decal = "cinematics/vfx_materials/decals/marine_blood_01.material", scale = 2, surface = "flesh", done = true}, 
-        
+            // marine blood 
+            {decal = {{.25, "cinematics/vfx_materials/decals/marine_blood_01.material"}, 
+                      {.25, "cinematics/vfx_materials/decals/marine_blood_02.material"}, 
+                      {.25, "cinematics/vfx_materials/decals/marine_blood_03.material"}, 
+                      {.25, "cinematics/vfx_materials/decals/marine_blood_04.material"}}, scale = 2, surface = "flesh", done = true}, 
+
             // alien blood
-            {decal = "cinematics/vfx_materials/decals/alien_blood_01.material", scale = 0.75, surface = "organic", done = true},   
+            {decal = {{.25, "cinematics/vfx_materials/decals/alien_blood_01.material"}, 
+                      {.25, "cinematics/vfx_materials/decals/alien_blood_02.material"},
+                      {.25, "cinematics/vfx_materials/decals/alien_blood_03.material"},
+                      {.25, "cinematics/vfx_materials/decals/alien_blood_04.material"}}, scale = 0.75, surface = "organic", done = true},   
+                      
             {decal = "cinematics/vfx_materials/decals/alien_blood_02.material", scale = 0.75, surface = "membrane", done = true},   
             
             // surface marine weapons
@@ -205,8 +219,11 @@ kDamageEffects =
             {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Rifle", alt_mode = false, done = true},        
             {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Shotgun", done = true},        
             {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Pistol", done = true}, 
-            {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.3, doer = "Minigun", done = true},      
-
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.3, doer = "Minigun", done = true},
+            {decal = "cinematics/vfx_materials/decals/railgun_hole_01.material", scale = 0.3, doer = "Railgun", done = true},
+            // For shooting through walls.
+            {decal = "cinematics/vfx_materials/decals/railgun_hole_02.material", scale = 0.3, doer = "Railgun", done = true},
+            
             // surface alien weapons   
             {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.5, doer = "BiteLeap", done = true}, 
             {decal = "", scale = 0.5, doer = "LerkBite", alt_mode = true, done = true}, 

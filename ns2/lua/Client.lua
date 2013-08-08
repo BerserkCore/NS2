@@ -960,9 +960,8 @@ local function OnLoadComplete()
     
 end
 
-
 function Client.CreateTimeLimitedDecal(materialName, coords, scale, lifeTime)
-/*
+
     if not lifeTime then
         lifeTime = Client.GetOptionFloat("graphics/decallifetime", 0.2) * kDecalMaxLifetime
     end
@@ -986,7 +985,7 @@ function Client.CreateTimeLimitedDecal(materialName, coords, scale, lifeTime)
         table.insert(Client.timeLimitedDecals, {decal, endTime})
 
     end
-*/
+
 end
 
 Event.Hook("ClientDisconnected", OnClientDisconnected)

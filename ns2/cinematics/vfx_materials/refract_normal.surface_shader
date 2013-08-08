@@ -14,8 +14,9 @@
 		}
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
+
 			material.transmissionColor =float3(1,1,1) * input.color.rgb;
-			material.ssDistortion = DecodeNormal( tex2D(normalMap, input.texCoord) ).xy * 1* input.color.a;
+			material.ssDistortion = DecodeNormal( tex2D(normalMap, input.texCoord) ).xy * 1* input.color.a * ( tex2D(normalMap, input.texCoord).a);
 			
 		}
 	]]>		

@@ -281,9 +281,6 @@ kShotgunWeight = 0.14
 // set to -1 to disable or a positive number
 kResourcesPerNode = -1
 
-// 200 inches in NS1 = 5 meters
-kBileBombSplashRadius = 6
-
 kDropStructureEnergyCost = 20
 
 kMinWebLength = 0.5

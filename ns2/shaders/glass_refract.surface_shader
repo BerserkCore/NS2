@@ -1,7 +1,8 @@
 <shader>
 	
 	<inputs>
-		<input name="normalMap" type="texture" address="wrap" />
+		<input name="normalMap" 		 type="texture" address="wrap" />
+		<input name="transmissionColor"  type="float3">(1, 1, 1)</input>
 	</inputs>
 	
 	<code>
@@ -14,9 +15,8 @@
 		}
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
-			material.transmissionColor = float3(1, 1, 1);
-			material.ssDistortion = DecodeNormal( tex2D(normalMap, input.texCoord) ).xy * 0.02;
-			
+			material.transmissionColor = transmissionColor;
+			material.ssDistortion = DecodeNormal( tex2D(normalMap, input.texCoord) ).xy * 0.01;
 		}
 	]]>		
 	</code>

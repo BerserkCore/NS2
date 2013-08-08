@@ -44,15 +44,15 @@ local function GetRelativImpactPoint(origin, hitEntity)
     local impactPoint = nil
     local worldImpactPoint = nil
 
-    local targetOrigin = hitEntity:GetOrigin()
+    local targetOrigin = hitEntity:GetOrigin() + Vector(0, 0.2, 0)
 
     if hitEntity.GetEngagementPoint then
         targetOrigin = hitEntity:GetEngagementPoint()
     end
     
     if origin == targetOrigin then
-        return Vector(0,0,0), targetOrigin
-    end    
+        return Vector(0,0.2,0), targetOrigin
+    end
     
     local trace = Shared.TraceRay(origin, targetOrigin, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOnly(hitEntity))
 
@@ -65,11 +65,16 @@ local function GetRelativImpactPoint(origin, hitEntity)
         impactPoint.x = hitEntityCoords.xAxis:DotProduct(direction)
         impactPoint.y = hitEntityCoords.yAxis:DotProduct(direction)
         worldImpactPoint = trace.endPoint
+
+    else
     
-    elseif trace.fraction == 1 then
-    
-        impactPoint = Vector(0,0,0)
-        worldImpactPoint = hitEntity:GetOrigin()
+        local trace = Shared.TraceRay(origin, targetOrigin, CollisionRep.LOS, PhysicsMask.Bullets, EntityFilterAll())
+        if trace.fraction > 0.9 then
+        
+            impactPoint = Vector(0,0.2,0)
+            worldImpactPoint = hitEntity:GetOrigin()
+        
+        end
     
     end
 
@@ -77,7 +82,11 @@ local function GetRelativImpactPoint(origin, hitEntity)
 
 end
 
-local function ConstructTargetEntry(origin, hitEntity, damage, radius, ignoreLos, customImpactPoint)
+function DotMarker:SetFallOffFunc(fallOffFunc)
+    self.fallOffFunc = fallOffFunc
+end
+
+local function ConstructTargetEntry(origin, hitEntity, damage, radius, ignoreLos, customImpactPoint, fallOffFunc)
 
     local entry = {}
     
@@ -92,11 +101,20 @@ local function ConstructTargetEntry(origin, hitEntity, damage, radius, ignoreLos
     
         if not worldImpactPoint then
             worldImpactPoint = hitEntity:GetOrigin()
-        end    
+        end
+        
+        
         
         entry.id = hitEntity:GetId()
         if radius ~= 0 then
-            entry.damage = damage - (worldImpactPoint - origin):GetLength() * (damage / radius)
+        
+            local distanceFraction = (worldImpactPoint - origin):GetLength() / radius
+            if fallOffFunc then
+                distanceFraction = fallOffFunc(distanceFraction)
+            end
+            distanceFraction = Clamp(distanceFraction, 0, 1)
+            entry.damage = damage * (1 - distanceFraction)
+            
         else
             entry.damage = damage
         end
@@ -116,14 +134,14 @@ local function ConstructTargetEntry(origin, hitEntity, damage, radius, ignoreLos
 end
 
 // caches damage dropoff and target ids so it does not need to be recomputed every time
-local function ConstructCachedTargetList(origin, forTeam, damage, radius)
+local function ConstructCachedTargetList(origin, forTeam, damage, radius, fallOffFunc)
 
     local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", forTeam, origin, radius)
     local targetList = {}
     local targetIds = {}
     
     for index, hitEntity in ipairs(hitEntities) do
-        local entry = ConstructTargetEntry(origin, hitEntity, damage, radius)
+        local entry = ConstructTargetEntry(origin, hitEntity, damage, radius, fallOffFunc)
         if entry then
             table.insert(targetList, entry)
             targetIds[hitEntity:GetId()] = true
@@ -300,7 +318,7 @@ function DotMarker:OnUpdate(deltaTime)
                     if target then
 
                         self.targetList = {}
-                        table.insert(self.targetList, ConstructTargetEntry(self:GetOrigin(), target, self.damage, self.radius, true, self.impactPoint) )
+                        table.insert(self.targetList, ConstructTargetEntry(self:GetOrigin(), target, self.damage, self.radius, true, self.impactPoint, self.fallOffFunc) )
                         targetList = self.targetList
                         
                     end
@@ -310,13 +328,13 @@ function DotMarker:OnUpdate(deltaTime)
             elseif self.dotMarkerType == DotMarker.kType.Dynamic then
             
                 // in case for dynamic dot marker recalculate the target list each damage tick (used for burning)
-                targetList = ConstructCachedTargetList(self:GetOrigin(), GetEnemyTeamNumber(self:GetTeamNumber()), self.damage, self.radius)
+                targetList = ConstructCachedTargetList(self:GetOrigin(), GetEnemyTeamNumber(self:GetTeamNumber()), self.damage, self.radius, self.fallOffFunc)
                 
             elseif self.dotMarkerType == DotMarker.kType.Static then
             
                 // calculate the target list once and reuse it later (used for bilebomb)
                 if not targetList then
-                    self.targetList, self.targetIds = ConstructCachedTargetList(self:GetOrigin(), GetEnemyTeamNumber(self:GetTeamNumber()), self.damage, self.radius)
+                    self.targetList, self.targetIds = ConstructCachedTargetList(self:GetOrigin(), GetEnemyTeamNumber(self:GetTeamNumber()), self.damage, self.radius, self.fallOffFunc)
                     targetList = self.targetList
                 end
             

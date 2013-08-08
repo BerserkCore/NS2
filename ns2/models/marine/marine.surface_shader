@@ -66,6 +66,8 @@
 				material.emissive   = 0;
 			}
 			
+			material.id = 1; // To make it show up on alien vision
+			
 		}
 	]]>
 	</code>

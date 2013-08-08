@@ -51,6 +51,7 @@ local networkVars =
 {
     attacking = "boolean",
     targetId = "entityid",
+    ownerId = "entityid",
     clinged = "boolean",
     doesGroundMove = "boolean",
     jumping = "boolean",
@@ -148,7 +149,7 @@ function Babbler:OnInitialized()
         self:AddTimedCallback(Babbler.TimeUp, kLifeTime)     
         
         self:Jump(Vector(math.random() * 2 - 1, 4, math.random() * 2 - 1))
-
+    
     end
     
 end
@@ -169,6 +170,15 @@ function Babbler:OnDestroy()
         Shared.DestroyCollisionObject(self.hitBox)
         self.hitBox = nil
         
+    end
+    
+    if Client then
+    
+        local model = self:GetRenderModel()
+        if model and self.addedToHiveVision then
+            HiveVision_RemoveModel(model)
+        end
+    
     end
 
 end
@@ -202,12 +212,8 @@ function Babbler:GetVelocity()
     
 end
 
-function Babbler:OnUpdate(deltaTime)
+local function UpdateBabbler(self, deltaTime)
 
-    PROFILE("Babbler:OnUpdate")
-
-    ScriptActor.OnUpdate(self, deltaTime)
-    
     if Server then
 
         self:CreatePhysics()
@@ -216,10 +222,17 @@ function Babbler:OnUpdate(deltaTime)
         self:UpdateMove(deltaTime)
         self.attacking = self.timeLastAttack + 0.2 > Shared.GetTime()
         self.wagging = self.moveType == kBabblerMoveType.Wag
-        
+
     elseif Client then
     
         self:UpdateMoveDirection(deltaTime)
+        
+        local localPlayerId = Client.GetLocalPlayer() ~= nil and Client.GetLocalPlayer():GetId()
+        local model = self:GetRenderModel()
+        if model ~= nil and self.ownerId == localPlayerId and not self.addedToHiveVision then
+            HiveVision_AddModel(model)
+            self.addedToHiveVision = true
+        end
     
     end
     
@@ -228,7 +241,21 @@ function Babbler:OnUpdate(deltaTime)
     
     self.lastVelocity = self:GetVelocity()
     self.lastOrigin = self:GetOrigin()
+
+end
+
+function Babbler:OnUpdate(deltaTime)
+
+    PROFILE("Babbler:OnUpdate")
+
+    ScriptActor.OnUpdate(self, deltaTime)
     
+    UpdateBabbler(self, deltaTime)
+    
+end
+
+function Babbler:OnProcessMove(input)
+    UpdateBabbler(self, input.time)
 end
 
 function Babbler:GetPhysicsModelAllowedOverride()
@@ -280,9 +307,10 @@ if Server then
     function Babbler:Jump(velocity)
 
         self:SetGroundMoveType(false)
-        
-        self.physicsBody:SetCoords(self:GetCoords())
-        self.physicsBody:AddImpulse(self:GetOrigin(), velocity)
+        if self.physicsBody then
+            self.physicsBody:SetCoords(self:GetCoords())
+            self.physicsBody:AddImpulse(self:GetOrigin(), velocity)
+        end
         self.timeLastJump = Shared.GetTime()
     
     end
@@ -422,7 +450,7 @@ if Server then
             elseif self.timeLastAttack + 8 < Shared.GetTime() then
             
                 self:SetMoveType(kBabblerMoveType.Move, nil, target:GetOrigin())
-                self:SetIgnoreOrders(2)
+                self:SetIgnoreOrders(3)
             
             end
         
@@ -454,11 +482,15 @@ if Server then
             self:ResetPathing()
             
             if self.doesGroundMove then
-                self.physicsBody:SetPhysicsType(CollisionObject.Kinematic)
+                if self.physicsBody then
+                    self.physicsBody:SetPhysicsType(CollisionObject.Kinematic)
+                end
             else
                 // prevents us from getting teleported back when switching to ground move again
                 self:ResetPathing()
-                self.physicsBody:SetPhysicsType(CollisionObject.Dynamic)
+                if self.physicsBody then
+                    self.physicsBody:SetPhysicsType(CollisionObject.Dynamic)
+                end
             end
             
         end
@@ -483,7 +515,13 @@ if Server then
                 if distance < travelDistance then  
               
                     self.clinged = true  
-                    travelDistance = distance      
+                    travelDistance = distance
+                    
+                    if self.physicsBody then
+                        Shared.DestroyCollisionObject(self.physicsBody)
+                        self.physicsBody = nil
+                    end
+                    
                     target:AttachBabbler(self)
                     self.timeClingEnds = Shared.GetTime() + kBabblerClingDuration
       
@@ -513,7 +551,11 @@ if Server then
             target:DetachBabbler(self)
         end
         
-        self.physicsBody:SetCoords(self:GetCoords())
+        self:SetParent(nil)
+        Print("Babbler:Detach")
+        if self.physicsBody then
+            self.physicsBody:SetCoords(self:GetCoords())
+        end
         self.clinged = false
     
     end
@@ -525,10 +567,6 @@ if Server then
   
             // disable physic simulation, match coords with attach point
             self:SetGroundMoveType(true)
-            local coords = target:GetBabblerAttachPointCoords(self)
-            if coords ~= nil then
-                self:SetCoords(coords)
-            end
             
         else
  
@@ -589,7 +627,9 @@ if Server then
                         end
                         
                         if done or (self:GetOrigin() - targetPosition):GetLengthXZ() < 0.5 then
-                            self.physicsBody:SetCoords(self:GetCoords())
+                            if self.physicsBody then
+                                self.physicsBody:SetCoords(self:GetCoords())
+                            end
                             self:SetMoveType(kBabblerMoveType.None)
                         end
                         
@@ -677,7 +717,9 @@ if Server then
     function Babbler:SetVelocity(velocity)
 
         self.desiredVelocity = velocity
-        self.physicsBody:SetLinearVelocity(velocity)
+        if self.physicsBody then
+            self.physicsBody:SetLinearVelocity(velocity)
+        end
         self.lastVelocity = velocity
         
     end
@@ -685,7 +727,7 @@ if Server then
     // creates physic object used for jump simulation
     function Babbler:CreatePhysics()
 
-        if not self.physicsBody then
+        if not self.physicsBody and not self.clinged then
         
             self.physicsBody = Shared.CreatePhysicsSphereBody(true, Babbler.kRadius, Babbler.kMass, self:GetCoords() )
             self.physicsBody:SetGravityEnabled(true)
@@ -699,6 +741,9 @@ if Server then
             self.physicsBody:SetLinearDamping(Babbler.kLinearDamping)
             self.physicsBody:SetRestitution(Babbler.kRestitution)
             
+        elseif self.clinged then
+            Shared.DestroyCollisionObject(self.physicsBody)
+            self.physicsBody = nil
         end
         
     end
@@ -929,7 +974,8 @@ elseif Client then
     // hide babblers which are clinged on the local player to not obscure their view
     function Babbler:OnGetIsVisible(visibleTable, viewerTeamNumber)
         
-        if self.clinged and Shared.GetEntity(self.targetId) == Client.GetLocalPlayer() then
+        local parent = self:GetParent()
+        if parent and (parent == Client.GetLocalPlayer() or (HasMixin(parent, "Cloakable") and parent:GetIsCloaked()) ) then
             visibleTable.Visible = false
         end
     
@@ -942,6 +988,10 @@ function Babbler:GetEffectParams(tableParams)
     ScriptActor.GetEffectParams(self, tableParams)    
     tableParams[kEffectFilterSilenceUpgrade] = self.silenced
 
+end
+
+function Babbler:GetDeathIconIndex()
+    return kDeathMessageIcon.Babbler
 end
 
 Shared.LinkClassToMap("Babbler", Babbler.kMapName, networkVars, true)

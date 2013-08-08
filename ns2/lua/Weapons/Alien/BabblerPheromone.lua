@@ -169,7 +169,7 @@ if Server then
                             target = Shared.GetEntity(self.destinationEntityId)
                             if GetAreFriends(self, target) and HasMixin(target, "BabblerCling") then
                                 moveType = kBabblerMoveType.Cling
-                            elseif GetAreEnemies(self, target) and HasMixin(target, "Live") and target:GetIsAlive() then
+                            elseif GetAreEnemies(self, target) and HasMixin(target, "Live") and target:GetIsAlive() and target:GetCanTakeDamage() then
                                 moveType = kBabblerMoveType.Attack
                             end
                         

@@ -27,6 +27,8 @@ Script.Load("lua/AlienActionFinderMixin.lua")
 Script.Load("lua/DetectableMixin.lua")
 Script.Load("lua/RagdollMixin.lua")
 
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/alien_blood.surface_shader")
+
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
 end

@@ -314,7 +314,7 @@ function GetEntitiesWithMixinForTeamWithinRange(mixinType, teamNumber, origin, r
 end
 
 // Fades damage linearly from center point to radius (0 at far end of radius)
-function RadiusDamage(entities, centerOrigin, radius, fullDamage, doer, ignoreLOS, alwaysFullDamage)
+function RadiusDamage(entities, centerOrigin, radius, fullDamage, doer, ignoreLOS, fallOffFunc)
 
     assert(HasMixin(doer, "Damage"))
 
@@ -341,13 +341,14 @@ function RadiusDamage(entities, centerOrigin, radius, fullDamage, doer, ignoreLO
         if (ignoreLOS or not wallBetween) and (distanceFromTarget <= radius) then
         
             // Damage falloff
-            local damageFalloff = fullDamage / radius
-            local damage = fullDamage
-            
-            if alwaysFullDamage ~= true then
-                damage = fullDamage - distanceFromTarget * damageFalloff
+            local distanceFraction = distanceFromTarget / radius
+            if fallOffFunc then
+                distanceFraction = fallOffFunc(distanceFraction)
             end
             
+            distanceFraction = Clamp(distanceFraction, 0, 1)        
+            damage = fullDamage * (1 - distanceFraction)
+
             local damageDirection = targetOrigin - centerOrigin
             damageDirection:Normalize()
             

@@ -34,62 +34,6 @@ function PlayerUI_GetNumHives()
 
 end
 
-local kEggDisplayRange = 30
-local kEggDisplayOffset = Vector(0, 0.8, 0)
-function PlayerUI_GetEggDisplayInfo()
-
-    local eggDisplay = {}
-    
-    local player = Client.GetLocalPlayer()
-    local animOffset = kEggDisplayOffset + kEggDisplayOffset * math.sin(Shared.GetTime() * 3) * 0.2
-    
-    if player then
-    
-        local eyePos = player:GetEyePos()         
-        for index, egg in ipairs(GetEntitiesForTeamWithinRange("Egg", player:GetTeamNumber(), player:GetEyePos(), kEggDisplayRange)) do
-        
-            local techId = egg:GetGestateTechId()
-            
-            if techId and (techId == kTechId.Gorge or techId == kTechId.Lerk or techId == kTechId.Fade or techId == kTechId.Onos) then
-            
-                local normToEntityVec = GetNormalizedVector(egg:GetOrigin() - eyePos)
-                local normViewVec = player:GetViewAngles():GetCoords().zAxis
-               
-                local dotProduct = normToEntityVec:DotProduct(normViewVec)
-                
-                if dotProduct > 0 then                
-                    table.insert(eggDisplay, { Position = Client.WorldToScreen(egg:GetOrigin() + animOffset), TechId = techId } )                
-                end
-            
-            end
-        
-        end
-        
-        if player:isa("Commander") then
-        
-            for index, egg in ipairs(GetEntitiesForTeamWithinRange("Embryo", player:GetTeamNumber(), player:GetEyePos(), kEggDisplayRange)) do
-            
-                local techId = egg:GetGestationTechId()
-
-                local normToEntityVec = GetNormalizedVector(egg:GetOrigin() - eyePos)
-                local normViewVec = player:GetViewAngles():GetCoords().zAxis
-               
-                local dotProduct = normToEntityVec:DotProduct(normViewVec)
-                
-                if dotProduct > 0 then                
-                    table.insert(eggDisplay, { Position = Client.WorldToScreen(egg:GetOrigin() + animOffset), TechId = techId } )                
-                end
-            
-            end
-        
-        end
-        
-    end
-    
-    return eggDisplay
-
-end
-
 function AlienUI_GetWaveSpawnTime()
 
     local player = Client.GetLocalPlayer()
@@ -684,4 +628,34 @@ function AlienUI_GetUpgradesForCategory(category)
     
     return upgrades
 
+end
+
+// create some blood on the ground below
+local kGroundDistanceBlood = Vector(0, 1, 0)
+local kGroundBloodStartOffset = Vector(0, 0.2, 0)
+function Alien:OnTakeDamageClient(damage, doer, position)
+
+    if not self.timeLastGroundBloodDecal then
+        self.timeLastGroundBloodDecal = 0
+    end
+    
+    if self.timeLastGroundBloodDecal + 0.5 < Shared.GetTime() then
+    
+        local trace = Shared.TraceRay(self:GetOrigin() + kGroundBloodStartOffset, self:GetOrigin() - kGroundDistanceBlood, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAll())
+        if trace.fraction ~= 1 then
+        
+            local coords = Coords.GetIdentity()
+            coords.origin = trace.endPoint
+            coords.yAxis = trace.normal
+            coords.zAxis = coords.yAxis:GetPerpendicular()
+            coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
+        
+            self:TriggerEffects("alien_blood_ground", {effecthostcoords = coords})
+            
+        end
+        
+        self.timeLastGroundBloodDecal = Shared.GetTime()
+        
+    end
+    
 end

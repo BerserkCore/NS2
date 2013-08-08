@@ -408,6 +408,23 @@ kMarineWeaponEffects =
         }
     },
     
+    railgun_steam_left =
+    {
+        minigunOverheatEffects =
+        {
+            {viewmodel_cinematic = "cinematics/marine/railgun/steam_1p_left.cinematic", attach_point = "fxnode_l_railgun_muzzle"},
+        }
+    },
+    
+    
+    railgun_steam_right =
+    {
+        minigunOverheatEffects =
+        {
+            {viewmodel_cinematic = "cinematics/marine/railgun/steam_1p_right.cinematic", attach_point = "fxnode_r_railgun_muzzle"},
+        }
+    },
+    
     claw_attack =
     {
         sounds =

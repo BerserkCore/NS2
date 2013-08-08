@@ -173,9 +173,7 @@ function GUIInsight_TechPoints:Update(deltaTime)
             local currentPointIndex = 1
             for index, techPoint in pairs(self.techPointList) do
                 local techPointRecord = techPoints[currentPointIndex]
-                
                 self:UpdateTechPoint(techPoint, techPointRecord, currentPointIndex)
-
                 currentPointIndex = currentPointIndex + 1
             end
         else
@@ -196,28 +194,21 @@ local function playAlertSound(team)
     
 end
 
-local function GetTextureCoords(team, techId)
-
-    if team == kTeam1Index then
-    
+-- teamIndex is unused, but could be used for MvM or AvA
+local function GetTextureCoords(teamIndex, techId)
+   
+    if techId == kTechId.CommandStation then
         return {0,0,80,80}
-    
-    elseif team == kTeam2Index then
-    
-        if techId == kTechId.CragHive then
-            return {80,0,160,80}
-        elseif techId == kTechId.ShadeHive then
-            return {80,80,160,160}
-        elseif techId == kTechId.ShiftHive then
-            return {80,160,160,240}
-        else
-            return {0,80,80,160}
-        end
-        
+    elseif techId == kTechId.Hive then
+        return {0,80,80,160}
+    elseif techId == kTechId.CragHive then
+        return {80,0,160,80}
+    elseif techId == kTechId.ShadeHive then
+        return {80,80,160,160}
+    elseif techId == kTechId.ShiftHive then
+        return {80,160,160,240}
     else
-    
         return {0,160,80,240}
-    
     end
 
 end
@@ -250,25 +241,28 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
     local icon = techPoint.Icon
     
     local team = techPointRecord.TeamNumber
-    local health = techPointRecord.Health + techPointRecord.Armor * kHealthPointsPerArmor
-    local maxHealth = techPointRecord.MaxHealth + techPointRecord.MaxArmor * kHealthPointsPerArmor
-    local healthFraction = math.min(health/maxHealth, 1)
-    local alive = techPointRecord.Health > 0
+    local healthFraction = techPointRecord.HealthFraction
+    local alive = healthFraction > 0
     local builtFraction = techPointRecord.BuiltFraction
     local built = builtFraction >= 1
     local teamChanged = team ~= storedValues.Team
     local techId = techPointRecord.TechId
-    
+    local powerFraction = techPointRecord.PowerNodeFraction
+    local location = Shared.GetString(techPointRecord.Location)
+
     if teamChanged then
     
         -- Update icon and colors
         storedValues.TeamColor = GetTeamColor(team)
+        name:SetText(location)
+        name:SetColor(storedValues.TeamColor)
         icon:SetTexturePixelCoordinates(unpack(GetTextureCoords(team, techId)))
         storedValues.Team = team
-        name:SetColor(storedValues.TeamColor)
-        name:SetText(techPointRecord.Location)
         background:SetColor(storedValues.TeamColor)
         info:SetColor(kInfoColor)
+        
+        storedValues.eggCount = -1
+        storedValues.Power = -1
         
         -- Flash and alert when team changes
         if team > 0 then        
@@ -277,7 +271,7 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
             
             if not built then
             
-                local text = string.format("%s Claimed", techPointRecord.Location)
+                local text = string.format("%s Claimed", location)
                 local icon = {Texture = kIconTexture, TextureCoordinates = GetTextureCoords(team, techId), Color = Color(1,1,1,0.5), Size = kIconSize}
                 local info = {Text = text, Scale = Vector(0.2,0.2,0.2), Color = storedValues.TeamColor, ShadowColor = Color(0,0,0,0.5)}
                 local position = techPoint.Background:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
@@ -285,11 +279,13 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
                 GUIInsight_AlertQueue:AddAlert(alert, Color(1,1,1,1), kClaimColor)
                 
             end
-            
+        else
+            techPoint.Info2:SetText("-")
+            techPoint.Info2:SetColor(kInfoColor) 
         end
         
     end
-    
+        
     if techId ~= storedValues.Type then
         
         icon:SetTexturePixelCoordinates(unpack(GetTextureCoords(team, techId)))
@@ -297,13 +293,13 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
         
     end
     
-    if health ~= storedValues.Health or builtFraction ~= storedValues.Built then
+    if healthFraction ~= storedValues.Health or builtFraction ~= storedValues.Built then
         local infoText
         if team > 0 then
             
             if alive then
             
-                if not teamChanged and health < storedValues.Health then
+                if not teamChanged and healthFraction < storedValues.Health then
                     storedValues.DamageFlashTime = currentTime + kAttackFlashTime
                     if currentTime - lastAlertTime > kTimeBetweenAlerts then
                         lastAlertTime = currentTime
@@ -326,7 +322,7 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
                     
                 elseif storedValues.Built < builtFraction then -- just finished building
                 
-                    local text = string.format("%s Finished", techPointRecord.Location)
+                    local text = string.format("%s Finished", location)
                     local icon = {Texture = kIconTexture, TextureCoordinates = GetTextureCoords(team, techId), Color = Color(1,1,1,0.5), Size = kIconSize}
                     local alertinfo = {Text = text, Scale = Vector(0.2,0.2,0.2), Color = storedValues.TeamColor, ShadowColor = Color(0,0.5,0.5,0.5)}
                     local position = techPoint.Background:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
@@ -341,7 +337,7 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
                 infoText = "Destroyed"
                 info:SetColor(kDeadColor)
 
-                local text = string.format("%s Destroyed", techPointRecord.Location)
+                local text = string.format("%s Destroyed", location)
                 local icon = {Texture = kIconTexture, TextureCoordinates = GetTextureCoords(team, techId), Color = Color(1,1,1,0.5), Size = kIconSize}
                 local alertinfo = {Text = text, Scale = Vector(0.2,0.2,0.2), Color = storedValues.TeamColor, ShadowColor = Color(0,0.5,0.5,0.5)}
                 local position = techPoint.Background:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
@@ -357,10 +353,35 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
         
         info:SetText(infoText)
         
-        storedValues.Health = health
+        storedValues.Health = healthFraction
         storedValues.Built = builtFraction
         
     end
+    
+    if team == kTeam1Index then
+        if powerFraction ~= storedValues.Power then
+        
+            if not teamChanged and powerFraction < storedValues.Power then
+                storedValues.DamageFlashTime = currentTime + kAttackFlashTime
+                if currentTime - lastAlertTime > kTimeBetweenAlerts then
+                    lastAlertTime = currentTime
+                    playAlertSound(team)
+                end
+            end
+
+            local powerText = string.format("Power: %d%%", math.ceil(powerFraction*100))
+            techPoint.Info2:SetText(powerText)
+            techPoint.Info2:SetColor(kBlueColor)
+            storedValues.Power = powerFraction
+        end
+    elseif team == kTeam2Index then
+        local eggcount = techPointRecord.EggCount
+        if eggcount ~= storedValues.eggCount then
+            techPoint.Info2:SetText("Eggs: " .. tostring(eggcount))
+            techPoint.Info2:SetColor(kRedColor)
+            storedValues.eggCount = eggCount
+        end
+    end    
     
     -- Flash if necessary
     local flashDamage = currentTime < storedValues.DamageFlashTime
@@ -469,7 +490,18 @@ function GUIInsight_TechPoints:CreateBackground()
     infoItem:SetColor(kInfoColor)
     background:AddChild(infoItem)
     
-    return { Background = background,  Name = nameItem, Icon = typeIcon, Info = infoItem, 
+    local infoItem2 = GUIManager:CreateTextItem()
+    infoItem2:SetFontName(kFontName)
+    infoItem2:SetScale(kTeamInfoFontScale)
+    infoItem2:SetAnchor(GUIItem.Right, GUIItem.Bottom)
+    infoItem2:SetTextAlignmentX(GUIItem.Align_Max)
+    infoItem2:SetTextAlignmentY(GUIItem.Align_Max)
+    infoItem2:SetColor(kInfoColor)
+    infoItem2:SetPosition(-Vector(4, 0, 0))
+    infoItem2:SetText("-")
+    background:AddChild(infoItem2)
+    
+    return { Background = background,  Name = nameItem, Icon = typeIcon, Info = infoItem, Info2 = infoItem2,
             StoredValues = { Team = -1, TeamColor = kUnclaimedColor, Health = -1, Built = 1, Type = -1, ClaimFlashTime = -1, DamageFlashTime = -1 }
            }
 

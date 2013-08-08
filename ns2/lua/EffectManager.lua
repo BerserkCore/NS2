@@ -281,9 +281,15 @@ function EffectManager:InternalPrecacheEffectTable(globalEffectTable)
                 
                 
                 elseif effectTable[kDecalType] then
-                
-                    Shared.RegisterDecalMaterial(assetEntry)
-                
+                    
+                    if type(assetEntry) == "table" then
+                        for index, assetNameEntry in ipairs(assetEntry) do                        
+                            Shared.RegisterDecalMaterial(assetNameEntry[2])                             
+                        end
+                    else
+                        Shared.RegisterDecalMaterial(assetEntry)
+                    end
+                    
                 elseif type(assetEntry) == "string" then
                 
                     if string.find(assetEntry, "%%") ~= nil then
@@ -722,7 +728,7 @@ function EffectManager:InternalTriggerDecal(effectTable, triggeringParams, trigg
         
             local ignorePlayer = nil // TODO: figure out player to ignore
             local scale = ConditionalValue(type(effectTable[kEffectParamScale]) == "number", effectTable[kEffectParamScale], 1)
-            success = Shared.CreateRenderDecal(materialName, triggeringParams[kEffectHostCoords], scale, ignorePlayer)
+            success = Shared.CreateTimeLimitedDecal(materialName, triggeringParams[kEffectHostCoords], scale, ignorePlayer)
         
         end
         

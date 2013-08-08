@@ -457,13 +457,6 @@ end
 
 function PlayingTeam:SetTeamResources(amount)
 
-    if(amount > self.teamResources) then
-    
-        // Save towards victory condition
-        self.totalTeamResourcesCollected = self.totalTeamResourcesCollected + (amount - self.teamResources)
-        
-    end
-    
     self.teamResources = math.min(kMaxTeamResources, amount)
     
     function PlayerSetTeamResources(player)
@@ -480,8 +473,14 @@ function PlayingTeam:GetTeamResources()
     
 end
 
-function PlayingTeam:AddTeamResources(amount)
+function PlayingTeam:AddTeamResources(amount, countTowardsTotal)
 
+    if countTowardsTotal then
+    
+        // Save towards victory condition
+        self.totalTeamResourcesCollected = self.totalTeamResourcesCollected + amount
+        
+    end
     self:SetTeamResources(self.teamResources + amount)
     
 end
@@ -802,7 +801,7 @@ function PlayingTeam:UpdateResourceTowers()
         local tResGained = numRTs * kTeamResourcePerTick
         
         self:SplitPres(pResGained)
-        self:AddTeamResources(tResGained)
+        self:AddTeamResources(tResGained, true)
         
         self.totalTeamResFromTowers = self.totalTeamResFromTowers + tResGained
     

@@ -71,12 +71,16 @@ function Mine:GetReceivesStructuralDamage()
     return true
 end    
 
+local function NoFallOff(distanceFraction)
+    return 0
+end
+
 local function Detonate(self, armFunc)
 
     local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kMineDetonateRange)
     
     // RadiusDamage without damage falloff. Ignore damage that goes through the world. Also hurt owner if in range.
-    RadiusDamage(hitEntities, self:GetOrigin(), kMineDetonateRange, kMineDamage, self, false, false)
+    RadiusDamage(hitEntities, self:GetOrigin(), kMineDetonateRange, kMineDamage, self, false, NoFallOff)
     
     // Start the timed destruction sequence for any mine within range of this exploded mine.
     local nearbyMines = GetEntitiesWithinRange("Mine", self:GetOrigin(), kMineChainDetonateRange)

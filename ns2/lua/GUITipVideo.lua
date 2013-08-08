@@ -75,6 +75,7 @@ function GUITipVideo:Initialize()
     self.widget:SetIsVisible(false)
 
     self.state = "hidden"
+    self.videoWebView:SetIsVisible(false)
 
 end
 
@@ -192,6 +193,7 @@ function GUITipVideo:Update(dt)
         if alpha <= 0.0 then
             self.widget:SetIsVisible(false)
             self.state = "hidden"
+            self.videoWebView:SetIsVisible(false)
             self.videoWebView:LoadUrl(kBlankUrl)
         end
         
@@ -200,6 +202,7 @@ function GUITipVideo:Update(dt)
         if not player:GetIsAlive() then
             self.sinceShow = 0.0
             self.state = "showing"
+            self.videoWebView:SetIsVisible(true)
         end
         
     end

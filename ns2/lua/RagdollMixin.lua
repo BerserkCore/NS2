@@ -32,7 +32,7 @@ end
 
 local function GetDamageImpulse(doer, point)
 
-    if damage and doer and point then
+    if doer and point then
         return GetNormalizedVector(doer:GetOrigin() - point) * 1.5 * 0.01
     end
     return nil
@@ -44,7 +44,7 @@ function RagdollMixin:OnTakeDamage(damage, attacker, doer, point)
     // Apply directed impulse to physically simulated objects, according to amount of damage.
     if self:GetPhysicsModel() ~= nil and self:GetPhysicsType() == PhysicsType.Dynamic then
     
-        local damageImpulse = GetDamageImpulse(damage, doer, point)
+        local damageImpulse = GetDamageImpulse(doer, point)
         if damageImpulse then
             self:GetPhysicsModel():AddImpulse(point, damageImpulse)
         end

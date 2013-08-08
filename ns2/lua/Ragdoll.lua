@@ -14,18 +14,25 @@ Script.Load("lua/TimedCallbackMixin.lua")
 
 function CreateRagdoll(fromEntity)
 
-    local ragdoll = CreateEntity(Ragdoll.kMapName, fromEntity:GetOrigin())
-    ragdoll:SetCoords(fromEntity:GetCoords())
-    ragdoll:SetModel(fromEntity:GetModelName(), fromEntity:GetGraphName())
+    local useModelName = fromEntity:GetModelName()
+    local useGraphName = fromEntity:GetGraphName()
     
-    if fromEntity.GetPlayInstantRagdoll and fromEntity:GetPlayInstantRagdoll() then
-        ragdoll:SetPhysicsType(PhysicsType.Dynamic)
-        ragdoll:SetPhysicsGroup(PhysicsGroup.RagdollGroup)
-    else    
-        ragdoll:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)    
+    if useModelName and string.len(useModelName) > 0 and useGraphName and string.len(useGraphName) > 0 then
+
+        local ragdoll = CreateEntity(Ragdoll.kMapName, fromEntity:GetOrigin())
+        ragdoll:SetCoords(fromEntity:GetCoords())
+        ragdoll:SetModel(useModelName, useGraphName)
+        
+        if fromEntity.GetPlayInstantRagdoll and fromEntity:GetPlayInstantRagdoll() then
+            ragdoll:SetPhysicsType(PhysicsType.Dynamic)
+            ragdoll:SetPhysicsGroup(PhysicsGroup.RagdollGroup)
+        else    
+            ragdoll:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)    
+        end
+        
+        ragdoll:CopyAnimationState(fromEntity)
+    
     end
-    
-    ragdoll:CopyAnimationState(fromEntity)
     
 end
 

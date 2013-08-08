@@ -252,6 +252,9 @@ function Embryo:SetGestationData(techIds, previousTechId, healthScalar, armorSca
     self.healthScalar = healthScalar
     self.armorScalar = armorScalar
     
+    // we reset the upgrades entirely and set them again, simplifies the code
+    self:ClearUpgrades()
+    
 end
 
 function Embryo:GetEvolutionTime()
@@ -339,9 +342,6 @@ if Server then
                 newPlayer:DropToFloor()
                 
                 self:TriggerEffects("player_end_gestate")
-                
-                // we reset the upgrades entirely and set them again, simplifies the code
-                newPlayer:ClearUpgrades()
                 
                 // Now give new player all the upgrades they purchased
                 local upgradesGiven = 0

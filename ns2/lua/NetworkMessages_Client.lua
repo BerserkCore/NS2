@@ -170,10 +170,18 @@ function OnCommandCreateDecal(message)
     
     local coords = Coords.GetTranslation(position)
     coords.yAxis = normal
-    coords.zAxis = coords.yAxis:GetPerpendicular()
-    coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
     
-    Shared.CreateRenderDecal(materialName, coords, scale)
+    local randomAxis = Vector(math.random() * 2 - 0.9, math.random() * 2 - 1.1, math.random() * 2 - 1)
+    randomAxis:Normalize()
+    
+    coords.zAxis = randomAxis
+    coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
+    coords.zAxis = coords.xAxis:CrossProduct(coords.yAxis)
+    
+    coords.xAxis:Normalize()
+    coords.yAxis:Normalize()
+    
+    Shared.CreateTimeLimitedDecal(materialName, coords, scale)
 
 end
 

@@ -11,6 +11,7 @@
 
 Script.Load("lua/Weapons/Weapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
+Script.Load("lua/LiveMixin.lua")
 
 class 'Welder' (Weapon)
 
@@ -30,6 +31,8 @@ local networkVars =
     loopingSoundEntId = "entityid"
 }
 
+AddMixinNetworkVars(LiveMixin, networkVars)
+
 local kWeldRange = 2.4
 local kWelderEffectRate = 0.45
 
@@ -47,6 +50,7 @@ function Welder:OnCreate()
     self.welding = false
     
     InitMixin(self, PickupableWeaponMixin)
+    InitMixin(self, LiveMixin)
     
     self.loopingSoundEntId = Entity.invalidId
     
@@ -319,6 +323,28 @@ function Welder:OnUpdateRender()
     
     end
 
+end
+
+function Welder:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    if damageType ~= kDamageType.Corrode then
+        damageTable.damage = 0
+    end
+end
+
+function Welder:GetCanTakeDamageOverride()
+    return self:GetParent() == nil
+end
+
+if Server then
+
+    function Welder:OnKill()
+        DestroyEntity(self)
+    end
+    
+    function Welder:GetSendDeathMessageOverride()
+        return false
+    end    
+    
 end
 
 Shared.LinkClassToMap("Welder", Welder.kMapName, networkVars)

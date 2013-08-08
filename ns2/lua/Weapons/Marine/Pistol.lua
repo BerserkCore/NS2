@@ -9,6 +9,7 @@
 
 Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
+Script.Load("lua/LiveMixin.lua")
 
 class 'Pistol' (ClipWeapon)
 
@@ -32,11 +33,14 @@ local networkVars =
     timeLastShot = "time"
 }
 
+AddMixinNetworkVars(LiveMixin, networkVars)
+
 function Pistol:OnCreate()
 
     ClipWeapon.OnCreate(self)
     
     InitMixin(self, PickupableWeaponMixin)
+    InitMixin(self, LiveMixin)
     
     self.altMode = false
     self.emptyPoseParam = 0
@@ -260,6 +264,28 @@ function Pistol:FirePrimary(player)
     self:TriggerEffects("pistol_attack")
     
     TEST_EVENT("Pistol primary attack")
+    
+end
+
+function Pistol:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    if damageType ~= kDamageType.Corrode then
+        damageTable.damage = 0
+    end
+end
+
+function Pistol:GetCanTakeDamageOverride()
+    return self:GetParent() == nil
+end
+
+if Server then
+
+    function Pistol:OnKill()
+        DestroyEntity(self)
+    end
+    
+    function Pistol:GetSendDeathMessageOverride()
+        return false
+    end 
     
 end
 

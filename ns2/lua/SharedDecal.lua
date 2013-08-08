@@ -20,7 +20,7 @@ function Shared.RegisterDecalMaterial(materialName)
 
     if table.insertunique(kSharedDecalMaterials, materialName) then
         //Print("Shared.RegisterDecalMaterial(%s)", ToString(materialName))
-    end    
+    end
     kNumSharedDecals = #kSharedDecalMaterials
 
 end
@@ -41,9 +41,8 @@ function GetDecalMaterialNameFromIndex(decalIndex)
     return kSharedDecalMaterials[decalIndex]
 end
 
-// TODO: rename to Shared.CreateTimeLimitedDecal
-function Shared.CreateRenderDecal(materialName, coords, scale, ignorePlayer)
-/*
+function Shared.CreateTimeLimitedDecal(materialName, coords, scale, ignorePlayer)
+
     local success = false
 
     if Server then
@@ -75,5 +74,5 @@ function Shared.CreateRenderDecal(materialName, coords, scale, ignorePlayer)
     end
     
     return success
-*/
+
 end

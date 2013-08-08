@@ -11,7 +11,6 @@ decoda_name = "Server"
 
 Script.Load("lua/Shared.lua")
 Script.Load("lua/MapEntityLoader.lua")
-Script.Load("lua/Button.lua")
 Script.Load("lua/TechData.lua")
 Script.Load("lua/TargetCache.lua")
 

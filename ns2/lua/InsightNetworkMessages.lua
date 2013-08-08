@@ -8,7 +8,7 @@
 
 local kHealthMessage =
 {
-    clientIndex = "integer",
+    clientIndex = "entityid",
     health = "integer",
     maxHealth = "integer",
     armor = "integer",
@@ -33,41 +33,55 @@ Shared.RegisterNetworkMessage( "Health", kHealthMessage )
 
 local kTechPointsMessage =
 {
-    entityIndex = "integer",
+    entityIndex = "entityid",
     teamNumber = "integer",
     techId = "integer",
+    location = "integer",
+    healthFraction = "float",
+    powerNodeFraction = "float",
     builtFraction = "float",
-    location = string.format("string (%d)", 32),
-    health = "integer",
-    maxHealth = "integer",
-    armor = "integer",
-    maxArmor = "integer"
+    eggCount = "integer"
 }
 
-function BuildTechPointsMessage(techPoint, commandStructures)
+function BuildTechPointsMessage(techPoint, commandStructures, powerNodes, eggs)
 
     local t = {}
-    local techPointLocation = techPoint:GetLocationName()
+    local techPointLocation = techPoint:GetLocationId()
     t.entityIndex = techPoint:GetId()
-    t.location = techPointLocation   
+    t.location = techPointLocation
     t.teamNumber = 0
 
-    for index, structure in ientitylist(commandStructures) do
-        local structureLocation = structure:GetLocationName()
+    local eggCount = 0
+    for _, egg in ientitylist(eggs) do
+        if egg:GetLocationId() == techPointLocation and egg:GetIsAlive() and egg:GetIsEmpty() then
+            eggCount = eggCount + 1
+        end
+    end
+    t.eggCount = eggCount
+    
+    for _, powerNode in ientitylist(powerNodes) do
+        if powerNode:GetLocationId() == techPointLocation then
+            if powerNode:GetIsSocketed() then
+                t.powerNodeFraction = powerNode:GetHealthScalar()
+            else
+                t.powerNodeFraction = -1
+            end
+            break
+        end
+    end
+
+    for _, structure in ientitylist(commandStructures) do
+        local structureLocation = structure:GetLocationId()
         if techPointLocation == structureLocation then
             t.teamNumber        = structure:GetTeamNumber()
             t.techId            = structure:GetTechId()
             if structure:GetIsAlive() then
                 t.builtFraction = structure:GetBuiltFraction()
-                t.health        = math.ceil(structure:GetHealth())
-                t.armor         = structure:GetArmor()
+                t.healthFraction= structure:GetHealthScalar()
             else
                 t.builtFraction = -1
-                t.health        = -1
-                t.armor         = -1
+                t.healthFraction= -1
             end
-            t.maxHealth         = structure:GetMaxHealth()
-            t.maxArmor          = structure:GetMaxArmor()
             return t
         end
     end

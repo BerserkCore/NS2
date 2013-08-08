@@ -202,7 +202,8 @@ end
  */
 local function GetCystIsRedeployable(cyst, origin)
 
-    if cyst:GetDistance(origin) <= kCystRedeployRange then
+    local immune = cyst.immuneToRedeploymentTime and Shared.GetTime() <= cyst.immuneToRedeploymentTime
+    if cyst:GetDistance(origin) <= kCystRedeployRange and not immune then
         return math.abs(cyst:GetOrigin().y - origin.y) < 1
     end
     
@@ -290,6 +291,10 @@ function Cyst:OnInitialized()
         DestroyNearbyCysts(self)
     end
     
+end
+
+function Cyst:SetImmuneToRedeploymentTime(forTime)
+    self.immuneToRedeploymentTime = Shared.GetTime() + forTime
 end
 
 function Cyst:GetInfestationGrowthRate()

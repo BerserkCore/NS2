@@ -330,6 +330,8 @@ function Commander:OnDestroy()
         GetGUIManager():DestroyGUIScriptSingle("GUIHotkeyIcons")
         GetGUIManager():DestroyGUIScriptSingle("GUICommanderLogout")
         GetGUIManager():DestroyGUIScriptSingle("GUIResourceDisplay")
+        GetGUIManager():DestroyGUIScript(self.production)
+        self.production = nil
         
         GetGUIManager():DestroyGUIScript(self.managerScript)
         self.managerScript = nil
@@ -780,6 +782,10 @@ function Commander:SetupHud()
     self.managerScript = GetGUIManager():CreateGUIScript("GUICommanderManager")
     
     local worldbuttons = GetGUIManager():CreateGUIScriptSingle("GUICommanderHelpWidget")
+    
+    self.production = GetGUIManager():CreateGUIScript("GUIProduction")
+    self.production:SetTeam(self:GetTeamType())
+    minimapScript:GetBackground():AddChild(self.production:GetBackground())
     
     // The manager needs to know about other commander UI scripts for things like
     // making sure mouse clicks don't click through UI elements.

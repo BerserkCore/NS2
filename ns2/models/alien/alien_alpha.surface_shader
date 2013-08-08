@@ -64,6 +64,8 @@
 			material.opacity = (opacity + f - 0.5) * tex2D(opacityMap, input.texCoord).rgb;
 			material.emissive   = tex2D(emissiveMap, input.texCoord).rgb * f * glowIntensity;
 			
+			material.id = 1; // To make it show up on alien vision
+			
 		}
 	]]>
 	</code>

@@ -13,7 +13,7 @@ Script.Load("lua/TriggerMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/OwnerMixin.lua")
 Script.Load("lua/Mixins/BaseModelMixin.lua")
-Script.Load("lua/Mixins/ClientModelMixin.lua")
+Script.Load("lua/Mixins/ModelMixin.lua")
 
 class 'Web' (Actor)
 
@@ -24,11 +24,11 @@ local kAnimationGraph = PrecacheAsset("models/alien/gorge/web.animation_graph")
 
 local networkVars =
 {
-    endPoint = "vector"
+    length = "float"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
-AddMixinNetworkVars(ClientModelMixin, networkVars)
+AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(TechMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 
@@ -49,7 +49,7 @@ function Web:OnCreate()
     Entity.OnCreate(self)
     
     InitMixin(self, BaseModelMixin)
-    InitMixin(self, ClientModelMixin)
+    InitMixin(self, ModelMixin)
     InitMixin(self, TechMixin)
     InitMixin(self, TeamMixin)
     
@@ -114,11 +114,12 @@ if Server then
     function Web:SetEndPoint(endPoint)
     
         self.endPoint = Vector(endPoint)
+        self.length = Clamp((self:GetOrigin() - self.endPoint):GetLength(), kMinWebLength, kMaxWebLength)
         CreateTrigger(self)
         
         local coords = Coords.GetIdentity()
         coords.origin = self:GetOrigin()
-        coords.zAxis = GetNormalizedVector(self.endPoint - self:GetOrigin())
+        coords.zAxis = GetNormalizedVector(self:GetOrigin() - self.endPoint)
         coords.xAxis = coords.zAxis:GetPerpendicular()
         coords.yAxis = coords.zAxis:CrossProduct(coords.xAxis)
         
@@ -180,7 +181,8 @@ if Client then
     function Web:OnUpdateRender()
 
         // we are smart and do that only once.
-        /* old code generated model
+        // old code generated model
+        /*
         if not self.webRenderModel then
         
             self.webRenderModel = DynamicMesh_Create()
@@ -199,14 +201,12 @@ if Client then
         */
 
     end
-    
-    function Web:OnUpdatePoseParameters()
-    
-        local length = Clamp((self.endPoint - self:GetOrigin()):GetLength(), kMinWebLength, kMaxWebLength)    
-        self:SetPoseParam("scale", length)
-        
-    end
-    
+
 end    
+
+// TODO: somehow the pose params dont work here when using clientmodelmixin. should figure out why this is broken and switch to clientmodelmixin
+function Web:OnUpdatePoseParameters()
+    self:SetPoseParam("scale", self.length)    
+end
 
 Shared.LinkClassToMap("Web", Web.kMapName, networkVars)

@@ -8,6 +8,7 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/Balance.lua")
+Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
 
@@ -19,6 +20,8 @@ local networkVars =
 {
     emptyPoseParam = "private float (0 to 1 by 0.01)"
 }
+
+AddMixinNetworkVars(LiveMixin, networkVars)
 
 // higher numbers reduces the spread
 local kSpreadDistance = 10
@@ -61,6 +64,7 @@ function Shotgun:OnCreate()
     ClipWeapon.OnCreate(self)
     
     InitMixin(self, PickupableWeaponMixin)
+    InitMixin(self, LiveMixin)
     
     self.emptyPoseParam = 0
 
@@ -290,6 +294,28 @@ if Client then
         
     end
 
+end
+
+function Shotgun:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    if damageType ~= kDamageType.Corrode then
+        damageTable.damage = 0
+    end
+end
+
+function Shotgun:GetCanTakeDamageOverride()
+    return self:GetParent() == nil
+end
+
+if Server then
+
+    function Shotgun:OnKill()
+        DestroyEntity(self)
+    end
+    
+    function Shotgun:GetSendDeathMessageOverride()
+        return false
+    end   
+    
 end
 
 Shared.LinkClassToMap("Shotgun", Shotgun.kMapName, networkVars)

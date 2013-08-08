@@ -152,7 +152,7 @@ local function AbortResearch(self, refundCost)
             
                 // Give money back if refundCost is true.
                 if refundCost then
-                    team:SetTeamResources(team:GetTeamResources() + researchNode:GetCost())
+                    team:AddTeamResources(researchNode:GetCost())
                 end
                 
                 ASSERT(researchNode:GetResearching() or researchNode:GetIsUpgrade())

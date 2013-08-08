@@ -223,11 +223,12 @@ local function CreateCysts(hive, harvester, teamNumber)
     for c = 1, #Server.cystSpawnPoints do
     
         local spawnPoint = Server.cystSpawnPoints[c]
-        if (spawnPoint - hiveOrigin):GetLength() <= dist then
+        if (spawnPoint - hiveOrigin):GetLength() <= (dist * 1.5) then
         
             local cyst = CreateEntityForTeam(kTechId.Cyst, spawnPoint, teamNumber, nil)
             cyst:SetConstructionComplete()
             cyst:SetInfestationFullyGrown()
+            cyst:SetImmuneToRedeploymentTime(1)
             
         end
         
@@ -696,9 +697,9 @@ function AlienTeam:InitTechTree()
 
     self.techTree:AddBuildNode(kTechId.Hydra,            kTechId.None,               kTechId.None)
     self.techTree:AddBuildNode(kTechId.Clog,             kTechId.None,               kTechId.None)
-    //self.techTree:AddBuildNode(kTechId.BabblerEgg,       kTechId.None,               kTechId.None)
-    //self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.TwoHives) 
-    //self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
+    self.techTree:AddBuildNode(kTechId.BabblerEgg,       kTechId.None,               kTechId.None)
+    self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.TwoHives) 
+    self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
 
     // personal upgrades (all alien types)
     

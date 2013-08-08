@@ -7,6 +7,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/AlienUpgradeManager.lua")
+
 function Alien:SetPrimalScream(duration)
     self.timeWhenPrimalScreamExpires = Shared.GetTime() + duration
 end
@@ -95,9 +97,7 @@ function Alien:GetDamagedAlertId()
     return kTechId.AlienAlertLifeformUnderAttack
 end
 
-/**
- * Morph into new class or buy upgrade.
- */
+// Morph into new class or buy upgrade.
 function Alien:ProcessBuyAction(techIds)
 
     ASSERT(type(techIds) == "table")
@@ -108,114 +108,74 @@ function Alien:ProcessBuyAction(techIds)
     local armorScalar = self:GetMaxArmor() == 0 and 1 or self:GetArmor() / self:GetMaxArmor()
     local totalCosts = 0
     
-    // Check for room
-    local eggExtents = LookupTechData(kTechId.Embryo, kTechDataMaxExtents)
-    local newAlienExtents = nil
-    // Aliens will have a kTechDataMaxExtents defined, find it.
-    for i, techId in ipairs(techIds) do
-        newAlienExtents = LookupTechData(techId, kTechDataMaxExtents)
-        if newAlienExtents then break end
-    end
-    
-    // In case we aren't evolving to a new alien, using the current's extents.
-    if not newAlienExtents then
-    
-        newAlienExtents = LookupTechData(self:GetTechId(), kTechDataMaxExtents)
-        // Preserve existing health/armor when we're not changing lifeform
-        healthScalar = self:GetHealth() / self:GetMaxHealth()
-        armorScalar = self:GetArmor() / self:GetMaxArmor()
+    local upgradeIds = {}
+    local lifeFormTechId = nil
+    for _, techId in ipairs(techIds) do
+        
+        if LookupTechData(techId, kTechDataGestateName) then
+            lifeFormTechId = techId
+        else
+            table.insertunique(upgradeIds, techId)
+        end
         
     end
+
+    local oldLifeFormTechId = self:GetTechId()
     
-    local physicsMask = PhysicsMask.AllButPCsAndRagdolls
-    local position = self:GetOrigin()
-    local newLifeFormTechId = kTechId.None
-    
-    local evolveAllowed = self:GetIsOnGround()
-    evolveAllowed = evolveAllowed and GetHasRoomForCapsule(eggExtents, position + Vector(0, eggExtents.y + Embryo.kEvolveSpawnOffset, 0), CollisionRep.Default, physicsMask, self)
-    evolveAllowed = evolveAllowed and GetHasRoomForCapsule(newAlienExtents, position + Vector(0, newAlienExtents.y + Embryo.kEvolveSpawnOffset, 0), CollisionRep.Default, physicsMask, self)
-    
-    // If not on the ground for the buy action, attempt to automatically
-    // put the player on the ground in an area with enough room for the new Alien.
-    if not evolveAllowed then
-    
-        for index = 1, 100 do
-        
-            local spawnPoint = GetRandomSpawnForCapsule(newAlienExtents.y, math.max(newAlienExtents.x, newAlienExtents.z), self:GetModelOrigin(), 0.5, 5, EntityFilterOne(self))
-            if spawnPoint then
-            
-                self:SetOrigin(spawnPoint)
-                position = spawnPoint
-                evolveAllowed = true
-                break
-                
-            end
-            
+    local upgradesAllowed = true
+    local upgradeManager = AlienUpgradeManager()
+    upgradeManager:Populate(self)
+    // add this first because it will allow switching existing upgrades
+    if lifeFormTechId then
+        upgradeManager:AddUpgrade(lifeFormTechId)
+    end
+    for _, newUpgradeId in ipairs(techIds) do
+
+        if newUpgradeId ~= kTechId.None and not upgradeManager:AddUpgrade(newUpgradeId) then
+            upgradesAllowed = false 
+            break
         end
         
     end
     
-    if evolveAllowed then
+    if upgradesAllowed then
     
-        // Deduct cost here as player is immediately replaced and copied.
-        for i, techId in ipairs(techIds) do
+        // Check for room
+        local eggExtents = LookupTechData(kTechId.Embryo, kTechDataMaxExtents)
+        local newLifeFormTechId = upgradeManager:GetLifeFormTechId()
+        local newAlienExtents = LookupTechData(newLifeFormTechId, kTechDataMaxExtents)
+        local physicsMask = PhysicsMask.AllButPCsAndRagdolls
+        local position = self:GetOrigin()
         
-            local bought = true
+        local evolveAllowed = self:GetIsOnGround()
+        evolveAllowed = evolveAllowed and GetHasRoomForCapsule(eggExtents, position + Vector(0, eggExtents.y + Embryo.kEvolveSpawnOffset, 0), CollisionRep.Default, physicsMask, self)
+        evolveAllowed = evolveAllowed and GetHasRoomForCapsule(newAlienExtents, position + Vector(0, newAlienExtents.y + Embryo.kEvolveSpawnOffset, 0), CollisionRep.Default, physicsMask, self)
+        
+        // If not on the ground for the buy action, attempt to automatically
+        // put the player on the ground in an area with enough room for the new Alien.
+        if not evolveAllowed then
+        
+            for index = 1, 100 do
             
-            // Try to buy upgrades (upgrades don't have a gestate name, only aliens do).
-            if not LookupTechData(techId, kTechDataGestateName) then
-            
-                // If we don't already have this upgrade, buy it.
-                if not self:GetHasUpgrade(techId) then
-                    bought = true
-                else
-                    bought = false
+                local spawnPoint = GetRandomSpawnForCapsule(newAlienExtents.y, math.max(newAlienExtents.x, newAlienExtents.z), self:GetModelOrigin(), 0.5, 5, EntityFilterOne(self))
+                if spawnPoint then
+                
+                    self:SetOrigin(spawnPoint)
+                    position = spawnPoint
+                    evolveAllowed = true
+                    break
+                    
                 end
                 
-            else
-                newLifeFormTechId = techId          
-            end
-            
-            if bought then
-                totalCosts = totalCosts + LookupTechData(techId, kTechDataCostKey)
             end
             
         end
-        
-        local hasHyperMutation = false        
-        if table.contains(techIds, kTechId.HyperMutation) or GetHasHyperMutationUpgrade(self) then
-        
-            hasHyperMutation = true
-            totalCosts = totalCosts * kHyperMutationCostScalar
 
-            if newLifeFormTechId ~= kTechId.None then   
-                totalCosts = totalCosts - self.storedHyperMutationCost
-            end
+        if evolveAllowed then
 
-        end
-
-        if newLifeFormTechId ~= kTechId.None then
-            self.twoHives = false
-            self.threeHives = false
-        end
-
-        if totalCosts > self:GetResources() then
-            success = false
-        else    
-
-            self:AddResources(math.min(0, -totalCosts))
-            
-            if newLifeFormTechId ~= kTechId.None then
-                self.storedHyperMutationCost = LookupTechData(newLifeFormTechId, kTechDataCostKey, 0) * kHyperMutationCostScalar
-            end
-            
             local newPlayer = self:Replace(Embryo.kMapName)
             position.y = position.y + Embryo.kEvolveSpawnOffset
             newPlayer:SetOrigin(position)
-            
-            if totalCosts < 0 then
-                newPlayer.resOnGestationComplete = -totalCosts
-            end
             
             // Clear angles, in case we were wall-walking or doing some crazy alien thing
             local angles = Angles(self:GetViewAngles())
@@ -224,26 +184,26 @@ function Alien:ProcessBuyAction(techIds)
             newPlayer:SetOriginalAngles(angles)
             
             // Eliminate velocity so that we don't slide or jump as an egg
-            newPlayer:SetVelocity(Vector(0, 0, 0))
-            
+            newPlayer:SetVelocity(Vector(0, 0, 0))                
             newPlayer:DropToFloor()
             
-            // Add all the existing upgrades to the new Alien's upgrade list so
-            // they don't lose them.
-            local previousUpgrades = self:GetUpgrades()
-            for u = 1, #previousUpgrades do
-                table.insertunique(techIds, previousUpgrades[u])
+            newPlayer:SetResources(upgradeManager:GetAvailableResources())
+            newPlayer:SetGestationData(upgradeManager:GetUpgrades(), self:GetTechId(), healthScalar, armorScalar)
+            
+            if oldLifeFormTechId and lifeFormTechId and oldLifeFormTechId ~= lifeFormTechId then
+                newPlayer.twoHives = false
+                newPlayer.threeHives = false
             end
             
-            newPlayer:SetGestationData(techIds, self:GetTechId(), healthScalar, armorScalar)
-            
             success = true
+            
+        end    
         
-        end
-        
-    else
-        self:TriggerInvalidSound()
     end
+    
+    if not success then
+        self:TriggerInvalidSound()
+    end    
     
     return success
     

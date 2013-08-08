@@ -22,10 +22,10 @@ class 'NS2Gamerules' (Gamerules)
 NS2Gamerules.kMapName = "ns2_gamerules"
 
 local kGameEndCheckInterval = 0.75
-local kPregameLength = 15
+local kPregameLength = 3
 local kTimeToReadyRoom = 8
 local kPauseToSocializeBeforeMapcycle = 30
-local kGameStartMessageInterval = 20
+local kGameStartMessageInterval = 10
 
 // How often to send the "No commander" message to players in seconds.
 local kSendNoCommanderMessageRate = 50
@@ -673,11 +673,13 @@ if Server then
             if spectators:GetSize() > 0 then
                 
                 local commandStructures = Shared.GetEntitiesWithClassname("CommandStructure")
+                local powerNodes = Shared.GetEntitiesWithClassname("PowerPoint")
+                local eggs = Shared.GetEntitiesWithClassname("Egg")
                 
-                for index, techpoint in ientitylist(Shared.GetEntitiesWithClassname("TechPoint")) do
+                for _, techpoint in ientitylist(Shared.GetEntitiesWithClassname("TechPoint")) do
                 
-                    local message = BuildTechPointsMessage(techpoint, commandStructures)
-                    for index, spectator in ientitylist(spectators) do
+                    local message = BuildTechPointsMessage(techpoint, commandStructures, powerNodes, eggs)
+                    for _, spectator in ientitylist(spectators) do
                         Server.SendNetworkMessage(spectator, "TechPoints", message, false)
                     end
                     
@@ -879,6 +881,29 @@ if Server then
         
     end
     
+    local function KillEnemiesNearCommandStructureInPreGame(self, timePassed)
+    
+        if self:GetGameState() == kGameState.NotStarted then
+        
+            local commandStations = Shared.GetEntitiesWithClassname("CommandStructure")
+            for _, ent in ientitylist(commandStations) do
+            
+                local enemyPlayers = GetEntitiesForTeam("Player", GetEnemyTeamNumber(ent:GetTeamNumber()))
+                for e = 1, #enemyPlayers do
+                
+                    local enemy = enemyPlayers[e]
+                    if enemy:GetDistance(ent) <= 5 then
+                        enemy:TakeDamage(25 * timePassed, nil, nil, nil, nil, 0, 25 * timePassed, kDamageType.Normal)
+                    end
+                    
+                end
+                
+            end
+            
+        end
+        
+    end
+    
     function NS2Gamerules:OnUpdate(timePassed)
     
         PROFILE("NS2Gamerules:OnUpdate")
@@ -923,6 +948,7 @@ if Server then
                 
                 CheckForNoCommander(self, self.team1, "MarineCommander")
                 CheckForNoCommander(self, self.team2, "AlienCommander")
+                KillEnemiesNearCommandStructureInPreGame(self, timePassed)
                 
             end
 

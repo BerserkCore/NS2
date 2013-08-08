@@ -64,6 +64,8 @@ if Server then
 
             table.removevalue(self.freeAttachPoints, freeAttachPoint)
             self.attachedBabblers[babbler:GetId()] = freeAttachPoint
+            babbler:SetParent(self)
+            babbler:SetAttachPoint(freeAttachPoint)
             success = true
 
         end

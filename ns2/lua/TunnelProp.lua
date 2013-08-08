@@ -8,11 +8,14 @@
 
 Script.Load("lua/Mixins/ClientModelMixin.lua")
 
+kTunnelPropType = enum({'Ceiling', 'Floor'})
+
 class 'TunnelProp' (Entity)
 
 TunnelProp.kMapName = "tunnelprop"
+local kAnimationGraph = PrecacheAsset("models/alien/tunnel/tunnel_prop.animation_graph")
 
-local networkVars =
+local networkVars = 
 {
 }
 
@@ -21,24 +24,29 @@ AddMixinNetworkVars(ClientModelMixin, networkVars)
 
 local kPropModels =
 {
-    {
-         PrecacheAsset("models/alien/tunnel/tunnel_prop1.model"),
-         PrecacheAsset("models/alien/tunnel/tunnel_prop1.animation_graph")
+    [kTunnelPropType.Ceiling] = {
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_botTents.model"),
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_bulp.model"),
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_growth.model"),
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_polyps.model"),
     },
     
-    {
-         PrecacheAsset("models/alien/tunnel/tunnel_prop2.model"),
-         PrecacheAsset("models/alien/tunnel/tunnel_prop2.animation_graph")
-    },
+    [kTunnelPropType.Floor] = {
+        PrecacheAsset("models/alien/tunnel/tunnel_attach_topTent.model"),
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_bulp.model"),
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_growth.model"),
+        PrecacheAsset("models/alien/tunnel/tunnel_attch_polyps.model"),
+    }
 }
 
 
-local function GetRandomPropModel()
+local function GetRandomPropModel(propType)
 
-    local numModels = #kPropModels
+    local propModels = kPropModels[propType]
+    local numModels = #propModels
     local randomIndex = math.random(1, numModels)
     
-    return kPropModels[randomIndex]
+    return propModels[randomIndex]
 
 end
 
@@ -49,18 +57,22 @@ function TunnelProp:OnCreate()
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ClientModelMixin)
 
-    if Server then
-
-        local randomModel = GetRandomPropModel()
-        self:SetModel(randomModel[1], randomModel[2])
-        
-    end
-
 end
 
 function TunnelProp:OnDestroy()
 
     Entity.OnDestroy(self)
+
+end
+
+function TunnelProp:SetTunnelPropType(propType)
+
+    if Server then
+
+        local randomModel = GetRandomPropModel(propType)
+        self:SetModel(randomModel, kAnimationGraph)
+        
+    end
 
 end
 

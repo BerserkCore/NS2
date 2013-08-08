@@ -9,6 +9,7 @@
 Script.Load("lua/Weapons/Weapon.lua")
 Script.Load("lua/Weapons/Marine/Flame.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
+Script.Load("lua/LiveMixin.lua")
 
 class 'Flamethrower' (ClipWeapon)
 
@@ -77,6 +78,8 @@ local networkVars =
     loopingSoundEntId = "entityid"
 }
 
+AddMixinNetworkVars(LiveMixin, networkVars)
+
 function Flamethrower:OnCreate()
 
     ClipWeapon.OnCreate(self)
@@ -102,6 +105,7 @@ function Flamethrower:OnCreate()
     end
     
     InitMixin(self, PickupableWeaponMixin)
+    InitMixin(self, LiveMixin)
 
 end
 
@@ -680,6 +684,28 @@ end
 
 function Flamethrower:GetNotifiyTarget()
     return false
+end
+
+function Flamethrower:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    if damageType ~= kDamageType.Corrode then
+        damageTable.damage = 0
+    end
+end
+
+function Flamethrower:GetCanTakeDamageOverride()
+    return self:GetParent() == nil
+end
+
+if Server then
+
+    function Flamethrower:OnKill()
+        DestroyEntity(self)
+    end
+    
+    function Flamethrower:GetSendDeathMessageOverride()
+        return false
+    end 
+    
 end
 
 Shared.LinkClassToMap("Flamethrower", Flamethrower.kMapName, networkVars)

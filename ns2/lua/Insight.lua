@@ -9,13 +9,15 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 kGUILayerInsight = 10
-kBlueColor = ColorIntToColor(kMarineTeamColor)
-kRedColor = Color(1, .61, 0, 1)
+kBlueColor = Color(0, 0.6117, 1, 1)
+kRedColor = Color(1, 0.4941, 0, 1)
 kPenToolColor = Color(1, 1, 1, 1)
 
 local techPointData = { }
-local team1Name= "Frontiersmen"
-local team2Name = "Kharaa"
+local team1Name
+local team2Name
+local team1Score = 0
+local team2Score = 0
 
 function Insight_Clear()
 
@@ -23,7 +25,7 @@ function Insight_Clear()
     
 end
 
-function Insight_SetTechPoint(entityIndex, teamNumber, techId, builtFraction, location, health, maxHealth, armor, maxArmor)
+function Insight_SetTechPoint(entityIndex, teamNumber, techId, location, healthFraction, powerNodeFraction, builtFraction, eggCount)
 
     for i = 1, table.maxn(techPointData) do
     
@@ -31,16 +33,13 @@ function Insight_SetTechPoint(entityIndex, teamNumber, techId, builtFraction, lo
         if structureRecord.EntityIndex == entityIndex then
             structureRecord.TeamNumber = teamNumber
             structureRecord.TechId = techId
-            structureRecord.BuiltFraction = builtFraction
             structureRecord.Location = location
-            structureRecord.Health = health
-            structureRecord.MaxHealth = maxHealth
-            structureRecord.Armor = armor
-            structureRecord.MaxArmor = maxArmor
-           
+            structureRecord.HealthFraction = healthFraction
+            structureRecord.PowerNodeFraction = powerNodeFraction
+            structureRecord.BuiltFraction = builtFraction
+            structureRecord.EggCount = eggCount           
             return
         end
-        
     end
     
     // Otherwise insert a new record
@@ -48,21 +47,17 @@ function Insight_SetTechPoint(entityIndex, teamNumber, techId, builtFraction, lo
     structureRecord.EntityIndex = entityIndex
     structureRecord.TeamNumber = teamNumber
     structureRecord.TechId = techId
-    structureRecord.BuiltFraction = builtFraction
     structureRecord.Location = location
-    structureRecord.Health = health
-    structureRecord.MaxHealth = maxHealth
-    structureRecord.Armor = armor
-    structureRecord.MaxArmor = maxArmor
+    structureRecord.HealthFraction = healthFraction
+    structureRecord.PowerNodeFraction = powerNodeFraction
+    structureRecord.BuiltFraction = builtFraction
+    structureRecord.EggCount = eggCount
     table.insert(techPointData, structureRecord )
 
 end
 
 local function sortById(tp1, tp2)
-    --if tp1.TeamNumber == tp2.TeamNumber then
-        return tp1.EntityIndex > tp2.EntityIndex
-    --end
-    --return tp1.TeamNumber > tp2.TeamNumber
+    return tp1.EntityIndex > tp2.EntityIndex
 end
 
 function InsightUI_GetTechPointData()
@@ -76,12 +71,48 @@ local function SetTeamNames(newTeam1Name, newTeam2Name)
 
     team1Name = newTeam1Name
     team2Name = newTeam2Name
-    --GUIInsight_TopBar:SetText(team1Name, team2Name)
-     local GUITeamNames = GetGUIManager():GetGUIScriptSingle("GUIInsight_TeamNames")
-    if GUITeamNames then 
-        GUITeamNames:SetText(team1Name, team2Name)
+    local topBar = GetGUIManager():GetGUIScriptSingle("GUIInsight_TopBar")
+    if topBar then
+        topBar:SetTeams(team1Name, team2Name)
     end
     
+end
+
+local function SetTeamScores(newTeam1Score, newTeam2Score)
+
+    if newTeam1Score == "+" then
+        team1Score = team1Score + 1
+    elseif newTeam1Score == "-" then
+        team1Score = team1Score - 1
+    elseif newTeam1Score == nil then
+        team1Score = 0
+    else
+        team1Score = tonumber(newTeam1Score)
+    end
+    
+    if newTeam2Score == "+" then
+        team2Score = team2Score + 1
+    elseif newTeam2Score == "-" then
+        team2Score = team2Score - 1
+    elseif newTeam2Score == nil then
+        team2Score = 0
+    else
+        team2Score = tonumber(newTeam2Score)
+    end
+    
+    local topBar = GetGUIManager():GetGUIScriptSingle("GUIInsight_TopBar")
+    if topBar then
+        topBar:SetScore(team1Score, team2Score)
+    end  
+    
+end
+
+function InsightUI_GetTeam1Name()
+    return team1Name
+end
+
+function InsightUI_GetTeam2Name()
+    return team2Name
 end
 
 local function HandleTeamsMessage(params)
@@ -89,17 +120,21 @@ local function HandleTeamsMessage(params)
     if params[1] == "teams" then
     
             if params[2] ~= nil and params[3] ~= nil then
+                SetTeamScores(team1Score, team2Score)
                 SetTeamNames(params[2], params[3])
             elseif params[2] == "swap" or params[2] == "switch" then
+                SetTeamScores(team2Score, team1Score)
                 SetTeamNames(team2Name, team1Name)
             elseif params[2] == "reset" or params[2] == "clear" then
-                --SetTeamNames(nil, nil)
-                SetTeamNames("", "")
+                SetTeamScores(0, 0)
+                SetTeamNames(nil, nil)
             end
             
     elseif params[1] == "team1" then
+        SetTeamScores(team1Score, team2Score)
         SetTeamNames(params[2], nil)
     elseif params[1] == "team2" then
+        SetTeamScores(team1Score, team2Score)    
         SetTeamNames(nil, params[2])
     end
 
@@ -115,6 +150,18 @@ end
 
 local function OnConsoleTeam2(param1)
     HandleTeamsMessage({"team2", param1, nil})
+end
+
+local function OnConsoleScores(param1, param2)
+    SetTeamScores(param1, param2)
+end
+
+local function OnConsoleScore1(param1)
+    SetTeamScores(param1, team2Score)
+end
+
+local function OnConsoleScore2(param1)
+    SetTeamScores(team1Score, param1)
 end
 
 /*function OnMessageChat(chat)
@@ -162,10 +209,14 @@ local function OnConsolePenColor(r_or_ColorInt, g, b, a)
     end
 
 end
+
 //Client.HookNetworkMessage("Chat", OnMessageChat)
 Event.Hook( "Console_teams", OnConsoleTeams )
 Event.Hook( "Console_team1", OnConsoleTeam1 )
 Event.Hook( "Console_team2", OnConsoleTeam2 )
+Event.Hook( "Console_scores", OnConsoleScores )
+Event.Hook( "Console_score1", OnConsoleScore1 )
+Event.Hook( "Console_score2", OnConsoleScore2 )
 Event.Hook( "Console_johnmadden", OnConsolePenColor )
 Event.Hook( "Console_jm", OnConsolePenColor )
 Event.Hook( "Console_pen", OnConsolePenColor )

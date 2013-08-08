@@ -315,10 +315,12 @@ kHealsprayFireDelay = 0.8
 kHealsprayEnergyCost = 12
 kHealsprayRadius = 3.5
 
-kBileBombDamage = 70 // per second
+kBileBombDamage = 55 // per second
 kBileBombDamageType = kDamageType.Corrode
 kBileBombEnergyCost = 20
 kBileBombDuration = 5
+// 200 inches in NS1 = 5 meters
+kBileBombSplashRadius = 7
 
 kWebBuildCost = 1
 kWebbedDuration = 1

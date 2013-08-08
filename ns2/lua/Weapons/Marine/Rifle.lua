@@ -9,6 +9,7 @@
 
 Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
+Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 
@@ -52,6 +53,8 @@ local networkVars =
     soundType = "integer (1 to 9)"
 }
 
+AddMixinNetworkVars(LiveMixin, networkVars)
+
 local kMuzzleEffect = PrecacheAsset("cinematics/marine/rifle/muzzle_flash.cinematic")
 local kMuzzleAttachPoint = "fxnode_riflemuzzle"
 
@@ -87,6 +90,7 @@ function Rifle:OnCreate()
     
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, EntityChangeMixin)
+    InitMixin(self, LiveMixin)
     
     if Client then
         InitMixin(self, ClientWeaponEffectsMixin)
@@ -341,6 +345,28 @@ if Client then
         return self:GetOrigin()
         
     end
+    
+end
+
+function Rifle:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    if damageType ~= kDamageType.Corrode then
+        damageTable.damage = 0
+    end
+end
+
+function Rifle:GetCanTakeDamageOverride()
+    return self:GetParent() == nil
+end
+
+if Server then
+
+    function Rifle:OnKill()
+        DestroyEntity(self)
+    end
+    
+    function Rifle:GetSendDeathMessageOverride()
+        return false
+    end 
     
 end
 

@@ -63,6 +63,11 @@ end
 
 if Server then
 
+    local function SineFalloff(distanceFraction)
+        local piFraction = Clamp(distanceFraction, 0, 1) * math.pi / 2
+        return math.cos(piFraction + math.pi) + 1 
+    end
+
     function Bomb:ProcessHit(targetHit, surface)
 
         if (not self:GetOwner() or targetHit ~= self:GetOwner()) and not self.detonated then
@@ -79,6 +84,7 @@ if Server then
             dotMarker:SetTargetEffectName("bilebomb_onstructure")
             dotMarker:SetDeathIconIndex(kDeathMessageIcon.BileBomb)
             dotMarker:SetOwner(self:GetOwner())
+            dotMarker:SetFallOffFunc(SineFalloff)
 
             DestroyEntity(self)
             

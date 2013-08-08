@@ -11,6 +11,7 @@ Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
 Script.Load("lua/Weapons/Marine/Grenade.lua")
 Script.Load("lua/EntityChangeMixin.lua")
+Script.Load("lua/LiveMixin.lua")
 
 class 'GrenadeLauncher' (ClipWeapon)
 
@@ -22,6 +23,8 @@ local networkVars =
     emptyPoseParam = "private float (0 to 1 by 0.01)"
 }
 
+AddMixinNetworkVars(LiveMixin, networkVars)
+
 GrenadeLauncher.kModelName = PrecacheAsset("models/marine/grenadelauncher/grenadelauncher.model")
 local kViewModelName = PrecacheAsset("models/marine/grenadelauncher/grenadelauncher_view.model")
 local kAnimationGraph = PrecacheAsset("models/marine/grenadelauncher/grenadelauncher_view.animation_graph")
@@ -31,6 +34,7 @@ function GrenadeLauncher:OnCreate()
     ClipWeapon.OnCreate(self)
     
     InitMixin(self, PickupableWeaponMixin)
+    InitMixin(self, LiveMixin)
     
     self.emptyPoseParam = 0
     
@@ -258,6 +262,28 @@ if Server then
 
     end
 
+end
+
+function GrenadeLauncher:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    if damageType ~= kDamageType.Corrode then
+        damageTable.damage = 0
+    end
+end
+
+function GrenadeLauncher:GetCanTakeDamageOverride()
+    return self:GetParent() == nil
+end
+
+if Server then
+
+    function GrenadeLauncher:OnKill()
+        DestroyEntity(self)
+    end
+    
+    function GrenadeLauncher:GetSendDeathMessageOverride()
+        return false
+    end 
+    
 end
 
 Shared.LinkClassToMap("GrenadeLauncher", GrenadeLauncher.kMapName, networkVars)

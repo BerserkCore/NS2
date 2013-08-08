@@ -355,10 +355,13 @@ function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUse
     
     if damage > 0 then
     
+        local oldArmor = self.armor
+        local oldHealth = self.health
+    
         self.armor = math.max(0, self:GetArmor() - armorUsed)
         self.health = math.max(0, self:GetHealth() - healthUsed)
         
-        if self.OnTakeDamage then
+        if self.OnTakeDamage and (oldArmor ~= self.armor or oldHealth ~= self.health) then
             self:OnTakeDamage(damage, attacker, doer, point, direction, damageType)
         end
         

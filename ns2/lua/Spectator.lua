@@ -338,6 +338,11 @@ function Spectator:GetTraceCapsule()
     return 0, 0
 end
 
+// Needed so player origin is same as camera for selection
+function Spectator:GetViewOffset()
+    return Vector(0, 0, 0)
+end
+
 function Spectator:GetMaxSpeed(possible)
     return kMaxSpeed
 end
@@ -352,6 +357,10 @@ end
 
 function Spectator:GetIsOverhead()
     return self.specMode == Spectator.kSpectatorMode.Overhead
+end
+
+function Spectator:GetIsFollowing()
+    return self.specMode == Spectator.kSpectatorMode.Following
 end
 
 /**

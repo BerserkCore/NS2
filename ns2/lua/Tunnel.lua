@@ -32,16 +32,55 @@ end
 local gNumTunnels = 0
 
 local kTunnelSpacing = Vector(160, 0, 0)
-local kTunnelStart = Vector(-1800, 200, -1800)
+local kTunnelStart = Vector(-1600, 200, -1600)
 
 local kTunnelLength = 27
+
+local kEntranceAPos = Vector(3, 0.5, -8)
+local kEntranceBPos = Vector(3, 0.5, 8)
+
+local kExitAPos = Vector(3, 0.25, -13.5)
+local kExitBPos = Vector(3, 0.25, 13.5)
 
 Tunnel.kModelName = PrecacheAsset("models/alien/tunnel/tunnel.model")
 local kAnimationGraph = PrecacheAsset("models/alien/tunnel/tunnel.animation_graph")
 
+local kTunnelCinematic = PrecacheAsset("cinematics/alien/tunnel/tunnel_ambient.cinematic")
+
 local kTunnelPropAttachPoints =
 {
-    "attachpoint1"
+    { "Tunnel_attachPointCeiling_00", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_02", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_03", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_04", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_05", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_06", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_07", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_08", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_09", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_10", kTunnelPropType.Ceiling },
+    { "Tunnel_attachPointCeiling_11", kTunnelPropType.Ceiling },
+    
+    { "Tunnel_attachPointGrnd_00", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_01", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_02", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_03", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_04", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_05", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_06", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_07", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_08", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_09", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_10", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_11", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_12", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_13", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_14", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_15", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_16", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_17", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_18", kTunnelPropType.Floor },
+    { "Tunnel_attachPointGrnd_19", kTunnelPropType.Floor }, 
 }
 
 local networkVars =
@@ -91,14 +130,15 @@ local function CreateRandomTunnelProps(self)
 
     for i = 1, #kTunnelPropAttachPoints do
     
-        local attachPointName = kTunnelPropAttachPoints[i]
-        local attachPointPosition = self:GetAttachPointOrigin(attachPointName)
+        local attachPointEntry = kTunnelPropAttachPoints[i]
+        local attachPointPosition = self:GetAttachPointOrigin(attachPointEntry[1])
         
         if attachPointPosition then
         
             local tunnelProp = CreateEntity(TunnelProp.kMapName, attachPointPosition)
             tunnelProp:SetParent(self)
-            tunnelProp:SetAttachPoint(attachPointName)
+            tunnelProp:SetTunnelPropType(attachPointEntry[2])
+            tunnelProp:SetAttachPoint(attachPointEntry[1])
             
         end
     
@@ -124,6 +164,11 @@ function Tunnel:OnInitialized()
         
         self.entranceLightA:SetCoords(Coords.GetLookIn(self:GetEntranceAPosition(), self:GetCoords().zAxis))
         self.entranceLightB:SetCoords(Coords.GetLookIn(self:GetEntranceBPosition(), -self:GetCoords().zAxis))
+        
+        self.tunnelCinematic = Client.CreateCinematic(RenderScene.Zone_Default)
+        self.tunnelCinematic:SetCinematic(kTunnelCinematic)
+        self.tunnelCinematic:SetRepeatStyle(Cinematic.Repeat_Endless)
+        self.tunnelCinematic:SetCoords(self:GetCoords())
     
     end
 
@@ -150,6 +195,13 @@ function Tunnel:OnDestroy()
             self.entranceLightB = nil
             
         end  
+        
+        if self.tunnelCinematic then
+            
+            Client.DestroyCinematic(self.tunnelCinematic)
+            self.tunnelCinematic = nil
+            
+        end
 
     end 
 
@@ -267,6 +319,7 @@ if Server then
             newAngles.yaw = newAngles.yaw + self:GetMinimapYawOffset()
             
             player:SetOffsetAngles(newAngles)
+            exit:OnPlayerExited(player)
     
         end
     
@@ -346,19 +399,19 @@ end
 
 // TODO: use attach points?
 function Tunnel:GetExitAPosition()
-    return -self:GetCoords().zAxis * kTunnelLength * .5 + self:GetOrigin() 
+    return self:GetOrigin() + self:GetCoords():TransformVector(kExitAPos)
 end
 
 function Tunnel:GetExitBPosition()
-    return self:GetCoords().zAxis * kTunnelLength * .5 + self:GetOrigin() 
+    return self:GetOrigin() + self:GetCoords():TransformVector(kExitBPos)
 end
 
 function Tunnel:GetEntranceAPosition()
-    return -(self:GetCoords().zAxis * (kTunnelLength * .5 - 4.5)) + self:GetOrigin() 
+    return self:GetOrigin() + self:GetCoords():TransformVector(kEntranceAPos)
 end
 
 function Tunnel:GetEntranceBPosition()
-    return self:GetCoords().zAxis * (kTunnelLength * .5 - 4.5) + self:GetOrigin() 
+    return self:GetOrigin() +  self:GetCoords():TransformVector(kEntranceBPos)
 end
 
 function Tunnel:GetRelativePosition(position)

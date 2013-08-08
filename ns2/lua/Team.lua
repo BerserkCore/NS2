@@ -34,6 +34,11 @@ function Team:OnInitialized()
 end
 
 function Team:OnEntityKilled(targetEntity, killer, doer, point, direction)
+
+    if killer and targetEntity and GetAreEnemies(killer, targetEntity) and killer:isa("Player") and targetEntity:isa("Player") then
+        self:AddKills(1)
+    end
+    
 end
 
 /**
