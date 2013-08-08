@@ -773,6 +773,7 @@ function GUIMinimap:Update(deltaTime)
             local timeSincePing, position, distance = PlayerUI_GetCommanderPingInfo(true)
             local posX, posY = PlotToMap(self, position.x, position.z)
             self.commanderPing.Frame:SetPosition(Vector(posX, posY, 0))
+            self.commanderPing.Frame:SetIsVisible(timeSincePing <= kCommanderPingDuration)
             GUIAnimateCommanderPing(self.commanderPing.Mark, self.commanderPing.Border, self.commanderPing.Location, kCommanderPingMinimapSize, timeSincePing, Color(1, 0, 0, 1), Color(1, 1, 1, 1))
             
         end

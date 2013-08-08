@@ -14,8 +14,8 @@ Shared.PrecacheSurfaceShader("materials/infestation/spit_decal.surface_shader")
 
 class 'Spit' (Projectile)
 
-Spit.kMapName            = "spit"
-Spit.kDamage             = kSpitDamage
+Spit.kMapName = "spit"
+Spit.kDamage = kSpitDamage
 
 local kSpitTrail =
 { 
@@ -146,7 +146,7 @@ function Spit:ProcessHit(targetHit, surface, normal)
     
         self:TriggerEffects("spit_hit", { effecthostcoords = Coords.GetTranslation(self:GetOrigin()) } )
     
-        self:DoDamage(Spit.kDamage, targetHit, self:GetOrigin(), nil, surface)
+        /*self:DoDamage(Spit.kDamage, targetHit, self:GetOrigin(), nil, surface)
         
         if targetHit and targetHit:isa("Marine") then
         
@@ -155,6 +155,7 @@ function Spit:ProcessHit(targetHit, surface, normal)
             targetHit:OnSpitHit(direction)
             
         end
+        */
         
         DestroyEntity(self)
         

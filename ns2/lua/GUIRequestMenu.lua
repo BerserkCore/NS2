@@ -99,6 +99,29 @@ local function CreateEjectButton(self, teamType)
 
 end
 
+local function CreateConcedeButton(self, teamType)
+
+    local background = GetGUIManager():CreateGraphicItem()
+    background:SetSize(kBackgroundSize)
+    background:SetTexture(kBackgroundTexture[teamType])
+    background:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
+    background:SetPosition(Vector(-kBackgroundSize.x * .5, kPadding, 0))
+    
+    local concedeText = GetGUIManager():CreateTextItem()
+    concedeText:SetTextAlignmentX(GUIItem.Align_Center)
+    concedeText:SetTextAlignmentY(GUIItem.Align_Center)
+    concedeText:SetFontName(kFontName)
+    concedeText:SetScale(scaleVector)
+    concedeText:SetAnchor(GUIItem.Middle, GUIItem.Center)
+    concedeText:SetText(Locale.ResolveString("VOTE_CONCEDE"))
+    
+    self.background:AddChild(background)
+    background:AddChild(concedeText)
+    
+    return { Background = background, ConcedeText = concedeText }
+
+end
+
 local function CreateMenuButton(self, teamType, voiceId, align, index, numEntries)
 
     voiceId = voiceId or kVoiceId.None
@@ -155,6 +178,20 @@ local function OnEjectCommanderClicked()
     if GetCanSendRequest() then
 
         Client.SendNetworkMessage("VoiceMessage", BuildVoiceMessage(kVoiceId.VoteEject), true)        
+        gTimeLastMessageSend = Shared.GetTime()
+        return true
+        
+    end
+    
+    return false
+
+end
+
+local function OnConcedeButtonClicked()
+
+    if GetCanSendRequest() then
+
+        Client.SendNetworkMessage("VoiceMessage", BuildVoiceMessage(kVoiceId.VoteConcede), true)        
         gTimeLastMessageSend = Shared.GetTime()
         return true
         
@@ -225,6 +262,7 @@ function GUIRequestMenu:Initialize()
     self.menuButtons = {}
     
     self.ejectCommButton = CreateEjectButton(self, self.teamType)
+    self.voteConcedeButton = CreateConcedeButton(self, self.teamType)
 
     local leftMenu = GetRequestMenu(LEFT_MENU, self.playerClass)
     local numLeftEntries = #leftMenu
@@ -265,6 +303,7 @@ function GUIRequestMenu:Uninitialize()
     
     self.background = nil
     self.ejectCommButton = nil
+    self.voteConcedeButton = nil
     self.menuButtons = {}
 
 end
@@ -310,6 +349,7 @@ function GUIRequestMenu:Update(deltaTime)
     
         local commanderName = PlayerUI_GetCommanderName()
         self.ejectCommButton.Background:SetIsVisible(commanderName ~= nil)
+        self.voteConcedeButton.Background:SetIsVisible(PlayerUI_GetGameStartTime() + kTimeGiveupPossible < Shared.GetTime())
         if commanderName then
             self.ejectCommButton.CommanderName:SetText(string.format("%s %s", Locale.ResolveString("EJECT"), string.upper(commanderName)))
         end
@@ -320,6 +360,12 @@ function GUIRequestMenu:Update(deltaTime)
             self.ejectCommButton.Background:SetTexture(kBackgroundTextureHighlight[self.teamType])
         else
             self.ejectCommButton.Background:SetTexture(kBackgroundTexture[self.teamType])
+        end
+        
+        if GUIItemContainsPoint(self.voteConcedeButton.Background, mouseX, mouseY) then
+            self.voteConcedeButton.Background:SetTexture(kBackgroundTextureHighlight[self.teamType])
+        else
+            self.voteConcedeButton.Background:SetTexture(kBackgroundTexture[self.teamType])
         end
         
         for i = 1, #self.menuButtons do
@@ -377,6 +423,12 @@ function GUIRequestMenu:SendKeyEvent(key, down)
         
             if self.ejectCommButton.Background:GetIsVisible() and GUIItemContainsPoint(self.ejectCommButton.Background, mouseX, mouseY) then            
                 if OnEjectCommanderClicked() then
+                    OnClick_RequestMenu()
+                end
+                hitButton = true
+                
+            elseif self.voteConcedeButton.Background:GetIsVisible() and GUIItemContainsPoint(self.voteConcedeButton.Background, mouseX, mouseY) then            
+                if OnConcedeButtonClicked() then
                     OnClick_RequestMenu()
                 end
                 hitButton = true

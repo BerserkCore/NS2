@@ -23,6 +23,25 @@ function VoteManager:Initialize()
     
 end
 
+function VoteManager:PlayerVotes(playerId, time)
+
+    if type(playerId) == "number" and type(time) == "number" then
+    
+        if not table.find(self.playersVoted, playerId) then
+        
+            table.insert(self.playersVoted, playerId)
+            self.target = true
+            self.timeVoteStarted = time
+            return true
+            
+        end    
+        
+    end
+    
+    return false
+
+end
+
 function VoteManager:PlayerVotesFor(playerId, target, time)
 
     if type(playerId) == "number" and target ~= nil and type(time) == "number" then

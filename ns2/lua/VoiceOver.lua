@@ -12,7 +12,7 @@ kMaxRequestsPerSide = 5
 
 kVoiceId = enum ({
 
-    'None', 'VoteEject', 'Ping',
+    'None', 'VoteEject', 'VoteConcede', 'Ping',
 
     'RequestWeld', 'MarineRequestMedpack', 'MarineRequestAmmo', 'MarineRequestOrder', 
     'MarineTaunt', 'MarineCovering', 'MarineFollowMe', 'MarineHostiles', 'MarineLetsMove',
@@ -41,6 +41,14 @@ local function VoteEjectCommander(player)
     if player then
         GetGamerules():CastVoteByPlayer(kTechId.VoteDownCommander1, player)
     end    
+    
+end
+
+local function VoteConcedeRound(player)
+
+    if player then
+        GetGamerules():CastVoteByPlayer(kTechId.VoteConcedeRound, player)
+    end  
     
 end
 
@@ -75,6 +83,7 @@ local kSoundData =
 
     // always part of the menu
     [kVoiceId.VoteEject] = { Function = VoteEjectCommander },
+    [kVoiceId.VoteConcede] = { Function = VoteConcedeRound },
 
     [kVoiceId.Ping] = { Function = PingInViewDirection, Description = "REQUEST_PING", KeyBind = "PingLocation" },
 

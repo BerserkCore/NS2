@@ -90,9 +90,8 @@ end
 local function PrintStatus(player, client, index)
 
     local playerClient = Server.GetOwner(player)
-    if not playerClient then
-        Shared.Message("playerClient is nil in PrintStatus, alert Brian")
-    else
+    // The player may not have an owner. Ragdoll player entities for example.
+    if playerClient then
         ServerAdminPrint(client, player:GetName() .. " : Steam Id = " .. playerClient:GetUserId())
     end
     
@@ -102,9 +101,8 @@ CreateServerAdminCommand("Console_sv_status", AllPlayers(PrintStatus), "Lists pl
 local function PrintStatusIP(player, client, index)
 
     local playerClient = Server.GetOwner(player)
-    if not playerClient then
-        Shared.Message("playerClient is nil in PrintStatus, alert Brian")
-    else
+    // The player may not have an owner. Ragdoll player entities for example.
+    if playerClient then
     
         local playerAddressString = IPAddressToString(Server.GetClientAddress(playerClient))
         ServerAdminPrint(client, player:GetName() .. " : Steam Id = " .. playerClient:GetUserId() .. " : Address = " .. playerAddressString)

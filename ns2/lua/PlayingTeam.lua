@@ -47,6 +47,9 @@ function PlayingTeam:Initialize(teamName, teamNumber)
     
     self.ejectCommVoteManager = VoteManager()
     self.ejectCommVoteManager:Initialize()
+    
+    self.concedeVoteManager = VoteManager()
+    self.concedeVoteManager:Initialize()
 
     // child classes can specify a custom team info class
     local teamInfoMapName = TeamInfo.kMapName
@@ -123,6 +126,9 @@ function PlayingTeam:OnInitialized()
     self:AddTeamResources(kPlayingTeamInitialTeamRes)
     
     self.ejectCommVoteManager:Reset()
+    self.concedeVoteManager:Reset()
+    
+    self.conceded = false
     
     self.lastCommPingTime = 0
     self.lastCommPingPosition = Vector(0,0,0)
@@ -134,6 +140,8 @@ function PlayingTeam:ResetTeam()
     local initialTechPoint = self:GetInitialTechPoint()
     
     self:SpawnInitialStructures(initialTechPoint)
+    
+    self.conceded = false
     
     local players = GetEntitiesForTeam("Player", self:GetTeamNumber())
     for p = 1, #players do
@@ -430,7 +438,8 @@ function PlayingTeam:GetHasTeamLost()
         
         if  (not activePlayers and not abilityToRespawn) or
             (numAliveCommandStructures == 0) or
-            (self:GetNumPlayers() == 0) then
+            (self:GetNumPlayers() == 0) or 
+            self:GetHasConceded() then
             
             return true
             
@@ -670,7 +679,7 @@ function PlayingTeam:Update(timePassed)
     
     self:UpdateGameEffects(timePassed)
     
-    self:UpdateVoteToEject()
+    self:UpdateVotes()
     
     if GetGamerules():GetGameStarted() then
         self:UpdateResourceTowers()
@@ -791,6 +800,16 @@ end
 function PlayingTeam:UpdateTeamSpecificGameEffects()
 end
 
+function PlayingTeam:VoteToGiveUp(votingPlayer)
+
+    local votingPlayerSteamId = tonumber(Server.GetOwner(votingPlayer):GetUserId())
+
+    if self.concedeVoteManager:PlayerVotes(votingPlayerSteamId, Shared.GetTime()) then
+        PrintToLog("%s cast vote to give up.", votingPlayer:GetName())
+    end
+
+end
+
 function PlayingTeam:VoteToEjectCommander(votingPlayer, targetCommander)
 
     local votingPlayerSteamId = tonumber(Server.GetOwner(votingPlayer):GetUserId())
@@ -802,12 +821,13 @@ function PlayingTeam:VoteToEjectCommander(votingPlayer, targetCommander)
     
 end
 
-function PlayingTeam:UpdateVoteToEject()
+function PlayingTeam:UpdateVotes()
 
-    PROFILE("PlayingTeam:UpdateVoteToEject")
+    PROFILE("PlayingTeam:UpdateVotes")
     
     // Update with latest team size
     self.ejectCommVoteManager:SetNumPlayers(self:GetNumPlayers())
+    self.concedeVoteManager:SetNumPlayers(self:GetNumPlayers())
 
     // Eject commander if enough votes cast
     if self.ejectCommVoteManager:GetVotePassed() then    
@@ -826,7 +846,24 @@ function PlayingTeam:UpdateVoteToEject()
             
     end
     
+    // give up when enough votes
+    if self.concedeVoteManager:GetVotePassed() then
+    
+        self.concedeVoteManager:Reset()
+        self.conceded = true
+        
+    elseif self.concedeVoteManager:GetVoteElapsed(Shared.GetTime()) then
+    
+        self.concedeVoteManager:Reset()
+            
+    end 
+        
+    
 end
+
+function PlayingTeam:GetHasConceded()
+    return self.conceded
+end    
 
 function PlayingTeam:GetPresRecipientCount()
 

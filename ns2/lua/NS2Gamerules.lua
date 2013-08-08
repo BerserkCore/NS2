@@ -736,8 +736,17 @@ if Server then
     
     // Commander ejection functionality
     function NS2Gamerules:CastVoteByPlayer( voteTechId, player )
-
-        if voteTechId == kTechId.VoteDownCommander1 or voteTechId == kTechId.VoteDownCommander2 or voteTechId == kTechId.VoteDownCommander3 then
+    
+        if voteTechId == kTechId.VoteConcedeRound then
+        
+            if self.timeSinceGameStateChanged > kTimeGiveupPossible and self:GetGameStarted() then
+            
+                local team = player:GetTeam()
+                team:VoteToGiveUp(player)
+                
+            end
+        
+        elseif voteTechId == kTechId.VoteDownCommander1 or voteTechId == kTechId.VoteDownCommander2 or voteTechId == kTechId.VoteDownCommander3 then
 
             // Get the 1st, 2nd or 3rd commander by entity order (does this on client as well)    
             local playerIndex = (voteTechId - kTechId.VoteDownCommander1 + 1)        
