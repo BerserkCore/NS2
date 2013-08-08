@@ -963,4 +963,10 @@ function Marine:GetHasCatpackBoost()
     return self.catpackboost
 end
 
+// dont allow marines to me chain stomped. this gives them breathing time and the onos needs to time the stomps instead of spamming
+// and being able to permanently disable the marine
+function Marine:GetIsStunAllowed()
+    return not self.timeLastStun or self.timeLastStun + kDisruptMarineTimeout < Shared.GetTime()
+end
+
 Shared.LinkClassToMap("Marine", Marine.kMapName, networkVars)

@@ -398,7 +398,14 @@ if Server then
     // Called whenever an entity is killed. Killer could be the same as targetEntity. Called before entity is destroyed.
     function NS2Gamerules:OnEntityKilled(targetEntity, attacker, doer, point, direction)
     
-        PostKillStat(targetEntity, attacker, doer)
+        // Limit how often we send up kill stats.
+        self.totalKills = (self.totalKills and self.totalKills + 1) or 1
+        if self.totalKills >= 5 then
+        
+            self.totalKills = 0
+            PostKillStat(targetEntity, attacker, doer)
+            
+        end
         
         // Also output to log if we're recording the game for playback in the game visualizer
         PostGameViz(string.format("%s killed %s", SafeClassName(doer), SafeClassName(targetEntity)), targetEntity)

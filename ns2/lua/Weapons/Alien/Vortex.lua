@@ -22,7 +22,7 @@ local networkVars =
 // Balance
 Vortex.kDamage = 0
 Vortex.kPrimaryEnergyCost = kVortexEnergyCost
-local kRange = 2.6
+local kRange = 5
 Vortex.kStabDuration = 1
 
 kVortexDuration = 4
@@ -142,11 +142,9 @@ local function PerformVortex(self)
 
     local player = self:GetParent()
     if player and Server then
-    
-        local didHit, hitObject, endPoint, surface = AttackMeleeCapsule(self, player, 0, kRange)
         
-        local vortexAbles = GetEntitiesWithMixinForTeamWithinRange("VortexAble", GetEnemyTeamNumber(player:GetTeamNumber()), endPoint, kRange)
-        Shared.SortEntitiesByDistance(endPoint, vortexAbles)
+        local vortexAbles = GetEntitiesWithMixinForTeamWithinRange("VortexAble", GetEnemyTeamNumber(player:GetTeamNumber()), player:GetEyePos(), kRange)
+        Shared.SortEntitiesByDistance(player:GetEyePos(), vortexAbles)
         
         for _, vortexAble in ipairs(vortexAbles) do
         

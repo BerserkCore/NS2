@@ -267,7 +267,7 @@ function Alien:OnInitialized()
     if Server then
     
         InitMixin(self, InfestationTrackerMixin)
-        self:UpdateNumHives()
+        UpdateAbilityAvailability(self, self:GetTierTwoTechId(), self:GetTierThreeTechId())
         
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then

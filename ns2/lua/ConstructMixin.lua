@@ -323,7 +323,7 @@ function ConstructMixin:GetCanConstruct(constructor)
     
 end
 
-function ConstructMixin:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function ConstructMixin:OnUse(player, elapsedTime, useSuccessTable)
 
     local used = false
 

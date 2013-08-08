@@ -399,7 +399,7 @@ function PowerPoint:GetTechAllowed(techId, techNode, player)
     return true, true
 end
 
-function PowerPoint:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function PowerPoint:OnUse(player, elapsedTime, useSuccessTable)
 
     local success = false
     if player:isa("Marine") and self:GetIsBuilt() and self:GetHealthScalar() < 1 then

@@ -13,6 +13,7 @@ Script.Load("lua/DigestMixin.lua")
 Script.Load("lua/TechMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/TargetMixin.lua")
+Script.Load("lua/UsableMixin.lua")
 
 local Shared_GetModel = Shared.GetModel
 
@@ -49,6 +50,7 @@ function Clog:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, TargetMixin)
     InitMixin(self, DigestMixin)
+    InitMixin(self, UsableMixin)
     
     if Server then
     
@@ -295,6 +297,10 @@ end
 
 function Clog:GetCanBeUsed(player, useSuccessTable)
     useSuccessTable.useSuccess = player:GetTeamNumber() == self:GetTeamNumber()
+end
+
+function Clog:GetUsablePoints()
+    return { self:GetOrigin() }
 end
 
 function Clog:ComputeDamageOverride(attacker, damage, damageType, time)

@@ -9,6 +9,7 @@ function Render_SyncRenderOptions()
     local shadows           = Client.GetOptionBoolean("graphics/display/shadows", true)
     local antiAliasing      = Client.GetOptionBoolean("graphics/display/anti-aliasing", true)
     local fog               = Client.GetOptionBoolean("graphics/display/fog", false)
+    local particleQuality   = Client.GetOptionString("graphics/display/particles", "low")
 
     Client.SetRenderSetting("mode", "lit")
     Client.SetRenderSetting("ambient_occlusion", ambientOcclusion)
@@ -17,6 +18,7 @@ function Render_SyncRenderOptions()
     Client.SetRenderSetting("shadows", ToString(shadows))
     Client.SetRenderSetting("anti_aliasing", ToString(antiAliasing))
     Client.SetRenderSetting("fog", ToString(fog))
+    Client.SetRenderSetting("particles", particleQuality)
 
 end
 

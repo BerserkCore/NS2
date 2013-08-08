@@ -27,16 +27,16 @@ function UpdateSortOrder(sortType)
     else
         gSortReversed = false
     end
-
+    
     gLastSortType = sortType
-
+    
 end
 
 function SortByTickrate(a, b)
 
     local tickrate1 = tonumber(a.tickrate) or 0
     local tickrate2 = tonumber(b.tickrate) or 0
-
+    
     if not gSortReversed then
         return tickrate1 > tickrate2
     else
@@ -67,28 +67,28 @@ end
 
 function SortByPrivate(a, b)
 
-    local aValue = ConditionalValue(a.requiresPassword, 1, 0)
-    local bValue = ConditionalValue(b.requiresPassword, 1, 0)
-
+    local aValue = a.requiresPassword and 1 or 0
+    local bValue = b.requiresPassword and 1 or 0
+    
     if not gSortReversed then
         return aValue > bValue
     else
         return aValue < bValue
     end
-
+    
 end
 
 function SortByFavorite(a, b)
 
-    local aValue = ConditionalValue(a.favorite, 1, 0)
-    local bValue = ConditionalValue(b.favorite, 1, 0)
-
+    local aValue = a.favorite and 1 or 0
+    local bValue = b.favorite and 1 or 0
+    
     if not gSortReversed then
         return aValue > bValue
     else
         return aValue < bValue
     end
-
+    
 end
 
 function SortByMap(a, b)
@@ -107,8 +107,8 @@ function SortByName(a, b)
         return a.name:upper() > b.name:upper()
     else
         return a.name:upper() < b.name:upper()
-    end    
-        
+    end
+    
 end
 
 function SortByMode(a, b)
@@ -117,8 +117,8 @@ function SortByMode(a, b)
         return a.mode:upper() > b.mode:upper()
     else
         return a.mode:upper() < b.mode:upper()
-    end    
-        
+    end
+    
 end
 
 function FilterServerMode(mode)
@@ -134,9 +134,10 @@ function FilterMinRate(minrate)
 end
 
 function FilterMaxPing(maxping)
+
     return function(entry)
     
-        // don't limit ping
+        // Don't limit ping.
         if maxping == kFilterMaxPing then
             return true
         else
@@ -144,6 +145,7 @@ function FilterMaxPing(maxping)
         end
         
     end
+    
 end
 
 function FilterEmpty(active)
@@ -177,14 +179,14 @@ local function CheckShowTableEntry(self, entry)
         if not filterFunc(entry) then
             return false
         end
-    
+        
     end
     
     return true
     
 end
 
-// called after the table has changed (style or data)
+// Called after the table has changed (style or data).
 local function RenderServerList(self)
 
     local renderPosition = 0
@@ -195,7 +197,7 @@ local function RenderServerList(self)
     local lastSelectedServerId = MainMenu_GetSelectedServer()
     self.scriptHandle:ResetServerSelection()
     
-    // add, remove entries, but reuse as many GUIItems as possible
+    // Add, remove entries, but reuse as many GUIItems as possible.
     if serverListSize < numServers then
     
         for i = 1, numServers - serverListSize do
@@ -243,16 +245,17 @@ end
 function ServerList:Initialize()
 
     self:DisableBorders()
+    
     MenuElement.Initialize(self)
     
     self:SetWidth(kDefaultWidth)
     self:SetBackgroundColor(kNoColor)
     
-    self.tableData = {}
-    self.serverEntries = {}
-    self.filter = {}
+    self.tableData = { }
+    self.serverEntries = { }
+    self.filter = { }
     
-    // default sorting is set in GUIMainMenu
+    // Default sorting is set in GUIMainMenu.
     self.comparator = nil
     
 end
@@ -260,10 +263,10 @@ end
 function ServerList:Uninitialize()
 
     MenuElement.Uninitialize(self)
-
-    self.tableData = {}
-    self.serverEntries = {}
-
+    
+    self.tableData = { }
+    self.serverEntries = { }
+    
 end
 
 function ServerList:GetTagName()
@@ -286,16 +289,18 @@ function ServerList:Sort(tableData)
     if self.comparator then
         table.sort(tableData, self.comparator)
     end
-
+    
     RenderServerList(self)
-
+    
 end
 
 function ServerList:SetTableData(tableData)
-    
+
     if tableData then
+    
         self:Sort(tableData)
         self.tableData = tableData
+        
     end
     
 end
@@ -303,9 +308,10 @@ end
 function ServerList:ClearChildren()
 
     MenuElement.ClearChildren(self)
-    self.tableData = {}
-    self.serverEntries = {}
-
+    
+    self.tableData = { }
+    self.serverEntries = { }
+    
 end
 
 function ServerList:AddEntry(serverEntry)
@@ -319,9 +325,11 @@ function ServerList:UpdateEntry(serverEntry)
 
     for s = 1, #self.tableData do
     
-        if self.tableData[s].serverId == serverEntry.serverId then
+        if self.tableData[s].address == serverEntry.address then
         
-            self.tableData[s] = serverEntry
+            for k, v in pairs(serverEntry) do
+                self.tableData[s][k] = v
+            end
             break
             
         end
@@ -332,9 +340,23 @@ function ServerList:UpdateEntry(serverEntry)
     
 end
 
+function ServerList:GetEntryExists(serverEntry)
+
+    for s = 1, #self.tableData do
+    
+        if self.tableData[s].address == serverEntry.address then
+            return true
+        end
+        
+    end
+    
+    return false
+    
+end
+
 function ServerList:SetFilter(index, func)
 
     self.filter[index] = func
     RenderServerList(self)
-
+    
 end

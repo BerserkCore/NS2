@@ -250,13 +250,6 @@ function InfantryPortal:GetShowOrderLine()
     return true
 end
 
-function InfantryPortal:GetUseAttachPoint()
-    if self:GetIsBuilt() then
-        return InfantryPortal.kLoginAttachPoint
-    end
-    return ""
-end
-
 local function QueueWaitingPlayer(self)
 
     if self:GetIsAlive() and self.queuedPlayerId == Entity.invalidId then
@@ -458,7 +451,7 @@ if Server then
             if self:SpawnTimeElapsed() then
             
                 self:FinishSpawn()
-                PushPlayersInRange(self:GetOrigin(), kPushRange, kPushImpulseStrength, GetEnemyTeamNumber(self:GetTeamNumber()))
+                //PushPlayersInRange(self:GetOrigin(), kPushRange, kPushImpulseStrength, GetEnemyTeamNumber(self:GetTeamNumber()))
                 
             end
             

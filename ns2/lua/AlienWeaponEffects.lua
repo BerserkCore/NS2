@@ -187,7 +187,7 @@ kAlienWeaponEffects =
             {cinematic = "seasonal/holiday2012/cinematics/snowball_hit.cinematic"},
             
             {sound = "", silenceupgrade = true, done = true},
-            {sound = "sound/NS2.fev/alien/gorge/bilebomb_hit", done = true},
+            {sound = "sound/NS2.fev/common/snowball", done = true},
         },
     },
     

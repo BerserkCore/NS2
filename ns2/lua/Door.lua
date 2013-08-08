@@ -388,12 +388,8 @@ function Door:TriggerDoorLock()
 end
 
 /*
-function Door:GetUseAttachPoint()
-    return "keypad_front"
-end
-
-function Door:GetUseAttachPoint2()
-    return "keypad_back"
+function Door:GetUsablePoints()
+    return { self:GetAttachPointOrigin("keypad_front"), self:GetAttachPointOrigin("keypad_back") }
 end
 */
 
@@ -401,7 +397,7 @@ function Door:GetHasLockTimeout()
     return self.lockTimeOut > Shared.GetTime()
 end
 
-function Door:OnUse(player, elapsedTime, useAttachPoint, usePoint)
+function Door:OnUse(player, elapsedTime)
 
     local state = self:GetState()
     if state ~= Door.kState.DestroyedFront and state ~= Door.kState.DestroyedBack and not self:GetIsWeldedShut() and player:isa("Marine") then

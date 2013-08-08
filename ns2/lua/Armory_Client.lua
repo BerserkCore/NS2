@@ -82,21 +82,21 @@ function Armory:GetWarmupCompleted()
     return not self.timeConstructionCompleted or (self.timeConstructionCompleted + 0.7 < Shared.GetTime())
 end
 
-function Armory:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function Armory:OnUse(player, elapsedTime, useSuccessTable)
 
     self:UpdateArmoryWarmUp()
-
+    
     if GetIsUnitActive(self) and not Shared.GetIsRunningPrediction() and not player.buyMenu and self:GetWarmupCompleted() then
-
+    
         if Client.GetLocalPlayer() == player then
         
             Client.SetCursor("ui/Cursor_MarineCommanderDefault.dds", 0, 0)
-    
+            
             // Play looping "active" sound while logged in
             // Shared.PlayPrivateSound(player, Armory.kResupplySound, player, 1.0, Vector(0, 0, 0))
             
             MouseTracker_SetIsVisible(true, "ui/Cursor_MenuDefault.dds", true)
-
+            
             // tell the player to show the lua menu
             player:BuyMenu(self)
             

@@ -85,7 +85,7 @@ function RecycleMixin:OnResearchComplete(researchId)
         Server.SendNetworkMessage( "Recycle", BuildRecycleMessage(amount - finalRecycleAmount, self:GetTechId(), finalRecycleAmount), true )
         
         local team = self:GetTeam()
-        team:SendCommand(team:GetDeathMessage(self, kDeathMessageIcon.Consumed, self))
+        team:SendCommand(team:GetDeathMessage(self, kDeathMessageIcon.Recycled, self))
         
         self.recycled = true
         self.timeRecycled = Shared.GetTime()

@@ -110,9 +110,8 @@ Player.kFallingDirtEffect           = PrecacheAsset("cinematics/alien/onos/dirt_
 Player.kRunIdleSpeed = 1
 
 Player.kLoginBreakingDistance = 150
-Player.kUseRange  = kPlayerUseRange
-Player.kDownwardUseRange = 2.2
-Player.kUseHolsterTime = .5
+local kDownwardUseRange = 2.2
+Player.kUseHolsterTime = 0.5
 Player.kDefaultBuildTime = .2
 local kUseBoxSize = Vector(0.5, 0.5, 0.5)
 
@@ -757,23 +756,18 @@ function Player:Reload()
     
 end
 
-local function GetIsValidUseOfAttachPoint(self, entity, attachPointName, useRange)
+local function GetIsValidUseOfPoint(self, entity, usablePoint, useRange)
 
-    if attachPointName ~= "" and GetPlayerCanUseEntity(self, entity) then
+    if GetPlayerCanUseEntity(self, entity) then
     
-        local attachPoint = entity:GetAttachPointOrigin(attachPointName)        
         local viewCoords = self:GetViewAngles():GetCoords()
-        local toAttachPoint = attachPoint - self:GetEyePos()
+        local toUsePoint = usablePoint - self:GetEyePos()
         
-        local legalUse = toAttachPoint:GetLength() < useRange and viewCoords.zAxis:DotProduct(GetNormalizedVector(toAttachPoint)) > .8
-        
-        if legalUse then
-            return true, attachPoint
-        end
+        return toUsePoint:GetLength() < useRange and viewCoords.zAxis:DotProduct(GetNormalizedVector(toUsePoint)) > 0.8
         
     end
     
-    return false, nil
+    return false
     
 end
 
@@ -781,15 +775,18 @@ end
  * Will return true if the passed in entity can be used by self and
  * the entity has no attach points to use.
  */
-local function GetCanEntityBeUsedWithNoAttachPoint(self, entity)
+local function GetCanEntityBeUsedWithNoUsablePoint(self, entity)
 
-    local attachPointName1 = ( entity.GetUseAttachPoint and entity:GetUseAttachPoint() ) or ""
-    local attachPointName2 = ( entity.GetUseAttachPoint1 and entity:GetUseAttachPoint2() ) or ""
-    // Ignore attach points if a Structure has not been built.
-    local attachPointOverride = HasMixin(entity, "Construct") and not entity:GetIsBuilt()
+    if HasMixin(entity, "Usable") then
     
-    if attachPointOverride or (attachPointName1 == "" and attachPointName2 == "") and GetPlayerCanUseEntity(self, entity) then             
-        return true, nil        
+        // Ignore usable points if a Structure has not been built.
+        local usablePointOverride = HasMixin(entity, "Construct") and not entity:GetIsBuilt()
+        
+        local usablePoints = entity:GetUsablePoints()
+        if usablePointOverride or (not usablePoints or #usablePoints == 0) and GetPlayerCanUseEntity(self, entity) then
+            return true, nil
+        end
+        
     end
     
     return false, nil
@@ -803,34 +800,45 @@ function Player:PerformUseTrace()
     
     // To make building low objects like an infantry portal easier, increase the use range
     // as we look downwards. This effectively makes use trace in a box shape when looking down.
-    local useRange = Player.kUseRange
+    local useRange = kPlayerUseRange
     local sinAngle = viewCoords.zAxis:GetLengthXZ()
     if viewCoords.zAxis.y < 0 and sinAngle > 0 then
     
-        useRange = Player.kUseRange / sinAngle
-        if -viewCoords.zAxis.y * useRange > Player.kDownwardUseRange then
-            useRange = Player.kDownwardUseRange / -viewCoords.zAxis.y
+        useRange = kPlayerUseRange / sinAngle
+        if -viewCoords.zAxis.y * useRange > kDownwardUseRange then
+            useRange = kDownwardUseRange / -viewCoords.zAxis.y
         end
         
     end
     
-    // Get possible useable entities within useRange that have an attach point.    
-    local ents = GetEntitiesForTeamWithinRange("ScriptActor", self:GetTeamNumber(), self:GetOrigin(), useRange)
-    for index, entity in ipairs(ents) do
+    // Get possible useable entities within useRange that have an attach point.
+    local ents = GetEntitiesWithMixinWithinRange("Usable", self:GetOrigin(), useRange)
+    for e = 1, #ents do
     
-        local attachPointNames = { entity:GetUseAttachPoint(), entity:GetUseAttachPoint2() }
-        for _, attachPointName in ipairs(attachPointNames) do
+        local entity = ents[e]
+        // Filter away anything on the enemy team. Allow using entities not on any team.
+        if not HasMixin(entity, "Team") or self:GetTeamNumber() == entity:GetTeamNumber() then
         
-            local success, attachPoint = GetIsValidUseOfAttachPoint(self, entity, attachPointName, useRange)
-            if success then
-                return entity, attachPoint
+            local usablePoints = entity:GetUsablePoints()
+            if usablePoints then
+            
+                for p = 1, #usablePoints do
+                
+                    local usablePoint = usablePoints[p]
+                    local success = GetIsValidUseOfPoint(self, entity, usablePoint, useRange)
+                    if success then
+                        return entity, usablePoint
+                    end
+                    
+                end
+                
             end
             
         end
         
     end
     
-    // If failed, do a regular trace with entities that don't have use attach points.
+    // If failed, do a regular trace with entities that don't have usable points.
     local viewCoords = self:GetViewAngles():GetCoords()
     local endPoint = startPoint + viewCoords.zAxis * useRange
     local activeWeapon = self:GetActiveWeapon()
@@ -839,9 +847,9 @@ function Player:PerformUseTrace()
     
     if trace.fraction < 1 and trace.entity ~= nil then
     
-        // Only return this entity if it can be used and it does not have an attach point (which should have been
+        // Only return this entity if it can be used and it does not have a usable point (which should have been
         // caught in the above cases).
-        if GetCanEntityBeUsedWithNoAttachPoint(self, trace.entity) then
+        if GetCanEntityBeUsedWithNoUsablePoint(self, trace.entity) then
             return trace.entity, trace.endPoint
         end
         
@@ -852,8 +860,8 @@ function Player:PerformUseTrace()
     local maxUseLength = (kUseBoxSize - -kUseBoxSize):GetLength()
     endPoint = startPoint + viewCoords.zAxis * (useRange - maxUseLength / 2)
     local traceBox = Shared.TraceBox(kUseBoxSize, startPoint, endPoint, CollisionRep.Move, PhysicsMask.AllButPCs, EntityFilterTwo(self, activeWeapon))
-    // Only return this entity if it can be used and it does not have an attach point (which should have been caught in the above cases).
-    if traceBox.fraction < 1 and traceBox.entity ~= nil and GetCanEntityBeUsedWithNoAttachPoint(self, traceBox.entity) then
+    // Only return this entity if it can be used and it does not have a usable point (which should have been caught in the above cases).
+    if traceBox.fraction < 1 and traceBox.entity ~= nil and GetCanEntityBeUsedWithNoUsablePoint(self, traceBox.entity) then
     
         local direction = startPoint - traceBox.entity:GetOrigin()
         direction:Normalize()
@@ -869,7 +877,7 @@ function Player:PerformUseTrace()
     
 end
 
-function Player:UseTarget(entity, attachPoint, timePassed)
+function Player:UseTarget(entity, timePassed)
 
     assert(entity)
     
@@ -877,7 +885,7 @@ function Player:UseTarget(entity, attachPoint, timePassed)
     if entity.OnUse then
     
         useSuccessTable.useSuccess = true
-        entity:OnUse(self, timePassed, true, attachPoint, useSuccessTable)
+        entity:OnUse(self, timePassed, useSuccessTable)
         
     end
     
@@ -888,8 +896,8 @@ function Player:UseTarget(entity, attachPoint, timePassed)
 end
 
 /**
- * Check to see if there's a ScriptActor we can use. Checks any attachpoints returned from  
- * GetAttachPointOrigin() and if that fails, does a regular traceray. Returns true if we processed the action.
+ * Check to see if there's a ScriptActor we can use. Checks any usable points returned from  
+ * GetUsablePoints() and if that fails, does a regular trace ray. Returns true if we processed the action.
  */
 local function AttemptToUse(self, timePassed)
 
@@ -908,22 +916,24 @@ local function AttemptToUse(self, timePassed)
     
     if GetIsVortexed(self) then
         return false
-    end    
+    end
     
     // Trace to find use entity.
-    local entity, attachPoint = self:PerformUseTrace()   
+    local entity, usablePoint = self:PerformUseTrace()
     
     // Use it.
     if entity then
     
-        if self:UseTarget(entity, attachPoint, kUseInterval) then
+        if self:UseTarget(entity, kUseInterval) then
+        
             self:SetIsUsing(true)
             self.timeOfLastUse = Shared.GetTime()
             return true
+            
         end
-
+        
     end
-
+    
 end
 
 function Player:Buy()

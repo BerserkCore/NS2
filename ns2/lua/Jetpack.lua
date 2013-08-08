@@ -98,15 +98,17 @@ end
 
 if Server then
 
-    function Jetpack:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
-
+    function Jetpack:OnUse(player, elapsedTime, useSuccessTable)
+    
         if self:GetIsValidRecipient(player) then
+        
             DestroyEntity(self)
             player:GiveJetpack()
+            
         end
-
+        
     end
-
+    
 end
 
 Shared.LinkClassToMap("Jetpack", Jetpack.kMapName, networkVars)

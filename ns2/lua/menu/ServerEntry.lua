@@ -83,13 +83,13 @@ function ServerEntry:Initialize()
                 
                     self.favorite:SetTexture(kFavoriteTexture)
                     self.serverData.favorite = true
-                    SetServerFavorite(self.serverData.address, true)
+                    SetServerIsFavorite(self.serverData, true)
                     
                 else
                 
                     self.favorite:SetTexture(kNonFavoriteTexture)
                     self.serverData.favorite = false
-                    SetServerFavorite(self.serverData.address, false)
+                    SetServerIsFavorite(self.serverData, false)
                     
                 end
                 
@@ -105,10 +105,24 @@ function ServerEntry:Initialize()
                     
                 else
                 
-                    local function RefreshCallback(serverIndex)
-                        MainMenu_OnServerRefreshed(serverIndex)
+                    // < 0 indicates that this server hasn't been queried yet.
+                    // This happens when a server is a favorite and hasn't
+                    // been downloaded yet.
+                    if self:GetId() >= 0 then
+                    
+                        local function RefreshCallback(serverIndex)
+                            MainMenu_OnServerRefreshed(serverIndex)
+                        end
+                        Client.RefreshServer(self:GetId(), RefreshCallback)
+                        
+                    else
+                    
+                        //local function RefreshCallback(name, ping, players)
+                        //    MainMenu_OnServerRefreshed(serverIndex)
+                        //end
+                        //Client.RefreshServer(self.serverData.address, RefreshCallback)
+                        
                     end
-                    Client.RefreshServer(self:GetId(), RefreshCallback)
                     
                 end
                 

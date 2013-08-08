@@ -161,6 +161,26 @@ local function LoadBillboard(className, groupName, values)
 end
 AddFunctionContract(LoadBillboard, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
 
+local function LoadDecal(className, groupName, values)
+
+    local renderDecal = Client.CreateRenderDecal()
+
+    local coords = values.angles:GetCoords(values.origin)
+    renderDecal:SetCoords(coords)
+    //renderDecal:SetGroup(groupName)
+    renderDecal:SetMaterial(values.material)
+    renderDecal:SetExtents(values.extents)
+    
+    if Client.decalList == nil then
+        Client.decalList = { }
+    end
+    table.insert(Client.decalList, renderDecal)
+    
+    return true
+        
+end
+AddFunctionContract(LoadDecal, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
+
 local function LoadStaticProp(className, groupName, values)
 
     if values.model == "" then
@@ -285,6 +305,7 @@ loadTypes["light_ambient"] = { LoadAllowed = ClientOnly, LoadFunction = LoadLigh
 loadTypes["prop_static"] = { LoadAllowed = ClientAndServerAndPredict, LoadFunction = LoadStaticProp }
 loadTypes["sound_effect"] = { LoadAllowed = ServerOnly, LoadFunction = LoadSoundEffect }
 loadTypes["billboard"] = { LoadAllowed = ClientOnly, LoadFunction = LoadBillboard }
+loadTypes["decal"] = { LoadAllowed = ClientOnly, LoadFunction = LoadDecal }
 loadTypes["reflection_probe"] = { LoadAllowed = ClientOnly, LoadFunction = LoadReflectionProbe }
 
 /**

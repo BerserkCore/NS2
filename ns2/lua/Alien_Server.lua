@@ -51,7 +51,7 @@ function Alien:OnProcessMove(input)
     if not self:GetIsDestroyed() then
     
         // Calculate two and three hives so abilities for abilities        
-        self:UpdateNumHives()
+        UpdateAbilityAvailability(self, self:GetTierTwoTechId(), self:GetTierThreeTechId())
         
         self.enzymed = self.timeWhenEnzymeExpires > Shared.GetTime()
         self.primalScreamBoost = self.timeWhenPrimalScreamExpires > Shared.GetTime()
@@ -254,112 +254,6 @@ function Alien:GetTierThreeTechId()
     return kTechId.None
 end
 
-function Alien:GetTierThreeWeaponMapName()
-    return LookupTechData(self:GetTierThreeTechId(), kTechDataMapName)
-end
-
-function Alien:GetTierTwoWeaponMapName()
-    return LookupTechData(self:GetTierTwoTechId(), kTechDataMapName)
-end
-
-function Alien:UnlockTierTwo()
-
-    local tierTwoMapName = self:GetTierTwoWeaponMapName()
-    
-    if tierTwoMapName and self:GetIsAlive() then
-    
-        local activeWeapon = self:GetActiveWeapon()
-        
-        if tierTwoMapName then
-        
-            local tierTwoWeapon = self:GetWeapon(tierTwoMapName)
-            if not tierTwoWeapon then
-                self:GiveItem(tierTwoMapName)
-            end
-        
-        end
-        
-        if activeWeapon then
-            self:SetActiveWeapon(activeWeapon:GetMapName())
-        end
-    
-    end
-    
-end
-
-function Alien:LockTierTwo()
-
-    local tierTwoMapName = self:GetTierTwoWeaponMapName()
-    
-    if tierTwoMapName and self:GetIsAlive() then
-    
-        local tierTwoWeapon = self:GetWeapon(tierTwoMapName)
-        local activeWeapon = self:GetActiveWeapon()
-        local activeWeaponMapName = nil
-        
-        if activeWeapon ~= nil then
-            activeWeaponMapName = activeWeapon:GetMapName()
-        end
-        
-        if tierTwoWeapon then
-            self:RemoveWeapon(tierTwoWeapon)
-        end
-        
-        if activeWeaponMapName == tierTwoMapName then
-            self:SwitchWeapon(1)
-        end
-        
-    end    
-    
-end
-
-function Alien:UnlockTierThree()
-
-    local tierThreeMapName = self:GetTierThreeWeaponMapName()
-    
-    if tierThreeMapName and self:GetIsAlive() then
-    
-        local activeWeapon = self:GetActiveWeapon()
-    
-        local tierThreeWeapon = self:GetWeapon(tierThreeMapName)
-        if not tierThreeWeapon then
-            self:GiveItem(tierThreeMapName)
-        end
-        
-        if activeWeapon then
-            self:SetActiveWeapon(activeWeapon:GetMapName())
-        end
-    
-    end
-    
-end
-
-function Alien:LockTierThree()
-
-    local tierThreeMapName = self:GetTierThreeWeaponMapName()
-    
-    if tierThreeMapName and self:GetIsAlive() then
-    
-        local tierThreeWeapon = self:GetWeapon(tierThreeMapName)
-        local activeWeapon = self:GetActiveWeapon()
-        local activeWeaponMapName = nil
-        
-        if activeWeapon ~= nil then
-            activeWeaponMapName = activeWeapon:GetMapName()
-        end
-        
-        if tierThreeWeapon then
-            self:RemoveWeapon(tierThreeWeapon)
-        end
-        
-        if activeWeaponMapName == tierThreeMapName then
-            self:SwitchWeapon(1)
-        end
-        
-    end
-    
-end
-
 function Alien:OnKill(attacker, doer, point, direction)
 
     Player.OnKill(self, attacker, doer, point, direction)
@@ -367,55 +261,6 @@ function Alien:OnKill(attacker, doer, point, direction)
     self.storedHyperMutationCost = 0
     self.twoHives = false
     self.threeHives = false
-    
-end
-
-function Alien:UpdateNumHives()
-
-    local time = Shared.GetTime()
-    if self.timeOfLastNumHivesUpdate == nil or (time > self.timeOfLastNumHivesUpdate + 0.5) then
-    
-        local team = self:GetTeam()
-        if team and team.GetTechTree then
-        
-            local hasTwoHivesNow = GetGamerules():GetAllTech() or (self:GetTierTwoTechId() ~= kTechId.None and GetHasTech(self, self:GetTierTwoTechId(), true))
-            
-            local hadTwoHives = self.twoHives
-            // Don't lose abilities unless you die.
-            self.twoHives = self.twoHives or hasTwoHivesNow
-            
-            // Prevent the callbacks from being called too often.
-            if hadTwoHives ~= self.twoHives then
-            
-                if self.twoHives then
-                    self:UnlockTierTwo()
-                else
-                    self:LockTierTwo()
-                end
-                
-            end
-            
-            local hasThreeHivesNow = GetGamerules():GetAllTech() or (self:GetTierTwoTechId() ~= kTechId.None and GetHasTech(self, self:GetTierThreeTechId(), true))
-            local hadThreeHives = self.threeHives
-            // Don't lose abilities unless you die.
-            self.threeHives = self.threeHives or hasThreeHivesNow
-            
-            // Prevent the callbacks from being called too often.
-            if hadThreeHives ~= self.threeHives then
-            
-                if self.threeHives then
-                    self:UnlockTierThree()
-                else
-                    self:LockTierThree()
-                end
-                
-            end
-            
-        end
-        
-        self.timeOfLastNumHivesUpdate = time
-        
-    end
     
 end
 

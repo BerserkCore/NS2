@@ -42,10 +42,7 @@ local function SharedUpdate(self)
                     rotateParam = math.max(rotateParam, self.maxRotate)
                 end
                 
-                local success = soundEnt:SetParameter("rotate", rotateParam, 1)
-                if success == false then
-                    Print("Tried to use invalid looping flamethrower sound entity id: %s", ToString(self.loopingSoundEntId))
-                end
+                soundEnt:SetParameter("rotate", rotateParam, 1)
                 
             end
             

@@ -19,7 +19,7 @@ function PrototypeLab:UpdatePrototypeLabWarmUp()
     
 end
 
-function PrototypeLab:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function PrototypeLab:OnUse(player, elapsedTime, useSuccessTable)
 
     self:UpdatePrototypeLabWarmUp()
     
@@ -34,7 +34,7 @@ function PrototypeLab:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSu
             
             MouseTracker_SetIsVisible(true, "ui/Cursor_MenuDefault.dds", true)
             
-            // tell the player to show the lua menu
+            // Tell the player to show the lua menu.
             player:BuyMenu(self)
             
         end

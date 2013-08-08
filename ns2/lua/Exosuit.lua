@@ -69,15 +69,17 @@ end
 
 if Server then
 
-    function Exosuit:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
-
+    function Exosuit:OnUse(player, elapsedTime, useSuccessTable)
+    
         if self:GetIsValidRecipient(player) then
+        
             DestroyEntity(self)
             player:GiveExo()
+            
         end
-
+        
     end
-
+    
 end
 
 // only give Exosuits to standard marines

@@ -655,13 +655,12 @@ function GUIMarineHUD:Update(deltaTime)
     // Update passive upgrades
     local armorLevel = 0
     local weaponLevel = 0
-    
-    if PlayerUI_GetIsPlaying() then
-    
-        armorLevel = PlayerUI_GetArmorLevel()
-        weaponLevel = PlayerUI_GetWeaponLevel()
-        
-    end
+
+    armorLevel = PlayerUI_GetArmorLevel()
+    weaponLevel = PlayerUI_GetWeaponLevel()
+
+    self.armorLevel:SetIsVisible(armorLevel ~= 0)
+    self.weaponLevel:SetIsVisible(weaponLevel ~= 0)
     
     if armorLevel ~= self.lastArmorLevel then
     
@@ -769,7 +768,6 @@ function GUIMarineHUD:ShowNewArmorLevel(armorLevel)
     if armorLevel ~= 0 then
     
         local textureCoords = GetTextureCoordinatesForIcon(GetTechIdForArmorLevel(armorLevel), true)
-        self.armorLevel:SetIsVisible(true)
         self.armorLevel:SetTexturePixelCoordinates(unpack(textureCoords))
         
     end

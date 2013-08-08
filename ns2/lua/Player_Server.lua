@@ -53,6 +53,8 @@ function Player:SetName(name)
     
     // Strip out surrounding "s
     local newName = string.gsub(name, "\"(.*)\"", "%1")
+    // Strip out escape characters.
+    newName = string.gsub(newName, "[\a\b\f\n\r\t\v]", "")
     
     // Make sure it's not too long
     newName = string.sub(newName, 0, kMaxNameLength)

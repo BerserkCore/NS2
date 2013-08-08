@@ -328,7 +328,7 @@ function CloakableMixin:OnClampSpeed(input, velocity)
 
     PROFILE("CloakableMixin:OnClampSpeed")
     
-    if self:GetIsCloaked() and bit.band(input.commands, Move.Jump) == 0 and (self.GetIsOnSurface and self:GetIsOnSurface()) then
+    if self:GetIsCloaked() and not self:GetIsJumping() and (self.GetIsOnSurface and self:GetIsOnSurface()) then
     
         local moveSpeed = velocity:GetLength()
         if moveSpeed > kCloakedMaxSpeed then

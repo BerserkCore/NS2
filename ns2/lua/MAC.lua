@@ -231,7 +231,7 @@ function MAC:GetReceivesStructuralDamage()
     return true
 end
 
-function MAC:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function MAC:OnUse(player, elapsedTime, useSuccessTable)
 
     // Play flavor sounds when using MAC.
     if Server then
@@ -669,7 +669,9 @@ local function FindSomethingToDo(self)
         for w = 1, #weldables do
         
             local weldable = weldables[w]
-            if weldable:GetCanBeWelded(self) then
+            // There are cases where the weldable's weld percentage is very close to
+            // 100% but not exactly 100%. This second check prevents the MAC from being so pedantic.
+            if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 0.95 then
                 return self:GiveOrder(kTechId.Weld, weldable:GetId(), weldable:GetOrigin(), nil, false, false) ~= kTechId.None
             end
             

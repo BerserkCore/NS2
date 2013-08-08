@@ -121,6 +121,14 @@ function DestroyLevelObjects()
         end
         Client.billboardList = { }
     end
+    
+    // Remove the decals.  
+    if Client.decalList ~= nil then  
+        for index, decal in ipairs(Client.decalList) do
+            Client.DestroyRenderDecal(decal)
+        end
+        Client.decalList = { }
+    end
 
     // Remove the reflection probes.
     if Client.reflectionProbeList ~= nil then

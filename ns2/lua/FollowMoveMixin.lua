@@ -86,6 +86,16 @@ local function UpdateTarget(self, input)
 
     assert(Server)
     
+    if self.imposedTargetId ~= Entity.invalidId then
+    
+        if self:GetIsValidTarget(Shared.GetEntity(self.imposedTargetId)) then
+            return
+        else
+            self.imposedTargetId = Entity.invalidId
+        end
+        
+    end
+    
     local primaryAttack = bit.band(input.commands, Move.PrimaryAttack) ~= 0
     local secondaryAttack = bit.band(input.commands, Move.SecondaryAttack) ~= 0
     local isTargetValid = self:GetIsValidTarget(Shared.GetEntity(self.followedTargetId))
@@ -124,10 +134,10 @@ function FollowMoveMixin:UpdateMove(input)
         return
     end
     
-    UpdateView(self, input)
     if Server then
         UpdateTarget(self, input)
     end
+    UpdateView(self, input)
     
 end
 

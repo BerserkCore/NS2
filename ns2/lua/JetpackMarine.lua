@@ -543,7 +543,7 @@ function JetpackMarine:OnUpdateAnimationInput(modelMixin)
 end
 
 function JetpackMarine:GetIsStunAllowed()
-    return self:GetIsOnGround()
+    return self:GetIsOnGround() and Marine.GetIsStunAllowed(self)
 end
 
 Shared.LinkClassToMap("JetpackMarine", JetpackMarine.kMapName, networkVars)

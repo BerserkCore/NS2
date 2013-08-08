@@ -1497,6 +1497,8 @@ function StringTrim(inString)
 
     ASSERT(type(inString) == "string")
     
+    // Strip out escape characters.
+    inString = inString:gsub("[\a\b\f\n\r\t\v]", "")
     return inString:gsub("^%s*(.-)%s*$", "%1")
     
 end

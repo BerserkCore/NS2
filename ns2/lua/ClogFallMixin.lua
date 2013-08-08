@@ -58,6 +58,8 @@ function ClogFallMixin:OnEntityChange(oldId, newId)
 
     if oldId == self.clogParentId then
         self.clogParentId = Entity.invalidId
+    elseif oldId == self.destinationEntityId then
+        self.destinationEntityId = nil 
     else
 
         // TODO: check childs
@@ -99,6 +101,7 @@ function ClogFallMixin:TriggerClogFall()
     if trace.fraction ~= 1 then
     
         self.fallDestinationY = trace.endPoint.y
+        self.destinationEntityId = trace.entity ~= nil and trace.entity:GetId()
         self.isClogFalling = true
         self.surfaceNormal = trace.normal
         
@@ -148,6 +151,19 @@ function ClogFallMixin:AddClogFall(deltaMove)
         self.isClogFalling = false
         
         self:TriggerEffects("structure_land", {effecthostcoords = Coords.GetTranslation(self:GetOrigin())})
+        
+        if not self.clogParentId or self.clogParentId == Entity.invalidId then
+        
+            // attach us to the clog we landed
+            local attachToClog = self.destinationEntityId and Shared.GetEntity(self.destinationEntityId)
+            if attachToClog and attachToClog:isa("Clog") then
+            
+                attachToClog:ConnectToClog(self)
+                self.destinationEntityId = nil
+                
+            end
+        
+        end
         
         if self.OnClogFallDone then
             self:OnClogFallDone(self.clogParentId and self.clogParentId ~= Entity.invalidId, self.surfaceNormal)

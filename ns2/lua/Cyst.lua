@@ -24,6 +24,7 @@ Script.Load("lua/FlinchMixin.lua")
 Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/CloakableMixin.lua")
+Script.Load("lua/DetectableMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/ConstructMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
@@ -93,6 +94,7 @@ AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(PointGiverMixin, networkVars)
 AddMixinNetworkVars(CloakableMixin, networkVars)
 AddMixinNetworkVars(ConstructMixin, networkVars)
+AddMixinNetworkVars(DetectableMixin, networkVars)
 
 //
 // To avoid problems with minicysts on walls connection to each other through solid rock,
@@ -159,6 +161,7 @@ function Cyst:OnCreate()
     InitMixin(self, CloakableMixin)
     InitMixin(self, ConstructMixin)
     InitMixin(self, MaturityMixin)
+    InitMixin(self, DetectableMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)    

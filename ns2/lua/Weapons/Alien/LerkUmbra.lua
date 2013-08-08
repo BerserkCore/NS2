@@ -21,6 +21,7 @@ local kRange = 17
 
 local kAnimationGraph = PrecacheAsset("models/alien/lerk/lerk_view.animation_graph")
 local attackEffectMaterial = nil
+local kUmbraSound = PrecacheAsset("sound/NS2.fev/alien/structures/crag/umbra")
 
 local networkVars =
 {
@@ -35,6 +36,11 @@ local function CreateUmbraCloud(self, player)
     
     local umbraCloud = CreateEntity(CragUmbra.kMapName, player:GetEyePos() + player:GetViewCoords().zAxis, player:GetTeamNumber())
     umbraCloud:SetTravelDestination(destination)
+    
+    
+    if not GetHasSilenceUpgrade(player) then
+        Shared.PlayWorldSound(nil, kUmbraSound, nil, player:GetEyePos())
+    end
 
 end
 

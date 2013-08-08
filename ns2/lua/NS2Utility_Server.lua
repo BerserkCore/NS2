@@ -348,3 +348,96 @@ function SocketPowerForLocation(locationName)
     end
     
 end
+
+local function UnlockAbility(forAlien, techId)
+
+    local mapName = LookupTechData(techId, kTechDataMapName)
+    if mapName and forAlien:GetIsAlive() then
+    
+        local activeWeapon = forAlien:GetActiveWeapon()
+
+        local tierWeapon = forAlien:GetWeapon(mapName)
+        if not tierWeapon then
+            forAlien:GiveItem(mapName)
+        end
+        
+        if activeWeapon then
+            forAlien:SetActiveWeapon(activeWeapon:GetMapName())
+        end
+    
+    end
+
+end
+
+local function LockAbility(forAlien, techId)
+
+    local mapName = LookupTechData(techId, kTechDataMapName)    
+    if mapName and forAlien:GetIsAlive() then
+    
+        local tierWeapon = forAlien:GetWeapon(mapName)
+        local activeWeapon = forAlien:GetActiveWeapon()
+        local activeWeaponMapName = nil
+        
+        if activeWeapon ~= nil then
+            activeWeaponMapName = activeWeapon:GetMapName()
+        end
+        
+        if tierWeapon then
+            forAlien:RemoveWeapon(tierWeapon)
+        end
+        
+        if activeWeaponMapName == mapName then
+            forAlien:SwitchWeapon(1)
+        end
+        
+    end    
+    
+end
+
+function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
+
+    local time = Shared.GetTime()
+    if forAlien.timeOfLastNumHivesUpdate == nil or (time > forAlien.timeOfLastNumHivesUpdate + 0.5) then
+
+        local team = forAlien:GetTeam()
+        if team and team.GetTechTree then
+        
+            local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetHasTech(forAlien, tierTwoTechId, true))
+            local hadTwoHives = forAlien.twoHives
+            // Don't lose abilities unless you die.
+            forAlien.twoHives = forAlien.twoHives or hasTwoHivesNow
+            
+            // Prevent the callbacks from being called too often.
+            if hadTwoHives ~= forAlien.twoHives then
+            
+                if forAlien.twoHives then
+                    UnlockAbility(forAlien, tierTwoTechId)
+                else
+                    LockAbility(forAlien, tierTwoTechId)
+                end
+                
+            end
+            
+            local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetHasTech(forAlien, tierThreeTechId, true))
+            local hadThreeHives = forAlien.threeHives
+            // Don't lose abilities unless you die.
+            forAlien.threeHives = forAlien.threeHives or hasThreeHivesNow
+            
+            // Prevent the callbacks from being called too often.
+            if hadThreeHives ~= forAlien.threeHives then
+            
+                if forAlien.threeHives then
+                    UnlockAbility(forAlien, tierThreeTechId)
+                else
+                    LockAbility(forAlien, tierThreeTechId)
+                end
+                
+            end
+            
+        end
+        
+        forAlien.timeOfLastNumHivesUpdate = time
+        
+    end
+
+end

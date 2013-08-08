@@ -172,7 +172,7 @@ function CommandStructure:GetCommander()
     return Shared.GetEntity(self.commanderId)
 end
 
-function CommandStructure:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function CommandStructure:OnUse(player, elapsedTime, useSuccessTable)
 
     local teamNum = self:GetTeamNumber()
     local csUseSuccess = false
@@ -189,7 +189,7 @@ function CommandStructure:OnUse(player, elapsedTime, useAttachPoint, usePoint, u
                 if not team:GetHasCommander() then
                 
                     // Must use attach point if specified (Command Station)            
-                    if not self.occupied and self.loginAllowed and (useAttachPoint or (self:GetUseAttachPoint() == "")) then
+                    if not self.occupied and self.loginAllowed then
                     
                         self.playerIdStartedLogin = player:GetId()                        
                         self.occupied = true

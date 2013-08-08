@@ -99,7 +99,7 @@ function Button:SetUseState(useState)
     
 end
 
-function Button:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function Button:OnUse(player, elapsedTime, useSuccessTable)
 
     local buttonUseSuccess = false
 

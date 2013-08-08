@@ -345,7 +345,7 @@ if Server then
                     
                     TransformPlayerCoordsForPhaseGate(player, self:GetCoords(), destinationPhaseGate:GetCoords())
                     
-                    PushPlayersInRange(destOrigin, kPushRange, kPushImpulseStrength, GetEnemyTeamNumber(self:GetTeamNumber()))
+                    //PushPlayersInRange(destOrigin, kPushRange, kPushImpulseStrength, GetEnemyTeamNumber(self:GetTeamNumber()))
                     
                     player:SetOrigin(destOrigin)
                     

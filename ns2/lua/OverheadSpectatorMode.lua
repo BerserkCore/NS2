@@ -33,11 +33,9 @@ function OverheadSpectatorMode:Initialize(spectator)
         MouseTracker_SetIsVisible(true, nil, true)
         
     	SetCommanderPropState(true)
-        Client.SetEnableFog(false)
         SetSkyboxDrawState(false)
         Client.SetSoundGeometryEnabled(false)
         Client.SetGroupIsVisible(kCommanderInvisibleGroupName, false)
-        Client.SetEnableFog(false)
         
         Client.SetPitch(overheadAngle.pitch)
         Client.SetYaw(overheadAngle.yaw)
@@ -77,11 +75,9 @@ function OverheadSpectatorMode:Uninitialize(spectator)
         MouseTracker_SetIsVisible(false)
         
         SetCommanderPropState(false)
-        Client.SetEnableFog(true)
         SetSkyboxDrawState(true)
         Client.SetSoundGeometryEnabled(true)
         Client.SetGroupIsVisible(kCommanderInvisibleGroupName, true)
-        Client.SetEnableFog(true)
         
         Client.SetPitch(viewAngles.pitch)
         

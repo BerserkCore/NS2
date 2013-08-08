@@ -15,7 +15,6 @@ class 'CragUmbra' (CommanderAbility)
 CragUmbra.kMapName = "cragumbra"
 
 CragUmbra.kCragUmbraEffect = PrecacheAsset("cinematics/alien/Crag/umbra.cinematic")
-local kUmbraSound = PrecacheAsset("sound/NS2.fev/alien/structures/crag/umbra")
 
 CragUmbra.kType = CommanderAbility.kType.Repeat
 
@@ -46,10 +45,6 @@ end
 function CragUmbra:OnInitialized()
 
     CommanderAbility.OnInitialized(self)
-    
-    if Server then
-        Shared.PlayWorldSound(nil, kUmbraSound, nil, self:GetOrigin())
-    end
     
     /*
     if Client then

@@ -30,7 +30,7 @@ function StunMixin:__initmixin()
     
 end
 
-function StunMixin:SetStun(duration, onGroundDuration)
+function StunMixin:SetStun(duration)
     
     local allowed = true
     
@@ -39,7 +39,8 @@ function StunMixin:SetStun(duration, onGroundDuration)
     end
 
     if allowed then    
-        self.stunTime = Shared.GetTime() + duration        
+        self.stunTime = Shared.GetTime() + duration
+        self.timeLastStun = Shared.GetTime()  
     end
     
 end

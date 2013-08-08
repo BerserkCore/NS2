@@ -216,6 +216,7 @@ function GUIAlienHUD:CreateHealthBall()
     healthBallBackground:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
     healthBallBackground:SetFloatParameter("correctionX", 1)
     healthBallBackground:SetFloatParameter("correctionY", 1)
+    healthBallBackground:SetLayer(kGUILayerPlayerHUD)
     
     self.healthBall:GetLeftSide():SetColor(Color(230/255, 171/255, 46/255, 1))
     self.healthBall:GetRightSide():SetColor(Color(230/255, 171/255, 46/255, 1))
@@ -243,6 +244,8 @@ function GUIAlienHUD:CreateHealthBall()
     armorBallSettings.InheritParentAlpha = false
     self.armorBall = GUIDial()
     self.armorBall:Initialize(armorBallSettings)
+    
+    self.armorBall:GetBackground():SetLayer(kGUILayerPlayerHUD)
     
     self.armorBall:GetLeftSide():SetColor(kArmorCircleColor)
     self.armorBall:GetRightSide():SetColor(kArmorCircleColor)
@@ -325,6 +328,7 @@ function GUIAlienHUD:CreateEnergyBall()
     energyBallBackground:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
     energyBallBackground:SetFloatParameter("correctionX", 1)
     energyBallBackground:SetFloatParameter("correctionY", 1)
+    energyBallBackground:SetLayer(kGUILayerPlayerHUD)
     
     self.activeAbilityIcon = GUIManager:CreateGraphicItem()
     self.activeAbilityIcon:SetSize(Vector(GUIScale(kInventoryIconTextureWidth), GUIScale(kInventoryIconTextureHeight), 0))

@@ -647,9 +647,6 @@ function Commander:OnInitLocalClient()
     // Set commander geometry invisible.
     Client.SetGroupIsVisible(kCommanderInvisibleGroupName, false)
     
-    // Turn off fog to improve look.
-    Client.SetEnableFog(false)
-    
     // Set our location so we are viewing the command structure we're in.
     self:SetStartPosition()
     

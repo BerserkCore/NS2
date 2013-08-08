@@ -44,7 +44,7 @@ local function GetEffectiveDigestDuration(self)
  
 end
 
-local function Digest(self, elapsedTime)
+local function Digest(self)
 
     local digestDuration = GetEffectiveDigestDuration(self)
     
@@ -69,7 +69,7 @@ local function Digest(self, elapsedTime)
     
 end
 
-function DigestMixin:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+function DigestMixin:OnUse(player, elapsedTime, useSuccessTable)
 
     local canDigest = false
     if self.GetCanDigest then
@@ -79,7 +79,7 @@ function DigestMixin:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuc
     end
     
     if canDigest then
-        Digest(self, elapsedTime)
+        Digest(self)
     end
     
     useSuccessTable.useSuccess = useSuccessTable.useSuccess and canDigest

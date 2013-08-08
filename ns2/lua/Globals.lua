@@ -137,7 +137,7 @@ kDeathMessageIcon = enum( { 'None',
                             'Mine', 'Gore', 'Spit', 'Jetpack', 'Claw',
                             'Minigun', 'Vortex', 'LerkBite', 'Umbra', 
                             'Xenocide', 'Blink', 'Leap', 'Stomp',
-                            'Consumed',
+                            'Consumed', 'GL', 'Recycled'
                             } )
 
 kMinimapBlipType = enum( { 'Undefined', 'TechPoint', 'ResourcePoint', 'Scan',

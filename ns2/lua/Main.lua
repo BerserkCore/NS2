@@ -12,6 +12,7 @@
 Script.Load("lua/Globals.lua")
 Script.Load("lua/Render.lua")
 Script.Load("lua/GUIManager.lua")
+Script.Load("lua/NS2Utility.lua")
 Script.Load("lua/MainMenu.lua")
 
 local renderCamera = nil

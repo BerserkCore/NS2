@@ -112,8 +112,11 @@ function CommandStation:GetNanoShieldOffset()
     return Vector(0, -0.3, 0)
 end
 
-function CommandStation:GetUseAttachPoint()
-    return kLoginAttachPoint
+function CommandStation:GetUsablePoints()
+
+    local loginPoint = self:GetAttachPointOrigin(kLoginAttachPoint)
+    return { loginPoint }
+    
 end
 
 function CommandStation:GetCanBeUsed(player, useSuccessTable)

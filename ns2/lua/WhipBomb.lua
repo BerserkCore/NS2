@@ -108,8 +108,9 @@ if (Server) then
     
         assert(not self:GetIsDestroyed())
         
-        // Do splash damage to structures and ARCs
-        local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), WhipBomb.kSplashRadius)
+        // Do splash damage to structures and ARCs, ignore friendly players here. the owner (alien commander) is not supposed to be damaged by their own whip
+        // this is an exception, since the default rule would be that the owner can be damaged
+        local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), WhipBomb.kSplashRadius)
 
         // Do damage to every target in range
         RadiusDamage(hitEntities, self:GetOrigin(), WhipBomb.kSplashRadius, kWhipBombardDamage, self)

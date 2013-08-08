@@ -18,6 +18,8 @@ Script.Load("lua/DSPEffects.lua")
 
 CreateDSPs()
 
+local kAllowDebuggingMainMenu = false
+
 local mainMenuMusic = nil
 local mainMenuAlertMessage  = nil
 
@@ -47,8 +49,8 @@ end
 
 function MainMenu_GetIsOpened()
 
-    // Don't load or open main menu while debugging (too slow)
-    if not GetIsDebugging() then
+    // Don't load or open main menu while debugging (too slow).
+    if not GetIsDebugging() or kAllowDebuggingMainMenu then
     
         if loadLuaMenu then
         
@@ -61,17 +63,16 @@ function MainMenu_GetIsOpened()
         else
             return MenuManager.GetMenu() ~= nil
         end
-
-    else
-//        Print("Skipping MainMenu_GetIsOpened() while debugging. Pass map map_name on command line.")
+        
     end
     
-    return false    
+    return false
+    
 end
 
 function LeaveMenu()
 
-    MainMenu_OnCloseMenu()    
+    MainMenu_OnCloseMenu()
     
     if gMainMenu then
         gMainMenu:SetIsVisible(false)
@@ -156,9 +157,21 @@ function MainMenu_GetSelectedServerName()
     
 end
 
-
 function MainMenu_JoinSelected()
-    MainMenu_SBJoinServer( Client.GetServerAddress(gSelectedServerNum), gPassword, Client.GetServerMapName(gSelectedServerNum) )
+
+    local address = nil
+    local mapName = nil
+    if gSelectedServerNum >= 0 then
+    
+        address = Client.GetServerAddress(gSelectedServerNum)
+        mapName = Client.GetServerMapName(gSelectedServerNum)
+        
+    else
+        address = GetFavoriteServers()[-gSelectedServerNum].address
+    end
+    
+    MainMenu_SBJoinServer(address, gPassword, mapName)
+    
 end
 
 function GetModName(mapFileName)
@@ -190,9 +203,6 @@ function MainMenu_ReturnToGame()
     LeaveMenu()
 end
 
-function MainMenu_Loaded()   
-end
-
 /**
  * Set a message that will be displayed in window in the main menu the next time
  * it's updated.
@@ -215,17 +225,10 @@ function MainMenu_GetAlertMessage()
     
 end
 
-/**
- * Called when the user selects the "Quit" button in the main menu.
- */
-function MainMenu_Quit()
-    Client.Exit()
-end
-
 function MainMenu_Open()
 
-    // Don't load or open main menu while debugging (too slow)
-    if not GetIsDebugging() then
+    // Don't load or open main menu while debugging (too slow).
+    if not GetIsDebugging() or kAllowDebuggingMainMenu then
     
         // Load and set default sound levels
         OptionsDialogUI_OnInit()
@@ -239,30 +242,14 @@ function MainMenu_Open()
             
         else
         
-            MenuManager.SetMenu( kMainMenuFlash )
+            MenuManager.SetMenu(kMainMenuFlash)
             MouseTracker_SetIsVisible(true, "ui/Cursor_MenuDefault.dds", false)
             
         end
         
         MainMenu_OnOpenMenu()
-
-    else
-        Print("Skipping MainMenu_Open() while debugging. Pass map name on command line.")        
-    end
-    
-end
-
-function MainMenu_GetDLCs()
-
-    local dlcs = { }
-    for i = 1, 4 do
-    
-        local enabled = "disabled"
-        table.insert(dlcs, string.format("dlc_%d_%s", i, enabled))
         
     end
-    
-    return dlcs
     
 end
 
@@ -277,12 +264,14 @@ end
 /**
  * Called when the user types the "map" command at the console.
  */
-local function OnCommandMap(mapFileName)    
+local function OnCommandMap(mapFileName)
+
     MainMenu_HostGame(mapFileName)
     
     if Client then
         Client.SetOptionString("lastServerMapName", mapFileName)
     end
+    
 end
 
 /**

@@ -11,6 +11,8 @@ Script.Load("lua/Mixins/ModelMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/FlinchMixin.lua")
+Script.Load("lua/EntityChangeMixin.lua")
+Script.Load("lua/LOSMixin.lua")
 
 class 'BoneWall' (CommanderAbility)
 
@@ -35,6 +37,7 @@ AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(FlinchMixin, networkVars)
+AddMixinNetworkVars(LOSMixin, networkVars)
 
 function AlignBoneWalls(coords)
 
@@ -77,6 +80,8 @@ function BoneWall:OnCreate()
     InitMixin(self, LiveMixin)
     InitMixin(self, SelectableMixin)
     InitMixin(self, FlinchMixin)
+    InitMixin(self, EntityChangeMixin)
+    InitMixin(self, LOSMixin)
     
     self.forcedEndLifespan = nil
 
@@ -100,7 +105,11 @@ function BoneWall:OnInitialized()
     
 end
 
-function Infestation:GetSurfaceOverride()
+function BoneWall:OverrideCheckVision()
+    return false
+end
+
+function BoneWall:GetSurfaceOverride()
     return "infestation"
 end    
 

@@ -300,7 +300,15 @@ function Spectator:SetSpectatorMode(mode)
 end
 
 function Spectator:GetFollowMoveCameraDistance()
+
+    local followTarget = Shared.GetEntity(self:GetFollowTargetId())
+    // Follow Players closer than other units.
+    if followTarget and followTarget:isa("Player") then
+        return 2.5
+    end
+    
     return 5
+    
 end
 
 function Spectator:GetAnimateDeathCamera()

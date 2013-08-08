@@ -187,7 +187,7 @@ if Server then
         PROFILE("SoundEffect:SharedUpdate")
         
         // If the assetLength is < 0, it is a looping sound and needs to be manually destroyed.
-        if self.playing and self.assetLength >= 0 then
+        if not self:GetIsMapEntity() and self.playing and self.assetLength >= 0 then
         
             // Add in a bit of time to make sure the Client has had enough time to fully play.
             local endTime = self.startTime + self.assetLength + kSoundEndBufferTime
@@ -254,7 +254,20 @@ if Client then
                 self.clientStartTime = self.startTime
                 
                 if self.playing then
+                
                     self.soundEffectInstance:Start()
+                    if self.clientSetParameters then
+                    
+                        for c = 1, #self.clientSetParameters do
+                        
+                            local param = self.clientSetParameters[c]
+                            self.soundEffectInstance:SetParameter(param.name, param.value, param.speed)
+                            
+                        end
+                        self.clientSetParameters = nil
+                        
+                    end
+                    
                 else
                     self.soundEffectInstance:Stop()
                 end
@@ -281,7 +294,18 @@ if Client then
         local success = false
         
         if self.soundEffectInstance and self.playing then
-            success = self.soundEffectInstance:SetParameter(paramName, paramValue, paramSpeed)
+        
+            if self.clientPlaying then
+                success = self.soundEffectInstance:SetParameter(paramName, paramValue, paramSpeed)
+            else
+            
+                // SharedUpdate() has not been called yet, save the parameters until it has.
+                self.clientSetParameters = self.clientSetParameters or { }
+                table.insert(self.clientSetParameters, { name = paramName, value = paramValue, speed = paramSpeed })
+                success = true
+                
+            end
+            
         end
         
         return success

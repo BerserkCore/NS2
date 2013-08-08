@@ -191,8 +191,8 @@ function Blink:ProcessMoveOnWeapon(player, input)
         
     end
     
-    // End blink mode if out of energy.
-    if player:GetEnergy() == 0 and player.ethereal then
+    // End blink mode if out of energy or when dead
+    if (player:GetEnergy() == 0 or not player:GetIsAlive()) and player.ethereal then
     
         self:SetEthereal(player, false)
         TEST_EVENT("Blink ended, out of energy")

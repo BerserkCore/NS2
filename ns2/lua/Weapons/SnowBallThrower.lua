@@ -13,13 +13,14 @@ class 'SnowBallThrower' (Weapon)
 
 SnowBallThrower.kMapName = "snowballthrower"
 
-// part of the players velocity is use for the bomb
 local kPlayerVelocityFraction = 1
 local kBombVelocity = 15
+local kShootLimit = 1
 
 local networkVars =
 {
-    firingPrimary = "boolean"
+    firingPrimary = "boolean",
+    lastTimeShot = "time"
 }
 
 function SnowBallThrower:OnCreate()
@@ -27,6 +28,7 @@ function SnowBallThrower:OnCreate()
     Weapon.OnCreate(self)
     
     self.firingPrimary = false
+    self.lastTimeShot = 0
     
 end
 
@@ -58,11 +60,16 @@ function SnowBallThrower:OnPrimaryAttack(player)
 
     Weapon.OnPrimaryAttack(self, player)
     
-    if not self.firingPrimary then
-        FireBombProjectile(player)
-    end
+    if Shared.GetTime() - self.lastTimeShot >= kShootLimit then
     
-    self.firingPrimary = true
+        if not self.firingPrimary then
+            FireBombProjectile(player)
+        end
+        
+        self.firingPrimary = true
+        self.lastTimeShot = Shared.GetTime()
+        
+    end
     
 end
 

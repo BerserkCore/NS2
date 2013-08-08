@@ -227,7 +227,10 @@ function AlienCommander:OnProcessMove(input)
 
     Commander.OnProcessMove(self, input)
 
-    if Client then    
+    if Server then
+        UpdateAbilityAvailability(self, self.tierTwoTechId, self.tierThreeTechId)
+
+    elseif Client then    
         self:UpdateForesight()    
     end
 

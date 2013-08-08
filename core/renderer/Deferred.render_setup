@@ -8,6 +8,7 @@ settings =
 		{ name="shadows" 			default="true" }
 		{ name="fog" 				default="true" }
 		{ name="infestation" 		default="rich" }
+		{ name="particles" 	    	default="high" }
 		{ name="infestation_scale" }
 	]
 	
@@ -52,6 +53,11 @@ resources =
 		{ name="accumulation_4"			format="A16B16G16R16F"	x_scale=0.25 y_scale=0.25 ping_pong=true } 		// 1/4 resolution
 		{ name="accumulation_8"			format="A16B16G16R16F"	x_scale=0.125 y_scale=0.125 ping_pong=true } 	// 1/8 resolution
 		{ name="accumulation_16"		format="A16B16G16R16F"	x_scale=0.0625 y_scale=0.0625 ping_pong=true } 	// 1/16 resolution
+
+		// Low-res particles
+		{ name="lowparts_ssdepth" 	    format="D16" 			x_scale=0.5 y_scale=0.5 }
+		{ name="lowparts_vsdepth"    	format="R16F" 			x_scale=0.5 y_scale=0.5 }
+		{ name="lowparts_accum"			format="A16B16G16R16F"	x_scale=0.5 y_scale=0.5 }
 		
 		{ name="infestation"			file_name="materials/infestation/infestation.dds" }
 		{ name="infestation_normal"		file_name="materials/infestation/infestation_normal.dds" }
@@ -430,12 +436,12 @@ layers =
 			generator						= "objects"
 			objects_mask					= "decal"
 		}
-			
-		// Add in the emissive pass for the particles.
+
+        // High-res particles pass
 		{
 			name							= "emissive_particles"
-			conditions						= { mode = "lit" }
-			conditions						= { mode = "unlit" }
+			conditions						= { mode = "lit" particles = "high" }
+			conditions						= { mode = "unlit" particles = "high" }
 			color_targets					= "accumulation_1"
 			depth_stencil_target			= "back_buffer_depth_stencil"
 			technique						= "Particle"
@@ -443,6 +449,81 @@ layers =
 			generator						= "objects"
 			objects_mask					= "particles"
 		}
+
+			
+        //----------------------------------------
+        //   Low-res Emissive Particles
+        //----------------------------------------
+
+        // Down-sample depth buffer
+        // Just use the same shader as Medium AO
+		{
+			name							= "lowparts_downsample_depth"
+			conditions						= { mode = "lit" particles = "low" }
+			conditions						= { mode = "unlit" particles = "low" }
+
+			color_targets 					= "lowparts_vsdepth"
+			depth_stencil_target			= "lowparts_ssdepth"
+            
+			shader							= "renderer/Particles.fx"
+			technique						= "ResizeDepth"
+
+			parameters						= { depthTexture = "depth" }
+			generator						= "fullscreen"
+		}
+
+        // Draw particles in low-res accum. But do not do view-model particles
+		{
+			name							= "lowparts_render"
+			conditions						= { mode = "lit" particles = "low" }
+			conditions						= { mode = "unlit" particles = "low" }
+
+			color_targets					= "lowparts_accum"
+			//depth_stencil_target			= "lowparts_ssdepth"
+			clear							= "color"
+
+			technique						= "Particle"
+
+			parameters						= { depthTexture = "lowparts_vsdepth" }
+			generator						= "objects"
+			objects_mask					= "particles"
+
+            zones_mask                      = "default"
+		}
+
+        // Composite back into full res accumulation
+		{
+			name							= "lowparts_composite"
+			conditions						= { mode = "lit" particles = "low" }
+			conditions						= { mode = "unlit" particles = "low" }
+
+			color_targets 					= "accumulation_1"
+
+			shader 							= "renderer/Particles.fx"
+			technique 						= "Composite"
+
+            parameters						= { lowAccumTexture = "lowparts_accum" }
+			generator						= "fullscreen"
+		}
+
+        // High-res particles pass for view-model particles only
+		{
+			name							= "emissive_particles"
+			conditions						= { mode = "lit" particles = "low" }
+			conditions						= { mode = "unlit" particles = "low" }
+			color_targets					= "accumulation_1"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "Particle"
+			parameters						= { depthTexture = "depth" }
+			generator						= "objects"
+			objects_mask					= "particles"
+            zones_mask                      = "view"
+		}
+
+
+        //----------------------------------------
+        //   End Particles
+        //----------------------------------------
 
 		/*
 		// Reflections

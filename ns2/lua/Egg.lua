@@ -506,13 +506,13 @@ if Server then
         ScriptActor.OnDestroy(self)
         
     end
-
-    function Egg:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
+    
+    function Egg:OnUse(player, elapsedTime, useSuccessTable)
     
         local useSuccess = false
         
         if self:InternalGetCanBeUsed(player) then
-            
+        
             GestatePlayer(self, player, player:GetTechId())
             useSuccess = true
             DestroyEntity(self)
@@ -520,7 +520,7 @@ if Server then
         end
         
         useSuccessTable.useSuccess = useSuccessTable.useSuccess and useSuccess
-
+        
     end
     
     function Egg:OnEntityChange(entityId, newEntityId)

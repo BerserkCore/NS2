@@ -228,9 +228,6 @@ kDamageEffects =
             {cinematic = "cinematics/marine/roboticsfactory/hurt.cinematic", classname = "RoboticsFactory", done = true},
             {cinematic = "cinematics/marine/phasegate/hurt_severe.cinematic", classname = "PhaseGate", flinch_severe = true, done = true},
             {cinematic = "cinematics/marine/phasegate/hurt.cinematic", classname = "PhaseGate", done = true},
-            
-            {cinematic = "", classname = "PowerPoint", done = true},
-            
             {cinematic = "cinematics/marine/structures/hurt_small_severe.cinematic", classname = "ArmsLab", flinch_severe = true, done = true},
             {cinematic = "cinematics/marine/structures/hurt_small.cinematic", classname = "ArmsLab", done = true},
             {cinematic = "cinematics/marine/structures/hurt_small_severe.cinematic", classname = "Observatory", flinch_severe = true, done = true},
@@ -239,8 +236,15 @@ kDamageEffects =
             {cinematic = "cinematics/marine/structures/hurt_small.cinematic", classname = "SentryBattery", done = true},
             {parented_cinematic = "cinematics/marine/exo/hurt_severe.cinematic", classname = "Exo", isalien = false, flinch_severe = true, done = true},
             {parented_cinematic = "cinematics/marine/exo/hurt.cinematic", classname = "Exo", isalien = false, done = true},
-        
-        
+            
+            {cinematic = "", classname = "PowerPoint", done = true},
+            {cinematic = "", classname = "Player", done = true},
+            {cinematic = "", classname = "MAC", done = true},
+            {cinematic = "", classname = "ARC", done = true},
+            {cinematic = "cinematics/marine/structures/hurt_severe.cinematic", classname = "ScriptActor", isalien = false, flinch_severe = true, done = true},
+            {cinematic = "cinematics/marine/structures/hurt.cinematic", classname = "ScriptActor", isalien = false, done = true},
+            
+            
             // alien damaged effects
             {cinematic = "cinematics/alien/hive/hurt_severe.cinematic", classname = "Hive", flinch_severe = true, done = true},
             {cinematic = "cinematics/alien/hive/hurt.cinematic", classname = "Hive", done = true},
@@ -258,9 +262,10 @@ kDamageEffects =
             {cinematic = "cinematics/alien/crag/hurt.cinematic", classname = "Crag", done = true},
             {cinematic = "cinematics/alien/whip/hurt_severe.cinematic", classname = "Whip", flinch_severe = true, done = true},
             {cinematic = "cinematics/alien/whip/hurt.cinematic", classname = "Whip", done = true},
-      
-            {cinematic = "cinematics/alien/structures/hurt_severe.cinematic", classname = "Structure", isalien = true, flinch_severe = true, done = true},   
-            {cinematic = "cinematics/alien/structures/hurt.cinematic", classname = "Structure", isalien = true, done = true},   
+            
+            {cinematic = "", classname = "Player", done = true},
+            {cinematic = "cinematics/alien/structures/hurt_severe.cinematic", classname = "ScriptActor", isalien = true, flinch_severe = true, done = true},   
+            {cinematic = "cinematics/alien/structures/hurt.cinematic", classname = "ScriptActor", isalien = true, done = true},   
         }
     },
 

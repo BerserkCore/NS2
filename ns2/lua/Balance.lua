@@ -360,6 +360,7 @@ kChargeMinDamage = 1
 kStompEnergyCost = 40
 kStompRange = 12
 kDisruptMarineTime = 2
+kDisruptMarineTimeout = 4
 kShockwaveSpeed = 10
 
 
