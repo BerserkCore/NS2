@@ -218,7 +218,7 @@ if Server then
         
         ScriptActor.OnKill(self, attacker, doer, point, direction)
         
-        TEST_EVENT("Mine arms on destruction")
+        TEST_EVENT("Mine killed by player")
         
     end
     

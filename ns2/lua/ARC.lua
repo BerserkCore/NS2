@@ -81,18 +81,18 @@ end
 local networkVars =
 {
     // ARCs can only fire when deployed and can only move when not deployed
-    mode            = "enum ARC.kMode",
-    deployMode      = "enum ARC.kDeployMode",
+    mode = "enum ARC.kMode",
+    deployMode = "enum ARC.kDeployMode",
     
-    barrelYawDegrees            = "compensated float",
-    barrelPitchDegrees          = "compensated float",
+    barrelYawDegrees = "compensated float",
+    barrelPitchDegrees = "compensated float",
     
     // pose parameters for forward track (should be compensated??)
-    forwardTrackYawDegrees        = "float",
-    forwardTrackPitchDegrees      = "float",
+    forwardTrackYawDegrees = "float",
+    forwardTrackPitchDegrees = "float",
     
     // So we can update angles and pose parameters smoothly on client
-    targetDirection             = "vector"
+    targetDirection = "vector",
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -137,6 +137,8 @@ function ARC:OnCreate()
     
         InitMixin(self, RepositioningMixin)
         InitMixin(self, SleeperMixin)
+        
+        self.targetPosition = nil
         
     elseif Client then
         InitMixin(self, CommanderGlowMixin)
@@ -269,6 +271,8 @@ function ARC:PerformActivation(techId, position, normal, commander)
         return true, true
         
     end
+    
+    self.targetPosition = nil
     
     return false, true
     

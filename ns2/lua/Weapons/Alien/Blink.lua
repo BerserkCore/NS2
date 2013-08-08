@@ -15,7 +15,7 @@ class 'Blink' (Ability)
 Blink.kMapName = "blink"
 
 // initial force added when starting blink
-local kEtherealForce = 4
+local kEtherealForce = 10
 
 // Delay before you can blink again after a blink
 Blink.kMinEnterEtherealTime = 0.4

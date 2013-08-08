@@ -318,7 +318,7 @@ AddFunctionContract(SetLastDamage, { Arguments = { "Entity", "number", { "Entity
 function LiveMixin:GetCanTakeDamage()
 
     local canTakeDamage = (not self.GetCanTakeDamageOverride or self:GetCanTakeDamageOverride()) and (not self.GetCanTakeDamageOverrideMixin or self:GetCanTakeDamageOverrideMixin())
-    return canTakeDamage
+    return canTakeDamage and not GetIsRecycledUnit(self)
     
 end
 AddFunctionContract(LiveMixin.GetCanTakeDamage, { Arguments = { "Entity" }, Returns = { "boolean" } })

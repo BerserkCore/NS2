@@ -9,7 +9,6 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-local kARCDamageOffset = Vector(0, 0.3, 0)
 local kMoveParam = "move_speed"
 local kMuzzleNode = "fxnode_arcmuzzle"
 
@@ -147,8 +146,8 @@ function ARC:AdjustPitchAndRoll()
     
 end
 
-function ARC:SetTargetDirection(target)
-    self.targetDirection = GetNormalizedVector(target:GetEngagementPoint() - self:GetAttachPointOrigin(kMuzzleNode))
+function ARC:SetTargetDirection(targetPosition)
+    self.targetDirection = GetNormalizedVector(targetPosition - self:GetOrigin())
 end
 
 function ARC:ClearTargetDirection()
@@ -159,38 +158,36 @@ function ARC:UpdateOrders(deltaTime)
 
     // If deployed, check for targets
     local currentOrder = self:GetCurrentOrder()
+
     if currentOrder then
+    
+        self.targetPosition = nil
     
         // Move ARC if it has an order and it can be moved
         local canMove = self.deployMode == ARC.kDeployMode.Undeployed
         if currentOrder:GetType() == kTechId.Move and canMove then
             self:UpdateMoveOrder(deltaTime)
-        elseif currentOrder:GetType() == kTechId.Attack and self.deployMode == ARC.kDeployMode.Deployed then
-            
-            local target = self:GetTarget()
-            if target ~= nil and self:GetCanFireAtTarget(target, nil) then
-                self:SetTargetDirection(target)
-            else
-            
-                self:ClearTargetDirection()
-                self:ClearCurrentOrder()
-                
-            end
-            
         end
     
     elseif self:GetInAttackMode() then
     
-        // Check for new target every so often, but not every frame
-        local time = Shared.GetTime()
-        if self.timeOfLastAcquire == nil or (time > self.timeOfLastAcquire + 0.2) then
+        if self.targetPosition then
+            self:SetTargetDirection(self.targetPosition)            
+        else
         
-            self:AcquireTarget()
+            // Check for new target every so often, but not every frame
+            local time = Shared.GetTime()
+            if self.timeOfLastAcquire == nil or (time > self.timeOfLastAcquire + 0.2) then
             
-            self.timeOfLastAcquire = time
+                self:AcquireTarget()            
+                self.timeOfLastAcquire = time
+                
+            end
             
-        end
+        end    
 
+    else
+        self.targetPosition = nil
     end
 
 end
@@ -203,49 +200,39 @@ function ARC:AcquireTarget()
     
     if finalTarget ~= nil then
     
-        self:GiveOrder(kTechId.Attack, finalTarget:GetId(), nil)
         self:SetMode(ARC.kMode.Targeting)
+        self.targetPosition = finalTarget:GetOrigin()
         
     else
-    
-        self:ClearOrders()
         self:SetMode(ARC.kMode.Stationary)
-        
+        self.targetPosition = nil    
     end
     
 end
 
 local function PerformAttack(self)
 
-    local target = self:GetTarget()
-    if target then
+    if self.targetPosition then
     
-        self:TriggerEffects("arc_firing")
-    
+        self:TriggerEffects("arc_firing")    
         // Play big hit sound at origin
-        target:TriggerEffects("arc_hit_primary")
-
-        // Do damage to everything in radius. Use upgraded splash radius if researched.
-        local damageRadius = ConditionalValue(self:GetHasUpgrade(kTechId.ARCSplashTech), ARC.kUpgradedSplashRadius, ARC.kSplashRadius)
-        local hitEntities = GetEntitiesWithMixinWithinRange("Live", target:GetOrigin() + kARCDamageOffset, damageRadius)
+        self:TriggerEffects("arc_hit_primary", {effecthostcoords = Coords.GetTranslation(self.targetPosition)})
+        local hitEntities = GetEntitiesWithMixinWithinRange("Live", self.targetPosition, ARC.kSplashRadius)
 
         // Do damage to every target in range
-        RadiusDamage(hitEntities, target:GetOrigin(), damageRadius, ARC.kAttackDamage, self, true)
+        RadiusDamage(hitEntities, self.targetPosition, ARC.kSplashRadius, ARC.kAttackDamage, self, true)
 
         // Play hit effect on each
-        for index, target in ipairs(hitEntities) do
-        
-            target:TriggerEffects("arc_hit_secondary")
-            
-        end
-        
-        if not self:GetCanFireAtTarget(target, targetPoint) then
-            self:ClearOrders()
+        for index, target in ipairs(hitEntities) do        
+            target:TriggerEffects("arc_hit_secondary")            
         end
         
         TEST_EVENT("ARC attacked entity")
         
     end
+    
+    // reset target position and acquire new target
+    self.targetPosition = nil
     
 end
 
@@ -259,7 +246,7 @@ function ARC:SetMode(mode)
         self.mode = mode
         
         // Now process actions per mode
-        if self.deployMode == ARC.kDeployMode.Deployed then
+        if self:GetInAttackMode() then
             self:AcquireTarget()
         end
         

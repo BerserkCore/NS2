@@ -214,8 +214,11 @@ kWelderPowerRepairRate = 220
 kBuilderPowerRepairRate = 110
 kWelderSentryRepairRate = 150
 kPlayerWeldRate = 30
-kStructureWeldRate = 125
+kStructureWeldRate = 90
 kDoorWeldTime = 15
+
+kHatchCooldown = 5
+kEggsPerHatch = 2
 
 kHealingBedStructureRegen     = 5 // Health per second
 
@@ -226,9 +229,9 @@ kAlienMinInnateRegeneration = 1
 kAlienMaxInnateRegeneration = 20
 
 // used for hive healing and regeneration upgrade
-kAlienRegenerationPercentage = 0.09
+kAlienRegenerationPercentage = 0.08
 kAlienMinRegeneration = 10
-kAlienMaxRegeneration = 120
+kAlienMaxRegeneration = 60
 
 // when in combat self healing (innate healing or through upgrade) is multiplied with this value
 kAlienRegenerationCombatModifier = 0.2
@@ -247,7 +250,7 @@ kUmbraRetainTime = .5
 
 kBellySlideCost = 25
 kLerkFlapEnergyCost = 3
-kFadeShadowStepCost = 15
+kFadeShadowStepCost = 10
 kChargeEnergyCost = 40 // per second
 
 kAbilityMaxEnergy = 100

@@ -958,6 +958,10 @@ if Server then
     
         if self:GetGameState() == kGameState.Started then
         
+            if self.autoTeamBalanceEnabled then
+                TEST_EVENT("Auto-team balance, game ended")
+            end
+            
             // Set losing team        
             local losingTeam = nil
             if winningTeam == self.team1 then

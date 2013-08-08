@@ -10,6 +10,8 @@
 decoda_name = "Client"
 
 Script.Load("lua/Shared.lua")
+Script.Load("lua/Effect.lua")
+Script.Load("lua/AmbientSound.lua")
 Script.Load("lua/GhostModelUI.lua")
 Script.Load("lua/Render.lua")
 Script.Load("lua/MapEntityLoader.lua")
@@ -62,7 +64,7 @@ Client.timeOfLastPowerPoints = nil
 local timePlayed = nil
 local kTimePlayedOptionsKey = "timePlayedSeconds"
 
-local waitingForAutoTeamBalanceUI = GetGUIManager():CreateGUIScript("GUIWaitingForAutoTeamBalance")
+local waitingForAutoTeamBalanceUI = nil
 
 function GetRenderCameraCoords()
 
@@ -144,6 +146,9 @@ function DestroyLevelObjects()
     Client.skyBoxList = { }
     
     Client.tracersList = { }
+    for a = 1, #Client.ambientSoundList do
+        Client.ambientSoundList[a]:OnDestroy()
+    end
     Client.ambientSoundList = { }
     Client.rules = { }
     
@@ -234,11 +239,11 @@ function OnMapLoadEntity(className, groupName, values)
         
         local repeatStyle = Cinematic.Repeat_None
         
-        if (values.repeatStyle == 0) then
+        if values.repeatStyle == 0 then
             repeatStyle = Cinematic.Repeat_None
-        elseif (values.repeatStyle == 1) then
+        elseif values.repeatStyle == 1 then
             repeatStyle = Cinematic.Repeat_Loop
-        elseif (values.repeatStyle == 2) then
+        elseif values.repeatStyle == 2 then
             repeatStyle = Cinematic.Repeat_Endless
         end
         
@@ -255,12 +260,11 @@ function OnMapLoadEntity(className, groupName, values)
         cinematic:SetRepeatStyle(repeatStyle)
         table.insert(Client.cinematics, cinematic)
         
-    elseif className == AmbientSound.kMapName then
+    elseif className == "ambient_sound" then
     
         local entity = AmbientSound()
         LoadEntityFromValues(entity, values)
-        // Precache the ambient sound effects
-        Shared.PrecacheSound(entity.eventName)
+        Client.PrecacheLocalSound(entity.eventName)
         table.insert(Client.ambientSoundList, entity)
         
     elseif className == Reverb.kMapName then
@@ -904,6 +908,8 @@ local function LoadGUIScripts()
     Script.Load("lua/GUIProgressBar.lua")
     Script.Load("lua/GUIAlienTeamMessage.lua")
     Script.Load("lua/GUIAlienHUD.lua")
+    
+    waitingForAutoTeamBalanceUI = GetGUIManager():CreateGUIScript("GUIWaitingForAutoTeamBalance")
     
 end
 

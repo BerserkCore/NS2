@@ -238,11 +238,11 @@ local networkVars =
     
     // Set to true when jump key has been released after jump processed
     // Used to require the key to pressed multiple times
-    jumpHandled = "private boolean",
+    jumpHandled = "private compensated boolean",
     timeOfLastJump = "private time",
     jumping = "compensated boolean",
     onGround = "compensated boolean",
-    onGroundNeedsUpdate = "private boolean",
+    onGroundNeedsUpdate = "private compensated boolean",
     
     onLadder = "boolean",
     
@@ -2503,16 +2503,12 @@ function Player:ModifyVelocity(input, velocity)
             
             self.jumpHandled = true
         
-        elseif self:GetIsOnGround() then
-            self:HandleOnGround(input, velocity)
+        elseif self:GetIsOnGround() then        
+            velocity.y = 0            
         end
         
     end
     
-end
-
-function Player:HandleOnGround(input, velocity)
-    velocity.y = 0
 end
 
 function Player:GetIsAbleToUse()

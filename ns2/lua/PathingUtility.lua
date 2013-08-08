@@ -66,6 +66,13 @@ end
 
 function ParsePathingSettings(settings)
 
+    // override this setting - anything larger causes huge perf spikes in pathing
+    local maxOptionTileSize = 36
+    if settings.option_tile_size > maxOptionTileSize then
+        Print("WARNING: Overriding map's pathing_settings.option_tile_size from %d to %d", settings.option_tile_size, maxOptionTileSize);
+        settings.option_tile_size = maxOptionTileSize
+    end
+
     SetPathingOption(Pathing.Option_CellSize, settings.option_cell_size)
     SetPathingOption(Pathing.Option_CellHeight, settings.option_cell_height)
     SetPathingOption(Pathing.Option_AgentHeight, settings.option_agent_height)

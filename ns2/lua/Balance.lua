@@ -36,7 +36,7 @@ kMineResearchCost  = 15
 kTechEMPResearchCost = 15
 kTechMACSpeedResearchCost = 15
 
-kWelderTechResearchTime = 10
+kWelderTechResearchTime = 15
 
 kShotgunCost = 20
 kShotgunTechResearchCost = 20
@@ -129,7 +129,7 @@ kCarapaceResearchCost = 15
 kRegenerationResearchCost = 10
 
 kCelerityResearchCost = 15
-kHyperMutationResearchCost = 5
+kHyperMutationResearchCost = 10
 
 kAdrenalineResearchCost = 15
 
@@ -257,7 +257,7 @@ kConfusedSentryBaseROF = 2.0
 
 kSentryDamage = 5
 
-kARCDamage = 900
+kARCDamage = 450
 kARCDamageType = kDamageType.Splash // splash damage hits friendly arcs as well
 kARCRange = 26
 kARCMinRange = 7
@@ -338,7 +338,7 @@ kStabEnergyCost = 20
 
 kVortexEnergyCost = 40
 
-kStartBlinkEnergyCost = 8
+kStartBlinkEnergyCost = 12
 kBlinkEnergyCost = 40
 kHealthOnBlink = 0
 
@@ -462,7 +462,7 @@ kArmor2ResearchTime = 100
 kArmor3ResearchTime = 120
 
 
-kHiveBuildTime = 150
+kHiveBuildTime = 180
 
 kDrifterBuildTime = 4
 kHarvesterBuildTime = 45
@@ -498,7 +498,7 @@ kLeapResearchTime = 60
 kBileBombResearchCost = 20
 kBileBombResearchTime = 60
 kSporesResearchCost = 20
-kSporesResearchTime = 90
+kSporesResearchTime = 60
 kBlinkResearchCost = 30
 kBlinkResearchTime = 90
 kStompResearchCost = 30
@@ -604,7 +604,7 @@ kMatureWhipMaxEnergy = 150
 
 kShiftInitialEnergy = 50  kShiftMaxEnergy = 150
 kShiftEchoCost = 3
-kShiftHatchCost = 1
+kShiftHatchCost = 5
 kShiftHatchRange = 11
 kMatureShiftMaxEnergy = 200
 

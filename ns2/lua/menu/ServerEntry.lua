@@ -230,10 +230,10 @@ function ServerEntry:SetServerData(serverData)
         self.favorite:SetTexture(kFavoriteTexture)
     else
         self.favorite:SetTexture(kNonFavoriteTexture)
-    end    
+    end
     
     self:SetId(serverData.serverId)
-
+    
 end
 
 local kUseVector = Vector(1, 0, 0)
@@ -271,7 +271,10 @@ function ServerEntry:GetTagName()
 end
 
 function ServerEntry:SetId(id)
+
+    assert(type(id) == "number")
     self.rowId = id
+    
 end
 
 function ServerEntry:GetId()

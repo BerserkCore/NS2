@@ -80,7 +80,7 @@ function Alien:UpdateAutoHeal()
             healRate = healRate * kAlienRegenerationCombatModifier
         end
 
-        self:AddHealth(healRate, false, false, not GetHasRegenerationUpgrade(self))  
+        self:AddHealth(healRate, false, false, not GetHasRegenerationUpgrade(self) or self:GetIsInCombat())  
         self.timeLastAlienAutoHeal = Shared.GetTime()
     
     end 

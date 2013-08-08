@@ -110,8 +110,9 @@ local function UpdateHealing(self)
             
             for index, player in ipairs(players) do
             
-                if player:GetIsAlive() and ((player:GetOrigin() - self:GetOrigin()):GetLength() < Hive.kHealRadius) then                
-                    player:AddHealth(Clamp(player:GetMaxHealth() * Hive.kHealthPercentage, kAlienMinRegeneration, kAlienMaxRegeneration), true )                
+                if player:GetIsAlive() and ((player:GetOrigin() - self:GetOrigin()):GetLength() < Hive.kHealRadius) then   
+                    // min healing, affects skulk only             
+                    player:AddHealth(math.max(10, player:GetMaxHealth() * Hive.kHealthPercentage), true )                
                 end
                 
             end

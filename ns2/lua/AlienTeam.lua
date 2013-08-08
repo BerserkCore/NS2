@@ -590,7 +590,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddUpgradeNode(kTechId.GorgeEgg,          kTechId.None,                kTechId.None)
     self.techTree:AddUpgradeNode(kTechId.LerkEgg,          kTechId.None,                kTechId.None)
     self.techTree:AddUpgradeNode(kTechId.FadeEgg,          kTechId.TwoHives,                kTechId.None)
-    self.techTree:AddUpgradeNode(kTechId.OnosEgg,          kTechId.TwoHives,                kTechId.None)
+    self.techTree:AddUpgradeNode(kTechId.OnosEgg,          kTechId.ThreeHives,                kTechId.None)
     
     // Special alien structures. These tech nodes are modified at run-time, depending when they are built, so don't modify prereqs.
     self.techTree:AddBuildNode(kTechId.Crag,                      kTechId.CragHive,          kTechId.None)

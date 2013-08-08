@@ -67,7 +67,7 @@ Crag.kHealWaveDuration = 8
 
 Crag.kHealPercentage = 0.05
 Crag.kMinHeal = 10
-Crag.kMaxHeal = 60
+Crag.kMaxHeal = 50
 Crag.kHealWaveMultiplier = 2.5
 
 local networkVars =

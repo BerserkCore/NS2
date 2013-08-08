@@ -11,20 +11,20 @@
 // HEALTH AND ARMOR		
 kMarineHealth = 100	kMarineArmor = 30	kMarinePointValue = 5
 kJetpackHealth = 100	kJetpackArmor = 30	kJetpackPointValue = 10
-kExosuitHealth = 100	kExosuitArmor = 300	kExosuitPointValue = 20
+kExosuitHealth = 100	kExosuitArmor = 400	kExosuitPointValue = 20
 		
 kSkulkHealth = 70	kSkulkArmor = 10	kSkulkPointValue = 5
 kGorgeHealth = 150	kGorgeArmor = 70	kGorgePointValue = 7
 kLerkHealth = 125	kLerkArmor = 50	kLerkPointValue = 15
 kFadeHealth = 250	kFadeArmor = 50	kFadePointValue = 20
-kOnosHealth = 1300	kOnosArmor = 600	kOnosPointValue = 30
+kOnosHealth = 1300	kOnosArmor = 500	kOnosPointValue = 30
 		
 kEggHealth = 350	kEggArmor = 0	kEggPointValue = 2
 kMatureEggHealth = 350	kMatureEggArmor = 25
 kBabblerHealth = 30	kBabblerArmor = 0	kBabblerPointValue = 1
 		
 kArmorPerUpgradeLevel = 20
-kExosuitArmorPerUpgradeLevel = 90
+kExosuitArmorPerUpgradeLevel = 60
 kArmorHealScalar = 1 // 0.75
 
 kBuildPointValue = 5
@@ -35,7 +35,7 @@ kSkulkArmorFullyUpgradedAmount = 30
 kGorgeArmorFullyUpgradedAmount = 150
 kLerkArmorFullyUpgradedAmount = 75
 kFadeArmorFullyUpgradedAmount = 100
-kOnosArmorFullyUpgradedAmount = 1000
+kOnosArmorFullyUpgradedAmount = 900
 
 kHealthPointsPerArmorScalarHive1 = 1
 kHealthPointsPerArmorScalarHive2 = 1
@@ -79,8 +79,8 @@ kSentryHealth = 500	kSentryArmor = 100	kSentryPointValue = 10
 kARCHealth = 2000	kARCArmor = 500	kARCPointValue = 20
 kARCDeployedHealth = 2000	kARCDeployedArmor = 0	kARCPointValue = 20
 		
-kShellHealth = 375	kShellArmor = 125	kShellPointValue = 10
-kMatureShellHealth = 900	kMatureShellArmor = 300	kShellPointValue = 10
+kShellHealth = 900	kShellArmor = 200	kShellPointValue = 10
+kMatureShellHealth = 1100	kMatureShellArmor = 300	kShellPointValue = 10
 
 kCragHealth = 450	kCragArmor = 150	kCragPointValue = 10
 kMatureCragHealth = 600	kMatureCragArmor = 250	kMatureCragPointValue = 15
@@ -88,14 +88,14 @@ kMatureCragHealth = 600	kMatureCragArmor = 250	kMatureCragPointValue = 15
 kWhipHealth = 650	kWhipArmor = 175	kWhipPointValue = 10
 kMatureWhipHealth = 720	kMatureWhipArmor = 240	kMatureWhipPointValue = 15
 		
-kSpurHealth = 400	kSpurArmor = 0	kSpurPointValue = 10
-kMatureSpurHealth = 900 kMatureSpurArmor = 125 kMatureSpurPointValue = 10
+kSpurHealth = 900	kSpurArmor = 0	kSpurPointValue = 10
+kMatureSpurHealth = 1000 kMatureSpurArmor = 200 kMatureSpurPointValue = 10
 
 kShiftHealth = 500	kShiftArmor = 50	kShiftPointValue = 10
 kMatureShiftHealth = 800	kMatureShiftArmor = 100	kMatureShiftPointValue = 15
 
-kVeilHealth = 500	kVeilArmor = 0	kVeilPointValue = 10
-kMatureVeilHealth = 900	kMatureVeilArmor = 100	kVeilPointValue = 10
+kVeilHealth = 900	kVeilArmor = 0	kVeilPointValue = 10
+kMatureVeilHealth = 1000	kMatureVeilArmor = 150	kVeilPointValue = 10
 
 kShadeHealth = 500	kShadeArmor = 0	kShadePointValue = 10
 kMatureShadeHealth = 1000	kMatureShadeArmor = 0	kMatureShadePointValue = 15

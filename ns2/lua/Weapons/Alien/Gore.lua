@@ -34,7 +34,7 @@ AddMixinNetworkVars(StompMixin, networkVars)
 
 local kAttackRadius = 1.5
 local kAttackOriginDistance = 2
-local kAttackRange = 2.7
+local kAttackRange = 2.2
 local kGoreSmashKnockbackForce = 590 // mass of a marine: 90
 local kGoreSmashMinimumUpwardsVelocity = 9
 

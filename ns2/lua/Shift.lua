@@ -490,6 +490,10 @@ if Server then
 
     function Shift:TriggerHatch()
     
+        if not self:GetIsBuilt() then
+            return false
+        end    
+    
         if #self.eggSpots == 0 then
             return false
         end 
@@ -497,38 +501,42 @@ if Server then
         local position = nil
         local egg = nil
         
-        for i = 1, #self.eggSpots do
-            
-            position = self.eggSpots[i]
+        for j = 1, kEggsPerHatch do
+        
+            for i = 1, #self.eggSpots do
+                
+                position = self.eggSpots[i]
 
-            local validForEgg = GetIsPlacementForTechId(position, true, kTechId.Egg)
-            local validForSkulk = GetIsPlacementForTechId(position, true, kTechId.Skulk)
-            local notNearResourcePoint = #GetEntitiesWithinRange("ResourcePoint", position, 2) == 0
-            
-            if validForEgg and validForSkulk and notNearResourcePoint then
-            
-                egg = CreateEntity(Egg.kMapName, position, self:GetTeamNumber())
-                if egg then
+                local validForEgg = GetIsPlacementForTechId(position, true, kTechId.Egg)
+                local validForSkulk = GetIsPlacementForTechId(position, true, kTechId.Skulk)
+                local notNearResourcePoint = #GetEntitiesWithinRange("ResourcePoint", position, 2) == 0
+                
+                if validForEgg and validForSkulk and notNearResourcePoint then
+                
+                    egg = CreateEntity(Egg.kMapName, position, self:GetTeamNumber())
+                    if egg then
 
-                    // Randomize starting angles
-                    local angles = self:GetAngles()
-                    angles.yaw = math.random() * math.pi * 2
-                    egg:SetAngles(angles)
-                    
-                    // To make sure physics model is updated without waiting a tick
-                    egg:UpdatePhysicsModel()
-                    
-                    // prioritizes as a spawn point
-                    self:RegisterEgg(egg)
-                    
-                    // completely breaks the whole code
-                    break
+                        // Randomize starting angles
+                        local angles = self:GetAngles()
+                        angles.yaw = math.random() * math.pi * 2
+                        egg:SetAngles(angles)
+                        
+                        // To make sure physics model is updated without waiting a tick
+                        egg:UpdatePhysicsModel()
+                        
+                        // prioritizes as a spawn point
+                        self:RegisterEgg(egg)
+                        
+                        // completely breaks the whole code
+                        break
+                        
+                    end 
                     
                 end 
-                
-            end 
-        
-        end
+            
+            end
+            
+        end    
 
         return egg ~= nil 
             

@@ -822,22 +822,6 @@ button.update
     right: 840;
 }
 
-button.refresh
-{
-    height: 58px;
-    width: 256px;
-    border-width: 0px;
-    
-    vertical-align: bottom;
-    top: 4px;
-    font-name: fonts/AgencyFB_medium.fnt;
-    text-color: #8bb4c1;
-    text-padding: 16px;
-    
-    bottom: 0px;
-    right: 584;
-}
-
 button.create_server
 {
     height: 58px;
@@ -1292,6 +1276,27 @@ button.fps
 	horizontal-align: right;
 	right: 70px;
 
+    font-name: fonts/AgencyFB_medium.fnt;
+    text-color: #8bb4c1;
+    background-color: #000000;
+    text-padding: 16px;
+	text-align: left;
+    opacity: 0.5;
+    hover-background-color: rgba(0.0,0.0,0.0,0.7);
+}
+
+button.server_count_display
+{
+    height: 58px;
+    width: 100px;
+    border-width: 0px;
+    
+    vertical-align: top;
+	top: 0px;
+    
+	horizontal-align: right;
+	right: 70px;
+    
     font-name: fonts/AgencyFB_medium.fnt;
     text-color: #8bb4c1;
     background-color: #000000;

@@ -20,7 +20,7 @@ function GUIWaitingForAutoTeamBalance:Initialize()
     self.waitingText:SetTextAlignmentX(GUIItem.Align_Center)
     self.waitingText:SetTextAlignmentY(GUIItem.Align_Center)
     self.waitingText:SetColor(kFontColor)
-    self.waitingText:SetText(Locale.ResolveString("AUTO_TEAM_BALANCE_TOOLTIP"))
+    self.waitingText:SetText(string.format(Locale.ResolveString("AUTO_TEAM_BALANCE_TOOLTIP"), BindingsUI_GetInputValue("ReadyRoom")))
     self.waitingText:SetIsVisible(true)
     
 end

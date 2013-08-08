@@ -411,12 +411,6 @@ local function UpdateServerList(self)
     
 end
 
-local function RefreshServerList(self)
-
-    
-    
-end
-
 function GUIMainMenu:ProcessJoinServer()
 
     if MainMenu_GetSelectedServer() ~= nil then
@@ -648,12 +642,12 @@ local function CreateFilterForm(self)
     
     self.filterHasPlayers = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER EMPTY")
     self.filterHasPlayers:SetCSSClass("filter_hasplayers")
-    self.filterHasPlayers:AddSetValueCallback( function(self)
+    self.filterHasPlayers:AddSetValueCallback(function(self)
     
         self.scriptHandle.serverList:SetFilter(5, FilterEmpty(self:GetValue()))
         Client.SetOptionString("filter_hasplayers", ToString(self.scriptHandle.filterHasPlayers:GetValue()))
         
-    end )
+    end)
 
     local description = CreateMenuElement(self.filterHasPlayers, "Font")
     description:SetText("FILTER EMPTY")
@@ -661,12 +655,12 @@ local function CreateFilterForm(self)
     
     self.filterFull = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER FULL")
     self.filterFull:SetCSSClass("filter_full")
-    self.filterFull:AddSetValueCallback( function(self)
+    self.filterFull:AddSetValueCallback(function(self)
     
         self.scriptHandle.serverList:SetFilter(6, FilterFull(self:GetValue()))
         Client.SetOptionString("filter_full", ToString(self.scriptHandle.filterFull:GetValue()))
         
-    end )
+    end)
     
     local description = CreateMenuElement(self.filterFull, "Font")
     description:SetText("FILTER FULL")
@@ -674,13 +668,13 @@ local function CreateFilterForm(self)
     
     self.filterModded = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER MODDED")
     self.filterModded:SetCSSClass("filter_modded")
-    self.filterModded:AddSetValueCallback( function(self)
+    self.filterModded:AddSetValueCallback(function(self)
     
         self.scriptHandle.serverList:SetFilter(7, FilterModded(self:GetValue()))
         self.scriptHandle.filterCustomContentHint:SetIsVisible(GetFiltersAllowCommunityContent(self.scriptHandle))
-        Client.SetOptionString("filter_modded", ToString(self:GetValue()))
+        Client.SetOptionString("filter_modded", ToString(self.scriptHandle.filterModded:GetValue()))
         
-    end )
+    end)
     
     local description = CreateMenuElement(self.filterModded, "Font")
     description:SetText("FILTER MODDED")
@@ -688,12 +682,12 @@ local function CreateFilterForm(self)
     
     self.filterFavorites = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FAVORITES")
     self.filterFavorites:SetCSSClass("filter_favorites")
-    self.filterFavorites:AddSetValueCallback( function(self)
+    self.filterFavorites:AddSetValueCallback(function(self)
     
-        self.scriptHandle.serverList:SetFilter(7, FilterFavoriteOnly(self:GetValue()))
+        self.scriptHandle.serverList:SetFilter(8, FilterFavoriteOnly(self:GetValue()))
         Client.SetOptionString("filter_favorites", ToString(self.scriptHandle.filterFavorites:GetValue()))
         
-    end )
+    end)
     
     local description = CreateMenuElement(self.filterFavorites, "Font")
     description:SetText("FAVORITES")
@@ -704,7 +698,7 @@ local function CreateFilterForm(self)
     self.filterRookie:SetCSSClass("filter_rookie")
     self.filterRookie:AddSetValueCallback( function(self)
     
-        self.scriptHandle.serverList:SetFilter(8, FilterRookie(self:GetValue()))
+        self.scriptHandle.serverList:SetFilter(9, FilterRookie(self:GetValue()))
         Client.SetOptionString("filter_rookie", ToString(self.scriptHandle.filterRookie:GetValue()))
         
     end )
@@ -736,17 +730,6 @@ function GUIMainMenu:CreateServerListWindow()
             UpdateServerList(self)
         end
     })
-    
-    local refresh = CreateMenuElement(self.playWindow, "MenuButton")
-    refresh:SetCSSClass("refresh")
-    refresh:SetText("REFRESH")
-    self.playWindow.refreshButton = refresh
-    refresh:AddEventCallbacks({
-        OnClick = function()
-            RefreshServerList(self)
-        end
-    })
-    refresh:SetIsVisible(false)
     
     self.joinServerButton = CreateMenuElement(self.playWindow, "MenuButton")
     self.joinServerButton:SetCSSClass("apply")
@@ -818,6 +801,9 @@ function GUIMainMenu:CreateServerListWindow()
     })
     
     CreateFilterForm(self)
+    
+    self.serverCountDisplay = CreateMenuElement(self.playWindow, "MenuButton")
+    self.serverCountDisplay:SetCSSClass("server_count_display")
     
 end
 
@@ -1876,7 +1862,7 @@ function GUIMainMenu:Update(deltaTime)
         
         if self.playWindow:GetIsVisible() then
         
-            if self.timeUpdateButtonPressed and self.timeUpdateButtonPressed + 4 < Shared.GetTime() then
+            if self.timeUpdateButtonPressed and self.timeUpdateButtonPressed + 10 < Shared.GetTime() then
             
                 self.playWindow.updateButton:SetText("UPDATE")
                 self.timeUpdateButtonPressed = nil
@@ -1899,6 +1885,9 @@ function GUIMainMenu:Update(deltaTime)
                 end
                 
             end
+            
+            local countTxt = ToString(Client.GetNumServers()) .. (Client.GetServerListRefreshed() and "" or "...")
+            self.serverCountDisplay:SetText(countTxt)
             
         end
         

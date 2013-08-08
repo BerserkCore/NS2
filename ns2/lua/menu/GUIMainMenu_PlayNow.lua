@@ -236,7 +236,6 @@ end
 local function ShowServerWindow(self)
 
     self.playWindow.updateButton:SetIsVisible(true)
-    //self.playWindow.refreshButton:SetIsVisible(true)
     self.joinServerButton:SetIsVisible(true)
     self.highlightServer:SetIsVisible(true)
     self.selectServer:SetIsVisible(true)
@@ -253,7 +252,6 @@ end
 local function HideServerWindow(self)
 
     self.playWindow.updateButton:SetIsVisible(false)
-    self.playWindow.refreshButton:SetIsVisible(false)
     self.joinServerButton:SetIsVisible(false)
     self.highlightServer:SetIsVisible(false)
     self.selectServer:SetIsVisible(false)

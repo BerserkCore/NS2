@@ -251,7 +251,7 @@ function PowerPoint:GetCanPower(consumer)
 end
 
 function PowerPoint:GetCanTakeDamageOverride()
-    return self.powerState ~= PowerPoint.kPowerState.unsocketed and (self:GetHealth() > 0) == true
+    return self.powerState ~= PowerPoint.kPowerState.unsocketed and self:GetIsBuilt() and self:GetHealth() > 0
 end
 
 /**
