@@ -189,40 +189,30 @@ function MarineBuy_GetHas(techId)
 end
 
 function MarineBuy_OnMouseOver()
-
-    Shared.PlaySound(nil, kMarineBuyMenuSounds.Hover)
-
+    StartSoundEffect(kMarineBuyMenuSounds.Hover)
 end
 
 function MarineBuy_OnOpen()
-
-    Shared.PlaySound(nil, kMarineBuyMenuSounds.Open)
-
+    StartSoundEffect(kMarineBuyMenuSounds.Open)
 end
 
 function MarineBuy_OnClose()
 
-    Shared.PlaySound(nil, kMarineBuyMenuSounds.Close)
+    StartSoundEffect(kMarineBuyMenuSounds.Close)
     MarineBuy_CloseNonFlash()
 
 end
 
 function MarineBuy_OnPurchase()
-
-    Shared.PlaySound(nil, kMarineBuyMenuSounds.Puchase)
-
+    StartSoundEffect(kMarineBuyMenuSounds.Puchase)
 end
 
 function MarineBuy_OnUpgradeSelected()
-
-    Shared.PlaySound(nil, kMarineBuyMenuSounds.SelectUpgrade)
-    
+    StartSoundEffect(kMarineBuyMenuSounds.SelectUpgrade)    
 end
 
 function MarineBuy_OnUpgradeDeselected()
-
-    Shared.PlaySound(nil, kMarineBuyMenuSounds.SellUpgrade)
-    
+    StartSoundEffect(kMarineBuyMenuSounds.SellUpgrade)    
 end
 
 // special sounds for jetpack etc.
@@ -231,15 +221,15 @@ function MarineBuy_OnItemSelect(techId)
     if techId == kTechId.Axe or techId == kTechId.Rifle or techId == kTechId.Shotgun or techId == kTechId.GrenadeLauncher or 
        techId == kTechId.Flamethrower or techId == kTechId.Welder or techId == kTechId.LayMines then
        
-        Shared.PlaySound(nil, kMarineBuyMenuSounds.SelectWeapon)
+        StartSoundEffect(kMarineBuyMenuSounds.SelectWeapon)
         
     elseif techId == kTechId.Jetpack then
     
-        Shared.PlaySound(nil, kMarineBuyMenuSounds.SelectJetpack)
+        StartSoundEffect(kMarineBuyMenuSounds.SelectJetpack)
 
     elseif techId == kTechId.Exosuit then
     
-        Shared.PlaySound(nil, kMarineBuyMenuSounds.SelectExosuit)
+        StartSoundEffect(kMarineBuyMenuSounds.SelectExosuit)
         
     end
 

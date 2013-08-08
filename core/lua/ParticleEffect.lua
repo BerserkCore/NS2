@@ -95,7 +95,6 @@ if Client then
         end
     
     end
-
     
     function ParticleEffect:OnInitialized()
     

@@ -38,7 +38,8 @@ function TeamDeathMessageMixin:OnEntityKilled(targetEntity, killer, doer, point,
                 
             end
             
-            self:SendCommand(self:GetDeathMessage(killer, index, targetEntity))
+            local deathMessageTable = self:GetDeathMessage(killer, index, targetEntity)
+            self:ForEachPlayer(function(player) if player:GetClient() then Server.SendNetworkMessage(player:GetClient(), "DeathMessage", deathMessageTable, true) end end)
             
         end
         
@@ -54,20 +55,20 @@ end
 // due to relevance. If the killer or target is not a player, the entity techId is used.
 function TeamDeathMessageMixin:GetDeathMessage(killer, doerIconIndex, targetEntity)
 
-    local killerIsPlayer = 0
+    local killerIsPlayer = false
     local killerIndex = -1
     
     if killer then
     
-        killerIsPlayer = killer:isa("Player") and 1 or 0
+        killerIsPlayer = killer:isa("Player")
         
-        if killerIsPlayer == 1 then
+        if killerIsPlayer then
             killerIndex = killer:GetClientIndex()
         else
         
             if killer.GetOwner and killer:GetOwner() and killer:GetOwner():isa("Player") then
             
-                killerIsPlayer = 1
+                killerIsPlayer = true
                 killerIndex = killer:GetOwner():GetClientIndex()
                 
             else
@@ -78,9 +79,9 @@ function TeamDeathMessageMixin:GetDeathMessage(killer, doerIconIndex, targetEnti
         
     end
     
-    local targetIsPlayer = targetEntity:isa("Player") and 1 or 0
+    local targetIsPlayer = targetEntity:isa("Player")
     local targetIndex = -1
-    if targetIsPlayer == 1 then
+    if targetIsPlayer then
         targetIndex = targetEntity:GetClientIndex()
     else
         targetIndex = targetEntity:GetTechId()
@@ -92,6 +93,7 @@ function TeamDeathMessageMixin:GetDeathMessage(killer, doerIconIndex, targetEnti
         killerTeamNumber = killer:GetTeamNumber()
     end
     
-    return string.format("deathmsg %s %s %s %s %s %s %s", killerIsPlayer, killerIndex, killerTeamNumber, doerIconIndex, targetIsPlayer, targetIndex, targetTeamNumber)
+    return { killerIsPlayer = killerIsPlayer, killerId = killerIndex, killerTeamNumber = killerTeamNumber, iconIndex = doerIconIndex,
+             targetIsPlayer = targetIsPlayer, targetId = targetIndex, targetTeamNumber = targetTeamNumber }
     
 end

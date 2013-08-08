@@ -628,6 +628,7 @@ kNutrientMistMaturingIncrease = 66
 kObservatoryInitialEnergy = 25  kObservatoryMaxEnergy = 100
 kObservatoryScanCost = 3
 kObservatoryDistressBeaconCost = 10
+kScanCooldown = 1
 
 kMACInitialEnergy = 50  kMACMaxEnergy = 150
 kDrifterCost = 3

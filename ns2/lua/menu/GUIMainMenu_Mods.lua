@@ -9,10 +9,11 @@
 // Translates from names returned by Client.GetModState to what we display
 local kModStateNames =
     {
-        getting_info    = "GETTING INFO",
-        downloading     = "DOWNLOADING",
-        unavailable     = "UNAVAILABLE",
-        available       = "AVAILABLE",
+        getting_info = "GETTING INFO",
+        queued_to_download = "QUEUED TO DOWNLOAD",
+        downloading = "DOWNLOADING",
+        unavailable = "UNAVAILABLE",
+        available = "AVAILABLE",
     }
 
 function GUIMainMenu:RefreshModsList()

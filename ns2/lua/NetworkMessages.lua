@@ -1005,3 +1005,6 @@ Shared.RegisterNetworkMessage("SetClientIndex", { clientIndex = "integer" })
 Shared.RegisterNetworkMessage("SetClientTeamNumber", { teamNumber = string.format("integer (-1 to %d)", kRandomTeamType) })
 Shared.RegisterNetworkMessage("WaitingForAutoTeamBalance", { waiting = "boolean" })
 Shared.RegisterNetworkMessage("SetTimeWaveSpawnEnds", { time = "time" })
+
+local kTeamNumDef = "integer (" .. kTeamInvalid .. " to " .. kSpectatorIndex .. ")"
+Shared.RegisterNetworkMessage("DeathMessage", { killerIsPlayer = "boolean", killerId = "integer", killerTeamNumber = kTeamNumDef, iconIndex = "enum kDeathMessageIcon", targetIsPlayer = "boolean", targetId = "integer", targetTeamNumber = kTeamNumDef })

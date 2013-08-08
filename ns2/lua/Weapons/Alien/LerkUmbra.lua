@@ -39,7 +39,7 @@ local function CreateUmbraCloud(self, player)
     
     
     if not GetHasSilenceUpgrade(player) then
-        Shared.PlayWorldSound(nil, kUmbraSound, nil, player:GetEyePos())
+        StartSoundEffectAtOrigin (kUmbraSound, player:GetEyePos())
     end
 
 end

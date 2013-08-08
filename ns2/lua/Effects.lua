@@ -26,9 +26,9 @@ kStopViewModelCinematicType        = "stop_viewmodel_cinematic" // Stops a cinem
 
 kSoundType                         = "sound"                    // Server-side world sound
 kParentedSoundType                 = "parented_sound"           // For looping entity sounds, you'll want to use parented_sound so they are stopped when entity goes away
-kLoopingSoundType                  = "looping_sound"            // TODO: Change name to one_sound? This currently plays relative to player.
 kPrivateSoundType                  = "private_sound"            // TODO: Change name to one_sound? This currently plays relative to player.
 kStopSoundType                     = "stop_sound"              
+kPlayerSoundType                   = "player_sound"             // won't be send to triggering player
 
 kStopEffectsType                   = "stop_effects"             // Stops all looping or parented sounds and particles for this object (pass "")
 
@@ -40,7 +40,7 @@ kRagdollType                       = "ragdoll"                  // Turns the mod
 kEffectTypes =
 {
     kCinematicType, kWeaponCinematicType, kViewModelCinematicType, kPlayerCinematicType, kParentedCinematicType, kLoopingCinematicType, kStopCinematicType, 
-    kSoundType, kParentedSoundType, kLoopingSoundType, kPrivateSoundType, kStopSoundType, 
+    kSoundType, kParentedSoundType, kPrivateSoundType, kStopSoundType, kPlayerSoundType,
     kStopEffectsType, kStopViewModelCinematicType,
     kDecalType,
     kRagdollType,
@@ -64,7 +64,6 @@ kEffectParamScale                   = "scale"           // Scale for decals (def
 kEffectSoundParameter               = "sound_param"     // Not working yet
 kEffectParamDone                    = "done"
 kEffectParamWorldSpace              = "world_space"     // If true, the cinematic will emit particles into world space.
-kEffectParamWorldSpaceExceptPlayer  = "world_space_except_player" // Emit into world space but don't send to the triggering player.
 
 // General effects. Chooses one effect from each block. Name of block is unused except for debugging/clarity. Add to InternalGetEffectMatches().
 kEffectFilterClassName              = "classname"
@@ -102,7 +101,6 @@ kEffectFilters =
 
 // Load effect data, adding to effect manager
 Script.Load("lua/GeneralEffects.lua")
-Script.Load("lua/ClientEffects.lua")
 Script.Load("lua/PlayerEffects.lua")
 Script.Load("lua/DamageEffects.lua")
 

@@ -17,15 +17,15 @@ Client.PrecacheLocalSound(kSelectSound)
 Client.PrecacheLocalSound(kCloseSound)
 
 function GorgeBuild_OnClose()
-    Shared.PlaySound(nil, kCloseSound)
+    StartSoundEffect(kCloseSound)
 end
 
 function GorgeBuild_OnSelect()
-    Shared.PlaySound(nil, kSelectSound)
+    StartSoundEffect(kSelectSound)
 end
 
 function GorgeBuild_OnMouseOver()
-    Shared.PlaySound(nil, kMouseOverSound)
+    StartSoundEffect(kMouseOverSound)
 end
 
 function GorgeBuild_Close()

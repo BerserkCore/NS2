@@ -186,9 +186,9 @@ local function OnScriptLoaded(fileName)
 end
 
 local scriptLoad = Script.Load
-function Script.Load(fileName)
+function Script.Load(fileName, reload)
 
-    scriptLoad(fileName)
+    scriptLoad(fileName, reload)
     
     OnScriptLoaded(fileName)
     

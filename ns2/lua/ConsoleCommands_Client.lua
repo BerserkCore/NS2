@@ -9,10 +9,6 @@
 
 Script.Load("lua/FunctionContracts.lua")
 
-function OnCommandDeathMsg(killerIsPlayer, killerId, killerTeamNumber, iconIndex, targetIsPlayer, targetId, targetTeamNumber)
-    AddDeathMessage(tonumber(killerIsPlayer), tonumber(killerId), tonumber(killerTeamNumber), tonumber(iconIndex), tonumber(targetIsPlayer), tonumber(targetId), tonumber(targetTeamNumber))
-end
-
 function OnCommandOnClientDisconnect(clientIndexString)
     Scoreboard_OnClientDisconnect(tonumber(clientIndexString))
 end
@@ -237,7 +233,6 @@ local function OnCommandDebugNotifications()
     
 end
 
-Event.Hook("Console_deathmsg", OnCommandDeathMsg)
 Event.Hook("Console_clientdisconnect", OnCommandOnClientDisconnect)
 Event.Hook("Console_points", OnCommandPoints)
 Event.Hook("Console_soundgeometry", OnCommandSoundGeometry)

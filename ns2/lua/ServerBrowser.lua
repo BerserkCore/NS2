@@ -126,12 +126,12 @@ function SetServerIsFavorite(serverData, isFavorite)
         local savedServerData = { }
         for k, v in pairs(serverData) do savedServerData[k] = v end
         table.insert(gFavoriteServers, savedServerData)
-        Shared.PlaySound(nil, kFavoriteAddedSound)
+        StartSoundEffect(kFavoriteAddedSound)
         
     elseif foundIndex then
     
         table.remove(gFavoriteServers, foundIndex)
-        Shared.PlaySound(nil, kFavoriteRemovedSound)
+        StartSoundEffect(kFavoriteRemovedSound)
         
     end
     

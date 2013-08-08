@@ -14,19 +14,19 @@ class 'GUIRequestMenu' (GUIScript)
 local kOpenSound = "sound/NS2.fev/common/checkbox_on"
 Client.PrecacheLocalSound(kOpenSound)
 local function OnShow_RequestMenu()
-    Shared.PlaySound(nil, kOpenSound)
+    StartSoundEffect(kOpenSound)
 end
 
 local kCloseSound = "sound/NS2.fev/common/checkbox_on"
 Client.PrecacheLocalSound(kCloseSound)
 local function OnHide_RequestMenu()
-    // Shared.PlaySound(nil, kCloseSound)
+    // StartSoundEffect(kCloseSound)
 end
 
 local kClickSound = "sound/NS2.fev/common/button_enter"
 Client.PrecacheLocalSound(kClickSound)
 local function OnClick_RequestMenu()
-    Shared.PlaySound(nil, kClickSound)
+    StartSoundEffect(kClickSound)
 end
 
 // make this part of UI bindings

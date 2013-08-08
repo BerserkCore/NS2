@@ -124,33 +124,10 @@ if Client then
         
     end
     
-    /**
-     * Updates the GUI elements in the view model.
-     */
-    local function UpdateGUI(self)
-    
-        local renderModel = self:GetRenderModel()
-        if renderModel ~= nil then
-        
-            renderModel:SetMaterialParameter("weaponAmmo", PlayerUI_GetWeaponAmmo())
-            renderModel:SetMaterialParameter("weaponClip", PlayerUI_GetWeaponClip())
-            renderModel:SetMaterialParameter("weaponAuxClip", PlayerUI_GetAuxWeaponClip())
-            local weapon = self:GetWeapon()
-            local progress = 0
-            if weapon and ( weapon:isa("Welder") or weapon:isa("Builder") ) then
-                progress = PlayerUI_GetUnitStatusPercentage()
-            end
-            renderModel:SetMaterialParameter("weldPercentage", progress)
-            
-        end
-        
-    end
-    
     function ViewModel:OnUpdateRender()
     
         PROFILE("ViewModel:OnUpdateRender")
         
-        UpdateGUI(self)
         // Hide view model when in third person.
         // Only show local player model and active weapon for local player when third person
         // or for other players (not ethereal Fades).

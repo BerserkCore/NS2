@@ -1993,7 +1993,7 @@ function Player:UpdateCommanderPingSound()
                 pingSound = kAlienPingSound
             end    
          
-            Shared.PlaySound(nil, pingSound)
+            StartSoundEffect(pingSound)
             
         end
         
@@ -3520,7 +3520,7 @@ function Player:UpdateDeadSound()
         // If we're dead and not playing montage, play deathly sound montage
         if (self:GetTeamNumber() ~= kSpectatorIndex) and not self:GetIsAlive() and not gPlayingDeadMontage then
         
-            Shared.PlaySound(nil, kDeadSound)
+            StartSoundEffect(kDeadSound)
             gPlayingDeadMontage = true
             
         // If we're alive and playing montage, stop it

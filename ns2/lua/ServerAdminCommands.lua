@@ -48,7 +48,7 @@ local function GetPlayerMatchingSteamId(steamId)
     local function Matches(player)
     
         local playerClient = Server.GetOwner(player)
-        if playerClient and playerClient:GetUserId() == tonumber(steamId) or GetReadableSteamId(playerClient:GetUserId()) == steamId then
+        if playerClient and (playerClient:GetUserId() == tonumber(steamId) or GetReadableSteamId(playerClient:GetUserId()) == steamId) then
             match = player
         end
         

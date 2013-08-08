@@ -91,7 +91,7 @@ local function InitEquipment(self)
     self.timeJetpackingChanged = Shared.GetTime()
     self.jetpacking = false
     
-    Shared.PlaySound(self, JetpackMarine.kJetpackPickupSound)
+    StartSoundEffectOnEntity(JetpackMarine.kJetpackPickupSound, self)
     
     self.jetpackLoop = Server.CreateEntity(SoundEffect.kMapName)
     self.jetpackLoop:SetAsset(kJetpackLoop)
@@ -252,7 +252,7 @@ end
 
 function JetpackMarine:HandleJetPackEnd()
 
-    Shared.PlaySound(self, JetpackMarine.kJetpackEnd)
+    StartSoundEffectOnEntity(JetpackMarine.kJetpackEnd, self)
     
     if Server then
         self.jetpackLoop:Stop()
@@ -529,7 +529,7 @@ function JetpackMarine:OnTag(tagName)
     Marine.OnTag(self, tagName)
     
     if tagName == "fly_start" and self.startedFromGround then
-        Shared.PlaySound(self, JetpackMarine.kJetpackStart)
+        StartSoundEffectOnEntity(JetpackMarine.kJetpackStart, self)
     end
 
 end

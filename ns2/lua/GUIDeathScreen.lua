@@ -77,21 +77,32 @@ function GUIDeathScreen:Update(deltaTime)
     
     GUIAnimatedScript.Update(self, deltaTime)
     
-    local isDead = (PlayerUI_GetIsDead() or PlayerUI_GetIsFeinting() ) and not PlayerUI_GetIsSpecating()    
-            
+    local isDead = (PlayerUI_GetIsDead() or PlayerUI_GetIsFeinting() ) and not PlayerUI_GetIsSpecating()
+    
     if isDead ~= self.lastIsDead then
     
+        -- Check for the killer name as it will be nil if it hasn't been received yet.
+        local killerName = nil
+        local weaponIconIndex = nil
+        if isDead then
+        
+            killerName, weaponIconIndex = GetKillerNameAndWeaponIcon()
+            if not killerName then
+                return
+            end
+            
+        end
+        
         self.lastIsDead = isDead
         
         if self.lastIsDead == true then
-
-            local killerName, weaponIconIndex = GetKillerNameAndWeaponIcon()
+        
             local playerName = PlayerUI_GetPlayerName()
             local xOffset = DeathMsgUI_GetTechOffsetX(0)
             local yOffset = DeathMsgUI_GetTechOffsetY(weaponIconIndex)
             local iconWidth = DeathMsgUI_GetTechWidth(0)
             local iconHeight = DeathMsgUI_GetTechHeight(0)
-    
+            
             self.killerName:SetText(killerName)
             self.playerName:SetText(playerName)
             
@@ -99,16 +110,16 @@ function GUIDeathScreen:Update(deltaTime)
             self.weaponIcon:FadeIn(0.5, "FADE_DEATH_ICON")
             
             if PlayerUI_GetIsFeinting() then
-
+            
                 self.feintText:FadeIn(0.2, "FADE_DEATH_FEINT")
                 self.background:SetColor(Color(0, 0, 0, 0.6), 0.5, "FADE_DEATH_SCREEN")
                 self.weaponIcon:SetIsVisible(false)
-
+                
             else
-
-                self.weaponIcon:SetIsVisible(true)        
-                self.background:FadeIn(2, "FADE_DEATH_SCREEN")        
-
+            
+                self.weaponIcon:SetIsVisible(true)
+                self.background:FadeIn(2, "FADE_DEATH_SCREEN")
+                
             end
             
         else

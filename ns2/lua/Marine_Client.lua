@@ -417,7 +417,10 @@ function Marine:OnCountDown()
 
     Player.OnCountDown(self)
     
-    ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):SetIsVisible(false)
+    local script = ClientUI.GetScript("Hud/Marine/GUIMarineHUD")
+    if script then
+        script:SetIsVisible(false)
+    end
     
 end
 
@@ -425,8 +428,13 @@ function Marine:OnCountDownEnd()
 
     Player.OnCountDownEnd(self)
     
-    ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):SetIsVisible(true)
-    ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):TriggerInitAnimations()
+    local script = ClientUI.GetScript("Hud/Marine/GUIMarineHUD")
+    if script then
+    
+        script:SetIsVisible(true)
+        script:TriggerInitAnimations()
+        
+    end
     
 end
 

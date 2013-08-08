@@ -44,5 +44,5 @@ function MenuManager.GetCinematicCamera()
 end
 
 function MenuManager.PlaySound(fileName)
-    Shared.PlaySound(nil, fileName)
+    StartSoundEffect(fileName)
 end

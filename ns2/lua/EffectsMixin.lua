@@ -16,17 +16,18 @@ end
 
 function EffectsMixin:OnInitialized()
 
-    if Client then
-        self:TriggerEffects("on_init")
+    // delay triggering of spawn effect to be independant of mixin initialization order
+    // effects inherit the relevancy of the triggering entity, so this needs to be set first, otherwise players
+    // could miss an effect which they were intended to so
+    if Server then
+        self.spawnEffectTriggered = false
     end
     
 end
 
 function EffectsMixin:OnDestroy()
 
-    if Server then
-        self:TriggerEffects("on_destroy")
-    end
+    // TODO: destroy any effects?
     
 end
 
@@ -55,3 +56,25 @@ function EffectsMixin:TriggerEffects(effectName, tableParams)
     GetEffectManager():TriggerEffects(effectName, tableParams, self)
     
 end
+
+if Server then
+
+    local function UpdateSpawnEffect(self)
+
+        if not self.spawnEffectTriggered then
+            self:TriggerEffects("spawn", { ismarine = GetIsMarineUnit(self), isalien = GetIsAlienUnit(self) })
+            self.spawnEffectTriggered = true
+        end
+
+    end
+
+    function EffectsMixin:OnProcessMove()
+        UpdateSpawnEffect(self)
+    end
+
+    function EffectsMixin:OnUpdate()
+        UpdateSpawnEffect(self)  
+    end
+
+end
+

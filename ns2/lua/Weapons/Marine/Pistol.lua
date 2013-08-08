@@ -160,7 +160,11 @@ if Client then
         return self:GetAttachPointCoords(kLaserAttachPoint)
         
     end
-
+    
+    function Pistol:GetUIDisplaySettings()
+        return { xSize = 256, ySize = 256, script = "lua/GUIPistolDisplay.lua" }
+    end
+    
 end
 
 function Pistol:GetAnimationGraphName()

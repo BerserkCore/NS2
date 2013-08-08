@@ -659,6 +659,10 @@ if Client then
         
     end
     
+    function Flamethrower:GetUIDisplaySettings()
+        return { xSize = 128, ySize = 256, script = "lua/GUIFlamethrowerDisplay.lua" }
+    end
+    
 end
 
 function Flamethrower:GetNotifiyTarget()

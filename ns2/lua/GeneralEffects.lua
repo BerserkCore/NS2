@@ -12,7 +12,7 @@ kGeneralEffectData =
     {
         tunnelEnterSound =
         {
-            {sound = "alien/structures/tunnel/in_2D"}
+            {sound = "sound/NS2.fev/alien/structures/tunnel/in_2D"}
         }
     },
     
@@ -20,7 +20,7 @@ kGeneralEffectData =
     {
         tunnelEnterSound =
         {
-            {sound = "alien/structures/tunnel/out_2D"}
+            {sound = "sound/NS2.fev/alien/structures/tunnel/out_2D"}
         }
     },
     
@@ -28,7 +28,7 @@ kGeneralEffectData =
     {
         tunnelEnterSound =
         {
-            {sound = "alien/structures/tunnel/in"}
+            {sound = "sound/NS2.fev/alien/structures/tunnel/in"}
         }
     },
     
@@ -36,7 +36,7 @@ kGeneralEffectData =
     {
         tunnelEnterSound =
         {
-            {sound = "alien/structures/tunnel/out"}
+            {sound = "sound/NS2.fev/alien/structures/tunnel/out"}
         }
     },
 

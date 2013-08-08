@@ -293,7 +293,7 @@ function Marine:AttemptToBuy(techIds)
                 // Make sure we're ready to deploy new weapon so we switch to it properly.
                 if self:GiveItem(mapName) then
                 
-                    Shared.PlayWorldSound(nil, Marine.kGunPickupSound, nil, self:GetOrigin())                    
+                    StartSoundEffectAtOrigin(Marine.kGunPickupSound, self:GetOrigin())                    
                     return true
                     
                 end

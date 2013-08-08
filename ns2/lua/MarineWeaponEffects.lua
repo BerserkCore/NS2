@@ -49,13 +49,13 @@ kMarineWeaponEffects =
         marineWeaponDrawSounds =
         {
             
-            {sound = "sound/NS2.fev/marine/rifle/deploy_grenade", classname = "GrenadeLauncher", done = true},
-            {sound = "sound/NS2.fev/marine/rifle/draw", classname = "Rifle", done = true},
-            {sound = "sound/NS2.fev/marine/pistol/draw", classname = "Pistol", done = true},
-            {sound = "sound/NS2.fev/marine/axe/draw", classname = "Axe", done = true},
-            {sound = "sound/NS2.fev/marine/flamethrower/draw", classname = "Flamethrower", done = true},
-            {sound = "sound/NS2.fev/marine/shotgun/deploy", classname = "Shotgun", done = true},
-            {sound = "sound/NS2.fev/marine/welder/deploy", classname = "Welder", done = true},
+            {player_sound = "sound/NS2.fev/marine/rifle/deploy_grenade", classname = "GrenadeLauncher", done = true},
+            {player_sound = "sound/NS2.fev/marine/rifle/draw", classname = "Rifle", done = true},
+            {player_sound = "sound/NS2.fev/marine/pistol/draw", classname = "Pistol", done = true},
+            {player_sound = "sound/NS2.fev/marine/axe/draw", classname = "Axe", done = true},
+            {player_sound = "sound/NS2.fev/marine/flamethrower/draw", classname = "Flamethrower", done = true},
+            {player_sound = "sound/NS2.fev/marine/shotgun/deploy", classname = "Shotgun", done = true},
+            {player_sound = "sound/NS2.fev/marine/welder/deploy", classname = "Welder", done = true},
             
         },
 
@@ -68,19 +68,14 @@ kMarineWeaponEffects =
             {viewmodel_cinematic = "cinematics/marine/heavy/deploy_light.cinematic", attach_point = "exosuit_camBone"},
         },
     },
-    
-    idle = 
-    {
-
-    },
 
     reload = 
     {
         gunReloadEffects =
         {
-            {sound = "sound/NS2.fev/marine/rifle/reload", classname = "Rifle"},
-            {sound = "sound/NS2.fev/marine/pistol/reload", classname = "Pistol"},
-            {sound = "sound/NS2.fev/marine/flamethrower/reload", classname = "Flamethrower"},
+            {player_sound = "sound/NS2.fev/marine/rifle/reload", classname = "Rifle"},
+            {player_sound = "sound/NS2.fev/marine/pistol/reload", classname = "Pistol"},
+            {player_sound = "sound/NS2.fev/marine/flamethrower/reload", classname = "Flamethrower"},
         },
     },
     
@@ -98,12 +93,12 @@ kMarineWeaponEffects =
     {
         emptySounds =
         {
-            {sound = "sound/NS2.fev/marine/shotgun/fire_empty", classname = "Shotgun", done = true},
-            {sound = "sound/NS2.fev/marine/shotgun/fire_empty", classname = "NadeLauncher", done = true},
-            {sound = "sound/NS2.fev/marine/common/empty", classname = "Rifle", done = true},
-            {sound = "sound/NS2.fev/marine/common/empty", classname = "Flamethrower", done = true},
-            {sound = "sound/NS2.fev/marine/common/empty", classname = "GrenadeLauncher", done = true},
-            {sound = "sound/NS2.fev/marine/common/empty", classname = "Pistol", done = true},  
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire_empty", classname = "Shotgun", done = true},
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire_empty", classname = "NadeLauncher", done = true},
+            {player_sound = "sound/NS2.fev/marine/common/empty", classname = "Rifle", done = true},
+            {player_sound = "sound/NS2.fev/marine/common/empty", classname = "Flamethrower", done = true},
+            {player_sound = "sound/NS2.fev/marine/common/empty", classname = "GrenadeLauncher", done = true},
+            {player_sound = "sound/NS2.fev/marine/common/empty", classname = "Pistol", done = true},  
         },
         
     },
@@ -112,7 +107,7 @@ kMarineWeaponEffects =
     {
         rifleAltAttackEffects = 
         {
-            {sound = "sound/NS2.fev/marine/rifle/alt_swing"},
+            {player_sound = "sound/NS2.fev/marine/rifle/alt_swing"},
         },
     },
     
@@ -132,7 +127,7 @@ kMarineWeaponEffects =
             {viewmodel_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
             {weapon_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
             // Sound effect
-            {sound = "sound/NS2.fev/marine/pistol/fire"},
+            {player_sound = "sound/NS2.fev/marine/pistol/fire"},
         },
     },
     
@@ -140,7 +135,7 @@ kMarineWeaponEffects =
     {
         axeAttackEffects = 
         {
-            {sound = "sound/NS2.fev/marine/axe/attack"},
+            {player_sound = "sound/NS2.fev/marine/axe/attack"},
         },
     },
 
@@ -148,7 +143,7 @@ kMarineWeaponEffects =
     {
         shotgunAttackEffects = 
         {
-            {sound = "sound/NS2.fev/marine/shotgun/fire", empty = false},
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire", empty = false},
             
             {viewmodel_cinematic = "cinematics/marine/shotgun/muzzle_flash.cinematic", attach_point = "fxnode_shotgunmuzzle"},
             {weapon_cinematic = "cinematics/marine/shotgun/muzzle_flash.cinematic", attach_point = "fxnode_shotgunmuzzle"},
@@ -156,7 +151,7 @@ kMarineWeaponEffects =
 
         shotgunAttackEmptyEffects = 
         {
-            {sound = "sound/NS2.fev/marine/shotgun/fire_last", empty = true},
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire_last", empty = true},
         },
     },
     
@@ -165,7 +160,7 @@ kMarineWeaponEffects =
     {
         shotgunReloadStartEffects =
         {
-            {sound = "sound/NS2.fev/marine/shotgun/start_reload"},
+            {player_sound = "sound/NS2.fev/marine/shotgun/start_reload"},
         },
     },
 
@@ -173,7 +168,7 @@ kMarineWeaponEffects =
     {
         shotgunReloadShellEffects =
         {
-            {sound = "sound/NS2.fev/marine/shotgun/load_shell"},
+            {player_sound = "sound/NS2.fev/marine/shotgun/load_shell"},
         },
     },
 
@@ -181,7 +176,7 @@ kMarineWeaponEffects =
     {
         shotgunReloadEndEffects =
         {
-            {sound = "sound/NS2.fev/marine/shotgun/end_reload"},
+            {player_sound = "sound/NS2.fev/marine/shotgun/end_reload"},
         },
     },
     
@@ -190,7 +185,7 @@ kMarineWeaponEffects =
     {
         grenadelauncherReloadStartEffects =
         {
-            {sound = "sound/NS2.fev/marine/grenade_launcher/reload_start"},
+            {player_sound = "sound/NS2.fev/marine/grenade_launcher/reload_start"},
         },
     },
 
@@ -206,7 +201,7 @@ kMarineWeaponEffects =
     {
         grenadelauncherReloadShellEffects =
         {
-            {sound = "sound/NS2.fev/marine/grenade_launcher/reload_last"},
+            {player_sound = "sound/NS2.fev/marine/grenade_launcher/reload_last"},
         },
     },
 
@@ -214,7 +209,7 @@ kMarineWeaponEffects =
     {
         grenadelauncherReloadEndEffects =
         {
-            {sound = "sound/NS2.fev/marine/grenade_launcher/reload_end"},
+            {player_sound = "sound/NS2.fev/marine/grenade_launcher/reload_end"},
         },
     },
     
@@ -225,8 +220,8 @@ kMarineWeaponEffects =
             {viewmodel_cinematic = "cinematics/marine/gl/muzzle_flash.cinematic", attach_point = "fxnode_glmuzzle", empty = false},
             {weapon_cinematic = "cinematics/marine/gl/muzzle_flash.cinematic", attach_point = "fxnode_glmuzzle", empty = false},
             
-            {sound = "sound/NS2.fev/marine/rifle/fire_grenade", done = true},
-            {sound = "sound/NS2.fev/marine/common/empty", empty = true, done = true},
+            {player_sound = "sound/NS2.fev/marine/rifle/fire_grenade", done = true},
+            {player_sound = "sound/NS2.fev/marine/common/empty", empty = true, done = true},
         },
     },
     
@@ -236,9 +231,17 @@ kMarineWeaponEffects =
         {
             {viewmodel_cinematic = "cinematics/marine/gl/muzzle_flash.cinematic", attach_point = "fxnode_glmuzzle", empty = false},
             
-            {sound = "sound/NS2.fev/marine/rifle/fire_grenade", done = true},
-            {sound = "sound/NS2.fev/marine/common/empty", empty = true, done = true},
+            {player_sound = "sound/NS2.fev/marine/rifle/fire_grenade", done = true},
+            {player_sound = "sound/NS2.fev/marine/common/empty", empty = true, done = true},
         },
+    },
+    
+    flamethrower_attack_start =
+    {
+        soundEffects =
+        {
+            {player_sound = "sound/NS2.fev/marine/flamethrower/attack_start"},
+        }    
     },
     
     flamethrower_attack = 
@@ -253,20 +256,14 @@ kMarineWeaponEffects =
             {viewmodel_cinematic = "cinematics/marine/flamethrower/flame_1p.cinematic", attach_point = "fxnode_flamethrowermuzzle"},
             {weapon_cinematic = "cinematics/marine/flamethrower/flame.cinematic", attach_point = "fxnode_flamethrowermuzzle"},
         },
-        
-        flamethrowerAttackEffects = 
-        {
-            // Sound effect
-            {looping_sound = "sound/NS2.fev/marine/flamethrower/attack_start"},
-        },
     },
     
     flamethrower_attack_end = 
     {
         flamethrowerAttackEndCinematics = 
         {
-            {stop_sound = "sound/NS2.fev/marine/flamethrower/attack_start"},
-            {sound = "sound/NS2.fev/marine/flamethrower/attack_end"},
+            //{stop_sound = "sound/NS2.fev/marine/flamethrower/attack_start"},
+            {player_sound = "sound/NS2.fev/marine/flamethrower/attack_end"},
         },
     },
     
@@ -304,13 +301,20 @@ kMarineWeaponEffects =
         }
             
     },
+    
+    release_nervegas =
+    {
+        releaseNerveGasEffects = 
+        {
+            {sound = "sound/NS2.fev/marine/flamethrower/attack"},
+        },    
+    },
 
-    // TODO: Do we need cinematics/marine/gl/muzzle_flash.cinematic" and "cinematics/marine/gl/barrel_smoke.cinematic"?    
     grenadelauncher_reload =
     {
         glReloadEffects = 
         {
-            {sound = "sound/NS2.fev/marine/rifle/reload_grenade"},
+            {player_sound = "sound/NS2.fev/marine/rifle/reload_grenade"},
         },    
     },
     
@@ -343,6 +347,23 @@ kMarineWeaponEffects =
         {
             {sound = "sound/NS2.fev/marine/common/explode", surface = "ethereal", done = true},
             {sound = "sound/NS2.fev/marine/common/explode", done = true},
+        },
+    },
+    
+    clusterfragment_residue = 
+    {
+        clusterFragmentResiudeEffect = 
+        {
+            {cinematic = "cinematics/marine/clusterfragment_residue.cinematic"},
+        },
+    },
+    
+    pulse_grenade_explode =
+    {
+        pulseGrenadeEffects =
+        {   
+            {sound = "sound/NS2.fev/marine/heavy/railgun_fire"},
+            {cinematic = "cinematics/materials/metal/ricochetRailgun.cinematic", done = true},
         },
     },
     
@@ -383,23 +404,13 @@ kMarineWeaponEffects =
         },
     },
     
-    welder_attack_hit =
-    {
-        welderAttackHitEffects =
-        {
-            //{cinematic = "cinematics/marine/welder/welder_attack_hit.cinematic"},
-            {sound = "sound/NS2.fev/marine/welder/attack"},
-        },
-    },
-    
     minigun_overheated_left =
     {
         minigunOverheatEffects =
         {
             {viewmodel_cinematic = "cinematics/marine/minigun/overheat.cinematic", attach_point = "fxnode_l_minigun_muzzle"},
         }
-    },
-    
+    },    
     
     minigun_overheated_right =
     {
@@ -430,7 +441,7 @@ kMarineWeaponEffects =
     {
         sounds =
         {
-            {sound = "sound/NS2.fev/marine/heavy/punch", done = true},
+            {player_sound = "sound/NS2.fev/marine/heavy/punch", done = true},
         }
     },
     
@@ -441,9 +452,10 @@ kMarineWeaponEffects =
             //{viewmodel_cinematic = "cinematics/marine/railgun/muzzle_flash.cinematic", attach_point = "fxnode_r_railgun_muzzle"},
             {weapon_cinematic = "cinematics/marine/railgun/muzzle_flash.cinematic", attach_point = "fxnode_rrailgunmuzzle"},
             // Sound effect
-            {sound = "sound/NS2.fev/marine/heavy/railgun_fire"}
+            {player_sound = "sound/NS2.fev/marine/heavy/railgun_fire"}
         },
     },
+    
 }
 
 GetEffectManager():AddEffectData("MarineWeaponEffects", kMarineWeaponEffects)

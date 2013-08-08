@@ -126,10 +126,7 @@ if Server then
         end
         
         local params = { surface = surface }
-        if not targetHit then
-            params[kEffectHostCoords] = Coords.GetLookIn( self:GetOrigin(), self:GetCoords().zAxis)
-        end
-        
+        params[kEffectHostCoords] = Coords.GetLookIn( self:GetOrigin(), self:GetCoords().zAxis)        
         self:TriggerEffects("grenade_explode", params)
         
         CreateExplosionDecals(self)

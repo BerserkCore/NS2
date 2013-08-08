@@ -266,7 +266,7 @@ function PathingMixin:MoveToTarget(physicsGroupMask, endPoint, movespeed, time)
     if self:GetIsFlying() then        
         newLocation = GetHoverAt(self, newLocation, EntityFilterMixinAndSelf(self, "Repositioning"))
     else
-        newLocation = GetGroundAt(self, newLocation, PhysicsMask.Movement, EntityFilterMixinAndSelf(self, "Repositioning"))
+        newLocation = GetGroundAt(self, newLocation, physicsGroupMask, EntityFilterMixinAndSelf(self, "Repositioning"))
     end
     self:SetOrigin(newLocation)
          

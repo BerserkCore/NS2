@@ -365,6 +365,13 @@ function Exo:OnDestroy()
         
     end
     
+    if self.armorDisplay then
+        
+        Client.DestroyGUIView(self.armorDisplay)
+        self.armorDisplay = nil
+        
+    end
+    
 end
 
 function Exo:GetMaxViewOffsetHeight()
@@ -548,7 +555,7 @@ function Exo:OnProcessMove(input)
     if not self.flashlightLastFrame and flashlightPressed then
     
         self:SetFlashlightOn(not self:GetFlashlightOn())
-        Shared.PlaySound(self, Marine.kFlashlightSoundName)
+        StartSoundEffectOnEntity(Marine.kFlashlightSoundName, self, 1, self)
         
     end
     self.flashlightLastFrame = flashlightPressed
@@ -659,22 +666,18 @@ if Client then
         
         if self:GetIsLocalPlayer() then
         
-            local viewModel = self:GetViewModelEntity()
-            if viewModel then
+            local armorDisplay = self.armorDisplay
+            if not armorDisplay then
             
-                viewModel:InstanceMaterials()
-                
-                local model = viewModel:GetRenderModel()
-                if model then
-                
-                    // Due to networking limitations in LiveMixin (on the armor field), self:GetArmor() will sometimes be 0 when the player
-                    // is not dead. So to handle this, we display 1 as the minimum armor value unless the Exo is dead.
-                    local armorAmount = self:GetIsAlive() and math.ceil(math.max(1, self:GetArmor())) or 0
-                    model:SetMaterialParameter("armorAmount", armorAmount)
-                    
-                end
+                armorDisplay = Client.CreateGUIView(256, 256)
+                armorDisplay:Load("lua/GUIExoArmorDisplay.lua")
+                armorDisplay:SetTargetTexture("*exo_armor")
+                self.armorDisplay = armorDisplay
                 
             end
+            
+            local armorAmount = self:GetIsAlive() and math.ceil(math.max(1, self:GetArmor())) or 0
+            armorDisplay:SetGlobal("armorAmount", armorAmount)
             
             // damaged effects for view model. triggers when under 60% and a stronger effect under 30%. every 3 seconds and non looping, so the effects fade out when healed up
             if not self.timeLastDamagedEffect or self.timeLastDamagedEffect + 3 < Shared.GetTime() then
@@ -697,6 +700,11 @@ if Client then
                 self.timeLastDamagedEffect = Shared.GetTime()
                 
             end
+            
+        elseif self.armorDisplay then
+        
+            Client.DestroyGUIView(self.armorDisplay)
+            self.armorDisplay = nil
             
         end
         

@@ -13,7 +13,7 @@ local function PlayOrderSoundName(type)
     local soundName = LookupTechData(type, kTechDataOrderSound, nil)
     local player = Client.GetLocalPlayer()
     if soundName and player and not player:isa("Commander") then
-        Shared.PlaySound(player, soundName)
+        StartSoundEffectOnEntity(soundName, player)
     end
     
 end

@@ -108,10 +108,17 @@ function Minigun:OnDestroy()
 
     Entity.OnDestroy(self)
     
-    if Client and self.shellsCinematic then
+    if self.shellsCinematic then
     
         Client.DestroyCinematic(self.shellsCinematic)
         self.shellsCinematic = nil
+        
+    end
+    
+    if self.heatDisplayUI then
+    
+        Client.DestroyGUIView(self.heatDisplayUI)
+        self.heatDisplayUI = nil
         
     end
     
@@ -346,7 +353,7 @@ end
 function Minigun:OnUpdateRender()
 
     PROFILE("Minigun:OnUpdateRender")
-
+    
     local parent = self:GetParent()
     if parent and parent:GetIsLocalPlayer() then
     
@@ -355,6 +362,27 @@ function Minigun:OnUpdateRender()
         
             viewModel:InstanceMaterials()
             viewModel:GetRenderModel():SetMaterialParameter("heatAmount" .. self:GetExoWeaponSlotName(), self.heatAmount)
+            
+        end
+        
+        local heatDisplayUI = self.heatDisplayUI
+        if not heatDisplayUI then
+        
+            heatDisplayUI = Client.CreateGUIView(242, 720)
+            heatDisplayUI:Load("lua/GUI" .. self:GetExoWeaponSlotName():gsub("^%l", string.upper) .. "MinigunDisplay.lua")
+            heatDisplayUI:SetTargetTexture("*exo_minigun_" .. self:GetExoWeaponSlotName())
+            self.heatDisplayUI = heatDisplayUI
+            
+        end
+        
+        heatDisplayUI:SetGlobal("heatAmount" .. self:GetExoWeaponSlotName(), self.heatAmount)
+        
+    else
+    
+        if self.heatDisplayUI then
+        
+            Client.DestroyGUIView(self.heatDisplayUI)
+            self.heatDisplayUI = nil
             
         end
         

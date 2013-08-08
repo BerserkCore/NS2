@@ -95,11 +95,6 @@ end
 function ScriptActor:OnInitialized()
 
     Entity.OnInitialized(self)
-    
-    if Server then
-        self:TriggerEffects("spawn", { ismarine = GetIsMarineUnit(self), isalien = GetIsAlienUnit(self) })
-    end
-    
     self:ComputeLocation()
     
 end

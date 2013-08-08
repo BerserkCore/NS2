@@ -98,7 +98,7 @@ function Gamerules_GetDamageMultiplier()
 end
 
 kDamageType = enum( {'Normal', 'Light', 'Heavy', 'Puncture', 'Structural', 'Splash', 'Gas',
-           'StructuresOnly', 'Falling', 'Door', 'Flame', 'Infestation', 'Corrode', 'ArmorOnly', 'Biological', 'StructuresOnlyLight' } )
+           'StructuresOnly', 'Falling', 'Door', 'Flame', 'Infestation', 'Corrode', 'ArmorOnly', 'Biological', 'StructuresOnlyLight', 'Electric' } )
 
 // Describe damage types for tooltips
 kDamageTypeDesc = {
@@ -114,7 +114,8 @@ kDamageTypeDesc = {
     "Corrode damage: Damage structures or armor only for non structures",
     "Armor damage: Will never reduce health",
     "StructuresOnlyLight: Damages structures only, light damage.",
-    "Splash: same as structures only but always affects ARCs (friendly fire)."
+    "Splash: same as structures only but always affects ARCs (friendly fire).",
+    "Electric: does normal damage and an additional 20% during on units which are shock able."
 }
 
 kBaseArmorUseFraction = 0.7
@@ -429,7 +430,6 @@ local function BuildDamageTypeRules()
     // ArmorOnly damage rules
     kDamageTypeRules[kDamageType.ArmorOnly] = {}
     table.insert(kDamageTypeRules[kDamageType.ArmorOnly], IgnoreDoors)
-    table.insert(kDamageTypeRules[kDamageType.ArmorOnly], ReduceGreatlyForPlayers)
     table.insert(kDamageTypeRules[kDamageType.ArmorOnly], IgnoreHealth)    
     // ------------------------------
     
@@ -439,6 +439,10 @@ local function BuildDamageTypeRules()
     table.insert(kDamageTypeRules[kDamageType.Biological], DamageBiologicalOnly)
     // ------------------------------
     
+    // Biological damage rules
+    kDamageTypeRules[kDamageType.Electric] = {}
+    table.insert(kDamageTypeRules[kDamageType.Electric], IgnoreDoors)
+    // ------------------------------
 
 
 end

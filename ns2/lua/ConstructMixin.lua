@@ -156,20 +156,8 @@ function ConstructMixin:OnUpdateAnimationInput(modelMixin)
 end
 
 function ConstructMixin:OnUpdatePoseParameters()
-
     self:SetPoseParam("grow", self.buildFraction)
-    
-end
-
-function GetConstructionTime(self)
-
-    if self.GetConstructionTimeOverride then
-        return self:GetConstructionTimeOverride()
-    end    
-    
-    return LookupTechData(self:GetTechId(), kTechDataBuildTime, kDefaultBuildTime)
-
-end    
+end  
 
 /**
  * Add health to structure as it builds.
@@ -221,7 +209,7 @@ function ConstructMixin:Construct(elapsedTime, builder)
 
             local startBuildFraction = self.buildFraction
             local newBuildTime = self.buildTime + elapsedTime
-            local timeToComplete = GetConstructionTime(self)
+            local timeToComplete = self:GetTotalConstructionTime()
             
             if newBuildTime >= timeToComplete then
             
@@ -408,6 +396,10 @@ end
 
 function ConstructMixin:GetBuiltFraction()
     return self.buildFraction
+end
+
+function ConstructMixin:GetTotalConstructionTime()
+    return LookupTechData(self:GetTechId(), kTechDataBuildTime, kDefaultBuildTime)
 end
 
 if Server then

@@ -475,7 +475,10 @@ function Alien:OnCountDown()
 
     Player.OnCountDown(self)
     
-    ClientUI.GetScript("GUIAlienHUD"):SetIsVisible(false)
+    local script = ClientUI.GetScript("GUIAlienHUD")
+    if script then
+        script:SetIsVisible(false)
+    end
     
 end
 
@@ -483,7 +486,10 @@ function Alien:OnCountDownEnd()
 
     Player.OnCountDownEnd(self)
     
-    ClientUI.GetScript("GUIAlienHUD"):SetIsVisible(true)
+    local script = ClientUI.GetScript("GUIAlienHUD")
+    if script then
+        script:SetIsVisible(true)
+    end
     
 end
 

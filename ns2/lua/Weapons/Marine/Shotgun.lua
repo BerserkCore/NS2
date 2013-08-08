@@ -293,7 +293,11 @@ if Client then
         return self:GetOrigin()
         
     end
-
+    
+    function Shotgun:GetUIDisplaySettings()
+        return { xSize = 256, ySize = 128, script = "lua/GUIShotgunDisplay.lua" }
+    end
+    
 end
 
 function Shotgun:ModifyDamageTaken(damageTable, attacker, doer, damageType)

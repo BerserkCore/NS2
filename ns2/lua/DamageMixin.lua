@@ -79,8 +79,18 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                 if Server and attacker:isa("Player") and (not doer.GetShowHitIndicator or doer:GetShowHitIndicator()) then
                     local showNumbers = GetAreEnemies(attacker,target) and target:GetIsAlive()
                     if showNumbers then
+                    
                         local msg = BuildDamageMessage(target, damage, point)
                         Server.SendNetworkMessage(attacker, "Damage", msg, false)
+                        
+                        for _, spectator in ientitylist(Shared.GetEntitiesWithClassname("Spectator")) do
+                        
+                            if attacker == Server.GetOwner(spectator):GetSpectatingPlayer() then
+                                Server.SendNetworkMessage(spectator, "Damage", msg, false)
+                            end
+                            
+                        end
+                        
                     end
                     
                     // This makes the cross hair turn red. Show it when hitting anything

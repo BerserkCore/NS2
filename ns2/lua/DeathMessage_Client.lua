@@ -65,31 +65,32 @@ function DeathMsgUI_GetTechHeight(doerId)
     return kSubImageHeight
 end
 
-// Pass 1 for isPlayer if coming from a player (look it up from scoreboard data), otherwise it's a tech id
-function GetDeathMessageEntityName(isPlayer, clientIndex)
+-- Pass 1 for isPlayer if coming from a player (look it up from scoreboard data), otherwise it's a tech id
+local function GetDeathMessageEntityName(isPlayer, clientIndex)
 
     local name = ""
-
-    if isPlayer == 1 then
+    
+    if isPlayer then
         name = Scoreboard_GetPlayerData(clientIndex, "Name")
     elseif clientIndex ~= -1 then
         name = GetDisplayNameForTechId(clientIndex)
     end
     
-    if not name then
-        name = ""
-    end
-    
-    return name
+    return name or ""
     
 end
 
-// stored the name of the last killer
-local gKillerName = ""
+-- Stored the name of the last killer.
+local gKillerName = nil
 local gKillerWeaponIconIndex = kDeathMessageIcon.None
 
+-- The killer name will clear when this is called.
 function GetKillerNameAndWeaponIcon()
-    return gKillerName, gKillerWeaponIconIndex
+
+    local killerName = gKillerName
+    gKillerName = nil
+    return killerName, gKillerWeaponIconIndex
+    
 end
 
 function DeathMsgUI_GetResLost(teamNumber)
@@ -172,7 +173,7 @@ function DeathMsgUI_AddResRecovered(amount)
 
 end
 
-function AddDeathMessage(killerIsPlayer, killerIndex, killerTeamNumber, iconIndex, targetIsPlayer, targetIndex, targetTeamNumber)
+local function AddDeathMessage(killerIsPlayer, killerIndex, killerTeamNumber, iconIndex, targetIsPlayer, targetIndex, targetTeamNumber)
 
     local killerName = GetDeathMessageEntityName(killerIsPlayer, killerIndex)
     local targetName = GetDeathMessageEntityName(targetIsPlayer, targetIndex)
@@ -258,3 +259,8 @@ function AddDeathMessage(killerIsPlayer, killerIndex, killerTeamNumber, iconInde
     end
     
 end
+
+local function OnDeathMessage(message)
+    AddDeathMessage(message.killerIsPlayer, message.killerId, message.killerTeamNumber, message.iconIndex, message.targetIsPlayer, message.targetId, message.targetTeamNumber)
+end
+Client.HookNetworkMessage("DeathMessage", OnDeathMessage)

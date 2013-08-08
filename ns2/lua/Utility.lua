@@ -1652,6 +1652,8 @@ function PrecacheAsset(effectName)
         Shared.PrecacheSound(effectName)
     elseif StringEndsWith(effectName, ".dds") then
         Shared.PrecacheTexture(effectName)
+    else
+        Shared.Message("Warning: Was not able to find the type of asset for " .. effectName .. " while precacheing\n" .. Script.CallStack())
     end
     
     return effectName

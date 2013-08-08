@@ -225,8 +225,9 @@ function PhaseGate:GetTechButtons(techId)
 end
 
 // Temporarily don't use "target" attach point
+local kPhaseGateEngagementPointOffset = Vector(0, 0.1, 0)
 function PhaseGate:GetEngagementPointOverride()
-    return self:GetModelOrigin()
+    return self:GetOrigin() + kPhaseGateEngagementPointOffset
 end
 
 function PhaseGate:GetRequiresPower()

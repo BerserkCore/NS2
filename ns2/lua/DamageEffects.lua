@@ -16,6 +16,7 @@ kDamageEffects =
     {
         hitEffectLocalEffects =
         {
+
             // marine effects:
             {private_sound = "sound/NS2.fev/marine/rifle/alt_hit_hard", doer = "ClipWeapon", isalien = true, surface = "ethereal", done = true},
             {private_sound = "sound/NS2.fev/marine/rifle/alt_hit_hard", doer = "ClipWeapon", isalien = true, surface = "umbra", done = true},
@@ -28,6 +29,18 @@ kDamageEffects =
             {private_sound = "sound/NS2.fev/alien/skulk/parasite_hit", doer = "Parasite", ismarine = true, classname = "Player", done = true},
 
         },
+    },
+    
+    damage_sound_target_local =
+    {
+        damageSounds =
+        {
+            {sound = "sound/NS2.fev/alien/common/getting_shot", doer = "ClipWeapon", isalien = true, world_space = true},
+            {sound = "sound/NS2.fev/alien/common/getting_shot", doer = "Minigun", isalien = true, world_space = true},
+            {sound = "sound/NS2.fev/alien/common/getting_shot", doer = "Railgun", isalien = true, world_space = true},
+            {sound = "sound/NS2.fev/alien/common/getting_shot", doer = "Sentry", isalien = true, world_space = true},
+        }
+    
     },
     
     damage_sound =

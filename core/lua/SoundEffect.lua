@@ -11,43 +11,48 @@ Script.Load("lua/Mixins/SignalListenerMixin.lua")
 // Utility functions below.
 if Server then
 
-    function StartSoundEffectAtOrigin(soundEffectName, atOrigin, optionalRelevantFunction)
+    function StartSoundEffectAtOrigin(soundEffectName, atOrigin, volume, predictor)
     
         local soundEffectEntity = Server.CreateEntity(SoundEffect.kMapName)
         soundEffectEntity:SetOrigin(atOrigin)
         soundEffectEntity:SetAsset(soundEffectName)
+        soundEffectEntity:SetVolume(volume)
+        soundEffectEntity:SetPredictor(predictor)
         soundEffectEntity:Start()
-        if optionalRelevantFunction then
         
-            soundEffectEntity:SetPropagate(Entity.Propagate_Callback)
-            soundEffectEntity.OnGetIsRelevant = optionalRelevantFunction
-            
-        end
+        return soundEffectEntity
         
     end
     
-    function StartSoundEffectOnEntity(soundEffectName, onEntity)
+    function StartSoundEffectOnEntity(soundEffectName, onEntity, volume, predictor)
     
         local soundEffectEntity = Server.CreateEntity(SoundEffect.kMapName)
         soundEffectEntity:SetParent(onEntity)
         soundEffectEntity:SetAsset(soundEffectName)
+        soundEffectEntity:SetVolume(volume)
+        soundEffectEntity:SetPredictor(predictor)
         soundEffectEntity:Start()
+        
+        return soundEffectEntity
         
     end
     
     /**
      * Starts a sound effect which only 1 player will hear.
      */
-    function StartSoundEffectForPlayer(soundEffectName, forPlayer)
+    function StartSoundEffectForPlayer(soundEffectName, forPlayer, volume)
     
         local soundEffectEntity = Server.CreateEntity(SoundEffect.kMapName)
         soundEffectEntity:SetParent(forPlayer)
         soundEffectEntity:SetAsset(soundEffectName)
         soundEffectEntity:SetPropagate(Entity.Propagate_Callback)
+        soundEffectEntity:SetVolume(volume)
         function soundEffectEntity:OnGetIsRelevant(player)
             return player == forPlayer
         end
         soundEffectEntity:Start()
+        
+        return soundEffectEntity
         
     end
     
@@ -55,16 +60,20 @@ end
 
 if Client then
 
-    function StartSoundEffectAtOrigin(soundEffectName, atOrigin)
-        // TODO: implement to allow prediction
+    function StartSoundEffectAtOrigin(soundEffectName, atOrigin, volume, predictor)
+        Shared.PlayWorldSound(nil, soundEffectName, nil, atOrigin, volume or 1)
     end
     
-    function StartSoundEffectOnEntity(soundEffectName, onEntity)
-        // TODO: implement to allow prediction
+    function StartSoundEffectOnEntity(soundEffectName, onEntity, volume, predictor)
+        Shared.PlaySound(onEntity, soundEffectName, volume or 1)
+    end
+    
+    function StartSoundEffect(soundEffectName, volume)
+        Shared.PlaySound(nil, soundEffectName, volume or 1)
     end
 
-    function StartSoundEffectForPlayer(soundEffectName, forPlayer)
-        Shared.PlayPrivateSound(forPlayer, soundEffectName, forPlayer, 1, forPlayer:GetOrigin())
+    function StartSoundEffectForPlayer(soundEffectName, forPlayer, volume)
+        Shared.PlayPrivateSound(forPlayer, soundEffectName, forPlayer, volume or 1, forPlayer:GetOrigin())
     end
     
 end
@@ -94,7 +103,9 @@ local networkVars =
 {
     playing = "boolean",
     assetIndex = "resource",
-    startTime = "time"
+    startTime = "time",
+    predictorId  = "entityid",
+    volume = "float (0 to 1 by 0.01)"
 }
 
 function SoundEffect:OnCreate()
@@ -105,6 +116,10 @@ function SoundEffect:OnCreate()
     
     self.playing = false
     self.assetIndex = 0
+    self.volume = 1
+    
+    self:SetUpdates(true)
+    self.predictorId = Entity.invalidId
     
     self:SetPropagate(Entity.Propagate_Mask)
     self:SetRelevancyDistance(kDefaultMaxAudibleDistance)
@@ -142,6 +157,14 @@ end
 
 if Server then
 
+    function SoundEffect:SetVolume(volume)
+        self.volume = volume or 1
+    end
+    
+    function SoundEffect:SetPredictor(predictor)
+        self.predictorId = predictor and predictor:GetId() or Entity.invalidId
+    end
+
     function SoundEffect:SetAsset(assetPath)
     
         if string.len(assetPath) == 0 then
@@ -158,6 +181,11 @@ if Server then
         
         self.assetIndex = assetIndex
         self.assetLength = GetSoundEffectLength(assetPath)
+        /*
+        if not self:GetParent() and self:GetOrigin() == Vector(0,0,0) then
+            Print("Warning: %s is being player at (0,0,0)", assetPath)
+        end
+        */
         
     end
     
@@ -229,6 +257,15 @@ if Client then
     local function SharedUpdate(self)
     
         PROFILE("SoundEffect:SharedUpdate")
+        
+        if self.predictorId ~= Entity.invalidId then
+        
+            local predictor = Shared.GetEntity(self.predictorId)
+            if Client.GetLocalPlayer() == predictor then
+                return
+            end
+            
+        end
        
         if self.clientAssetIndex ~= self.assetIndex then
         
@@ -256,6 +293,7 @@ if Client then
                 if self.playing then
                 
                     self.soundEffectInstance:Start()
+                    self.soundEffectInstance:SetVolume(self.volume)
                     if self.clientSetParameters then
                     
                         for c = 1, #self.clientSetParameters do

@@ -155,7 +155,6 @@ function EffectManager:AddEffectData(identifier, data)
     assert(data)
     
     self.effectTables = self.effectTables or { }
-    self.loopingSounds = self.loopingSounds or { }
     self.decalList = self.decalList or { }
     
     self.effectTables[identifier] = data
@@ -189,10 +188,15 @@ local function InternalPrecacheEffectTable(self, globalEffectTable)
                     
                 elseif type(assetEntry) == "string" then
                 
-                    if string.find(assetEntry, "%%") ~= nil then
-                        PrecacheMultipleAssets(assetEntry, kSurfaceList)
-                    else
-                        PrecacheAsset(assetEntry)
+                    -- Sometimes the assetEntry is left blank (for a silence upgrade for example).
+                    if string.len(assetEntry) > 0 then
+                    
+                        if string.find(assetEntry, "%%") ~= nil then
+                            PrecacheMultipleAssets(assetEntry, kSurfaceList)
+                        else
+                            PrecacheAsset(assetEntry)
+                        end
+                        
                     end
                     
                 elseif type(assetEntry) == "table" then
@@ -291,7 +295,7 @@ local function InternalTriggerEffect(self, effectTable, triggeringParams, trigge
         
             success = self:InternalTriggerCinematic(effectTable, triggeringParams, triggeringEntity)
             
-        elseif effectTable[kSoundType] or effectTable[kParentedSoundType] or effectTable[kLoopingSoundType] or effectTable[kPrivateSoundType] or effectTable[kStopSoundType] then
+        elseif effectTable[kSoundType] or effectTable[kParentedSoundType] or effectTable[kPrivateSoundType] or effectTable[kStopSoundType] or effectTable[kPlayerSoundType] then
         
             success = self:InternalTriggerSound(effectTable, triggeringParams, triggeringEntity)
 
@@ -639,53 +643,7 @@ function GetPlayerFromTriggeringEntity(triggeringEntity)
 
     return nil
     
-end
-
-function EffectManager:GetPlayingLoopingSound(player, soundAssetName)
-    
-    for index, loopingSoundEntry in ipairs(self.loopingSounds) do
-    
-        if (loopingSoundEntry[1] == player:GetId()) and (loopingSoundEntry[2] == soundAssetName) then
-            return true
-        end
-        
-    end
-    
-    return false
-    
-end
-
-function EffectManager:PlayLoopingSound(player, soundAssetName)
-
-    Shared.PlaySound(player, soundAssetName)
-    
-    table.insert(self.loopingSounds, {player:GetId(), soundAssetName})
-    
-end           
-
-function EffectManager:StopLoopingSound(player, soundAssetName)
-
-    if player then
-    
-        for index, loopingSoundEntry in ipairs(self.loopingSounds) do
-        
-            if (loopingSoundEntry[1] == player:GetId()) and ((loopingSoundEntry[2] == soundAssetName) or (soundAssetName == "")) then
-            
-                Shared.StopSound(player, soundAssetName)
-                
-                table.remove(self.loopingSounds, index)
-                
-                return true
-                
-            end
-            
-        end    
-        
-    end
-    
-    return false
-    
-end
+end         
 
 // Returns false if an error was encountered (returns true even if sound was supposed to have stopped when not playing
 function EffectManager:InternalTriggerSound(effectTable, triggeringParams, triggeringEntity)
@@ -696,64 +654,52 @@ function EffectManager:InternalTriggerSound(effectTable, triggeringParams, trigg
     local player = GetPlayerFromTriggeringEntity(triggeringEntity)
     local volume = ConditionalValue(triggeringParams[kEffectParamVolume], triggeringParams[kEffectParamVolume], 1.0)
     local inWorldSpace = effectTable[kEffectParamWorldSpace]
-    local inWorldSpaceExceptPlayer = effectTable[kEffectParamWorldSpaceExceptPlayer]
+    local soundEffectEntity = nil
     
     self:DisplayDebug(ToString(soundAssetName), effectTable, triggeringParams, triggeringEntity)
     
-    // Play world sound
-    if effectTable[kSoundType] then
-    
-        if player and inWorldSpace ~= true and inWorldSpaceExceptPlayer ~= true then
+    // its valid to define empty string as sound asset, in this case the expected behavior is to skip entity/sound generation
+    if soundAssetName and soundAssetName ~= "" then
         
-            // Shared player sound
-            Shared.PlaySound(player, soundAssetName)
-            success = true
+        // Play world sound
+        if effectTable[kSoundType] then
+        
+            if player and inWorldSpace ~= true and inWorldSpaceExceptPlayer ~= true then
             
-        else
-        
-            // World sound (don't send to the player if inWorldSpaceExceptPlayer is true).
-            Shared.PlayWorldSound(((inWorldSpaceExceptPlayer == true) and player) or nil, soundAssetName, nil, coords.origin)
-            success = true
+                // Shared player sound
+                soundEffectEntity = StartSoundEffectOnEntity(soundAssetName, player, volume)
+                success = true
+                
+            else
             
-        end
-        
-    // Play parented sound
-    elseif effectTable[kParentedSoundType] then
-    
-        Shared.PlayWorldSound(player, soundAssetName, triggeringEntity, Vector(0, 0, 0))
-        success = true
-
-    // Looping sounds
-    elseif effectTable[kLoopingSoundType] then
-  
-        if player then
-        
-            if not self:GetPlayingLoopingSound(player, soundAssetName) then
-            
-                self:PlayLoopingSound(player, soundAssetName)
-
+                // World sound (don't send to the player if inWorldSpaceExceptPlayer is true).
+                soundEffectEntity = StartSoundEffectAtOrigin(soundAssetName, coords.origin, volume)
+                success = true
+                
             end
             
-            // Mark as succes either way because this is the common usage
+        elseif effectTable[kPlayerSoundType] then
+            
+            soundEffectEntity = StartSoundEffectOnEntity(soundAssetName, player, volume, player)
             success = true
             
-        else
-            Print("%s sounds only work for players (%s)", kLoopingSoundType, soundAssetName)
+        // Play parented sound
+        elseif effectTable[kParentedSoundType] then
+        
+            soundEffectEntity = StartSoundEffectOnEntity(soundAssetName, player, volume, nil)
+            success = true
+            
+        elseif effectTable[kPrivateSoundType] then
+        
+            soundEffectEntity = StartSoundEffectForPlayer(soundAssetName, player, volume)
+            success = true
+            
         end
+
+    end    
         
-    elseif effectTable[kPrivateSoundType] then
+    if effectTable[kStopSoundType] then
     
-        Shared.PlayPrivateSound(player, soundAssetName, player, volume, Vector(0, 0, 0))
-        success = true
-        
-    elseif effectTable[kStopSoundType] then
-    
-        // Stop sound for triggering player or entity
-        
-        if player then
-            self:StopLoopingSound(player, soundAssetName)
-        end
-        
         // Passes in "" if we are to stop all sounds
         // Stop sounds on the triggering entity.
         Shared.StopSound(player, soundAssetName, triggeringEntity)
@@ -763,6 +709,8 @@ function EffectManager:InternalTriggerSound(effectTable, triggeringParams, trigg
         success = true
         
     end
+    
+    CopyRelevancyMask(triggeringEntity, soundEffectEntity)
     
     return success
     
@@ -774,12 +722,7 @@ function EffectManager:InternalStopEffects(effectTable, triggeringParams, trigge
     local player = GetPlayerFromTriggeringEntity(triggeringEntity)
     
     self:DisplayDebug("all", effectTable, triggeringParams, triggeringEntity)
-    
 
-    if player then
-        self:StopLoopingSound(player, "")
-    end
-    
     // Passes in "" if we are to stop all sounds
     Shared.StopSound(player, "", triggeringEntity)
     

@@ -116,3 +116,16 @@ if Client then
 	    end
 	end
 end
+
+// Removed in 246 because it has no purpose
+if Server then
+    local reported = false
+    function Server.ClearFileHashes()
+	    if not reported then
+	        Shared.Message("Server.ClearFileHashes function no longer exists. Called from:")
+	        Shared.Message(Script.CallStack())
+	        reported = true
+	    end    
+        Server.RemoveFileHashes("*")
+    end
+end

@@ -900,10 +900,7 @@ function BaseModelMixin:GetAttachPointCoords(attachPoint)
 
         local coords = self._modelCoords
         if attachPointExists and coords ~= nil then
-            if self.boneCoords:GetSize() > 0 then
-                coords = self._modelCoords * model:GetAttachPointCoords(attachPointIndex, self.boneCoords)
-            end
-            return coords
+            return self._modelCoords * model:GetAttachPointCoords(attachPointIndex, self.boneCoords)
         end
         
     end

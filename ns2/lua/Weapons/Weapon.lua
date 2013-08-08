@@ -80,7 +80,14 @@ function Weapon:OnDestroy()
     // Force end events just in case the weapon goes out of relevancy on the client for example.
     self:TriggerEffects(self:GetPrimaryAttackPrefix() .. "_attack_end")
     self:TriggerEffects(self:GetSecondaryAttackPrefix() .. "_alt_attack_end")
-
+    
+    if self.ammoDisplayUI then
+    
+        Client.DestroyGUIView(self.ammoDisplayUI)
+        self.ammoDisplayUI = nil
+        
+    end
+    
 end
 
 function Weapon:GetAnimationGraphName()
@@ -260,6 +267,39 @@ end
 
 function Weapon:ProcessMoveOnWeapon(player, input)
     SharedUpdate(self)
+end
+
+function Weapon:GetUIDisplaySettings()
+    return nil
+end
+
+function Weapon:OnUpdateRender()
+
+    local parent = self:GetParent()
+    local settings = self:GetUIDisplaySettings()
+    if parent and parent:GetIsLocalPlayer() and settings then
+    
+        local ammoDisplayUI = self.ammoDisplayUI
+        if not ammoDisplayUI then
+        
+            ammoDisplayUI = Client.CreateGUIView(settings.xSize, settings.ySize)
+            ammoDisplayUI:Load(settings.script)
+            ammoDisplayUI:SetTargetTexture("*ammo_display" .. (settings.textureNameOverride or self:GetMapName()))
+            self.ammoDisplayUI = ammoDisplayUI
+            
+        end
+        
+        ammoDisplayUI:SetGlobal("weaponClip", parent:GetWeaponClip())
+        ammoDisplayUI:SetGlobal("weaponAmmo", parent:GetWeaponAmmo())
+        ammoDisplayUI:SetGlobal("weaponAuxClip", parent:GetAuxWeaponClip())
+        
+    elseif self.ammoDisplayUI then
+    
+        Client.DestroyGUIView(self.ammoDisplayUI)
+        self.ammoDisplayUI = nil
+        
+    end
+    
 end
 
 function Weapon:GetIsActive()

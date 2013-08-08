@@ -15,10 +15,12 @@ Script.Load("lua/BindingsDialog.lua")
 Script.Load("lua/Update.lua")
 Script.Load("lua/MenuManager.lua")
 Script.Load("lua/DSPEffects.lua")
+Script.Load("lua/SoundEffect.lua")
 
 CreateDSPs()
 
-local kAllowDebuggingMainMenu = false
+// Change this to false if loading the main menu is slowing down debugging too much
+local kAllowDebuggingMainMenu = true
 
 local mainMenuMusic = nil
 local mainMenuAlertMessage  = nil
@@ -322,44 +324,46 @@ Client.PrecacheLocalSound(kLoopingMenuSound)
 Client.PrecacheLocalSound(kWindowOpenSound)
 
 function MainMenu_OnMouseIn()
-    Shared.PlaySound(nil, kMouseInSound)
+    StartSoundEffect(kMouseInSound)
 end
 
 function MainMenu_OnMouseOut()
-    //Shared.PlaySound(nil, kMouseOutSound)
+    //StartSoundEffect(kMouseOutSound)
 end
 
 function MainMenu_OnMouseClick()
-    Shared.PlaySound(nil, kClickSound)
+    StartSoundEffect(kClickSound)
 end
 
 function MainMenu_OnWindowOpen()
-    Shared.PlaySound(nil, kWindowOpenSound)
+    StartSoundEffect(kWindowOpenSound)
 end
 
 function MainMenu_OnCheckboxOn()
-    Shared.PlaySound(nil, kCheckboxOnSound)
+    StartSoundEffect(kCheckboxOnSound)
 end
 
 function MainMenu_OnCheckboxOff()
-    Shared.PlaySound(nil, kCheckboxOffSound)
+    StartSoundEffect(kCheckboxOffSound)
 end
 
 function MainMenu_OnConnect()
-    Shared.PlaySound(nil, kConnectSound)
+    StartSoundEffect(kConnectSound)
 end
 
 function MainMenu_OnOpenMenu()
-
-    //Shared.PlaySound(nil, kOpenMenuSound)
-    Shared.PlaySound(nil, kLoopingMenuSound)
-    
+    StartSoundEffect(kLoopingMenuSound)    
 end
 
 function MainMenu_OnCloseMenu()
+    StartSoundEffect(kLoopingMenuSound)    
+end
 
-    //Shared.PlaySound(nil, kCloseMenuSound)
-    Shared.StopSound(nil, kLoopingMenuSound)
+function MainMenu_LoadNewsURL(url)
+
+    if gMainMenu.newsScript then
+        gMainMenu.newsScript:LoadURL(url)
+    end
     
 end
 

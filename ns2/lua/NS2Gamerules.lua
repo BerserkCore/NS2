@@ -1076,21 +1076,10 @@ if Server then
         return ConditionalValue(math.random() < .5, kTeam1Index, kTeam2Index)
         
     end
-
-    // Enforce balanced teams
+    
+    -- No enforced balanced teams on join as the auto team balance system balances teams.
     function NS2Gamerules:GetCanJoinTeamNumber(teamNumber)
-
-        local team1Players = self.team1:GetNumPlayers()
-        local team2Players = self.team2:GetNumPlayers()
-        
-        if (team1Players > team2Players) and (teamNumber == self.team1:GetTeamNumber()) then
-            return false
-        elseif (team2Players > team1Players) and (teamNumber == self.team2:GetTeamNumber()) then
-            return false
-        end
-        
         return true
-
     end
     
     function NS2Gamerules:GetCanSpawnImmediately()

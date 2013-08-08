@@ -262,7 +262,7 @@ function ExoWeaponHolder:OnTag(tagName)
         
             // Do not send this sound to this Exo player as they play it Client side above.
             local function Relevant(soundEffect, player) return player ~= self:GetParent() end
-            StartSoundEffectAtOrigin(kDeploy3DSoundEffect, self:GetOrigin(), Relevant)
+            StartSoundEffectAtOrigin(kDeploy3DSoundEffect, self:GetOrigin())
             
         end
         

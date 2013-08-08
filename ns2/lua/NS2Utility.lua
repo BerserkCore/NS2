@@ -11,6 +11,27 @@ Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 Script.Load("lua/FunctionContracts.lua")
 
+/**
+ * Return an extents vector for tracing a bullet with the given caliber (diameter) along direction. 
+ *
+ * As the trace box is world-axis aligned, it must be shrunk when tracing a diagonal.
+ */
+function GetDirectedExtentsForDiameter(direction, diameter)
+    
+    // normalize and scale the vector, then extract the extents from it
+    local v = GetNormalizedVector(direction)
+    v:Scale(diameter)
+    
+    local x = math.sqrt(v.y * v.y + v.z * v.z)
+    local y = math.sqrt(v.x * v.x + v.z * v.z)
+    local z = math.sqrt(v.y * v.y + v.x * v.x)
+ 
+    local result = Vector(x,y,z)
+    // Log("extents for %s/%s -> %s", direction, v, result)
+    return result
+    
+end
+
 if Client then
 
     function CreateSimpleInfestationDecal(size, coords)
@@ -130,6 +151,8 @@ function HandleHitEffect(position, doer, surface, target, showtracer, altMode, d
     // Don't play the hit cinematic, those are made for third person.
     if target ~= Client.GetLocalPlayer() then
         GetEffectManager():TriggerEffects("damage", tableParams)
+    else
+        GetEffectManager():TriggerEffects("damage_sound_target_local", tableParams)
     end
     
     // Always play sound effect.

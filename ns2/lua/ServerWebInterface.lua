@@ -6,6 +6,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/RingBuffer.lua")
+
 local kMaxPerfDatas = 30
 
 // How often to log performance data in seconds.
@@ -135,7 +137,7 @@ local function OnWebRequest(actions)
     elseif actions.request == "getperfdata" then
         return "application/json", json.encode(perfDataBuffer:ToTable())
     elseif actions.request == "getchatlist" then
-        return "application/json", json.encode(Server.recentChatMessages:ToTable())
+        return "application/json", Server.recentChatMessages and json.encode(Server.recentChatMessages:ToTable()) or "{ }"
     elseif actions.request == "getinstalledmodslist" then
         return "application/json", json.encode(GetModList())
     elseif actions.request == "getmaplist" then

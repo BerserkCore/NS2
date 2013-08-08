@@ -51,7 +51,9 @@ function Projectile:Setup(player, velocity, gravityEnabled, extents, triggeringE
 
     assert(Server)
 
-    self:SetOwner(player)
+    if player then
+        self:SetOwner(player)
+    end
     
     if triggeringEnt and HasMixin(triggeringEnt, "Relevancy") then
         self:SetExcludeRelevancyMask(triggeringEnt:GetExcludeRelevancyMask())

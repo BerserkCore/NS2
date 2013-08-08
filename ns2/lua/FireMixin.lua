@@ -19,6 +19,8 @@ local kBurnMedCinematic = PrecacheAsset("cinematics/marine/flamethrower/burn_med
 local kBurnSmallCinematic = PrecacheAsset("cinematics/marine/flamethrower/burn_small.cinematic")
 local kBurn1PCinematic = PrecacheAsset("cinematics/marine/flamethrower/burn_1p.cinematic")
 
+local kBurnUpdateRate = 0.5
+
 local fireCinematicTable = { }
 fireCinematicTable["Hive"] = kBurnHugeCinematic
 fireCinematicTable["CommandStation"] = kBurnHugeCinematic
@@ -184,24 +186,45 @@ local function SharedUpdate(self, deltaTime)
     end
     
     if Server then
-    
-        // stacks are applied at ComputeDamageOverride
-        local damageOverTime = kBurnDamagePerStackPerSecond * deltaTime
-        if self.GetIsFlameAble and self:GetIsFlameAble() then
-            damageOverTime = damageOverTime * kFlameableMultiplier
-        end
-        
-        local attacker = nil
-        if self.fireAttackerId ~= Entity.invalidId then
-            attacker = Shared.GetEntity(self.fireAttackerId)
-        end
+   
+        if not self.timeLastFireDamageUpdate or self.timeLastFireDamageUpdate + kBurnUpdateRate <= Shared.GetTime() then
+            
+            // stacks are applied at ComputeDamageOverride
+            local damageOverTime = kBurnDamagePerStackPerSecond * kBurnUpdateRate
+            if self.GetIsFlameAble and self:GetIsFlameAble() then
+                damageOverTime = damageOverTime * kFlameableMultiplier
+            end
+            
+            local attacker = nil
+            if self.fireAttackerId ~= Entity.invalidId then
+                attacker = Shared.GetEntity(self.fireAttackerId)
+            end
 
-        local doer = nil
-        if self.fireDoerId ~= Entity.invalidId then
-            doer = Shared.GetEntity(self.fireDoerId)
+            local doer = nil
+            if self.fireDoerId ~= Entity.invalidId then
+                doer = Shared.GetEntity(self.fireDoerId)
+            end
+            
+            self:DeductHealth(damageOverTime, attacker, doer)
+            
+            if attacker then
+            
+                local msg = BuildDamageMessage(self, damageOverTime, self:GetOrigin())
+                Server.SendNetworkMessage(attacker, "Damage", msg, false)
+                
+                for _, spectator in ientitylist(Shared.GetEntitiesWithClassname("Spectator")) do
+                
+                    if attacker == Server.GetOwner(spectator):GetSpectatingPlayer() then
+                        Server.SendNetworkMessage(spectator, "Damage", msg, false)
+                    end
+                    
+                end
+            
+            end
+            
+            self.timeLastFireDamageUpdate = Shared.GetTime()
+            
         end
-        
-        self:DeductHealth(damageOverTime, attacker, doer)
         
         // See if we put ourselves out
         if Shared.GetTime() - self.timeBurnInit > kFlamethrowerBurnDuration then

@@ -14,6 +14,7 @@ Script.Load("lua/TechMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/TargetMixin.lua")
 Script.Load("lua/UsableMixin.lua")
+Script.Load("lua/Mixins/SimplePhysicsMixin.lua")
 
 local Shared_GetModel = Shared.GetModel
 
@@ -58,34 +59,27 @@ function Clog:OnCreate()
         InitMixin(self, OwnerMixin)
         InitMixin(self, ClogFallMixin)
         InitMixin(self, EntityChangeMixin)       
-        
-        self:SetUpdates(false)
-        
-    elseif Client then
-        self:SetUpdates(true)
+
     end
     
     self:SetPropagate(Entity.Propagate_Mask)
     self:SetRelevancyDistance(kMaxRelevancyDistance)
+    self:SetUpdates(true)
     
 end
 
 function Clog:OnInitialized()
 
-    self:CreatePhysics()
+    InitMixin(self, SimplePhysicsMixin)
     
     if Server then
     
         local mask = bit.bor(kRelevantToTeam1Unit, kRelevantToTeam2Unit, kRelevantToReadyRoom)
         
         if sighted or self:GetTeamNumber() == 1 then
-
-            mask = bit.bor(mask, kRelevantToTeam1Commander)   
-            
-        elseif self:GetTeamNumber() == 2 then
-        
-            mask = bit.bor(mask, kRelevantToTeam2Commander)
-        
+            mask = bit.bor(mask, kRelevantToTeam1Commander)              
+        elseif self:GetTeamNumber() == 2 then        
+            mask = bit.bor(mask, kRelevantToTeam2Commander)        
         end  
         
         self:SetExcludeRelevancyMask( mask )
@@ -94,18 +88,12 @@ function Clog:OnInitialized()
 
 end
 
-function Clog:CreatePhysics()
+function Clog:GetSimplePhysicsBodyType()
+    return kSimplePhysicsBodyType.Sphere
+end
 
-    if self.physicsModel then
-        Shared.DestroyCollisionObject(self.physicsModel)
-        self.physicsModel = nil
-    end    
-
-    self.physicsModel = Shared.CreatePhysicsSphereBody(true, Clog.kRadius, 20, self:GetCoords())
-    self.physicsModel:SetGroup(PhysicsGroup.BigStructuresGroup)
-    self.physicsModel:SetEntity(self)
-    self.physicsModel:SetPhysicsType(CollisionObject.Static)
-
+function Clog:GetSimplePhysicsBodySize()
+    return Clog.kRadius
 end
 
 function Clog:OnDestroy()
@@ -116,14 +104,7 @@ function Clog:OnDestroy()
         self._renderModel = nil
         
     end
-    
-    if self.physicsModel then
-    
-        Shared.DestroyCollisionObject(self.physicsModel)
-        self.physicsModel = nil
-        
-    end
-    
+
 end
 
 function Clog:SpaceClearForEntity(location)
@@ -144,10 +125,6 @@ end
 
 function Clog:SetCoords(coords)
 
-    if self.physicsModel then
-        self.physicsModel:SetBoneCoords(coords, self.boneCoords)
-    end
-    
     if self._renderModel then    
         self._renderModel:SetCoords(coords)        
     end
@@ -161,10 +138,6 @@ function Clog:SetOrigin(origin)
     local newCoords = self:GetCoords()
     newCoords.origin = origin
 
-    if self.physicsModel then
-        self.physicsModel:SetBoneCoords(newCoords, CoordsArray())
-    end
-    
     if self._renderModel then    
         self._renderModel:SetCoords(newCoords)        
     end
@@ -178,49 +151,6 @@ function Clog:GetModelOrigin()
 end
 
 if Server then
-
-    function Clog:OnStarve()
-        self:SetUpdates(true)
-    end
-
-    function Clog:OnStarveEnd()
-        if not self:GetIsOnFire() and not self:GetIsFalling() then
-            self:SetUpdates(false)
-        end
-    end
-
-    function Clog:SetGameEffectMask(gameEffect, state)
-    
-        if gameEffect == kGameEffect.OnFire then
-        
-            if state == true then
-                self:SetUpdates(true)
-            elseif not self:GetIsFalling() then  
-                self:SetUpdates(false)
-            end
-        
-        end
-    
-    end
-
-    function Clog:OnClogFall()
-        self:SetUpdates(true)
-    end
-    
-    function Clog:OnClogFallDone()
-    
-        if not self:GetIsOnFire() then
-            self:SetUpdates(false)
-        end
-        
-        if self.physicsModel then
-
-            Shared.DestroyCollisionObject(self.physicsModel)
-            self:CreatePhysics()
-        
-        end
-        
-    end
 
     function Clog:OnKill()
     
@@ -259,23 +189,6 @@ elseif Client then
             self._renderModel:SetCoords(self:GetCoords())  
         end
     
-    end
-
-end
-
-function Clog:OnUpdate(deltaTime)
-
-    if self.physicsModel then
-    
-        if Client and self:GetOrigin() ~= self.storedOrigin then
-
-            self:CreatePhysics()
-            self.storedOrigin = self:GetOrigin()
-                
-        end
-
-    else 
-        self:CreatePhysics()    
     end
 
 end

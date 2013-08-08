@@ -163,6 +163,15 @@ local kMuzzleAttachPoint = "fxnode_weldermuzzle"
 
 function Builder:OnUpdateRender()
 
+    Weapon.OnUpdateRender(self)
+    
+    if self.ammoDisplayUI then
+    
+        local progress = PlayerUI_GetUnitStatusPercentage()
+        self.ammoDisplayUI:SetGlobal("weldPercentage", progress)
+        
+    end
+    
     if self.playEffect then
     
         if self.lastBuilderEffect + kBuildEffectInterval <= Shared.GetTime() then
@@ -173,7 +182,15 @@ function Builder:OnUpdateRender()
         end
         
     end
+    
+end
 
+if Client then
+
+    function Builder:GetUIDisplaySettings()
+        return { xSize = 512, ySize = 512, script = "lua/GUIWelderDisplay.lua", textureNameOverride = "welder" }
+    end
+    
 end
 
 Shared.LinkClassToMap("Builder", Builder.kMapName, networkVars)

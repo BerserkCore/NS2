@@ -77,16 +77,11 @@ local networkVars =
     // Track our parentId
     parentId = "entityid",
     hasChild = "boolean",
-        
-    // when the last impulse was started. The impulse is inactive if the starttime + pathtime < now
-    impulseStartTime = "time",
     
     // if we are connected. Note: do NOT use on the server side when calculating reconnects/disconnects,
     // as the random order of entity update means that you can't trust it to reflect the actual connect/disconnects
     // used on the client side by the ui to determine connection status for potently cyst building locations
-    connected = "boolean",
-    
-    bursted = "boolean"
+    connected = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -189,10 +184,6 @@ end
 function Cyst:OnDestroy()
 
     if Client then
-    
-        if self.light ~= nil then
-            Client.DestroyRenderLight(self.light)
-        end
         
         if self.redeployCircleModel then
         
@@ -249,18 +240,11 @@ function Cyst:OnInitialized()
         // start out as disconnected; wait for impulse to arrive
         self.connected = false
         
-        // mark us as not having received an impulse
-        self.lastImpulseReceived = -1000
-        
-        self.lastImpulseSent = Shared.GetTime() 
         self.nextUpdate = Shared.GetTime()
         self.impulseActive = false
         self.bursted = false
         self.timeBursted = 0
         self.children = { }
-        
-        // initalize impulse setup
-        self.impulseStartTime = 0
         
         InitMixin(self, SleeperMixin)
         InitMixin(self, StaticTargetMixin)
@@ -275,26 +259,8 @@ function Cyst:OnInitialized()
     elseif Client then    
     
         InitMixin(self, UnitStatusMixin)
-    
-        // create the impulse light
-        self.light = Client.CreateRenderLight()
-        
-        self.light:SetType( RenderLight.Type_Point )
-        self.light:SetCastsShadows( false )
-
-        self.lightCoords = CopyCoords(self:GetCoords())
-        self.light:SetCoords( self.lightCoords )
-        self.light:SetRadius(kImpulseLightRadius)
-        self.light:SetIntensity( Cyst.kImpulseLightIntensity ) 
-        self.light:SetColor( Cyst.kImpulseColor )
-            
-        self.light:SetIsVisible(true) 
 
     end
-    
-    self.points = nil
-    self.pathLen = 0
-    self.index = 1
     
     self:SetUpdates(true)
     
@@ -348,85 +314,11 @@ function Cyst:GetCanSleep()
     return true
 end    
 
-function _DebugTrack(points, dur, r, g, b, a, force)
-    if force then
-        local prevP = nil
-        for _,p in ipairs(points) do
-            if prevP then
-                DebugLine(prevP, p,dur, r, g, b, a)
-                DebugLine(p, p + Vector.yAxis , dur, r, g, b, a)
-            end
-            prevP = p
-        end
-    end
-end
-
-/**
- * Draw the track using the given color/dur (defaults to 30/green)
- */
-function Cyst:Debug(dur, color)
-    dur = dur or 30
-    color = color or { 0, 1, 0, 1 }
-    
-    local r,g,b,a = unpack(color)
-    
-    _DebugTrack(self.points, dur,r,g,b,a, true)
-end
-
-function Cyst:StartOnSegment(index)
-
-    assert(index <= table.count(self.points))
-    assert(index >= 1)
-    
-    self.index = index
-    if index < self.pathLen then
-        self.segment = self.points[index+1]-self.points[index]
-    else
-        self.segment = Vector(0, 0, 0)
-    end
-    self.length = self.segment:GetLength()
-    self.segmentLengthRemaining = self.length
-    
-end
-
 function Cyst:GetTechButtons(techId)
   
     return  { kTechId.Rupture, kTechId.Infestation,  kTechId.None, kTechId.None,
               kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
-end
-
-local function AdvanceTo(self, time)
-
-    if self.index == self.pathLen then
-        return nil
-    end
-    
-    if self.pathLen and self.pathLen == 1 then
-        return nil
-    end
-    
-    local deltaTime = time - self.currentTime
-    self.currentTime = time
-    
-    local length = self.speed * deltaTime
-    
-    while self.segmentLengthRemaining > 0 and length > self.segmentLengthRemaining do
-    
-        self.index = self.index + 1
-        if self.index == self.pathLen then
-            return nil
-        end
-        
-        length = length - self.segmentLengthRemaining
-        self:StartOnSegment(self.index)
-        
-    end
-    
-    self.segmentLengthRemaining = math.max(0, self.segmentLengthRemaining - length)
-    local fraction = (self.length - self.segmentLengthRemaining) / self.length
-    return self.points[self.index] + self.segment * fraction
-    
 end
 
 function Cyst:GetInfestationRadius()
@@ -461,17 +353,6 @@ function Cyst:OnOverrideSpawnInfestation(infestation)
     // New infestation starts partially built, but this allows it to start totally built at start of game 
     local radiusPercent = math.max(infestation:GetRadius(), .2)
     infestation:SetRadiusPercent(radiusPercent)
-    
-end
-
-function Cyst:Restart(time)
-
-    self.startTime = time
-    self.currentTime = time
-    self.index = 1
-    self.speed = Cyst.kImpulseSpeed
-    self.pathLen = #(self.points)
-    self:StartOnSegment(1)
     
 end
 
@@ -521,21 +402,6 @@ local function ServerUpdate(self, point, deltaTime)
             self:MarkBlipDirty()
         end
         
-        // point == nil signals that the impulse tracker is done
-        if self.impulseActive and point == nil then
-        
-            self.lastImpulseReceived = now
-            self.impulseActive = false
-            
-        end
-        
-        // if we have received an impulse but hasn't sent one out yet, send one
-        if self.lastImpulseReceived > self.lastImpulseSent then
-        
-            self:FireImpulses(now)
-            self.lastImpulseSent = now
-            
-        end
         // avoid clumping; don't use now when calculating next think time (large kThinkTime)
         self.nextUpdate = self.nextUpdate + Cyst.kThinkTime
         
@@ -559,41 +425,6 @@ function Cyst:OnUpdate(deltaTime)
     ScriptActor.OnUpdate(self, deltaTime)
     
     if self:GetIsAlive() then
-    
-        local point = nil
-        local now = Shared.GetTime()
-        
-        // Make a connect to the parent so we can do the visual whatevers
-        // the client and server could differ in these paths but to be honest
-        // the server is always the authority the client is just for visuals
-        // which could be out of sync
-        if self.points == nil then
-        
-            local parent = self:GetCystParent()
-            if parent ~= nil then
-            
-                // Create the connect between me and my parent
-                local parentOrigin = parent:GetOrigin()
-                local myOrigin = self:GetOrigin()
-                
-                self.points = CreateBetweenEntities(self, parent)
-                if self.points and #self.points > 0 then
-                    self:Restart(self.impulseStartTime)
-                end
-                
-            end
-            
-        elseif #self.points > 0 then
-        
-            // if we have a tracker, check if we need to restart it
-            if self.impulseStartTime ~= self.startTime then
-                self:Restart(self.impulseStartTime)
-            end
-            
-            // Advanced the point on the timeline
-            point = AdvanceTo(self, now)
-            
-        end
         
         if Server then
         
@@ -601,15 +432,6 @@ function Cyst:OnUpdate(deltaTime)
             self.hasChild = #self.children > 0
             
         elseif Client then
-        
-            self.light:SetIsVisible(point ~= nil and not self:GetIsCloaked())
-            
-            if point then
-            
-                self.lightCoords.origin = point
-                self.light:SetCoords(self.lightCoords)
-                
-            end
             
             if not self.connectedFraction then
                 self.connectedFraction = self.connected and 1 or 0

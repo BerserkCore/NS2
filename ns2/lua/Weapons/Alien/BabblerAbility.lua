@@ -158,11 +158,11 @@ function BabblerAbility:OnTag(tagName)
         local player = self:GetParent()
         
         if player then
+        
+            player:TriggerEffects("babblerability_attack")
 
             if Server then
                 CreateBabblerPheromone(self, player)
-                // sound plays twice otherwise
-                player:TriggerEffects("babblerability_attack")
                 self.timeLastThrown = Shared.GetTime()
             end
             

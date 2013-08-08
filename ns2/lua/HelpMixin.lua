@@ -26,7 +26,7 @@ end
 
 function HelpWidgetAnimateIn(guiItem)
 
-    Shared.PlaySound(nil, kStartHelpSound)
+    StartSoundEffect(kStartHelpSound)
     
     local size = guiItem:GetSize()
     local position = Vector(-size.x / 2, -size.y, 0)
@@ -63,7 +63,7 @@ end
 
 function HelpWidgetIncreaseUse(guiScript, className)
 
-    Shared.PlaySound(nil, kLearnedHelpSound)
+    StartSoundEffect(kLearnedHelpSound)
     
     local classNameLower = string.lower(className)
     Client.SetOptionInteger("help/" .. classNameLower, Client.GetOptionInteger("help/" .. classNameLower, 0) + 1)

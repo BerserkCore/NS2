@@ -185,9 +185,9 @@ end
 local function playAlertSound(team)
 
     if team == kTeam1Index then
-        Shared.PlaySound(nil, kMarineAlertSound)
+        StartSoundEffect(kMarineAlertSound)
     elseif team == kTeam2Index then
-        Shared.PlaySound(nil, kAlienAlertSound)
+        StartSoundEffect(kAlienAlertSound)
     end
     
 end

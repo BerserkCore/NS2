@@ -311,6 +311,15 @@ end
 
 function Welder:OnUpdateRender()
 
+    Weapon.OnUpdateRender(self)
+    
+    if self.ammoDisplayUI then
+    
+        local progress = PlayerUI_GetUnitStatusPercentage()
+        self.ammoDisplayUI:SetGlobal("weldPercentage", progress)
+        
+    end
+    
     local parent = self:GetParent()
     if parent and self.welding then
 
@@ -331,23 +340,29 @@ function Welder:OnUpdateRender()
                 self:TriggerEffects("welder_hit", { classname = className, effecthostcoords = coords})
                 
             end
-
+            
             self.timeLastWeldHitEffect = Shared.GetTime()
             
         end
-    
+        
     end
-
+    
 end
 
 function Welder:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+
     if damageType ~= kDamageType.Corrode then
         damageTable.damage = 0
     end
+    
 end
 
 function Welder:GetCanTakeDamageOverride()
     return self:GetParent() == nil
+end
+
+function Welder:GetIsWelding()
+    return self.welding
 end
 
 if Server then
@@ -359,6 +374,14 @@ if Server then
     function Welder:GetSendDeathMessageOverride()
         return false
     end    
+    
+end
+
+if Client then
+
+    function Welder:GetUIDisplaySettings()
+        return { xSize = 512, ySize = 512, script = "lua/GUIWelderDisplay.lua" }
+    end
     
 end
 

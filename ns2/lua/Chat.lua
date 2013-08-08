@@ -180,7 +180,7 @@ local function OnMessageChat(message)
         // entity id
         table.insert(chatMessages, 0)
         
-        Shared.PlaySound(self, player:GetChatSound())
+        StartSoundEffect(player:GetChatSound())
         
         // Only print to log if the client isn't running a local server
         // which has already printed to log.
@@ -224,7 +224,7 @@ function ChatUI_AddSystemMessage(msgText)
         // entity id
         table.insert(chatMessages, 0)
 
-        Shared.PlaySound(self, player:GetChatSound())
+        StartSoundEffect(player:GetChatSound())
         
     end
     

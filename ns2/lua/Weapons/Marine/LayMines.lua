@@ -365,11 +365,15 @@ if Client then
         
             self.showGhost, self.ghostCoords, self.placementValid = self:GetPositionForStructure(player)
             self.showGhost = self.showGhost and self.minesLeft > 0
-
+            
         end
-    
+        
     end
-
+    
+    function LayMines:GetUIDisplaySettings()
+        return { xSize = 256, ySize = 417, script = "lua/GUIMineDisplay.lua" }
+    end
+    
 end
 
 function LayMines:GetShowGhostModel()

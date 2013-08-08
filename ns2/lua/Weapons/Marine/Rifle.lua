@@ -352,12 +352,18 @@ if Client then
         
     end
     
+    function Rifle:GetUIDisplaySettings()
+        return { xSize = 256, ySize = 417, script = "lua/GUIRifleDisplay.lua" }
+    end
+    
 end
 
 function Rifle:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+
     if damageType ~= kDamageType.Corrode then
         damageTable.damage = 0
     end
+    
 end
 
 function Rifle:GetCanTakeDamageOverride()

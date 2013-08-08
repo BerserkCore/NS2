@@ -11,6 +11,8 @@
 
 Script.Load("lua/ScenarioHandler_Commands.lua")
 
+local gLastPosition = nil
+
 local function JoinTeam(player, teamIndex)
 
     if player ~= nil and player:GetTeamNumber() == kTeamReadyRoom then
@@ -419,7 +421,7 @@ local function OnCommandGive(client, itemName)
     
 end
 
-local function OnCommandSpawn(client, itemName, teamnum)
+local function OnCommandSpawn(client, itemName, teamnum, useLastPos)
 
     local player = client:GetControllingPlayer()
     if(Shared.GetCheatsEnabled() and itemName ~= nil) then
@@ -427,23 +429,50 @@ local function OnCommandSpawn(client, itemName, teamnum)
         // trace along players zAxis and spawn the item there
         local startPoint = player:GetEyePos()
         local endPoint = startPoint + player:GetViewCoords().zAxis * 100
-        
-        local trace = Shared.TraceRay(startPoint, endPoint,  CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
+        local usePos = nil
         
         if not teamnum then
             teamnum = player:GetTeamNumber()
         else
             teamnum = tonumber(teamnum)
         end
-
-        local newItem = CreateEntity(itemName, trace.endPoint, teamnum)
-        if newItem:isa("Projectile") then
-            newItem:SetVelocity(Vector(0, 1, 0))
-        end
         
+        if useLastPos and gLastPosition then
+            usePos = gLastPosition
+        else    
+        
+            local trace = Shared.TraceRay(startPoint, endPoint,  CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
+            usePos = trace.endPoint
+        
+        end
+
+        local newItem = CreateEntity(itemName, usePos, teamnum)
         
     end
     
+end
+
+local function OnCommandShoot(client, projectileName, velocity)
+
+    local player = client:GetControllingPlayer()
+    if Shared.GetCheatsEnabled() and projectileName ~= nil then    
+    
+        velocity = velocity or 15
+        
+        local viewAngles = player:GetViewAngles()
+        local viewCoords = viewAngles:GetCoords()
+        local startPoint = player:GetEyePos() + viewCoords.zAxis * 1
+        
+        local startPointTrace = Shared.TraceRay(player:GetEyePos(), startPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(player))
+        startPoint = startPointTrace.endPoint
+        
+        local startVelocity = viewCoords.zAxis * velocity
+        
+        local projectile = CreateEntity(projectileName, startPoint, player:GetTeamNumber())
+        projectile:Setup(player, startVelocity, true, nil, player)    
+    
+    end
+
 end
 
 local function OnCommandGiveUpgrade(client, techIdString)
@@ -1235,6 +1264,21 @@ local function OnCommandHell(client)
 
 end
 
+local function OnCommandStoreLastPosition(client)
+
+    if Shared.GetCheatsEnabled() then
+    
+        local player = client:GetControllingPlayer()
+        if player then            
+            gLastPosition = player:GetOrigin()
+            Print("stored position %s", ToString(gLastPosition))
+        end
+        
+    end  
+
+end
+
+
 // GC commands
 Event.Hook("Console_changegcsettingserver", OnCommandChangeGCSettingServer)
 
@@ -1278,6 +1322,8 @@ Event.Hook("Console_damage", OnCommandDamage)
 Event.Hook("Console_highdamage", OnCommandHighDamage)
 Event.Hook("Console_give", OnCommandGive)
 Event.Hook("Console_spawn", OnCommandSpawn)
+Event.Hook("Console_storeposition", OnCommandStoreLastPosition)
+Event.Hook("Console_shoot", OnCommandShoot)
 Event.Hook("Console_giveupgrade", OnCommandGiveUpgrade)
 Event.Hook("Console_setfov", OnCommandSetFOV)
 

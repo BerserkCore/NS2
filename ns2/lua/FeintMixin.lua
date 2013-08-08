@@ -50,7 +50,8 @@ if Server then
         end
         
         local enemyTeam = GetGamerules():GetTeam(GetEnemyTeamNumber(self:GetTeamNumber()))
-        enemyTeam:SendCommand(enemyTeam:GetDeathMessage(attacker, index, self))
+        local deathMessageTable = enemyTeam:GetDeathMessage(attacker, index, self)
+        enemyTeam:ForEachPlayer(function(player) if player:GetClient() then Server.SendNetworkMessage(player:GetClient(), "DeathMessage", deathMessageTable, true) end end)
         CreateRagdoll(self)
         
         if HasMixin(self, "GameEffects") then

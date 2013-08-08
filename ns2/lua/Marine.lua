@@ -431,7 +431,7 @@ function Marine:HandleButtons(input)
         if not self.flashlightLastFrame and flashlightPressed then
         
             self:SetFlashlightOn(not self:GetFlashlightOn())
-            Shared.PlaySound(self, Marine.kFlashlightSoundName)
+            StartSoundEffectOnEntity(Marine.kFlashlightSoundName, self, 1, self)
             
         end
         self.flashlightLastFrame = flashlightPressed
@@ -460,7 +460,7 @@ function Marine:HandleButtons(input)
                         end
                         
                         self:AddWeapon(nearbyDroppedWeapon, true)
-                        Shared.PlayWorldSound(nil, Marine.kGunPickupSound, nil, self:GetOrigin())
+                        StartSoundEffectAtOrigin(Marine.kGunPickupSound, self:GetOrigin())
                         
                         self.timeOfLastPickUpWeapon = Shared.GetTime()
                         

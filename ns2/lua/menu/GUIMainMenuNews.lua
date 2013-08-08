@@ -98,3 +98,9 @@ end
 function GUIMainMenuNews:SetIsVisible(visible)
     self.webContainer:SetIsVisible(visible)
 end
+
+function GUIMainMenuNews:LoadURL(url)
+    self.webView:LoadUrl(url)
+end
+
+Event.Hook("Console_refreshnews", function() MainMenu_LoadNewsURL(kMainMenuNewsURL) end)

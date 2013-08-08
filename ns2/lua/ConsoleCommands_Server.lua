@@ -33,11 +33,13 @@ function OnCommandKill(client)
     
         local player = client:GetControllingPlayer()
         
-        if player ~= nil then
+        if player ~= nil and (not client.timeLastKillCommand or client.timeLastKillCommand + 1 < Shared.GetTime()) then
         
             if HasMixin(player, "Live") and player:GetCanDie() then
                 player:Kill(nil, nil, player:GetOrigin())
             end
+            
+            client.timeLastKillCommand = Shared.GetTime()
             
         end
         
@@ -289,6 +291,7 @@ local function OnCommandBang(client, ...)
             Shared.Message(error)
         end    
     end
+
 end
 
 // Generic console commands

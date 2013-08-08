@@ -286,4 +286,12 @@ if Server then
     
 end
 
+if Client then
+
+    function GrenadeLauncher:GetUIDisplaySettings()
+        return { xSize = 256, ySize = 256, script = "lua/GUIGrenadelauncherDisplay.lua" }
+    end
+    
+end
+
 Shared.LinkClassToMap("GrenadeLauncher", GrenadeLauncher.kMapName, networkVars)

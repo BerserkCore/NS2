@@ -76,6 +76,13 @@ function Railgun:OnDestroy()
         
     end
     
+    if self.chargeDisplayUI then
+    
+        Client.DestroyGUIView(self.chargeDisplayUI)
+        self.chargeDisplayUI = nil
+        
+    end
+    
 end
 
 function Railgun:OnPrimaryAttack(player)
@@ -164,7 +171,6 @@ local function TriggerSteamEffect(self, player)
     
 end
 
-local kRailgunBulletExtents = Vector(kBulletSize, kBulletSize, kBulletSize)
 local function ExecuteShot(self, startPoint, endPoint, player)
 
     // Filter ourself out of the trace so that we don't hit ourselves.
@@ -174,13 +180,15 @@ local function ExecuteShot(self, startPoint, endPoint, player)
     local direction = (endPoint - startPoint):GetUnit()
     local damage = kRailgunDamage + math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime) * kRailgunChargeDamage
     
+    local extents = GetDirectedExtentsForDiameter(direction, kBulletSize)
+    
     if trace.fraction < 1 then
     
         // do a max of 10 capsule traces, should be sufficient
         local hitEntities = {}
         for i = 1, 20 do
         
-            local capsuleTrace = Shared.TraceBox(kRailgunBulletExtents, startPoint, trace.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+            local capsuleTrace = Shared.TraceBox(extents, startPoint, trace.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
             if capsuleTrace.entity then
             
                 if not table.find(hitEntities, capsuleTrace.entity) then
@@ -192,12 +200,12 @@ local function ExecuteShot(self, startPoint, endPoint, player)
                 
             end    
                 
-            if (capsuleTrace.endPoint - trace.endPoint):GetLength() <= kRailgunBulletExtents.x then
+            if (capsuleTrace.endPoint - trace.endPoint):GetLength() <= extents.x then
                 break
             end
             
             // use new start point
-            startPoint = Vector(capsuleTrace.endPoint) + direction * kRailgunBulletExtents.x * 3
+            startPoint = Vector(capsuleTrace.endPoint) + direction * extents.x * 3
         
         end
         
@@ -295,6 +303,28 @@ function Railgun:OnUpdateRender()
             local renderModel = viewModel:GetRenderModel()
             renderModel:SetMaterialParameter("chargeAmount" .. self:GetExoWeaponSlotName(), chargeAmount)
             renderModel:SetMaterialParameter("timeSinceLastShot" .. self:GetExoWeaponSlotName(), Shared.GetTime() - self.timeOfLastShot)
+            
+        end
+        
+        local chargeDisplayUI = self.chargeDisplayUI
+        if not chargeDisplayUI then
+        
+            chargeDisplayUI = Client.CreateGUIView(246, 256)
+            chargeDisplayUI:Load("lua/GUI" .. self:GetExoWeaponSlotName():gsub("^%l", string.upper) .. "RailgunDisplay.lua")
+            chargeDisplayUI:SetTargetTexture("*exo_railgun_" .. self:GetExoWeaponSlotName())
+            self.chargeDisplayUI = chargeDisplayUI
+            
+        end
+        
+        chargeDisplayUI:SetGlobal("chargeAmount" .. self:GetExoWeaponSlotName(), chargeAmount)
+        chargeDisplayUI:SetGlobal("timeSinceLastShot" .. self:GetExoWeaponSlotName(), Shared.GetTime() - self.timeOfLastShot)
+        
+    else
+    
+        if self.chargeDisplayUI then
+        
+            Client.DestroyGUIView(self.chargeDisplayUI)
+            self.chargeDisplayUI = nil
             
         end
         
@@ -404,13 +434,15 @@ if Client then
             local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAllButIsa("Tunnel"))
             local direction = (endPoint - startPoint):GetUnit()
             
+            local extents = GetDirectedExtentsForDiameter(direction, kBulletSize)
+            
             self.railgunTargetId = nil
             
             if trace.fraction < 1 then
 
                 for i = 1, 20 do
                 
-                    local capsuleTrace = Shared.TraceBox(kRailgunBulletExtents, startPoint, trace.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+                    local capsuleTrace = Shared.TraceBox(extents, startPoint, trace.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
                     if capsuleTrace.entity then
                     
                         capsuleTrace.entity:SetRailgunTarget()

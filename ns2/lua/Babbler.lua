@@ -1032,7 +1032,7 @@ elseif Client then
     function Babbler:OnGetIsVisible(visibleTable, viewerTeamNumber)
         
         local parent = self:GetParent()
-        if parent and (parent == Client.GetLocalPlayer() or (HasMixin(parent, "Cloakable") and parent:GetIsCloaked()) ) then
+        if parent and (parent == Client.GetLocalPlayer() or not parent:GetIsVisible() ) then
             visibleTable.Visible = false
         end
     
@@ -1046,6 +1046,20 @@ end
 
 function Babbler:GetDeathIconIndex()
     return kDeathMessageIcon.Babbler
+end
+
+function Babbler:OnUpdateRender()
+
+    local renderModel = self:GetRenderModel()
+    if renderModel then
+    
+        local parent = self:GetParent()
+        local cloakFraction = (parent ~= nil and HasMixin(parent, "Cloakable")) and parent:GetCloakFraction() or 0
+        self:SetOpacity(Clamp(1 - cloakFraction * 1.5, 0, 1), "cloak")
+    
+    end
+
+
 end
 
 Shared.LinkClassToMap("Babbler", Babbler.kMapName, networkVars, true)

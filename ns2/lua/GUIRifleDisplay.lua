@@ -40,7 +40,7 @@ end
  */
 function Initialize()
 
-    GUI.SetSize( 256, 417 )
+    GUI.SetSize(256, 417)
 
     bulletDisplay = GUIBulletDisplay()
     bulletDisplay:Initialize()

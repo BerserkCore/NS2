@@ -96,7 +96,7 @@ function FlinchMixin:__initmixin()
         self.flinchDamageThisFrame = 0
         self.flinchLastDamageType = kDamageType.Normal
         self:AddTimedCallback(UpdateDamagedEffects, 3)
-        self:AddTimedCallback(UpdateFlinchEffects, 1)
+        self:AddTimedCallback(UpdateFlinchEffects, 0.3)
         
     end
     
