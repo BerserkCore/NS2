@@ -102,14 +102,14 @@ if Client then
 
     function AlienSpectator:OnInitLocalClient()
     
-            Spectator.OnInitLocalClient(self)
-            
-            if self.requestMenu == nil then
-                self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-            end
+        TeamSpectator.OnInitLocalClient(self)
+        
+        if self.requestMenu == nil then
+            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
+        end
         
     end
-
+    
 end
 
 function AlienSpectator:GetIsValidToSpawn()

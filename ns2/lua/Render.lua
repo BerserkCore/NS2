@@ -8,6 +8,7 @@ function Render_SyncRenderOptions()
     local bloom             = Client.GetOptionBoolean("graphics/display/bloom", true)
     local shadows           = Client.GetOptionBoolean("graphics/display/shadows", true)
     local antiAliasing      = Client.GetOptionBoolean("graphics/display/anti-aliasing", true)
+    local fog               = Client.GetOptionBoolean("graphics/display/fog", false)
 
     Client.SetRenderSetting("mode", "lit")
     Client.SetRenderSetting("ambient_occlusion", ambientOcclusion)
@@ -15,6 +16,7 @@ function Render_SyncRenderOptions()
     Client.SetRenderSetting("bloom"  , ToString(bloom))
     Client.SetRenderSetting("shadows", ToString(shadows))
     Client.SetRenderSetting("anti_aliasing", ToString(antiAliasing))
+    Client.SetRenderSetting("fog", ToString(fog))
 
 end
 
@@ -46,5 +48,6 @@ Event.Hook("Console_r_ao",              RenderConsoleHandler("ambient_occlusion"
 Event.Hook("Console_r_atmospherics",    RenderConsoleHandler("atmospherics", "graphics/display/atmospherics") )
 Event.Hook("Console_r_aa",              RenderConsoleHandler("anti_aliasing", "graphics/display/anti-aliasing") )
 Event.Hook("Console_r_bloom",           RenderConsoleHandler("bloom", "graphics/display/bloom") )
+Event.Hook("Console_r_fog",             RenderConsoleHandler("fog", "graphics/display/fog") )
 
 

@@ -17,6 +17,19 @@ TeamSpectator.kMapName = "teamspectator"
 
 local networkVars = { }
 
+function TeamSpectator:OnDestroy()
+
+    Spectator.OnDestroy(self)
+    
+    if self.teamSpecUI then
+    
+        GetGUIManager():DestroyGUIScript(self.teamSpecUI)
+        self.teamSpecUI = nil
+        
+    end
+    
+end
+
 function TeamSpectator:OnProcessMove(input)
 
     // TeamSpectators never allow mode switching. Follow only.
@@ -41,6 +54,16 @@ end
 
 function TeamSpectator:GetIsValidTarget(entity)
     return Spectator.GetIsValidTarget(self, entity) and HasMixin(entity, "Team") and entity:GetTeamNumber() == self:GetTeamNumber()
+end
+
+function TeamSpectator:OnInitLocalClient()
+
+    Spectator.OnInitLocalClient(self)
+    
+    if self.teamSpecUI == nil then
+        self.teamSpecUI = GetGUIManager():CreateGUIScript("GUITeamSpectator")
+    end
+    
 end
 
 Shared.LinkClassToMap("TeamSpectator", TeamSpectator.kMapName, networkVars)

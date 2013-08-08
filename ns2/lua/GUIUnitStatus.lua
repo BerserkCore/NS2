@@ -126,23 +126,13 @@ function GUIUnitStatus:EnableAlienStyle()
     self.useMarineStyle = false
 end
 
-function GUIUnitStatus:Update(deltaTime)
-
-    PROFILE("GUIUnitStatus:Update")
-
-    GUIAnimatedScript.Update(self, deltaTime)
-
-    self:UpdateUnitStatusList(PlayerUI_GetUnitStatusInfo(), deltaTime)
-    
-end
-
 local function Pulsate(script, item)
 
-    item:SetColor( Color(1,1,1,0.5), 0.3, "UNIT_STATE_ANIM_ALPHA", AnimateLinear, 
-        function(script, item) 
-            item:SetColor(Color(1,1,1,1), 0.3, "UNIT_STATE_ANIM_ALPHA", AnimateLinear, Pulsate)
-        end )
-
+    item:SetColor(Color(1, 1, 1, 0.5), 0.3, "UNIT_STATE_ANIM_ALPHA", AnimateLinear,
+        function(script, item)
+            item:SetColor(Color(1, 1, 1, 1), 0.3, "UNIT_STATE_ANIM_ALPHA", AnimateLinear, Pulsate)
+        end)
+    
 end
 
 local function GetPixelCoordsForFraction(fraction)
@@ -157,152 +147,7 @@ local function GetPixelCoordsForFraction(fraction)
     
 end
 
-function GUIUnitStatus:UpdateUnitStatusList(activeBlips, deltaTime)
-
-    PROFILE("GUIUnitStatus:UpdateUnitStatusList")
-
-    local numBlips = #activeBlips
-    
-    while numBlips > table.count(self.activeBlipList) do
-        local newBlipItem = self:CreateBlipItem()
-        table.insert(self.activeBlipList, newBlipItem)
-        newBlipItem.GraphicsItem:DestroyAnimations()
-        newBlipItem.GraphicsItem:FadeIn(0.3, "UNIT_STATE_ANIM_ALPHA", AnimateLinear, Pulsate)
-    end
-    
-    while numBlips < table.count(self.activeBlipList) do
-        // fade out and destroy
-        self.activeBlipList[1].GraphicsItem:Destroy()
-        GUI.DestroyItem(self.activeBlipList[1].statusBg)
-        table.remove(self.activeBlipList, 1)
-    end
-    
-    local baseResearchRot = (Shared.GetTime() % GUIUnitStatus.kResearchRotationDuration) / GUIUnitStatus.kResearchRotationDuration
-    local showHints = Client.GetOptionBoolean("showHints", true) == true
-    
-    // Update current blip state.
-    local currentIndex = 1
-    for i = 1, #self.activeBlipList do
-        
-        local blipData = activeBlips[i]
-        local updateBlip = self.activeBlipList[i]
-        
-        /*
-        Print("------------------------")
-        for key, value in pairs(blipData) do
-            Print("%s:  %s", ToString(key), ToString(value))
-        end
-        Print("------------------------")
-        */
-        
-        local playerTeamType = PlayerUI_GetTeamType()
-        local teamType = blipData.TeamType
-        local isEnemy = false
-        
-        if playerTeamType ~= kNeutralTeamType then
-            isEnemy = (playerTeamType ~= blipData.TeamType) and (teamType ~= kNeutralTeamType)
-            teamType = playerTeamType            
-        end
-        
-        // status icon, color and unit name
-        updateBlip.GraphicsItem:SetTexturePixelCoordinates(GetUnitStatusTextureCoordinates(blipData.Status))
-        updateBlip.GraphicsItem:SetPosition(blipData.Position - GUIUnitStatus.kUnitStatusSize * .5 )
-        
-        updateBlip.OverLayGraphic:SetTexturePixelCoordinates(GetUnitStatusTextureCoordinates(blipData.Status))
-        
-        updateBlip.statusBg:SetTexture(kStatusBgTexture[teamType])
-        updateBlip.statusBg:SetPosition(blipData.HealthBarPosition - GUIUnitStatus.kStatusBgSize * .5 )
-
-        if blipData.HealthFraction == 0 or PlayerUI_IsACommander() then
-            updateBlip.statusBg:SetTexturePixelCoordinates(0, 0, 0, 0)
-        else        
-            updateBlip.statusBg:SetTexturePixelCoordinates(unpack(GUIUnitStatus.kStatusBackgroundPixelCoords))
-        end 
-        
-        // status description
-        local showDetail = blipData.StatusFraction ~= 0 and blipData.StatusFraction ~= 1
-        updateBlip.ProgressingIcon:SetIsVisible(blipData.IsCrossHairTarget and showDetail)
-        updateBlip.ProgressText:SetText(math.floor(blipData.StatusFraction * 100) .. "%")
-        
-        local healthBarBgColor = Color(kHealthBarColors[teamType])
-        healthBarBgColor.r = healthBarBgColor.r * .5
-        healthBarBgColor.g = healthBarBgColor.g * .5
-        healthBarBgColor.b = healthBarBgColor.b * .5
-        
-        local armorBarBgColor = Color(kArmorBarColors[teamType])
-        armorBarBgColor.r = armorBarBgColor.r * .5
-        armorBarBgColor.g = armorBarBgColor.g * .5
-        armorBarBgColor.b = armorBarBgColor.b * .5
-        
-        updateBlip.HealthBar:SetColor(kHealthBarColors[teamType])
-        updateBlip.ArmorBar:SetColor(kArmorBarColors[teamType])
-        updateBlip.HealthBarBg:SetColor(healthBarBgColor)
-        updateBlip.HealthBarBg:SetIsVisible(blipData.HealthFraction ~= 0)
-        updateBlip.ArmorBarBg:SetColor(armorBarBgColor)
-        updateBlip.ArmorBarBg:SetIsVisible(blipData.ArmorFraction ~= 0)
-        
-        local alpha = 0
-        
-        if blipData.IsCrossHairTarget then        
-            alpha = 1
-        else
-            alpha = 0
-        end
-        
-        // use the entities team color here, so you can make a difference between enemy or friend
-        updateBlip.statusBg:SetColor(Color(1,1,1,alpha))
-        updateBlip.NameText:SetText(blipData.Name)
-        updateBlip.ActionText:SetText(blipData.Action)
-        
-        local hintVisible = showHints and blipData.Hint ~= nil and string.len(blipData.Hint) > 0
-        
-        if hintVisible then
-            updateBlip.statusBg:SetSize(GUIUnitStatus.kStatusBgSize)
-            updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgSize)
-        else    
-            updateBlip.statusBg:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
-            updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
-        end    
-        
-        // Only show hint text with hints enabled
-        if updateBlip.HintText and showHints then
-            updateBlip.HintText:SetText(blipData.Hint)
-        end
-        
-        local textColor = Color(kNameTagFontColors[teamType])
-        
-        if isEnemy then
-            textColor = GUIUnitStatus.kEnemyColor
-        end
-        
-        if not blipData.ForceName then
-            textColor.a = alpha
-        end
-        updateBlip.NameText:SetColor(textColor)
-        updateBlip.ActionText:SetColor(textColor)
-        if updateBlip.HintText then
-            updateBlip.HintText:SetColor(textColor)
-        end
-        
-        updateBlip.HealthBar:SetSize(Vector(kHealthBarWidth * blipData.HealthFraction, kHealthBarHeight, 0))
-        updateBlip.HealthBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.HealthFraction))
-        
-        updateBlip.ArmorBar:SetSize(Vector(kArmorBarWidth * blipData.ArmorFraction, kArmorBarHeight, 0))
-        updateBlip.ArmorBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.ArmorFraction)) 
-        
-        updateBlip.ProgressingIcon:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
-        updateBlip.BorderMask:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
-        updateBlip.BorderMask:SetIsVisible(teamType == kMarineTeamType and blipData.IsCrossHairTarget)
-        updateBlip.smokeyBackground:SetIsVisible(teamType == kAlienTeamType and blipData.HealthFraction ~= 0)
-
-        updateBlip.Badge:SetTexture(blipData.BadgeTexture)
-        updateBlip.Badge:SetIsVisible(string.len(blipData.BadgeTexture) > 0)
-         
-    end
-
-end
-
-function GUIUnitStatus:CreateBlipItem()
+local function CreateBlipItem(self)
 
     local newBlip = { }
     local teamType = PlayerUI_GetTeamType()
@@ -477,5 +322,158 @@ function GUIUnitStatus:CreateBlipItem()
     newBlip.ProgressingIcon:AddChild(newBlip.ActionText)
     
     return newBlip
+    
+end
+
+local function UpdateUnitStatusList(self, activeBlips, deltaTime)
+
+    PROFILE("GUIUnitStatus:UpdateUnitStatusList")
+    
+    local numBlips = #activeBlips
+    
+    while numBlips > table.count(self.activeBlipList) do
+    
+        local newBlipItem = CreateBlipItem(self)
+        table.insert(self.activeBlipList, newBlipItem)
+        newBlipItem.GraphicsItem:DestroyAnimations()
+        newBlipItem.GraphicsItem:FadeIn(0.3, "UNIT_STATE_ANIM_ALPHA", AnimateLinear, Pulsate)
+        
+    end
+    
+    while numBlips < table.count(self.activeBlipList) do
+    
+        // fade out and destroy
+        self.activeBlipList[1].GraphicsItem:Destroy()
+        GUI.DestroyItem(self.activeBlipList[1].statusBg)
+        table.remove(self.activeBlipList, 1)
+        
+    end
+    
+    local baseResearchRot = (Shared.GetTime() % GUIUnitStatus.kResearchRotationDuration) / GUIUnitStatus.kResearchRotationDuration
+    local showHints = Client.GetOptionBoolean("showHints", true) == true
+    
+    // Update current blip state.
+    local currentIndex = 1
+    for i = 1, #self.activeBlipList do
+    
+        local blipData = activeBlips[i]
+        local updateBlip = self.activeBlipList[i]
+        
+        local playerTeamType = PlayerUI_GetTeamType()
+        local teamType = blipData.TeamType
+        local isEnemy = false
+        
+        if playerTeamType ~= kNeutralTeamType then
+        
+            isEnemy = (playerTeamType ~= blipData.TeamType) and (teamType ~= kNeutralTeamType)
+            teamType = playerTeamType
+            
+        end
+        
+        // status icon, color and unit name
+        updateBlip.GraphicsItem:SetTexturePixelCoordinates(GetUnitStatusTextureCoordinates(blipData.Status))
+        updateBlip.GraphicsItem:SetPosition(blipData.Position - GUIUnitStatus.kUnitStatusSize * .5 )
+        
+        updateBlip.OverLayGraphic:SetTexturePixelCoordinates(GetUnitStatusTextureCoordinates(blipData.Status))
+        
+        updateBlip.statusBg:SetTexture(kStatusBgTexture[teamType])
+        updateBlip.statusBg:SetPosition(blipData.HealthBarPosition - GUIUnitStatus.kStatusBgSize * .5 )
+
+        if blipData.HealthFraction == 0 or PlayerUI_IsACommander() then
+            updateBlip.statusBg:SetTexturePixelCoordinates(0, 0, 0, 0)
+        else        
+            updateBlip.statusBg:SetTexturePixelCoordinates(unpack(GUIUnitStatus.kStatusBackgroundPixelCoords))
+        end 
+        
+        // status description
+        local showDetail = blipData.StatusFraction ~= 0 and blipData.StatusFraction ~= 1
+        updateBlip.ProgressingIcon:SetIsVisible(blipData.IsCrossHairTarget and showDetail)
+        updateBlip.ProgressText:SetText(math.floor(blipData.StatusFraction * 100) .. "%")
+        
+        local healthBarBgColor = Color(kHealthBarColors[teamType])
+        healthBarBgColor.r = healthBarBgColor.r * .5
+        healthBarBgColor.g = healthBarBgColor.g * .5
+        healthBarBgColor.b = healthBarBgColor.b * .5
+        
+        local armorBarBgColor = Color(kArmorBarColors[teamType])
+        armorBarBgColor.r = armorBarBgColor.r * .5
+        armorBarBgColor.g = armorBarBgColor.g * .5
+        armorBarBgColor.b = armorBarBgColor.b * .5
+        
+        updateBlip.HealthBar:SetColor(kHealthBarColors[teamType])
+        updateBlip.ArmorBar:SetColor(kArmorBarColors[teamType])
+        updateBlip.HealthBarBg:SetColor(healthBarBgColor)
+        updateBlip.HealthBarBg:SetIsVisible(blipData.HealthFraction ~= 0)
+        updateBlip.ArmorBarBg:SetColor(armorBarBgColor)
+        updateBlip.ArmorBarBg:SetIsVisible(blipData.ArmorFraction ~= 0)
+        
+        local alpha = 0
+        
+        if blipData.IsCrossHairTarget then        
+            alpha = 1
+        else
+            alpha = 0
+        end
+        
+        // use the entities team color here, so you can make a difference between enemy or friend
+        updateBlip.statusBg:SetColor(Color(1,1,1,alpha))
+        updateBlip.NameText:SetText(blipData.Name)
+        updateBlip.ActionText:SetText(blipData.Action)
+        
+        local hintVisible = showHints and blipData.Hint ~= nil and string.len(blipData.Hint) > 0
+        
+        if hintVisible then
+            updateBlip.statusBg:SetSize(GUIUnitStatus.kStatusBgSize)
+            updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgSize)
+        else    
+            updateBlip.statusBg:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
+            updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
+        end    
+        
+        // Only show hint text with hints enabled
+        if updateBlip.HintText and showHints then
+            updateBlip.HintText:SetText(blipData.Hint)
+        end
+        
+        local textColor = Color(kNameTagFontColors[teamType])
+        
+        if isEnemy then
+            textColor = GUIUnitStatus.kEnemyColor
+        end
+        
+        if not blipData.ForceName then
+            textColor.a = alpha
+        end
+        updateBlip.NameText:SetColor(textColor)
+        updateBlip.ActionText:SetColor(textColor)
+        if updateBlip.HintText then
+            updateBlip.HintText:SetColor(textColor)
+        end
+        
+        updateBlip.HealthBar:SetSize(Vector(kHealthBarWidth * blipData.HealthFraction, kHealthBarHeight, 0))
+        updateBlip.HealthBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.HealthFraction))
+        
+        updateBlip.ArmorBar:SetSize(Vector(kArmorBarWidth * blipData.ArmorFraction, kArmorBarHeight, 0))
+        updateBlip.ArmorBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.ArmorFraction)) 
+        
+        updateBlip.ProgressingIcon:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
+        updateBlip.BorderMask:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
+        updateBlip.BorderMask:SetIsVisible(teamType == kMarineTeamType and blipData.IsCrossHairTarget)
+        updateBlip.smokeyBackground:SetIsVisible(teamType == kAlienTeamType and blipData.HealthFraction ~= 0)
+
+        updateBlip.Badge:SetTexture(blipData.BadgeTexture)
+        updateBlip.Badge:SetIsVisible(string.len(blipData.BadgeTexture) > 0)
+         
+    end
+
+end
+
+function GUIUnitStatus:Update(deltaTime)
+
+    PROFILE("GUIUnitStatus:Update")
+    
+    GUIAnimatedScript.Update(self, deltaTime)
+    
+    UpdateUnitStatusList(self, PlayerUI_GetUnitStatusInfo(), deltaTime)
     
 end

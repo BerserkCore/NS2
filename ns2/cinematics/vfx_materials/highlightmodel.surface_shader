@@ -1,0 +1,26 @@
+<shader>
+
+	<inputs>
+		<input name="intensity" type="float">0.0</input>
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">false</param>
+
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{	 
+			material.emissive = intensity * 0.5;
+		}
+	]]>
+	</code>
+
+</shader>

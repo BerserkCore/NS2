@@ -1,14 +1,13 @@
 settings = 
 	[
-		{ name="mode" }
-		{ name="ambient_occlusion" }
-		{ name="reflections" }
-		{ name="bloom" }
-		{ name="atmospherics" }
-		{ name="anti_aliasing" }
-		{ name="shadows" }
-		{ name="fog" }
-		{ name="infestation" }
+		{ name="mode" 				default="lit"  }
+		{ name="ambient_occlusion" 	default="true" }
+		{ name="bloom" 				default="true" }
+		{ name="atmospherics" 		default="true" }
+		{ name="anti_aliasing" 		default="true" }
+		{ name="shadows" 			default="true" }
+		{ name="fog" 				default="true" }
+		{ name="infestation" 		default="rich" }
 		{ name="infestation_scale" }
 	]
 	

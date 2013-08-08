@@ -560,10 +560,6 @@ function OnMapPreLoad()
     
 end
 
-function ShowFeedbackPage()
-    Client.ShowWebpage(kFeedbackURL)
-end
-
 local function CheckRules()
 
     //Client side check for game requirements (listen server)
@@ -586,10 +582,10 @@ local function OnMapPostLoad()
     // Set sound falloff defaults
     Client.SetMinMaxSoundDistance(7, 100)
 
-    TimedRun("InitPathing", InitializePathing)
-    TimedRun("CreateDSPs", CreateDSPs)
-    TimedRun("Scoreboard_Clear", Scoreboard_Clear)
-    TimedRun("CheckRules", CheckRules)
+    InitializePathing()
+    CreateDSPs()
+    Scoreboard_Clear()
+    CheckRules()
     
 end
 

@@ -19,10 +19,8 @@ class 'MarineSpectator' (TeamSpectator)
 
 MarineSpectator.kMapName = "marinespectator"
 
-local networkVars = {
-}
+local networkVars ={ }
 
---@Override TeamSpectator
 function MarineSpectator:OnCreate()
 
     TeamSpectator.OnCreate(self)
@@ -36,10 +34,10 @@ function MarineSpectator:OnCreate()
     
 end
 
---@Override TeamSpectator
 function MarineSpectator:OnInitialized()
 
     TeamSpectator.OnInitialized(self)
+    
     self:SetTeamNumber(1)
     
 end
@@ -62,27 +60,27 @@ if Client then
 
     function MarineSpectator:OnInitLocalClient()
     
-            Spectator.OnInitLocalClient(self)
-            
-            if self.requestMenu == nil then
-                self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-            end
+        TeamSpectator.OnInitLocalClient(self)
+        
+        if self.requestMenu == nil then
+            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
+        end
         
     end
     
     function MarineSpectator:OnDestroy()
     
-        Spectator.OnDestroy(self)
+        TeamSpectator.OnDestroy(self)
         
         if self.requestMenu then
         
             GetGUIManager():DestroyGUIScript(self.requestMenu)
             self.requestMenu = nil
             
-        end    
-    
+        end
+        
     end
-
+    
 end
 
 Shared.LinkClassToMap("MarineSpectator", MarineSpectator.kMapName, networkVars)

@@ -29,6 +29,7 @@ Script.Load("lua/menu/GUIMainMenu_FindPeople.lua")
 Script.Load("lua/menu/GUIMainMenu_PlayNow.lua")
 Script.Load("lua/menu/GUIMainMenu_Mods.lua")
 Script.Load("lua/menu/GUIMainMenu_Tutorial.lua")
+Script.Load("lua/menu/GUIMainMenu_Web.lua")
 
 // Min and maximum values for the mouse sensitivity slider
 local kMinSensitivity = 1
@@ -403,7 +404,6 @@ local function UpdateServerList(self)
     Client.RebuildServerList()
     self.playWindow.updateButton:SetText("UPDATING...")
     self.playWindow:ResetSlideBar()
-    self.timeUpdateButtonPressed = Shared.GetTime()
     self.selectServer:SetIsVisible(false)
     self.serverList:ClearChildren()
     // Needs to be done here because the server IDs will change.
@@ -568,37 +568,38 @@ local function CreateFilterForm(self)
 
     self.filterForm = CreateMenuElement(self.playWindow, "Form", false)
     self.filterForm:SetCSSClass("filter_form")
-
+    
     self.filterGameMode = self.filterForm:CreateFormElement(Form.kElementType.TextInput, "GAME MODE")
     self.filterGameMode:SetCSSClass("filter_gamemode")
-    self.filterGameMode:AddSetValueCallback( function(self)
+    self.filterGameMode:AddSetValueCallback(function(self)
     
-        local value = self:GetValue()
-        self.scriptHandle.serverList:SetFilter(1, FilterServerMode(value))   
+        local value = StringTrim(self:GetValue())
+        self.scriptHandle.serverList:SetFilter(1, FilterServerMode(value))
         self.scriptHandle.filterCustomContentHint:SetIsVisible(GetFiltersAllowCommunityContent(self.scriptHandle))
         
         Client.SetOptionString("filter_gamemode", value)
-     
-    end )
+        
+    end)
     
     self.filterCustomContentHint = CreateMenuElement(self.filterForm, "Font")
     self.filterCustomContentHint:SetText(Locale.ResolveString("SERVERBROWSER_SHOWING_MODDED_HINT"))
     self.filterCustomContentHint:SetCSSClass("filter_custom_content_hint")
     self.filterCustomContentHint:SetIsVisible(false)
-
+    
     local description = CreateMenuElement(self.filterGameMode, "Font")
     description:SetText("GAME")
     description:SetCSSClass("filter_description")
     
     self.filterMapName = self.filterForm:CreateFormElement(Form.kElementType.TextInput, "MAP NAME")
     self.filterMapName:SetCSSClass("filter_mapname")
-    self.filterMapName:AddSetValueCallback( function(self)
+    self.filterMapName:AddSetValueCallback(function(self)
     
-        self.scriptHandle.serverList:SetFilter(2, FilterMapName(self:GetValue()))
+        local value = StringTrim(self:GetValue())
+        self.scriptHandle.serverList:SetFilter(2, FilterMapName(value))
         Client.SetOptionString("filter_mapname", self.scriptHandle.filterMapName:GetValue())
         
-    end )
-
+    end)
+    
     local description = CreateMenuElement(self.filterMapName, "Font")
     description:SetText("MAP")
     description:SetCSSClass("filter_description")
@@ -693,6 +694,19 @@ local function CreateFilterForm(self)
     description:SetText("FAVORITES")
     description:SetCSSClass("filter_description")
     
+    self.filterPassworded = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "PASSWORDED")
+    self.filterPassworded:SetCSSClass("filter_passworded")
+    self.filterPassworded:AddSetValueCallback(function(self)
+    
+        self.scriptHandle.serverList:SetFilter(8, FilterPassworded(self:GetValue()))
+        Client.SetOptionString("filter_passworded", ToString(self.scriptHandle.filterPassworded:GetValue()))
+        
+    end)
+    
+    local description = CreateMenuElement(self.filterPassworded, "Font")
+    description:SetText("PASSWORDED")
+    description:SetCSSClass("filter_description")
+    
     
     self.filterRookie = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER ROOKIE")
     self.filterRookie:SetCSSClass("filter_rookie")
@@ -716,6 +730,7 @@ local function CreateFilterForm(self)
     self.filterModded:SetValue(Client.GetOptionString("filter_modded", "false"))
     self.filterRookie:SetValue(Client.GetOptionString("filter_rookie", "false"))
     self.filterFavorites:SetValue(Client.GetOptionString("filter_favorites", "false"))
+    self.filterPassworded:SetValue(Client.GetOptionString("filter_passworded", "true"))
     
 end
 
@@ -1828,31 +1843,39 @@ function GUIMainMenu:Update(deltaTime)
     PROFILE("GUIMainMenu:Update")
     
     if self:GetIsVisible() then
-
-        local currentTime = Client.GetTime();
+    
+        local currentTime = Client.GetTime()
         
-        // Refresh the mod list once every 5 seconds
+        // Refresh the mod list once every 5 seconds.
         self.timeOfLastRefresh = self.timeOfLastRefresh or currentTime
         if self.modsWindow:GetIsVisible() and currentTime - self.timeOfLastRefresh >= 5 then
+        
             self:RefreshModsList()
-            self.timeOfLastRefresh = currentTime;
+            self.timeOfLastRefresh = currentTime
+            
         end
-
+        
         self.tweetText:Update(deltaTime)
-    
+        
         local alertText = MainMenu_GetAlertMessage()
         if self.currentAlertText ~= alertText then
         
             self.currentAlertText = alertText
             
             if self.currentAlertText then
-                self.alertText:SetText(self.currentAlertText)
+            
+                local setAlertText = self.currentAlertText
+                if setAlertText:len() > 32 then
+                    setAlertText = setAlertText:sub(0, 32) .. "\n" .. setAlertText:sub(33, setAlertText:len())
+                end
+                self.alertText:SetText(setAlertText)
                 self.alertWindow:SetIsVisible(true)
+                
             end
             
         end
-    
-        // update only when visible
+        
+        // Update only when visible.
         GUIAnimatedScript.Update(self, deltaTime)
         self.playerName:SetText(OptionsDialogUI_GetNickname())
         
@@ -1862,13 +1885,6 @@ function GUIMainMenu:Update(deltaTime)
         
         if self.playWindow:GetIsVisible() then
         
-            if self.timeUpdateButtonPressed and self.timeUpdateButtonPressed + 10 < Shared.GetTime() then
-            
-                self.playWindow.updateButton:SetText("UPDATE")
-                self.timeUpdateButtonPressed = nil
-                
-            end
-            
             if not Client.GetServerListRefreshed() then
             
                 for s = 0, Client.GetNumServers() - 1 do
@@ -1884,6 +1900,8 @@ function GUIMainMenu:Update(deltaTime)
                     
                 end
                 
+            else
+                self.playWindow.updateButton:SetText("UPDATE")
             end
             
             local countTxt = ToString(Client.GetNumServers()) .. (Client.GetServerListRefreshed() and "" or "...")

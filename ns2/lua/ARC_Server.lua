@@ -156,40 +156,40 @@ end
 
 function ARC:UpdateOrders(deltaTime)
 
-    // If deployed, check for targets
+    // If deployed, check for targets.
     local currentOrder = self:GetCurrentOrder()
-
-    if currentOrder then
     
-        self.targetPosition = nil
-    
-        // Move ARC if it has an order and it can be moved
-        local canMove = self.deployMode == ARC.kDeployMode.Undeployed
-        if currentOrder:GetType() == kTechId.Move and canMove then
-            self:UpdateMoveOrder(deltaTime)
-        end
-    
-    elseif self:GetInAttackMode() then
+    if self:GetInAttackMode() then
     
         if self.targetPosition then
-            self:SetTargetDirection(self.targetPosition)            
+            self:SetTargetDirection(self.targetPosition)
         else
         
-            // Check for new target every so often, but not every frame
+            // Check for new target every so often, but not every frame.
             local time = Shared.GetTime()
             if self.timeOfLastAcquire == nil or (time > self.timeOfLastAcquire + 0.2) then
             
-                self:AcquireTarget()            
+                self:AcquireTarget()
                 self.timeOfLastAcquire = time
                 
             end
             
-        end    
-
+        end
+        
+    elseif currentOrder then
+    
+        self.targetPosition = nil
+        
+        // Move ARC if it has an order and it can be moved.
+        local canMove = self.deployMode == ARC.kDeployMode.Undeployed
+        if currentOrder:GetType() == kTechId.Move and canMove then
+            self:UpdateMoveOrder(deltaTime)
+        end
+        
     else
         self.targetPosition = nil
     end
-
+    
 end
 
 function ARC:AcquireTarget()

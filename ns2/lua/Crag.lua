@@ -65,9 +65,9 @@ Crag.kHealEffectInterval = 1
 
 Crag.kHealWaveDuration = 8
 
-Crag.kHealPercentage = 0.05
+Crag.kHealPercentage = 0.03
 Crag.kMinHeal = 10
-Crag.kMaxHeal = 50
+Crag.kMaxHeal = 40
 Crag.kHealWaveMultiplier = 2.5
 
 local networkVars =
@@ -204,7 +204,6 @@ function Crag:PerformHealing()
     PROFILE("Crag:PerformHealing")
 
     local targets = GetEntitiesWithMixinForTeamWithinRange("Live", self:GetTeamNumber(), self:GetOrigin(), Crag.kHealRadius)
-    table.removevalue(targets, self)
     local entsHealed = 0
     
     for _, target in ipairs(targets) do
@@ -222,14 +221,18 @@ end
 
 function Crag:TryHeal(target)
 
-    local heal = math.min(target:GetMaxHealth() * Crag.kHealPercentage + Crag.kMinHeal, Crag.kMaxHeal)
+    local unclampedHeal = target:GetMaxHealth() * Crag.kHealPercentage
+    local heal = Clamp(unclampedHeal, Crag.kMinHeal, Crag.kMaxHeal)
     
     if self.healWaveActive then
         heal = heal * Crag.kHealWaveMultiplier
     end
-
+    
     if target:GetHealthScalar() ~= 1 and target:RegisterHealer(self, Shared.GetTime() + Crag.kHealInterval) then
         local amountHealed = target:AddHealth(heal)
+        //if amountHealed > 0 then
+        //    Print("Healing %s by %.2f (%d, %d) => %.2f", target:GetClassName(), unclampedHeal, Crag.kMinHeal, Crag.kMaxHeal, heal)
+        //end
         return amountHealed
     else
         return 0

@@ -19,6 +19,8 @@ function GUIMainMenu:RefreshModsList()
     Client.RefreshModList()
 end
 
+local kGetModsURL = "http://steamcommunity.com/workshop/browse?appid=4920"
+
 function GUIMainMenu:CreateModsWindow()
 
     self.modsWindow = self:CreateWindow()
@@ -29,18 +31,18 @@ function GUIMainMenu:CreateModsWindow()
     local back = CreateMenuElement(self.modsWindow, "MenuButton")
     back:SetCSSClass("back")
     back:SetText("BACK")
-    back:AddEventCallbacks( { OnClick = function() self.modsWindow:SetIsVisible(false) end } )
-
+    back:AddEventCallbacks({ OnClick = function() self.modsWindow:SetIsVisible(false) end })
+    
     local getMods = CreateMenuElement(self.modsWindow, "MenuButton")
-    getMods:SetCSSClass("refresh")
+    getMods:SetCSSClass("getmods")
     getMods:SetText("GET MODS")
-    getMods:AddEventCallbacks( { OnClick = function() Client.ShowWebpage("http://steamcommunity.com/workshop/browse?appid=4920") end } )
-
+    getMods:AddEventCallbacks({ OnClick = function() SetMenuWebView(kGetModsURL, Vector(Client.GetScreenWidth() * 0.8, Client.GetScreenHeight() * 0.8, 0)) end })
+    
     local restart = CreateMenuElement(self.modsWindow, "MenuButton")
     restart:SetCSSClass("apply")
     restart:SetText("RESTART")
-    restart:AddEventCallbacks( { OnClick = function() Client.RestartMain() end } )
-
+    restart:AddEventCallbacks({ OnClick = function() Client.RestartMain() end })
+    
     self.highlightMod = CreateMenuElement(self.modsWindow:GetContentBox(), "Image")
     self.highlightMod:SetCSSClass("highlight_server")
     self.highlightMod:SetIgnoreEvents(true)

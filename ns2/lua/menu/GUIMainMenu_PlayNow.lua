@@ -184,7 +184,7 @@ local function UpdatePlayFirstTimeWindow(self)
         local hintLink = CreateMenuElement(self.playFirstTimeWindow, "Image")
         hintLink:SetCSSClass("first_time_video_link")
         
-        hintLink.OnClick = function() Client.ShowWebpage("http://unknownworlds.com/spark/ns2/tutorials/tut0.html") end
+        hintLink.OnClick = function() SetMenuWebView("http://unknownworlds.com/spark/ns2/tutorials/tut0.html", Vector(Client.GetScreenWidth() * 0.8, Client.GetScreenHeight() * 0.8, 0)) end
         hintLink:EnableHighlighting()
         
         self.showFirstTimeCheckbox = CreateMenuElement(self.playFirstTimeWindow, "Checkbox")

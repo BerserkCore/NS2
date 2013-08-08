@@ -155,7 +155,7 @@ function InitTechTreeMaterialOffsets()
     kTechIdToMaterialOffset[kTechId.Armor1] = 77
     kTechIdToMaterialOffset[kTechId.Armor2] = 78
     kTechIdToMaterialOffset[kTechId.Armor3] = 79
-    kTechIdToMaterialOffset[kTechId.WeaponsMenu] = 80
+    kTechIdToMaterialOffset[kTechId.WeaponsMenu] = 85
     kTechIdToMaterialOffset[kTechId.Weapons1] = 80
     kTechIdToMaterialOffset[kTechId.Weapons2] = 81
     kTechIdToMaterialOffset[kTechId.Weapons3] = 82

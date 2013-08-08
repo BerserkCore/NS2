@@ -17,6 +17,7 @@ function Infestation:OnHostKilled()
     self.timeCycleStarted = Shared.GetTime()
     self.radiusCached = nil
     self.growthRate = Infestation.kDefaultGrowthRate
+    self.infestationParentId = Entity.invalidId
     
     if HasMixin(self, "MapBlip") then
         self:MarkBlipDirty()

@@ -292,7 +292,7 @@ kAIMoveOrderCompleteDistance = 0.01
 kPlayerMoveOrderCompleteDistance = 1.5
 
 // Statistics
-kStatisticsURL = "http://strong-ocean-7422.herokuapp.com"
+kStatisticsURL = "http://sponitor2.herokuapp.com/api/send"
 
 kCatalyzURL = "https://catalyz.herokuapp.com/v1"
 

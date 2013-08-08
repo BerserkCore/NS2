@@ -1,0 +1,18 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float4 tex = tex2D(emissiveMap, input.texCoord);
+			material.emissive = tex.rgb * 40 * input.color.rgb;
+			material.opacity  = tex.a * input.color.a;
+		}
+	]]>
+	</code>
+
+</shader>

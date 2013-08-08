@@ -1,0 +1,47 @@
+<shader>
+
+	<inputs>
+		<input name="glowpoints" type="texture" address="wrap" srgb="true"/>
+		<input name="noiseMap" type="texture" address="wrap" srgb="true"/>
+	
+
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">false</param>
+		<param name="alphaTest">true</param>
+
+	</params>
+	
+	<code> 
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			const float3 tint = float3(.6, .1, .01);
+			
+			// Offset the position.
+			material.wsOffset = input.wsNormal * 0.03;
+			
+			
+			float3 ash = tex2D( glowpoints, input.texCoord  * float2( 0.8, .7) + float2(time * -.025, time * -.35) ).rgb;
+			float3 noise = tex2D( glowpoints, input.texCoord  * float2( 0.2, .5) + float2(time * .025, time * -0.25) ).rgb;
+			float3 noise2 = tex2D( noiseMap, input.texCoord  * float2( 0.3, 1.3) + float2(time * -.01, time * -.5) ).rgb;
+			float3 noise3 = tex2D( glowpoints, input.texCoord  * float2( 0.6, 2.1) + float2(time * -.02, time * -.8) ).rgb;
+
+			
+		
+
+			material.emissive = ( noise * noise2 + ash + noise3 ) * tint;
+			material.opacity = ( (noise + noise2 ) + noise3 + ash  ) * 10 ;
+			
+		}
+	]]>
+	</code>
+
+</shader>

@@ -164,13 +164,8 @@ function Marine:OnInitLocalClient()
         
         if self.sensorBlips == nil then
             self.sensorBlips = GetGUIManager():CreateGUIScript("GUISensorBlips")
-        end 
-       
-        if self.unitStatusDisplay == nil then
-            self.unitStatusDisplay = GetGUIManager():CreateGUIScript("GUIUnitStatus")
-            self.unitStatusDisplay:EnableMarineStyle()
-        end 
-
+        end
+        
         if self.objectiveDisplay == nil then
             self.objectiveDisplay = GetGUIManager():CreateGUIScript("GUIObjectiveDisplay")
         end 

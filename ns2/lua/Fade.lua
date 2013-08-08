@@ -28,42 +28,43 @@ class 'Fade' (Alien)
 Fade.kMapName = "fade"
 
 Fade.kModelName = PrecacheAsset("models/alien/fade/fade.model")
-Fade.kViewModelName = PrecacheAsset("models/alien/fade/fade_view.model")
+local kViewModelName = PrecacheAsset("models/alien/fade/fade_view.model")
 local kFadeAnimationGraph = PrecacheAsset("models/alien/fade/fade.animation_graph")
 
 Shared.PrecacheSurfaceShader("models/alien/fade/fade.surface_shader")
 
-Fade.kViewOffsetHeight = 1.7
-Fade.XZExtents = .4
+local kViewOffsetHeight = 1.7
+Fade.XZExtents = 0.4
 Fade.YExtents = 1.05
 Fade.kHealth = kFadeHealth
 Fade.kArmor = kFadeArmor
-Fade.kMass = 158 // ~350 pounds
-Fade.kJumpHeight = 1.4
-Fade.kMaxSpeed = 6.5
-Fade.kStabSpeed = .5
+// ~350 pounds.
+local kMass = 158
+local kJumpHeight = 1.4
+local kMaxSpeed = 6.5
 
-Fade.kAcceleration = 65
+local kAcceleration = 65
 
-Fade.kAirAccelerationFraction = .8
+local kAirAccelerationFraction = 0.8
 
-Fade.kAirZMoveWeight = 1
-Fade.kAirStrafeWeight = 3
-Fade.kAirBrakeWeight = 0.1
+local kAirZMoveWeight = 1
+local kAirStrafeWeight = 3
+local kAirBrakeWeight = 0.1
 
 local kFadeScanDuration = 4
 
-Fade.kShadowStepCooldown = 0.73
-Fade.kShadowStepJumpDelay = 0.1
-Fade.kShadowStepForce = 21
-Fade.kShadowStepDuration = 0.25
+local kShadowStepCooldown = 0.73
+local kShadowStepJumpDelay = 0.1
+local kShadowStepForce = 21
+local kShadowStepDuration = 0.25
 
-// when using shadow step before 1.4 seconds passed it decreases in effectiveness
-Fade.kShadowStepSoftCooldDown = 1.4
-Fade.kShadowStepDelayAfterBlink = 0.15
+local kShadowStepDelayAfterBlink = 0.15
 
-Fade.kBlinkAcceleration = 120
-Fade.kBlinkFriction = 7
+local kBlinkAcceleration = 120
+local kBlinkFriction = 7
+
+// Delay before you can blink again after a blink.
+local kMinEnterEtherealTime = 0.4
 
 if Server then
     Script.Load("lua/Fade_Server.lua")
@@ -86,7 +87,6 @@ local networkVars =
     
     // True when we're moving quickly "through the ether"
     ethereal = "boolean",
-    
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -107,28 +107,30 @@ function Fade:OnCreate()
     self.shadowStepDirection = Vector()
     
     if Server then
+    
         self.timeLastScan = 0
         self.isBlinking = false
         self.timeShadowStep = 0
         self.shadowStepping = false
         self.hasDoubleJumped = false
         self.landedAfterBlink = false
+        
     end
     
     self.etherealStartTime = 0
     self.etherealEndTime = 0
     self.ethereal = false
-
+    
 end
 
 function Fade:AdjustGravityForce(input, gravity)
     
     if self:GetIsBlinking() or not self.landedAfterBlink then
-        gravity = gravity * .65
+        gravity = gravity * 0.65
     end
     
     return gravity
-      
+    
 end
 
 function Fade:OnInitialized()
@@ -152,11 +154,11 @@ end
 function Fade:OnDestroy()
 
     Alien.OnDestroy(self)
-
-    if Client then    
-        self:DestroyTrailCinematic()    
+    
+    if Client then
+        self:DestroyTrailCinematic()
     end
-
+    
 end
 
 function Fade:GetInfestationBonus()
@@ -176,14 +178,14 @@ function Fade:MovementModifierChanged(newMovementModifierState, input)
     if newMovementModifierState then
         self:TriggerShadowStep(input.move)
     end
-
+    
 end
 
 function Fade:GetHeadAttachpointName()
     return "fade_tongue2"
 end
 
-// prevents reseting of celerity
+// Prevents reseting of celerity.
 function Fade:OnSecondaryAttack()
 end
 
@@ -192,7 +194,7 @@ function Fade:PreCopyPlayerData()
     // Reset visibility and gravity in case we were in ether mode.
     self:SetIsVisible(true)
     self:SetGravityEnabled(true)
-
+    
 end
 
 function Fade:GetBaseArmor()
@@ -204,11 +206,11 @@ function Fade:GetArmorFullyUpgradedAmount()
 end
 
 function Fade:GetMaxViewOffsetHeight()
-    return Fade.kViewOffsetHeight
+    return kViewOffsetHeight
 end
 
 function Fade:GetViewModelName()
-    return Fade.kViewModelName
+    return kViewModelName
 end
 
 function Fade:OnJumpLand(landIntensity, slowDown)
@@ -242,21 +244,25 @@ end
 
 function Fade:GetGroundFrictionForce()
     return ConditionalValue(self:GetIsShadowStepping(), 0, 9)
-end  
+end
 
 function Fade:GetCanJump()
-    return (Alien.GetCanJump(self) or not self.hasDoubleJumped) and self.timeShadowStep + Fade.kShadowStepJumpDelay < Shared.GetTime()
+    return (Alien.GetCanJump(self) or not self.hasDoubleJumped) and self.timeShadowStep + kShadowStepJumpDelay < Shared.GetTime()
 end
 
 function Fade:ConstrainMoveVelocity(moveVelocity)
-    
+
     if not self:GetIsBlinking() then
-        // allow acceleration in air for fades
+    
+        // Allow acceleration in air for Fades.
         if not self:GetIsOnSurface() then
+        
             local speedFraction = Clamp(self:GetVelocity():GetLengthXZ() / self:GetMaxSpeed(), 0, 1)
             speedFraction = 1 - (speedFraction * speedFraction)
-            moveVelocity:Scale(speedFraction * Fade.kAirAccelerationFraction)
+            moveVelocity:Scale(speedFraction * kAirAccelerationFraction)
+            
         end
+        
     end
     
 end
@@ -278,9 +284,9 @@ end
 function Fade:GetAirFrictionForce(input, velocity)
 
     if self:GetIsBlinking() then
-        return Fade.kBlinkFriction
+        return kBlinkFriction
     end
-
+    
     return 0.2
     
 end
@@ -289,10 +295,10 @@ local kBlinkTraceOffset = Vector(0, 0.5, 0)
 function Fade:GetMoveDirection(moveVelocity)
 
     if self:GetIsBlinking() or self:GetIsShadowStepping() then
-        
+    
         local direction = GetNormalizedVector(moveVelocity)
         
-        // check if we attempt to blink into the ground
+        // Check if we attempt to blink into the ground.
         // TODO: get rid of this hack here once UpdatePosition is adjusted for blink
         if direction.y < 0 then
         
@@ -306,45 +312,40 @@ function Fade:GetMoveDirection(moveVelocity)
         return direction
         
     end
-
-    return Alien.GetMoveDirection(self, moveVelocity)    
-
+    
+    return Alien.GetMoveDirection(self, moveVelocity)
+    
 end
 
 function Fade:GetAcceleration()
-    
+
     if self:GetIsBlinking() then
-        return Fade.kBlinkAcceleration
+        return kBlinkAcceleration
     elseif self:GetIsShadowStepping() then
         return 0
     end
-
-    return Fade.kAcceleration * self:GetMovementSpeedModifier() * ( 1 - self:GetCrouchAmount() * Player.kCrouchSpeedScalar )
-
+    
+    return kAcceleration * self:GetMovementSpeedModifier() * (1 - self:GetCrouchAmount() * Player.kCrouchSpeedScalar)
+    
 end
 
 function Fade:GetMaxSpeed(possible)
 
     if possible then
-        return Fade.kMaxSpeed
+        return kMaxSpeed
     end
     
-    local baseSpeed = Fade.kMaxSpeed    
-    if self.mode == kPlayerMode.FadeStab then
-        baseSpeed = Fade.kStabSpeed        
-    end
+    // Take into account crouching.
+    return (1 - self:GetCrouchAmount() * Player.kCrouchSpeedScalar) * kMaxSpeed * self:GetMovementSpeedModifier()
     
-    // Take into account crouching
-    return ( 1 - self:GetCrouchAmount() * Player.kCrouchSpeedScalar ) * baseSpeed * self:GetMovementSpeedModifier()
-
 end
 
 function Fade:GetMass()
-    return Fade.kMass 
+    return kMass
 end
 
 function Fade:GetJumpHeight()
-    return Fade.kJumpHeight
+    return kJumpHeight
 end
 
 function Fade:GetIsBlinking()
@@ -352,11 +353,11 @@ function Fade:GetIsBlinking()
 end
 
 function Fade:GetRecentlyBlinked(player)
-    return Shared.GetTime() - self.etherealEndTime < Blink.kMinEnterEtherealTime
+    return Shared.GetTime() - self.etherealEndTime < kMinEnterEtherealTime
 end
 
 function Fade:GetHasShadowStepCooldown()
-    return self.timeShadowStep + Fade.kShadowStepCooldown > Shared.GetTime() or Shared.GetTime() - self.etherealEndTime < Fade.kShadowStepDelayAfterBlink
+    return self.timeShadowStep + kShadowStepCooldown > Shared.GetTime() or Shared.GetTime() - self.etherealEndTime < kShadowStepDelayAfterBlink
 end
 
 function Fade:GetRecentlyJumped()
@@ -367,11 +368,11 @@ function Fade:TriggerShadowStep(direction)
 
     if direction:GetLength() == 0 then
         return
-    end   
-
-    direction:Normalize() 
-
-    local movementDirection = self:GetViewCoords():TransformVector( direction )
+    end
+    
+    direction:Normalize()
+    
+    local movementDirection = self:GetViewCoords():TransformVector(direction)
     
     if self:GetIsOnSurface() then
     
@@ -380,35 +381,29 @@ function Fade:TriggerShadowStep(direction)
         
     else
         movementDirection.y = math.min(0.25, movementDirection.y)
-    end    
-
+    end
+    
     local weapon = self:GetActiveWeapon()
     local canShadowStep = not weapon or not weapon.GetCanShadowStep or weapon:GetCanShadowStep()
     
     if canShadowStep and not self:GetIsBlinking() and not self:GetHasShadowStepCooldown() and self:GetEnergy() > kFadeShadowStepCost and not self:GetRecentlyJumped() then
-
+    
         local velocity = self:GetVelocity()
         
-        local shadowStepStrength = Fade.kShadowStepForce
-        self:SetVelocity( movementDirection * shadowStepStrength * self:GetSlowSpeedModifier())
+        local shadowStepStrength = kShadowStepForce
+        self:SetVelocity(movementDirection * shadowStepStrength * self:GetSlowSpeedModifier())
         
         self.timeShadowStep = Shared.GetTime()
         self.shadowStepping = true
         self.shadowStepDirection = direction
         
-        self:TriggerEffects("shadow_step", {effecthostcoords = Coords.GetLookIn(self:GetOrigin(), movementDirection)})
-        
-        /*
-        if Client and Client.GetLocalPlayer() == self then
-            self:TriggerFirstPersonMiniBlinkEffect(direction)
-        end
-        */
+        self:TriggerEffects("shadow_step", { effecthostcoords = Coords.GetLookIn(self:GetOrigin(), movementDirection) })
         
         self:DeductAbilityEnergy(kFadeShadowStepCost)
         self:TriggerUncloak()
-    
+        
     end
-
+    
 end
 
 function Fade:OverrideInput(input)
@@ -418,8 +413,10 @@ function Fade:OverrideInput(input)
     if self:GetIsShadowStepping() then
         input.move = self.shadowStepDirection
     elseif self:GetIsBlinking() then
+    
         input.move.z = 1
         input.move.x = 0
+        
     end
     
     return input
@@ -429,31 +426,38 @@ end
 function Fade:OnProcessMove(input)
 
     Alien.OnProcessMove(self, input)
-
+    
     if Server then
     
         if self.isScanned and self.timeLastScan + kFadeScanDuration < Shared.GetTime() then
             self.isScanned = false
         end
-    
+        
     end
     
 end
 
-// for update position
+// For update position.
 function Fade:GetCanStep()
-    return self:GetIsBlinking() or Alien.GetCanStep(self)
+
+    // Note: We must check if the Fade is on the ground while blinking to allow
+    // stepping. We don't want the Fade stepping while in the air, this causes
+    // too many problems while trying to blink into vents and "teleporting"
+    // to the ground when the Fade hits a wall (due to the large step height defined
+    // in Fade:GetStepHeight()).
+    return (self:GetIsBlinking() and Alien.GetIsOnGround(self)) or Alien.GetCanStep(self)
+    
 end
 
 function Fade:OnScan()
 
     if Server then
-
+    
         self.timeLastScan = Shared.GetTime()
         self.isScanned = true
-    
+        
     end
-
+    
 end
 
 function Fade:GetStepHeight()
@@ -461,7 +465,7 @@ function Fade:GetStepHeight()
     if self:GetIsBlinking() then
         return 2
     end
-
+    
     return Player.GetStepHeight()
     
 end
@@ -472,12 +476,13 @@ end
 
 function Fade:UpdatePosition(velocity, time)
 
-    // TODO: update position in a smarter way when blinking: move player in desired direction, if failed  try to step over the object (default step, Y = 0 or positive), if failed try under the object (Y = 0 or negative)
-
+    // TODO: Update position in a smarter way when blinking: move player in desired direction, if failed
+    // try to step over the object (default step, Y = 0 or positive), if failed try under the object (Y = 0 or negative).
+    
     PROFILE("Fade:UpdatePosition")
-
+    
     if self:GetIsBlinking() then
-
+    
         if not self.controller then
             return velocity
         end
@@ -486,26 +491,26 @@ function Fade:UpdatePosition(velocity, time)
         
         // We need to make a copy so that we aren't holding onto a reference
         // which is updated when the origin changes.
-        local start         = Vector(self:GetOrigin())
+        local start = Vector(self:GetOrigin())
         local startVelocity = Vector(velocity)
         
         local maxSlideMoves = 3
         
-        local offset     = nil
+        local offset = nil
         local stepHeight = self:GetStepHeight()
-        local canStep    = self:GetCanStep()
-        local onGround   = self:GetIsOnGround()
-        local stepped    = false
+        local canStep = self:GetCanStep()
+        local onGround = self:GetIsOnGround()
+        local stepped = false
         
-        local completedMove = self:PerformMovement( velocity * time, maxSlideMoves, velocity )
+        local completedMove = self:PerformMovement(velocity * time, maxSlideMoves, velocity)
         
         if not completedMove and canStep then
         
             // Go back to the beginning and now try a step move.
             self:SetOrigin(start)
             
-            // First move the character upwards to allow them to go up stairs and over small obstacles. 
-            self:PerformMovement( Vector(0, stepHeight, 0), 1 )
+            // First move the character upwards to allow them to go up stairs and over small obstacles.
+            self:PerformMovement(Vector(0, stepHeight, 0), 1)
             local steppedStart = self:GetOrigin()
             
             if self:GetIsColliding() then
@@ -521,8 +526,8 @@ function Fade:UpdatePosition(velocity, time)
                 offset = steppedStart - start
                 
                 // Now try moving the controller the desired distance.
-                VectorCopy( startVelocity, velocity )
-                self:PerformMovement( startVelocity * time, maxSlideMoves, velocity )
+                VectorCopy(startVelocity, velocity)
+                self:PerformMovement(startVelocity * time, maxSlideMoves, velocity)
                 stepped = true
                 
             end
@@ -535,36 +540,35 @@ function Fade:UpdatePosition(velocity, time)
         
             // Finally, move the player back down to compensate for moving them up.
             // We add in an additional step  height for moving down steps/ramps.
-            if stepped then        
+            if stepped then
                 offset.y = -(offset.y + stepHeight)
             end
-            self:PerformMovement( offset, 1, nil )
+            self:PerformMovement(offset, 1, nil)
             
-            // Check to see if we moved up a step and need to smooth out
-            // the movement.
+            // Check to see if we moved up a step and need to smooth out the movement.
             local yDelta = self:GetOrigin().y - start.y
             
             if yDelta ~= 0 then
             
                 // If we're already interpolating up a step, we need to take that into account
-                // so that we continue that interpolation, plus our new step interpolation
+                // so that we continue that interpolation, plus our new step interpolation.
                 
-                local deltaTime      = Shared.GetTime() - self.stepStartTime
+                local deltaTime = Shared.GetTime() - self.stepStartTime
                 local prevStepAmount = 0
                 
                 if deltaTime < Player.stepTotalTime then
                     prevStepAmount = self.stepAmount * (1 - deltaTime / Player.stepTotalTime)
-                end        
+                end
                 
                 self.stepStartTime = Shared.GetTime()
-                self.stepAmount    = Clamp(yDelta + prevStepAmount, -Player.kMaxStepAmount, Player.kMaxStepAmount)
+                self.stepAmount = Clamp(yDelta + prevStepAmount, -Player.kMaxStepAmount, Player.kMaxStepAmount)
                 
             end
             
         end
         
         return velocity
-    
+        
     else
         return Alien.UpdatePosition(self, velocity, time)
     end
@@ -576,29 +580,35 @@ function Fade:SetDetected(state)
     if Server then
     
         if state then
+        
             self.timeLastScan = Shared.GetTime()
             self.isScanned = true
+            
         else
             self.isScanned = false
         end
-    
+        
     end
-
+    
 end
 
 function Fade:TriggerBlink()
+
     self.ethereal = true
     self.onGroundNeedsUpdate = false
     self.jumping = true
     self.landedAfterBlink = false
+    
 end
 
 function Fade:OnBlinkEnd()
+
     self.onGroundNeedsUpdate = true
     if self:GetIsOnGround() then
         self.jumping = false
     end
     self.ethereal = false
+    
 end
 
 function Fade:GetCanCloakOverride()
@@ -606,19 +616,19 @@ function Fade:GetCanCloakOverride()
 end
 
 function Fade:PreUpdateMove(input, runningPrediction)
-    self.shadowStepping = self.timeShadowStep + Fade.kShadowStepDuration > Shared.GetTime()
+    self.shadowStepping = self.timeShadowStep + kShadowStepDuration > Shared.GetTime()
 end
 
 function Fade:ModifyVelocity(input, velocity)
 
     Alien.ModifyVelocity(self, input, velocity)
-
+    
     if not self:GetIsOnGround() and not self:GetIsBlinking() and input.move:GetLength() ~= 0 then
     
         local moveLengthXZ = velocity:GetLengthXZ()
         local previousY = velocity.y
         local adjustedZ = false
-
+        
         if input.move.z ~= 0 then
         
             local redirectedVelocityZ = GetNormalizedVectorXZ(self:GetViewCoords().zAxis) * input.move.z
@@ -631,38 +641,38 @@ function Fade:ModifyVelocity(input, velocity)
                 local xzVelocity = Vector(velocity)
                 xzVelocity.y = 0
                 
-                VectorCopy(velocity - (xzVelocity * input.time * Fade.kAirBrakeWeight), velocity)
+                VectorCopy(velocity - (xzVelocity * input.time * kAirBrakeWeight), velocity)
                 
             else
             
-                redirectedVelocityZ = redirectedVelocityZ * input.time * Fade.kAirZMoveWeight + GetNormalizedVectorXZ(velocity)
-                redirectedVelocityZ:Normalize()                
+                redirectedVelocityZ = redirectedVelocityZ * input.time * kAirZMoveWeight + GetNormalizedVectorXZ(velocity)
+                redirectedVelocityZ:Normalize()
                 redirectedVelocityZ:Scale(moveLengthXZ)
                 redirectedVelocityZ.y = previousY
-                VectorCopy(redirectedVelocityZ,  velocity)
+                VectorCopy(redirectedVelocityZ, velocity)
                 adjustedZ = true
-            
+                
             end
-        
+            
         end
-    
-        if input.move.x ~= 0  then
-    
-            local redirectedVelocityX = GetNormalizedVectorXZ(self:GetViewCoords().xAxis) * input.move.x
         
+        if input.move.x ~= 0  then
+        
+            local redirectedVelocityX = GetNormalizedVectorXZ(self:GetViewCoords().xAxis) * input.move.x
+            
             if adjustedZ then
-                redirectedVelocityX = redirectedVelocityX * input.time * Fade.kAirStrafeWeight + GetNormalizedVectorXZ(velocity)
+                redirectedVelocityX = redirectedVelocityX * input.time * kAirStrafeWeight + GetNormalizedVectorXZ(velocity)
             else
                 redirectedVelocityX = redirectedVelocityX * input.time * 2 + GetNormalizedVectorXZ(velocity)
             end
             
-            redirectedVelocityX:Normalize()            
+            redirectedVelocityX:Normalize()
             redirectedVelocityX:Scale(moveLengthXZ)
             redirectedVelocityX.y = previousY
             VectorCopy(redirectedVelocityX,  velocity)
             
-        end    
-    
+        end
+        
     end
     
 end

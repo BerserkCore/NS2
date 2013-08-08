@@ -16,6 +16,8 @@ local Shared_GetEntity      = Shared.GetEntity
 local Entity_invalidId      = Entity.invalidId
 local Client_GetLocalPlayer = Client.GetLocalPlayer
 
+local kTimeToCloakIfParentMissing = 0.3
+
 local kMaxOutCrop = 0.45 // should be low enough so skulks can always comfortably see over it
 local kMinOutCrop = 0.1 // should be 
 
@@ -54,6 +56,7 @@ function Infestation:OnInitialized()
     --self:LimitBlobsAspectRatio()
     
     self.hasClientGeometry = false
+    self.parentMissingTime = 0.0
     
 end
 
@@ -131,14 +134,23 @@ function Infestation:UpdateClientGeometry()
                 if HasMixin(infestationParent, "Cloakable") then
                     cloakFraction = infestationParent:GetCloakedFraction()
                 end
-
+                
+                self.parentMissingTime = -1.0
+                
             else
+            
                 // parent is missing, but one was expected
-                // assume it is because the parent is invisible to the local player, who may be a commander or something
-                // so we should be invisible
-                cloakFraction = 1.0
+                // assume it is because the parent is invisible/irrelevant to the local player, who may be a commander or something
+                // But, due to a quirk with how state is sync'd, delay this hiding to avoid flickering.
+                if self.parentMissingTime < 0 then
+                    self.parentMissingTime = Shared_GetTime()
+                elseif (Shared_GetTime() - self.parentMissingTime) > kTimeToCloakIfParentMissing then
+                    cloakFraction = 1.0
+                end
+                
             end
-        
+        else
+            self.parentMissingTime = -1.0
         end
     end
     

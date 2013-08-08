@@ -115,11 +115,15 @@ function MouseTracker_GetIsVisible()
     return #gCursorStack > 0
 end
 
-function MouseTracker_SendKeyEvent(key, down)
+/**
+ * If inputBlocked is true, the key event will not be processed. Only
+ * the movement internally will be processed in this case.
+ */
+function MouseTracker_SendKeyEvent(key, down, inputBlocked)
 
     if not Shared.GetIsRunningPrediction() and #gCursorStack > 0 then
     
-        if key == InputKey.MouseZ then
+        if key == InputKey.MouseZ and not inputBlocked then
         
             // Notify about mouse wheel movement.
             for index, listener in ipairs(gMouseWheelMovementListeners) do
@@ -144,9 +148,13 @@ function MouseTracker_SendKeyEvent(key, down)
             
             gMouseMove = gCursorPos - gLastCursorPos
             
-            // Notify about mouse movement.
-            for index, listener in ipairs(gMouseMovementListeners) do
-                listener:OnMouseMove(gLeftButtonPressed)
+            if not inputBlocked then
+            
+                // Notify about mouse movement.
+                for index, listener in ipairs(gMouseMovementListeners) do
+                    listener:OnMouseMove(gLeftButtonPressed)
+                end
+                
             end
             
             return true
@@ -175,16 +183,20 @@ function MouseTracker_SendKeyEvent(key, down)
             
             local stop = false
             
-            for index, listener in ipairs(gMouseButtonListeners) do
+            if not inputBlocked then
             
-                if down then
-                    stop = listener:OnMouseDown(key, doubleClick)
-                else
-                    stop = listener:OnMouseUp(key)
-                end
+                for index, listener in ipairs(gMouseButtonListeners) do
                 
-                if stop then
-                    break
+                    if down then
+                        stop = listener:OnMouseDown(key, doubleClick)
+                    else
+                        stop = listener:OnMouseUp(key)
+                    end
+                    
+                    if stop then
+                        break
+                    end
+                    
                 end
                 
             end

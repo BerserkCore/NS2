@@ -1,0 +1,50 @@
+<shader>
+	
+	<inputs>
+		<input name="blocksMap" type="texture" address="wrap">materials/dev/noise_clouds.dds</input>
+		<input name="infestMap" type="texture" address="wrap">models/props/refinery/digital_infestation_mask.dds</input>
+	</inputs>
+
+	<code>
+	<![CDATA[
+	
+		float smoothstep(float t)
+		{
+			return (3 - 2 * t) * t * t;
+		}
+	
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			const float  speed      = 0.5;
+			const float  blockSize  = 1.0 / 16.0;
+			const float3 color 		= float3(0, 2.25, 1.125);
+			
+			float3 objectOrigin = objectToWorldMatrix[3];
+			//float  offset = sin(objectOrigin.x * 15 + objectOrigin.z * 13);  
+			
+			float t = time * speed;
+
+			// Create blocks.
+			float2 texCoord = input.texCoord;
+			texCoord = floor(texCoord / blockSize) * blockSize;
+			
+			// Add scan lines.
+			float  scanLine = cos(input.texCoord.y * 250 + t * 20) + 1;
+			float3 bgColor  = color * scanLine * 0.01;
+			
+			float infest  = tex2D(infestMap, texCoord * 0.25 + float2(0, t * 0.01)).r;
+			float mask    = pow( 2 * infest, 0.5 );
+			float3 blocks = tex2D(blocksMap, texCoord * 2);
+			float opacity =  input.texCoord.y + cos(t * 3 + texCoord.x * 2 + sin(t * 2)) * 0.5 + 1 + sin(t * 0.1) * 0.4;
+			
+			float threshold = 0.5;
+			float amount1 = saturate((opacity - mask) - threshold);
+			float amount2 = pow( smoothstep( saturate(opacity- mask) ), 2);
+			
+			material.albedo   = float3(0, 0, 0);
+			material.emissive = ((amount2 - amount1 * 0.75) * color + bgColor);
+			
+		}
+	]]>
+	</code>
+</shader>

@@ -139,8 +139,44 @@ function ResearchMixin:GetResearchTechAllowed(techNode)
     
 end
 
+local function AbortResearch(self, refundCost)
+
+    if self.researchProgress > 0 then
+    
+        local team = self:GetTeam()
+        // Team is not always available due to order of destruction during map change.
+        if team then
+        
+            local researchNode = team:GetTechTree():GetTechNode(self.researchingId)
+            if researchNode ~= nil then
+            
+                // Give money back if refundCost is true.
+                if refundCost then
+                    team:SetTeamResources(team:GetTeamResources() + researchNode:GetCost())
+                end
+                
+                ASSERT(researchNode:GetResearching() or researchNode:GetIsUpgrade())
+                
+                researchNode:ClearResearching()
+                
+                if self.OnResearchCancel then
+                    self:OnResearchCancel(self.researchingId)
+                end
+                
+                self:ClearResearch()
+                
+                team:GetTechTree():SetTechChanged()
+                
+            end
+            
+        end
+        
+    end
+    
+end
+
 function ResearchMixin:OnKill()
-    self:AbortResearch()
+    AbortResearch(self)
 end 
 
 function ResearchMixin:ClearResearch()
@@ -151,11 +187,19 @@ function ResearchMixin:ClearResearch()
     self.timeResearchStarted = 0
     self.timeResearchComplete = 0
     self.researchProgress = 0
-
+    
 end
 
 function ResearchMixin:GetIsResearching()
-    return self:GetResearchProgress() ~= 0
+
+    local researchProgress = self:GetResearchProgress()
+    // Note: We need to treat 1 as "not researching" as there
+    // is a delay in the tech tree code that means the entity will
+    // have a researchProgress of 1 for longer than we would expect.
+    // This delay allows the player to cancel research before the
+    // tech tree updates and get a free research.
+    return researchProgress > 0 and researchProgress < 1
+    
 end
 
 function ResearchMixin:GetIsManufacturing()
@@ -181,7 +225,7 @@ function ResearchMixin:GetIsUpgrading()
     end
     
     return false
-
+    
 end
 
 // Could be for research or upgrade
@@ -202,42 +246,6 @@ function ResearchMixin:SetResearching(techNode, player)
     
 end
 
-function ResearchMixin:AbortResearch(refundCost)
-
-    if self.researchProgress > 0 then
-    
-        local team = self:GetTeam()
-        // Team is not always available due to order of destruction during map change.
-        if team then
-        
-            local researchNode = team:GetTechTree():GetTechNode(self.researchingId)
-            if researchNode ~= nil then
-            
-                // Give money back if refundCost is true
-                if refundCost then
-                    team:SetTeamResources(team:GetTeamResources() + researchNode:GetCost())
-                end
-                
-                ASSERT(researchNode:GetResearching() or researchNode:GetIsUpgrade())
-                
-                researchNode:ClearResearching()
-                
-                if self.OnResearchCancel then
-                    self:OnResearchCancel(self.researchingId)
-                end
-                
-                self:ClearResearch()
-                
-                team:GetTechTree():SetTechChanged()
-                
-            end
-            
-        end
-        
-    end
-    
-end
-
 function ResearchMixin:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("ResearchMixin:OnUpdateAnimationInput")
@@ -247,13 +255,13 @@ end
 
 function ResearchMixin:PerformAction(techNode, position)
 
-    // Process Cancel of research or upgrade
+    // Process Cancel of research or upgrade.
     if techNode.techId == kTechId.Cancel then
     
-        if self:GetIsResearching() then        
-            self:AbortResearch(true)            
-        end       
-
+        if self:GetIsResearching() then
+            AbortResearch(self, true)
+        end
+        
     end
     
 end
@@ -346,7 +354,7 @@ end
 function ResearchMixin:OnPowerOff()
 
     if self:GetIsResearching() then        
-        self:AbortResearch(true)            
+        AbortResearch(self, true)            
     end       
 
 end

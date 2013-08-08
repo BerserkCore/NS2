@@ -142,5 +142,5 @@ function FollowMoveMixin:SetFollowTarget(target)
 end
 
 function FollowMoveMixin:GetFollowTargetId()
-    return self.imposedTargetId
+    return self.imposedTargetId ~= Entity.invalidId and self.imposedTargetId or self.followedTargetId
 end

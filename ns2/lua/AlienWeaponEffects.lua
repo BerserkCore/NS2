@@ -179,6 +179,18 @@ kAlienWeaponEffects =
         },
     },
     
+    // Holiday 2012
+    snowball_hit =
+    {
+        snowballHitEffects = 
+        {
+            {cinematic = "seasonal/holiday2012/cinematics/snowball_hit.cinematic"},
+            
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/gorge/bilebomb_hit", done = true},
+        },
+    },
+    
     // When creating a structure
     gorge_create =
     {

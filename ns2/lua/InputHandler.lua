@@ -12,10 +12,20 @@
 Script.Load("lua/ConsoleBindings.lua")
 Script.Load("lua/menu/MouseTracker.lua")
 
+local keyEventBlocker = nil
+
+function SetKeyEventBlocker(setKeyEventBlocker)
+    keyEventBlocker = setKeyEventBlocker
+end
+
 // Return true if the event should be stopped here.
 local function OnSendKeyEvent(key, down)
 
-    local stop = MouseTracker_SendKeyEvent(key, down)
+    local stop = MouseTracker_SendKeyEvent(key, down, keyEventBlocker ~= nil)
+    
+    if keyEventBlocker then
+        return keyEventBlocker:SendKeyEvent(key, down)
+    end
     
     if not stop then
     

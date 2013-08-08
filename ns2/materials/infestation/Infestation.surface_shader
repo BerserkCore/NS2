@@ -1,0 +1,38 @@
+<shader>
+	
+	<inputs>
+		<input name="albedo" type="texture">materials/infestation/infestation.dds</input>
+		<input name="amount" type="float"/>
+		<input name="origin" type="float3"/>
+		<input name="maxRadius" type="float"/>
+	</inputs>
+
+	<params>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="wsOrigin">true</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			float3 offset;
+			offset.x = sin(time * 3 + input.wsPosition.y) * 1;
+			offset.z = sin(time * 2 + input.wsPosition.z) * 1;
+			offset.y = sin(time * 1 + input.wsPosition.x) * 1;
+			
+            const float growDist = 2;
+            float blobDist       = length(input.wsPosition - origin);
+            float infestDist     = amount * maxRadius;
+            float scale          = saturate( (infestDist - blobDist)/growDist );
+	
+            material.albedo      = tex2D(albedo, input.texCoord).rgb;
+            material.scale       = scale;
+			material.wsOffset    = (offset * 0.02) * amount;
+		}
+	]]>		
+	</code>
+
+</shader>

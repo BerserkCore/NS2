@@ -1,0 +1,46 @@
+<shader>
+	
+	<inputs>
+		<input name="maskMap" type="texture" address="clamp">materials/power/powered_mask.dds</input>
+		<input name="maskMap2" type="texture" address="wrap">cinematics/vfx_materials/vfx_circuit_02.dds</input>
+		<input name="osOrigin" type="float3"/>
+	</inputs>
+	
+	<params>
+		<param name="osPosition">true</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			
+			float3 d = osOrigin - input.osPosition;
+			float  r = length(d.xz) / 10; 
+			
+			const float waveFreq 	= 5;
+			const float waveSpeed   = 1.5;
+			const float wavePow  	= 90;
+			const float wavePow2	= 1;
+			const float wavePow3	= 200;
+			const float texScale    = 0.2;
+			const float maskScale   = 50;
+			const float maskScale2  = 5;
+			
+			float w = 1 - fmod(time * waveSpeed - r, waveFreq) / waveFreq;
+			
+			float wave =  pow( w, wavePow );
+			float wave2 = pow( w, wavePow2 );
+			float wave3 = pow( w, wavePow3 ) * 0.03;
+			float mask 	= tex2D(maskMap, (d.xz / maskScale) + 0.5)* 2;
+			float mask2 = tex2D(maskMap2, (d.xz / maskScale2) + 0.5) * 0.2 + 0.1;
+			
+			const float3 color = float3(0, 1, 2);
+			
+			material.emissive = (wave * mask + wave2 * mask2 * 0.1 + wave3) * color;
+			
+		}
+	]]>
+	</code>
+
+</shader>

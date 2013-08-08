@@ -73,6 +73,7 @@ technique VisualizeNormals
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeNormalsPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -85,6 +86,7 @@ technique VisualizeSpecular
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeSpecularPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -97,6 +99,7 @@ technique VisualizeAlbedo
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeAlbedoPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -109,6 +112,7 @@ technique VisualizeGloss
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeGlossPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -121,6 +125,7 @@ technique VisualizeEmissive
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeEmissivePS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -133,6 +138,7 @@ technique VisualizeDepth
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeDepthPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -145,6 +151,7 @@ technique VisualizeId
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeIdPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }
@@ -157,6 +164,7 @@ technique VisualizeMask
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 VisualizeMaskPS();
+		CullMode			= None;
         ColorWriteEnable    = Red | Green | Blue;
     }
 }

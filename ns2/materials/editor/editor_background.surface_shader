@@ -1,0 +1,19 @@
+<shader>
+	
+	<inputs>
+		<input name="color1" type="float3"/>
+		<input name="color2" type="float3"/>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			
+			float f = input.texCoord.y;
+			material.emissive = pow(lerp(color1, color2, f), 2.2);
+			
+		}
+	]]>
+	</code>
+</shader>

@@ -90,7 +90,7 @@ function OnUpdateRender()
         if kModeText[mode] then
             text = kModeText[mode].text
             if kModeText[mode].display == "count" and total ~= 0 then
-                text = text .. string.format(" (%d/%d)", count, total)
+                text = text .. string.format(" (%d%%)", math.ceil((count / total) * 100))
             end
         else            
             text = "LOADING"

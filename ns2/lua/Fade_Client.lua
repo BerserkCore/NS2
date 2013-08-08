@@ -6,8 +6,6 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Fade.kFirstPersonMiniBlinkCinematic = "cinematics/alien/fade/miniblink1p.cinematic"
-
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/fade_blink.surface_shader")
 
 local kBlink2DSound = PrecacheAsset("sound/NS2.fev/alien/fade/blink_loop")
@@ -147,17 +145,5 @@ function Fade:DestroyTrailCinematic()
         self.scanTrailCinematic = nil
     
     end
-
-end
-
-function Fade:TriggerFirstPersonMiniBlinkEffect(direction)
-
-    local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
-    cinematic:SetCinematic(Fade.kFirstPersonMiniBlinkCinematic)
-    local coords = Coords.GetIdentity()
-    coords.zAxis = direction
-    coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
-    
-    cinematic:SetCoords(coords)
 
 end

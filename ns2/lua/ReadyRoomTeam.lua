@@ -8,6 +8,7 @@
 // This class is used for the team that is for players that are in the ready room.
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
+
 Script.Load("lua/Team.lua")
 Script.Load("lua/TeamDeathMessageMixin.lua")
 
@@ -75,6 +76,9 @@ function ReadyRoomTeam:ReplaceRespawnPlayer(player, origin, angles)
     self:RespawnPlayer(newPlayer, origin, angles)
     
     newPlayer:ClearGameEffects()
+    
+    // Holiday 2012
+    newPlayer:GiveItem(SnowBallThrower.kMapName)
     
     return (newPlayer ~= nil), newPlayer
     

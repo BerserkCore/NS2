@@ -1,0 +1,36 @@
+<shader>
+
+	<inputs>
+
+		<input name="noiseMap" type="texture" address="wrap" />
+		<input name="HealTime" type="float" />
+	</inputs>	
+
+	<params>
+
+		<param name="twoSided">false</param>
+		<param name="alphaTest">false</param>	
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			const float3 tint = float3(.2, .4, .05);
+			
+		
+			
+float t = time - HealTime;
+	
+			float3 noise = tex2D( noiseMap, (input.texCoord ) * float2(20, 20.5) ).rgb; 
+			float3 noise2 = tex2D( noiseMap, (input.texCoord + float2(time * .004, time * -.004)) * float2(4, 5.3) ).rgb; 
+		
+			material.emissive = (noise2  + noise ) * tint ;
+			material.albedo = (noise2  + noise ) * tint ;
+			material.opacity = (noise2  * noise ) *20 *t  ;
+		}
+	]]>
+	</code>
+
+</shader>

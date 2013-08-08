@@ -706,8 +706,8 @@ local function techIdStringToTechId(techIdString)
     
 end
 
-// Create structure, weapon, etc. near player
-local function OnCommandCreate(client, techIdString, number)
+// Create structure, weapon, etc. near player.
+local function OnCommandCreate(client, techIdString, number, teamNum)
 
     if Shared.GetCheatsEnabled() then
     
@@ -725,7 +725,7 @@ local function OnCommandCreate(client, techIdString, number)
                 for index = 1, 2000 do
                 
                     local player = client:GetControllingPlayer()
-                    local teamNumber = player:GetTeamNumber()
+                    local teamNumber = tonumber(teamNum) or player:GetTeamNumber()
                     if techId == kTechId.Scan then
                         teamNumber = GetEnemyTeamNumber(teamNumber)
                     end

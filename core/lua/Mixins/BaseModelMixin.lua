@@ -775,10 +775,9 @@ function BaseModelMixin:SetModel(modelName, graphName)
         // A new graph must be set after this point.
         self.animationGraphIndex = 0
         
-        self:UpdatePhysicsModel()
-        
     end
-    
+   
+    self:UpdatePhysicsModel()
     UpdateBoneCoords(self, true)
     
     local graphChanged = SetAnimationGraph(self, graphName)
@@ -887,23 +886,13 @@ function BaseModelMixin:GetAttachPointCoords(attachPoint)
     
         local attachPointExists = model:GetAttachPointExists(attachPointIndex)
         ASSERT(attachPointExists, self:GetClassName() .. ":GetAttachPointCoords(" .. attachPointIndex .. "): Attach point doesn't exist. Named: " .. ToString(attachPoint) .. " Model Name: " .. model:GetFileName() .. " Point Name: " .. ToString(attachPoint))
-        
-        if attachPointExists then
-        
-            local coords = self._modelCoords
-            
-            if self.boneCoords:GetSize() > 0 then
 
-                if attachPointExists then
-                    coords = self._modelCoords * model:GetAttachPointCoords(attachPointIndex, self.boneCoords)
-                else
-                    Print("%s:GetAttachPointCoords(%d): Attach point doesn't exist.", self:GetClassName(), attachPointIndex)
-                end
-                
+        local coords = self._modelCoords
+        if attachPointExists and coords ~= nil then
+            if self.boneCoords:GetSize() > 0 then
+                coords = self._modelCoords * model:GetAttachPointCoords(attachPointIndex, self.boneCoords)
             end
-            
             return coords
-            
         end
         
     end

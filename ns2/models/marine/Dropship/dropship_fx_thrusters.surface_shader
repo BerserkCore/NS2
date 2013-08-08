@@ -1,0 +1,33 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+
+		<input name="maskMap" type="texture" address="wrap" srgb="true"/>
+	</inputs>
+	
+
+	<params>
+		<param name="twoSided">true</param>
+	</params>
+
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			const float3 tint = float3(15.1, 18.3, 38.5);
+
+			float4 texmask = tex2D(maskMap, input.texCoord);
+			float4 tex = tex2D(emissiveMap, input.texCoord * float2(1.95 , 1.67) + float2( time * .03, time * -8));
+			float4 tex2 = tex2D(emissiveMap, input.texCoord * float2(1.7 , 1.8)  + float2( .5 + time * -.02, time * -9));
+			float4 tex3 = tex2D(emissiveMap, input.texCoord * float2(1.2 , 1.5)  + float2( time * -.01, time * -7));
+
+
+			material.emissive = (tex.rgb * tex2.rgb  ) * tint * texmask.rgb  ;
+
+
+		}
+	]]>
+	</code>
+
+</shader>

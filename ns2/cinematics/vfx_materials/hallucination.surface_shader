@@ -1,0 +1,29 @@
+<shader>
+
+	<inputs>
+		<input name="greebMap" type="texture" address="wrap" srgb="true"/>
+		<input name="circuitMap" type="texture" address="wrap" srgb="true"/>
+		<input name="noiseMap" type="texture" address="wrap" />
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">false</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			const float3 tint = float3(0.5,pow(input.wsNormal.y + 1, 2) * 0.05, 1);		
+			material.emissive = tint * clamp(input.wsNormal.y, 0, 1) * 3;
+			
+		}
+	]]>
+	</code>
+
+</shader>

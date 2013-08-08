@@ -162,6 +162,10 @@ function FilterFavoriteOnly(active)
     return function(entry) return not active or entry.favorite == true end
 end
 
+function FilterPassworded(active)
+    return function(entry) return active or entry.requiresPassword == false end
+end
+
 function FilterRookie(active)
     return function(entry) return not active or entry.rookieFriendly == false end
 end

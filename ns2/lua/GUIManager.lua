@@ -24,12 +24,19 @@ kGUILayerMinimap = 11
 kGUILayerScoreboard = 12
 kGUILayerCountDown = 13
 kGUILayerMainMenu = 20
+// The Web layer must be much higher than the MainMenu layer
+// because the MainMenu layer inserts items above
+// kGUILayerMainMenu procedurally.
+kGUILayerMainMenuWeb = 50
 
-// check required because of material scripts
+// Check required because of material scripts.
 if Client and Event then
-Script.Load("lua/menu/WindowManager.lua")
-Script.Load("lua/InputHandler.lua")
+
+    Script.Load("lua/menu/WindowManager.lua")
+    Script.Load("lua/InputHandler.lua")
+    
 end
+
 Script.Load("lua/GUIScript.lua")
 Script.Load("lua/GUIUtility.lua")
 

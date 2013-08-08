@@ -1,0 +1,37 @@
+<shader>
+
+	<inputs>
+		<input name="MaskMap" type="texture" address="wrap" srgb="true"/>
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">true</param>
+
+		
+	</params>
+	
+	<code> 
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+		
+			const float3 tint = float3(.5, .55, .65);
+
+			float3 dripmask = tex2D( MaskMap, input.texCoord * float2(1, 1) + float2( 0, time * -1)).rgb;
+
+			material.emissive= dripmask  * tint  ;
+
+			
+		
+			
+			
+		}
+	]]>
+	</code>
+
+</shader>

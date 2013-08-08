@@ -1,0 +1,22 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+	</inputs>
+	
+	<params>
+		<param name="unlit">true</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float4 tex = tex2D(emissiveMap, input.texCoord);
+			material.emissive = tex.rgb * input.color.rgb;
+			material.opacity  = tex.a * input.color.a;
+		}
+	]]>
+	</code>
+
+</shader>

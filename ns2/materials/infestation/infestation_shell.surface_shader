@@ -1,0 +1,38 @@
+<shader>
+	
+	<inputs>
+		<input name="amount" type="float"/>
+		<input name="origin" type="float3"/>
+		<input name="maxRadius" type="float"/>
+	</inputs>
+
+	<params>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="wsOrigin">true</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		float EaseOutElastic( float t )
+		{
+			float ts = t*t;
+			float tc = ts*t;
+			return -13.495*tc*ts + 36.2425*ts*ts - 29.7*tc + 3.40*ts + 4.5475*t;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+
+            const float growDist      = 0.8;
+            float blobDist            = length(input.wsOrigin - origin);
+            float infestDist          = amount * maxRadius;
+            float scale               = saturate( (infestDist - blobDist)/growDist );
+	
+            material.infestationShell = 1;
+            material.scale            = scale;
+			
+		}
+	]]>		
+	</code>
+
+</shader>

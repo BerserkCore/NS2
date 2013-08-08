@@ -1,0 +1,39 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="welcomeEmissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="lockedEmissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="hiddenAmount" type="float">0.0</input>
+		<input name="timeStateChanged" type="float">0.0</input>
+		<input name="state" type="float">1.0</input>
+		
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			float f              = 1 - hiddenAmount;
+			const float normal   = 1;
+			const float locked   = 2;
+			const float welcome  = 3;
+		
+			float4 tex;
+		
+			if (state == normal) {
+				tex = tex2D(emissiveMap, input.texCoord);
+			} else if (state == locked) {
+				tex = tex2D(lockedEmissiveMap, input.texCoord);
+			} else if (state == welcome) {
+				tex = tex2D(welcomeEmissiveMap, input.texCoord);
+			}
+		
+			material.emissive = tex.rgb * input.color.rgb * ( f + 1 + cos(time * 4) );
+			material.opacity  = tex.a * input.color.a;
+		}
+	]]>
+	</code>
+
+</shader>

@@ -1,0 +1,22 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="hiddenAmount" type="float">0.0</input>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			float f             = 1 - hiddenAmount;
+		
+			float4 tex = tex2D(emissiveMap, input.texCoord);
+			material.emissive = tex.rgb * input.color.rgb * f;
+			material.opacity  = tex.a * input.color.a;
+		}
+	]]>
+	</code>
+
+</shader>

@@ -167,13 +167,16 @@ function Infestation:SetGrowthRate(growthRate)
     
 end
 
+/*
 function Infestation:OnEntityChange(oldId, newId)
 
     if oldId == self.infestationParentId then
         self.infestationParentId = Entity.invalidId
+        Print("on entity change, setting parent to invalid. class = %s id=%d, cs = %s", self:GetClassName(), self:GetId(), Script.CallStack())
     end    
     
 end
+*/
 
 function Infestation:GetMaxRadius()
     return self.maxRadius

@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //
 // lua\Weapons\Alien\Blink.lua
 //
@@ -6,19 +6,19 @@
 //                  Max McGuire (max@unknownworlds.com)
 //
 // Blink - Attacking many times in a row will create a cool visual "chain" of attacks, 
-// showing the more flavorful animations in sequence. Base class for swipe and vortex, available at tier 2.
+// showing the more flavorful animations in sequence. Base class for swipe and vortex,
+// available at tier 2.
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
+
 Script.Load("lua/Weapons/Alien/Ability.lua")
 
 class 'Blink' (Ability)
+
 Blink.kMapName = "blink"
 
 // initial force added when starting blink
 local kEtherealForce = 10
-
-// Delay before you can blink again after a blink
-Blink.kMinEnterEtherealTime = 0.4
 
 local networkVars =
 {
@@ -27,7 +27,7 @@ local networkVars =
 function Blink:OnInitialized()
 
     Ability.OnInitialized(self)
-
+    
     self.secondaryAttacking = false
     self.timeBlinkStarted = 0
     
@@ -49,25 +49,25 @@ function Blink:GetSecondaryAttackRequiresPress()
     return true
 end
 
-function Blink:TriggerBlinkOutEffects(player)
+local function TriggerBlinkOutEffects(self, player)
 
-    // Play particle effect at vanishing position
+    // Play particle effect at vanishing position.
     if not Shared.GetIsRunningPrediction() then
     
         self:TriggerEffects("blink_out", {effecthostcoords = Coords.GetTranslation(player:GetOrigin())})
         
-        if Client and Client.GetLocalPlayer():GetId() == player:GetId() then
-            self:TriggerEffects("blink_out_local", {effecthostcoords = Coords.GetTranslation(player:GetOrigin())})
+        if Client and player:GetIsLocalPlayer() then
+            self:TriggerEffects("blink_out_local", { effecthostcoords = Coords.GetTranslation(player:GetOrigin()) })
         end
         
     end
-
+    
 end
 
-function Blink:TriggerBlinkInEffects(player)
+local function TriggerBlinkInEffects(self, player)
 
     if not Shared.GetIsRunningPrediction() then
-        self:TriggerEffects("blink_in", {effecthostcoords = Coords.GetTranslation(player:GetOrigin())})
+        self:TriggerEffects("blink_in", { effecthostcoords = Coords.GetTranslation(player:GetOrigin()) })
     end
     
 end
@@ -100,7 +100,7 @@ function Blink:OnSecondaryAttack(player)
     if not player.etherealStartTime or minTimePassed and hasEnoughEnergy and self:GetBlinkAllowed() then
     
         // Enter "ether" fast movement mode, but don't keep going ethereal when button still held down after
-        // running out of energy
+        // running out of energy.
         if not self.secondaryAttacking then
         
             self:SetEthereal(player, true)
@@ -136,21 +136,23 @@ end
 
 function Blink:SetEthereal(player, state)
 
-    // Enter or leave invulnerable invisible fast-moving mode
+    // Enter or leave invulnerable invisible fast-moving mode.
     if player.ethereal ~= state then
     
         if state then
-
+        
             player.etherealStartTime = Shared.GetTime()
-            self:TriggerBlinkOutEffects(player)
+            TriggerBlinkOutEffects(self, player)
             player:AddHealth(kHealthOnBlink)
             
             local newVelocity = player:GetViewCoords().zAxis * kEtherealForce * player:GetMovementSpeedModifier() + player:GetVelocity()
             player:SetVelocity(newVelocity)
             
         else
-            self:TriggerBlinkInEffects(player)     
-            player.etherealEndTime = Shared.GetTime() 
+        
+            TriggerBlinkInEffects(self, player)
+            player.etherealEndTime = Shared.GetTime()
+            
         end
         
         player.ethereal = state
@@ -160,15 +162,13 @@ function Blink:SetEthereal(player, state)
         
         // Give player initial velocity in direction we're pressing, or forward if not pressing anything.
         if player.ethereal then
-            
+        
             // Deduct blink start energy amount.
             player:DeductAbilityEnergy(kStartBlinkEnergyCost)
             player:TriggerBlink()
-        
+            
         else
-            
             player:OnBlinkEnd()
-            
         end
         
     end
@@ -179,11 +179,11 @@ function Blink:ProcessMoveOnWeapon(player, input)
  
     if self:GetIsActive() and player.ethereal then
     
-        // Decrease energy while in blink mode
-        // Don't deduct energy for blink for a short time to make sure that when we blink
-        // we always get at least a short blink out of it
-        if Shared.GetTime() > (self.timeBlinkStarted + .08) then
-
+        // Decrease energy while in blink mode.
+        // Don't deduct energy for blink for a short time to make sure that when we blink,
+        // we always get at least a short blink out of it.
+        if Shared.GetTime() > (self.timeBlinkStarted + 0.08) then
+        
             local energyCost = input.time * kBlinkEnergyCost
             player:DeductAbilityEnergy(energyCost)
             
@@ -191,7 +191,7 @@ function Blink:ProcessMoveOnWeapon(player, input)
         
     end
     
-    // End blink mode if out of energy
+    // End blink mode if out of energy.
     if player:GetEnergy() == 0 and player.ethereal then
     
         self:SetEthereal(player, false)

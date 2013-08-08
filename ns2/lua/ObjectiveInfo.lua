@@ -84,19 +84,19 @@ if Server then
     function ObjectiveInfo:OnUpdate(deltaTime)
     
         PROFILE("ObjectiveInfo:Update")
-    
+        
         Entity.OnUpdate(self, deltaTime)
-
+        
         local owner = self:GetOwner()
         assert(owner)
-         
-        self.inCombat = owner:GetIsAlive() and ( owner:GetIsInCombat() or owner:GetRecentHealthChanged() )
-        self.techId = owner:GetTechId() 
+        
+        self.inCombat = owner:GetIsAlive() and owner:GetIsInCombat()
+        self.techId = owner:GetTechId()
         self.healthScalar = owner:GetHealthScalar()
         self.locationId = owner:GetLocationId()
         
     end
-
+    
 end
 
 Shared.LinkClassToMap( "ObjectiveInfo", ObjectiveInfo.kMapName, networkVars)

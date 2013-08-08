@@ -279,21 +279,19 @@ function ARC:PerformActivation(techId, position, normal, commander)
 end
 
 function ARC:GetActivationTechAllowed(techId)
-    
+
     if techId == kTechId.ARCDeploy then
         return self.deployMode == ARC.kDeployMode.Undeployed
     elseif techId == kTechId.Move then
         return self.deployMode == ARC.kDeployMode.Undeployed
     elseif techId == kTechId.ARCUndeploy then
         return self.deployMode == ARC.kDeployMode.Deployed
-    elseif techId == kTechId.Attack then
-        return self.deployMode == ARC.kDeployMode.Deployed
     elseif techId == kTechId.Stop then
         return self.mode == ARC.kMode.Moving or self.mode == ARC.kMode.Targeting
     end
     
     return true
-
+    
 end
 
 function ARC:GetTechButtons(techId)
@@ -302,12 +300,12 @@ function ARC:GetTechButtons(techId)
     
         if self:GetInAttackMode() then
         
-            return  { kTechId.Attack, kTechId.Stop, kTechId.Move, kTechId.None,
+            return  { kTechId.Stop, kTechId.Move, kTechId.None, kTechId.None,
                       kTechId.ARCUndeploy, kTechId.None, kTechId.None, kTechId.None }
         
         else
         
-            return  { kTechId.Attack, kTechId.Stop, kTechId.Move, kTechId.None,
+            return  { kTechId.Stop, kTechId.Move, kTechId.None, kTechId.None,
                       kTechId.ARCDeploy, kTechId.None, kTechId.None, kTechId.None }
         
         end

@@ -156,6 +156,9 @@ Script.Load("lua/Weapons/Marine/LayMines.lua")
 Script.Load("lua/Weapons/Marine/Welder.lua")
 Script.Load("lua/Jetpack.lua")
 
+// Holiday 2012
+Script.Load("lua/Weapons/SnowBallThrower.lua")
+
 Script.Load("lua/PowerPoint.lua")
 Script.Load("lua/SentryBattery.lua")
 Script.Load("lua/NS2Utility.lua")

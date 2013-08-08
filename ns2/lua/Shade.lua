@@ -64,7 +64,7 @@ Shade.kAnimationGraph = PrecacheAsset("models/alien/shade/shade.animation_graph"
 local kCloakTriggered = PrecacheAsset("sound/NS2.fev/alien/structures/shade/cloak_triggered")
 local kCloakTriggered2D = PrecacheAsset("sound/NS2.fev/alien/structures/shade/cloak_triggered_2D")
 
-Shade.kCloakRadius = 20
+Shade.kCloakRadius = 14
 
 Shade.kCloakUpdateRate = 0.5
 

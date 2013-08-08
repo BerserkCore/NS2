@@ -2058,8 +2058,6 @@ function Player:OnInitLocalClient()
     // Set commander geometry visible
     Client.SetGroupIsVisible(kCommanderInvisibleGroupName, true)
     
-    Client.SetEnableFog(true)
-    
     local loopingIdleSound = self:GetIdleSoundName()
     if loopingIdleSound then
         

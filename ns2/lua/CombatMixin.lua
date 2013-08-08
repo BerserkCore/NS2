@@ -14,7 +14,7 @@ CombatMixin = { }
 CombatMixin.type = "Combat"
 
 // after X seconds of no "combat action" the entity is flagged as not in combat
-local kCombatTimeOut = 1.5
+local kCombatTimeOut = 3
 
 local kDamageCameraShakeAmount = 0.10
 local kDamageCameraShakeSpeed = 5
@@ -29,7 +29,6 @@ CombatMixin.networkVars =
 {
     inCombat = "boolean",
     lastTakenDamageTime = "time",
-    recentHealthChanged = "boolean",
     lastTakenDamageOrigin = "private position(by 0.1)",
     lastTakenDamageAmount = "private integer (0 to 8191)",
     lastTargetId = "private entityid"
@@ -44,7 +43,6 @@ function CombatMixin:__initmixin()
     self.lastTargetId = Entity.invalidId
     self.lastTakenDamageOrigin = Vector()
     self.lastTakenDamageAmount = 0
-    self.recentHealthChanged = false
     self.timeLastHealthChange = 0
     
 end
@@ -74,9 +72,9 @@ local function SharedUpdate(self, deltaTime)
     
     if Server then
     
-        local inCombat = (self.timeLastDamageDealt + kCombatTimeOut > Shared.GetTime()) or (self.lastTakenDamageTime + kCombatTimeOut > Shared.GetTime())    
+        local inCombat = (self.timeLastDamageDealt + kCombatTimeOut > Shared.GetTime()) or (self.lastTakenDamageTime + kCombatTimeOut > Shared.GetTime())
         if inCombat ~= self.inCombat then
-
+        
             self.inCombat = inCombat
             
             if inCombat and self.OnEnterCombat then
@@ -85,12 +83,10 @@ local function SharedUpdate(self, deltaTime)
             
             if not inCombat and self.OnLeaveCombat then
                 self:OnLeaveCombat()
-            end   
+            end
             
         end
         
-        self.recentHealthChanged = self.timeLastHealthChange + kCombatTimeOut > Shared.GetTime()
-    
     end
     
     // Special case for client side player combat effects.
@@ -115,10 +111,6 @@ local function SharedUpdate(self, deltaTime)
         
     end
     
-end
-
-function CombatMixin:GetRecentHealthChanged()
-    return self.recentHealthChanged
 end
 
 function CombatMixin:OnDamageDone(doer, target)

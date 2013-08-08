@@ -27,45 +27,47 @@ end
 local function SetNextText(self)
 
     self.currentTextIndex = (self.currentTextIndex % #self.tweets) + 1
-
+    
     if not self.tweets[self.currentTextIndex]["retweet_count"] == 0 then
+    
         self.retweetCount = self.retweetcount + 1
-
+        
         if self.retweetCount <= #self.tweets then
             SetNextText(self)
         else
-            self.animState = 'stop'
+            self.animState = "stop"
         end
-
+        
     else
-
+    
         self.currentIndex = 0
         self.currentText = self.tweets[self.currentTextIndex]["text"]
         self.currentText = ConvertHtmlCodes(self.currentText)
         self.retweetCount = 0
-
+        
     end
-
-    self:RenderText( self.currentText )
-
+    
+    self:RenderText(self.currentText)
+    
 end
 
 function Ticker:Initialize()
 
     MenuElement.Initialize(self)
-
+    
     self.nextLetter = 0.100;
-
+    
     self.animState = 'in'
     self.textAlpha = 0.0
     self.nextTime = 4
     self.currentTextIndex = 0
-
-    local params = {
+    
+    local params =
+    {
         user_id = "NS2",
         screen_name = "NS2"
     }
-
+    
     Shared.SendHTTPRequest("https://api.twitter.com/1/statuses/user_timeline.json", "GET", params, function(response)
         local obj, pos, err = json.decode(response, 1, nil)
         
@@ -74,18 +76,20 @@ function Ticker:Initialize()
         end
         
         self.tweets = obj
-
+        
         SetNextText(self)
-
-        local function OpenTweet() 
+        
+        local function OpenTweet()
+        
             local id = self.tweets[self.currentTextIndex]["id_str"]
-            Client.ShowWebpage("https://twitter.com/NS2/status/" .. id)
+            SetMenuWebView("https://twitter.com/NS2/status/" .. id, Vector(Client.GetScreenWidth() * 0.8, Client.GetScreenHeight() * 0.8, 0))
+            
         end
-
+        
         self:AddEventCallbacks({ OnClick = OpenTweet })
         
     end)
-
+    
 end
 
 local function UpdateTextAlpha(self)

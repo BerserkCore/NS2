@@ -388,7 +388,8 @@ if Server then
 
         end
 
-        Shared.SendHTTPRequest(kStatisticsURL .. url, "POST", params)
+		//Print("Posting kill stat to "..kStatisticsURL)
+        Shared.SendHTTPRequest(kStatisticsURL .. url, "POST", params, function(data) Shared.Message(data) end)
         
     end
 
@@ -397,14 +398,7 @@ if Server then
     // Called whenever an entity is killed. Killer could be the same as targetEntity. Called before entity is destroyed.
     function NS2Gamerules:OnEntityKilled(targetEntity, attacker, doer, point, direction)
     
-        // Limit how often we send up kill stats.
-        self.totalKills = (self.totalKills and self.totalKills + 1) or 1
-        if self.totalKills >= 5 then
-        
-            self.totalKills = 0
-            PostKillStat(targetEntity, attacker, doer)
-            
-        end
+        PostKillStat(targetEntity, attacker, doer)
         
         // Also output to log if we're recording the game for playback in the game visualizer
         PostGameViz(string.format("%s killed %s", SafeClassName(doer), SafeClassName(targetEntity)), targetEntity)

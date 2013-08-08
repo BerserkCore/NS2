@@ -1,0 +1,37 @@
+<shader>
+
+	<inputs>
+		<input name="scanMap" type="texture" address="wrap" srgb="true"/>
+		<input name="timeDetected" type="float">1.0</input>
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">false</param>
+
+	</params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			const float3 tint = float3(2, 5, 5);
+			const float animationDuration = 2;
+			
+			float animationTime = time - timeDetected;
+			float alpha = 1 - clamp( (animationTime) / animationDuration, 0, 1);
+		
+			float3 scan = tex2D( scanMap, input.wsPosition.y * float2(8, 8) + float2(animationTime * 1, animationTime * -1) ).rgb;
+
+			material.emissive = scan * alpha * 12;
+			
+		}
+	]]>
+	</code>
+
+</shader>
