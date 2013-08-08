@@ -622,10 +622,6 @@ function Fade:OnBlinkEnd()
     
 end
 
-function Fade:GetCanCloakOverride()
-    return not self:GetIsShadowStepping()
-end
-
 function Fade:PreUpdateMove(input, runningPrediction)
     self.shadowStepping = self.timeShadowStep + kShadowStepDuration > Shared.GetTime()
 end

@@ -224,6 +224,7 @@ function GUIInsight_TopBar:Initialize()
     alienMinusButton:SetAnchor(GUIItem.Middle, GUIItem.Center)
         
     self:SetTeams(InsightUI_GetTeam1Name(), InsightUI_GetTeam2Name())
+    self:SetScore(InsightUI_GetTeam1Score(), InsightUI_GetTeam2Score())
         
 end
 

@@ -461,6 +461,10 @@ function Drifter:OnUpdate(deltaTime)
     
 end
 
+function Drifter:GetCanCloakOverride()
+    return not self:GetHasOrder()
+end
+
 if Client then
 
     function Drifter:GetIsMoving()

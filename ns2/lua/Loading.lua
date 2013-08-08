@@ -41,6 +41,8 @@ local tipText = nil
 local tipTextBg = nil
 local tipNextHint = nil
 local tipNextHintBg = nil
+local modsBg = nil
+local modsText = nil
 
 local tipIndex = 0
 local timeOfLastTip = nil
@@ -67,7 +69,53 @@ local function GetMapName()
     return mapName
 end
 
+local function UpdateServerInformation()
+
+    local numMods = Client.GetNumMods()
+    
+    local msg1 = ""
+    local msg2 = "SERVER MODIFICATIONS:\n"
+        
+    if Client.GetConnectedServerIsSecure() then
+        msg1 = "NOTE: THIS SERVER IS VAC SECURED\nCHEATING WILL RESULT IN A PERMANENT BAN"  
+    end
+
+    local numMountedMods = 0
+    
+    if numMods > 0 then
+        for i = 1,numMods do
+            if Client.GetIsModMounted(i) then
+                    
+                numMountedMods = numMountedMods + 1
+                local title = Client.GetModTitle(i)
+                local state  = Client.GetModState(i)
+                msg2 = msg2 .. string.format("\n      %s", title)
+                
+            end
+        end
+    end
+    
+    local text = ""
+    
+    if msg1 ~= "" then
+        text = msg1 .. "\n\n"
+    end
+    if numMountedMods > 0 then
+        text = text .. msg2
+    end
+    
+    if text == "" then
+        modsText:SetIsVisible(false)
+    else
+        modsText:SetIsVisible(true)
+        modsText:SetText(text)
+    end    
+
+end
+
 function OnUpdateRender()
+
+    UpdateServerInformation()
     
     local spinnerSpeed  = 2
     local dotsSpeed     = 0.5
@@ -375,6 +423,14 @@ function OnLoadComplete()
     
     // Translate string to account for findings
     tipNextHint:SetText(" " .. SubstituteBindStrings(Locale.ResolveString("LOADING_TIP_NEXT")) .. " " )
+    
+    // Create a box to show the mods that the server is running
+    modsText = GUI.CreateItem()
+    modsText:SetOptionFlag(GUIItem.ManageRender)
+    modsText:SetPosition(Vector(Client.GetScreenWidth() * 0.15, Client.GetScreenHeight() * 0.18, 0))
+    modsText:SetFontName("fonts/AgencyFB_small.fnt")
+    modsText:SetLayer(3)  
+    modsText:SetIsVisible( false )
     
 end
 

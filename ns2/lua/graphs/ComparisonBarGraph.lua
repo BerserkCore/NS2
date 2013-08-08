@@ -132,7 +132,7 @@ end
 function ComparisonBarGraph:SetSize(s)
     self.graphSize = s
     self.graphBackground:SetSize(self.graphSize)
-    refreshBar()
+    self:refreshBar()
 end
 function ComparisonBarGraph:SetTitle(t)
     self.titleItem:SetText(t)

@@ -35,7 +35,8 @@ end
 
 function Team:OnEntityKilled(targetEntity, killer, doer, point, direction)
 
-    if killer and targetEntity and GetAreEnemies(killer, targetEntity) and killer:isa("Player") and targetEntity:isa("Player") then
+    local killerOnTeam = HasMixin(killer, "Team") and killer:GetTeamNumber() == self.teamNumber
+    if killer and targetEntity and killerOnTeam and GetAreEnemies(killer, targetEntity) and killer:isa("Player") and targetEntity:isa("Player") then
         self:AddKills(1)
     end
     

@@ -318,7 +318,7 @@ local function Ban(client, playerId, duration, ...)
         
     elseif playerIdNum and playerIdNum > 0 then
     
-        table.insert(bannedPlayers, { name = "Unknown", id = playerIdNum, reason = StringConcatArgs(...), time = bannedUntilTime })
+        table.insert(bannedPlayers, { name = "Unknown", id = playerIdNum, reason = StringConcatArgs(...) or "None provided", time = bannedUntilTime })
         SaveBannedPlayers()
         ServerAdminPrint(client, "Player with SteamId " .. playerIdNum .. " has been banned")
         

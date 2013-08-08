@@ -43,49 +43,50 @@ local kTechPointsMessage =
     eggCount = "integer"
 }
 
-function BuildTechPointsMessage(techPoint, commandStructures, powerNodes, eggs)
+function BuildTechPointsMessage(techPoint, powerNodes, eggs)
 
     local t = {}
     local techPointLocation = techPoint:GetLocationId()
     t.entityIndex = techPoint:GetId()
     t.location = techPointLocation
-    t.teamNumber = 0
-
-    local eggCount = 0
-    for _, egg in ientitylist(eggs) do
-        if egg:GetLocationId() == techPointLocation and egg:GetIsAlive() and egg:GetIsEmpty() then
-            eggCount = eggCount + 1
-        end
-    end
-    t.eggCount = eggCount
+    t.teamNumber = techPoint.occupiedTeam
     
-    for _, powerNode in ientitylist(powerNodes) do
-        if powerNode:GetLocationId() == techPointLocation then
-            if powerNode:GetIsSocketed() then
-                t.powerNodeFraction = powerNode:GetHealthScalar()
-            else
-                t.powerNodeFraction = -1
-            end
-            break
-        end
-    end
+    local structure = Shared.GetEntity(techPoint.attachedId)
+    
+    if structure then
 
-    for _, structure in ientitylist(commandStructures) do
-        local structureLocation = structure:GetLocationId()
-        if techPointLocation == structureLocation then
-            t.teamNumber        = structure:GetTeamNumber()
-            t.techId            = structure:GetTechId()
-            if structure:GetIsAlive() then
-                t.builtFraction = structure:GetBuiltFraction()
-                t.healthFraction= structure:GetHealthScalar()
-            else
-                t.builtFraction = -1
-                t.healthFraction= -1
+        local eggCount = 0
+        for _, egg in ientitylist(eggs) do
+            if egg:GetLocationId() == techPointLocation and egg:GetIsAlive() and egg:GetIsEmpty() then
+                eggCount = eggCount + 1
             end
-            return t
         end
-    end
+        t.eggCount = eggCount
+        
+        for _, powerNode in ientitylist(powerNodes) do
+            if powerNode:GetLocationId() == techPointLocation then
+                if powerNode:GetIsSocketed() then
+                    t.powerNodeFraction = powerNode:GetHealthScalar()
+                else
+                    t.powerNodeFraction = -1
+                end
+                break
+            end
+        end
 
+        t.teamNumber = structure:GetTeamNumber()
+        t.techId     = structure:GetTechId()
+        if structure:GetIsAlive() then
+            t.builtFraction = structure:GetBuiltFraction()
+            t.healthFraction= structure:GetHealthScalar()
+        else
+            t.builtFraction = -1
+            t.healthFraction= -1
+        end
+        return t
+
+    end
+    
     return t
 
 end

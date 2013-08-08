@@ -697,13 +697,12 @@ if Server then
             local spectators = Shared.GetEntitiesWithClassname("Spectator")
             if spectators:GetSize() > 0 then
                 
-                local commandStructures = Shared.GetEntitiesWithClassname("CommandStructure")
                 local powerNodes = Shared.GetEntitiesWithClassname("PowerPoint")
                 local eggs = Shared.GetEntitiesWithClassname("Egg")
                 
                 for _, techpoint in ientitylist(Shared.GetEntitiesWithClassname("TechPoint")) do
                 
-                    local message = BuildTechPointsMessage(techpoint, commandStructures, powerNodes, eggs)
+                    local message = BuildTechPointsMessage(techpoint, powerNodes, eggs)
                     for _, spectator in ientitylist(spectators) do
                         Server.SendNetworkMessage(spectator, "TechPoints", message, false)
                     end
@@ -1238,7 +1237,7 @@ if Server then
                 
             end
 
-			return success, newPlayer
+            return success, newPlayer
             
         end
         

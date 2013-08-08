@@ -44,6 +44,8 @@ AlienCommander.kHealTarget = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_
 AlienCommander.kSpendResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_nanites")
 AlienCommander.kSpendTeamResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_metal")
 
+AlienCommander.kBoneWallSpawnSound = PrecacheAsset("sound/NS2.fev/alien/common/infestation_spikes")
+
 local kHoverSound = PrecacheAsset("sound/NS2.fev/alien/commander/hover")
 
 if Client then
@@ -196,6 +198,10 @@ if Server then
             local location = GetLocationForPoint(position)
             local locationName = location and location:GetName() or ""
             self:TriggerNotification(Shared.GetStringIndex(locationName), techId)
+            
+            if techId == kTechId.BoneWall then
+                Shared.PlayPrivateSound(self, AlienCommander.kBoneWallSpawnSound, nil, 1.0, self:GetOrigin())
+            end
             
         end
         

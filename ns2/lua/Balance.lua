@@ -604,6 +604,7 @@ kArmoryInitialEnergy = 100  kArmoryMaxEnergy = 150
 
 kAmmoPackCost = 1
 kMedPackCost = 1
+kMedpackCooldown = 0.3
 
 kHiveInitialEnergy = 50  kHiveMaxEnergy = 200
 kMatureHiveMaxEnergy = 250

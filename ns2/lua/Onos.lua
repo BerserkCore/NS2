@@ -259,10 +259,6 @@ function Onos:EndCharge()
 
 end
 
-function Onos:GetCanCloakOverride()
-    return not self:GetIsCharging()
-end
-
 function Onos:PreUpdateMove(input, runningPrediction)
     // determines how manuverable the onos is. When not charging, manuverability is 1. 
     // when charging it goes towards zero as the speed increased. At zero, you can't strafe or change

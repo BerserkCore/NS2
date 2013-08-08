@@ -84,25 +84,12 @@ function LineGraph:StartLine(index, lineColor)
     self.colors[index] = lineColor
 
 end
+function LineGraph:SetPoints(index, points, noRefresh, preserveBounds)
 
-function LineGraph:AddPoint(index, point, noRefresh, preserveBounds)
-
-    if not preserveBounds then
-        self.min.x = math.min(self.min.x, point.x)
-        self.max.x = math.max(self.max.x, point.x)
-        self.min.y = math.min(self.min.y, point.y)
-        self.max.y = math.max(self.max.y, point.y)
-        self:adjustBoundsToGridSpacing()
-        if not noRefresh then
-            self:refreshGrid()
-        end
-    end    
-    table.insert(self.lines[index], point)
-    if not noRefresh then
-        self:refreshLines()
-    end
+    self.lines[index] = points
 
 end
+
 function LineGraph:GiveParent(p)
     p:AddChild(self.graphBackground)
 end

@@ -83,7 +83,11 @@ function CloakableMixin:GetIsCloaked()
 end
 
 function CloakableMixin:TriggerCloak()
-    self.timeCloaked = Shared.GetTime() + CloakableMixin.kTriggerCloakDuration
+
+    if self:GetCanCloak() then
+        self.timeCloaked = Shared.GetTime() + CloakableMixin.kTriggerCloakDuration
+    end
+    
 end
 
 function CloakableMixin:TriggerUncloak()
@@ -105,7 +109,7 @@ local function UpdateDesiredCloakFraction(self, deltaTime)
             
             // Uncloaking takes precedence over cloaking
             if Shared.GetTime() < self.timeCloaked or (self.GetIsCamouflaged and self:GetIsCamouflaged()) then        
-                self.cloakingDesired = true            
+                self.cloakingDesired = true
             end
             
         end    

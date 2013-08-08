@@ -28,9 +28,9 @@
 		{
 		
 
-			float4 bab1 = tex2D(albedoMap, input.texCoord*8*scaleFactor + float2( time * .15, time * 1.8)+ (DecodeNormal( tex2D(refractMap, input.texCoord*14 + float2(time * 3, time * 0.1)) ).xy * .15 ));
+			float4 bab1 = tex2D(albedoMap, input.texCoord*16 + float2( time * .15, time * 1.8)+ (DecodeNormal( tex2D(refractMap, input.texCoord*14 + float2(time * 3, time * 0.1)) ).xy * .15 ));
 
-			float4 bab2 = tex2D(albedoMap, input.texCoord*6*scaleFactor + float2( time * -.15, time * 1.5)+ (DecodeNormal( tex2D(refractMap, input.texCoord*7 + float2(time * -5, time * 1)) ).xy * .1 ));
+			float4 bab2 = tex2D(albedoMap, input.texCoord*12 + float2( time * -.15, time * 1.5)+ (DecodeNormal( tex2D(refractMap, input.texCoord*7 + float2(time * -5, time * 1)) ).xy * .1 ));
 			float fresnel =  pow(max(-input.vsNormal.z, 0), 1);
 		
 			material.albedo 	= bab1.rgb + bab2.rgb;

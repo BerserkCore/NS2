@@ -234,9 +234,7 @@ function ServerEntry:SetServerData(serverData)
      
         self.serverName:SetText(serverData.name)
         
-        if serverData.modded then
-            self.serverName:SetColor(kYellow)
-        elseif serverData.rookieFriendly then
+        if serverData.rookieFriendly then
             self.serverName:SetColor(kGreen)
         else
             self.serverName:SetColor(kWhite)

@@ -115,6 +115,14 @@ function InsightUI_GetTeam2Name()
     return team2Name
 end
 
+function InsightUI_GetTeam1Score()
+    return team1Score
+end
+
+function InsightUI_GetTeam2Score()
+    return team2Score
+end
+
 local function HandleTeamsMessage(params)
 
     if params[1] == "teams" then
@@ -210,13 +218,113 @@ local function OnConsolePenColor(r_or_ColorInt, g, b, a)
 
 end
 
-//Client.HookNetworkMessage("Chat", OnMessageChat)
-Event.Hook( "Console_teams", OnConsoleTeams )
-Event.Hook( "Console_team1", OnConsoleTeam1 )
-Event.Hook( "Console_team2", OnConsoleTeam2 )
-Event.Hook( "Console_scores", OnConsoleScores )
-Event.Hook( "Console_score1", OnConsoleScore1 )
-Event.Hook( "Console_score2", OnConsoleScore2 )
-Event.Hook( "Console_johnmadden", OnConsolePenColor )
-Event.Hook( "Console_jm", OnConsolePenColor )
-Event.Hook( "Console_pen", OnConsolePenColor )
+Event.Hook("Console_teams", OnConsoleTeams )
+Event.Hook("Console_team1", OnConsoleTeam1 )
+Event.Hook("Console_team2", OnConsoleTeam2 )
+Event.Hook("Console_scores", OnConsoleScores )
+Event.Hook("Console_score1", OnConsoleScore1 )
+Event.Hook("Console_score2", OnConsoleScore2 )
+Event.Hook("Console_johnmadden", OnConsolePenColor )
+Event.Hook("Console_jm", OnConsolePenColor )
+Event.Hook("Console_pen", OnConsolePenColor )
+
+local maxRTs = 1
+local maxRes = 1
+local maxKills = 1
+local teams = { }
+
+function Insight_GetTeamData(teamIndex)
+    return teams[teamIndex]
+end
+
+function Insight_GetMaxRTs()
+    return maxRTs
+end
+
+function Insight_GetMaxRes()
+    return maxRes
+end
+
+function Insight_GetMaxKills()
+    return maxKills
+end
+
+local function InitializeTeam(teamIndex)
+
+    local startTime = PlayerUI_GetGameStartTime()
+    local teamInfo = GetEntitiesForTeam("TeamInfo", teamIndex)
+    local currentRTs = teamInfo[1]:GetNumResourceTowers()
+    local currentTotalTeamRes = teamInfo[1]:GetTotalTeamResources()
+    local currentKills = teamInfo[1]:GetKills()
+    teams[teamIndex] = {
+    RTs = currentRTs, RTPoints = {Vector(startTime, currentRTs, 0)}, 
+    TotalTeamRes = currentTotalTeamRes, TeamResPoints = {Vector(startTime, currentTotalTeamRes, 0)}, 
+    Kills = currentKills, KillPoints = {Vector(startTime, currentKills, 0)}}
+    
+end
+
+local function UpdateTeamGraphs(time, teamIndex)
+
+    local teamInfo = GetEntitiesForTeam("TeamInfo", teamIndex)
+    local team = teams[teamIndex]
+    
+    local currentRTs = teamInfo[1]:GetNumResourceTowers()
+    local previousRTs = team.RTs
+    if currentRTs ~= previousRTs then
+    
+        maxRTs = math.max(maxRTs, currentRTs)
+        table.insert(team.RTPoints, Vector(time, previousRTs, 0))
+        table.insert(team.RTPoints, Vector(time, currentRTs, 0))
+        team.RTs = currentRTs
+    
+    end
+    
+    local currentTotalTeamRes = teamInfo[1]:GetTotalTeamResources()
+    local previousTotalTeamRes = team.TotalTeamRes
+    if currentTotalTeamRes ~= previousTotalTeamRes then
+    
+        maxRes = math.max(maxRes, currentTotalTeamRes)
+        table.insert(team.TeamResPoints, Vector(time, currentTotalTeamRes, 0))
+        team.TotalTeamRes = currentTotalTeamRes
+    
+    end
+    
+    local currentKills = teamInfo[1]:GetKills()
+    local previousKills = team.Kills
+    if currentKills ~= previousKills then
+    
+        maxKills = math.max(maxKills, currentKills)
+        table.insert(team.KillPoints, Vector(time, maxKills, 0))
+        team.Kills = currentKills
+    
+    end
+    
+end
+
+local prevGameStartTime = -1
+local function OnUpdateClient()
+
+    // Gather Graph information
+    if PlayerUI_GetHasGameStarted() and PlayerUI_IsASpectator() and PlayerUI_GetTeamNumber() == kSpectatorIndex then
+    
+        // Reset graphs if the game just started
+        local startTime = PlayerUI_GetGameStartTime()
+        if prevGameStartTime < PlayerUI_GetGameStartTime() then
+        
+            maxRTs = 0
+            maxRes = 0
+            maxKills = 0
+            InitializeTeam(kTeam1Index)
+            InitializeTeam(kTeam2Index)
+            prevGameStartTime = PlayerUI_GetGameStartTime()
+            
+        end
+        
+        local time = Shared.GetTime()
+        UpdateTeamGraphs(time, kTeam1Index)
+        UpdateTeamGraphs(time, kTeam2Index)
+        
+    end
+    
+end
+Event.Hook("UpdateClient", OnUpdateClient)

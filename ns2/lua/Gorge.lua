@@ -346,10 +346,6 @@ function Gorge:GetAirMoveScalar()
     return 0
 end
 
-function Gorge:GetCanCloakOverride()
-    return not self:GetIsBellySliding()
-end
-
 Gorge.kSlideControl = 1
 
 function Gorge:ModifyVelocity(input, velocity)

@@ -19,11 +19,11 @@ GUIScoreboard.kClickForMouseTextSize = GUIScale(22)
 GUIScoreboard.kClickForMouseText = Locale.ResolveString("SB_CLICK_FOR_MOUSE")
 
 // Shared constants.
-GUIScoreboard.kTeamInfoFontName      = "fonts/AgencyFB_tiny.fnt"
-GUIScoreboard.kPlayerStatsFontName   = "fonts/AgencyFB_tiny.fnt"
-GUIScoreboard.kTeamNameFontName      = "fonts/AgencyFB_small.fnt"
-GUIScoreboard.kGameTimeFontName      = "fonts/AgencyFB_small.fnt"
-GUIScoreboard.kClickForMouseFontName = "fonts/AgencyFB_small.fnt"
+GUIScoreboard.kTeamInfoFontName      = "fonts/Arial_15.fnt"
+GUIScoreboard.kPlayerStatsFontName   = "fonts/Arial_15.fnt"
+GUIScoreboard.kTeamNameFontName      = "fonts/Arial_17.fnt"
+GUIScoreboard.kGameTimeFontName      = "fonts/Arial_17.fnt"
+GUIScoreboard.kClickForMouseFontName = "fonts/Arial_17.fnt"
 
 GUIScoreboard.kLowPingThreshold = 100
 GUIScoreboard.kLowPingColor = Color(0, 1, 0, 1)
@@ -394,7 +394,7 @@ function GUIScoreboard:Update(deltaTime)
         
         local minutes = math.floor(gameTime / 60)
         local seconds = gameTime - minutes * 60
-        local gameTimeText = string.format(Client.GetConnectedServerName() .. " - %d:%02d", minutes, seconds)
+        local gameTimeText = string.format(Client.GetConnectedServerName() .. " | " .. Shared.GetMapName() .. " - %d:%02d", minutes, seconds)
         
         self.gameTime:SetText(gameTimeText)
         

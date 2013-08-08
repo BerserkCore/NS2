@@ -91,6 +91,10 @@ function GUIMainMenu:Initialize()
     self.showWindowAnimation = CreateMenuElement(self.mainWindow, "Font", false)
     self.showWindowAnimation:SetCSSClass("showwindow_hidden")
     
+    if not MainMenu_IsInGame() then
+        self.newsScript = GetGUIManager():CreateGUIScript("menu/GUIMainMenuNews")
+    end
+    
     self.openedWindows = 0
     self.numMods = 0
     
@@ -353,6 +357,14 @@ function GUIMainMenu:Uninitialize()
 
     gMainMenu = nil
     self:DestroyAllWindows()
+    
+    if self.newsScript then
+    
+        GetGUIManager():DestroyGUIScript(self.newsScript)
+        self.newsScript = nil
+        
+    end
+    
     GUIAnimatedScript.Uninitialize(self)
     
 end
@@ -622,10 +634,6 @@ function GUIMainMenu:CreatePasswordPromptWindow()
     
 end
 
-local function GetFiltersAllowCommunityContent(self)
-    return self.filterModded:GetValue() == false
-end
-
 local kMaxPingDesciption = "MAX PING: %s"
 local kTickrateDescription = "PERFORMANCE: %s%%"
 
@@ -640,16 +648,10 @@ local function CreateFilterForm(self)
     
         local value = StringTrim(self:GetValue())
         self.scriptHandle.serverList:SetFilter(1, FilterServerMode(value))
-        self.scriptHandle.filterCustomContentHint:SetIsVisible(GetFiltersAllowCommunityContent(self.scriptHandle))
         
         Client.SetOptionString("filter_gamemode", value)
         
     end)
-    
-    self.filterCustomContentHint = CreateMenuElement(self.filterForm, "Font")
-    self.filterCustomContentHint:SetText(Locale.ResolveString("SERVERBROWSER_SHOWING_MODDED_HINT"))
-    self.filterCustomContentHint:SetCSSClass("filter_custom_content_hint")
-    self.filterCustomContentHint:SetIsVisible(false)
     
     local description = CreateMenuElement(self.filterGameMode, "Font")
     description:SetText("GAME")
@@ -732,20 +734,6 @@ local function CreateFilterForm(self)
     description:SetText("FILTER FULL")
     description:SetCSSClass("filter_description")
     
-    self.filterModded = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER MODDED")
-    self.filterModded:SetCSSClass("filter_modded")
-    self.filterModded:AddSetValueCallback(function(self)
-    
-        self.scriptHandle.serverList:SetFilter(7, FilterModded(self:GetValue()))
-        self.scriptHandle.filterCustomContentHint:SetIsVisible(GetFiltersAllowCommunityContent(self.scriptHandle))
-        Client.SetOptionString("filter_modded", ToString(self.scriptHandle.filterModded:GetValue()))
-        
-    end)
-    
-    local description = CreateMenuElement(self.filterModded, "Font")
-    description:SetText("FILTER MODDED")
-    description:SetCSSClass("filter_description")
-    
     self.filterFavorites = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FAVORITES")
     self.filterFavorites:SetCSSClass("filter_favorites")
     self.filterFavorites:AddSetValueCallback(function(self)
@@ -794,7 +782,6 @@ local function CreateFilterForm(self)
     self.filterHasPlayers:SetValue(Client.GetOptionString("filter_hasplayers", "false"))
     self.filterFull:SetValue(Client.GetOptionString("filter_full", "false"))
     self.filterMaxPing:SetValue(tonumber(Client.GetOptionString("filter_maxping", "1")) or 1)
-    self.filterModded:SetValue(Client.GetOptionString("filter_modded", "false"))
     self.filterRookie:SetValue(Client.GetOptionString("filter_rookie", "false"))
     self.filterFavorites:SetValue(Client.GetOptionString("filter_favorites", "false"))
     self.filterPassworded:SetValue(Client.GetOptionString("filter_passworded", "true"))
@@ -2227,6 +2214,10 @@ function GUIMainMenu:ShowMenu()
     
     self.logo:SetIsVisible(true)
     
+    if self.newsScript then
+        self.newsScript:SetIsVisible(true)
+    end
+    
 end
 
 function GUIMainMenu:HideMenu()
@@ -2253,6 +2244,9 @@ function GUIMainMenu:HideMenu()
     end
     
     self.logo:SetIsVisible(false)
+    if self.newsScript then
+        self.newsScript:SetIsVisible(false)
+    end
     
 end
 

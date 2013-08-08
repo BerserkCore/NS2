@@ -114,7 +114,6 @@ function GUIInsight_TechPoints:Initialize()
     isVisible = true
     
     self.techPointList = {}
-    self.reusebackgrounds = {}
 
 end
 
@@ -122,7 +121,6 @@ function GUIInsight_TechPoints:Uninitialize()
 
     GUI.DestroyItem(self.techPointBackground)
     self.techPointBackground = nil
-    self.reusebackgrounds = {}
 
 end
 
@@ -257,13 +255,10 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
         name:SetText(location)
         name:SetColor(storedValues.TeamColor)
         icon:SetTexturePixelCoordinates(unpack(GetTextureCoords(team, techId)))
-        storedValues.Team = team
+
         background:SetColor(storedValues.TeamColor)
         info:SetColor(kInfoColor)
-        
-        storedValues.eggCount = -1
-        storedValues.Power = -1
-        
+
         -- Flash and alert when team changes
         if team > 0 then        
             
@@ -282,7 +277,20 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
         else
             techPoint.Info2:SetText("-")
             techPoint.Info2:SetColor(kInfoColor) 
+            
+            if storedValues.Team > 0 then
+                local text = string.format("%s Destroyed", location)
+                local icon = {Texture = kIconTexture, TextureCoordinates = GetTextureCoords(storedValues.Team, storedValues.Type), Color = Color(1,1,1,0.5), Size = kIconSize}
+                local alertinfo = {Text = text, Scale = Vector(0.2,0.2,0.2), Color = storedValues.TeamColor, ShadowColor = Color(0,0.5,0.5,0.5)}
+                local position = techPoint.Background:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
+                local alert = GUIInsight_AlertQueue:CreateAlert(position, icon, alertinfo, storedValues.Team)
+                GUIInsight_AlertQueue:AddAlert(alert, Color(1,1,1,1), kDeadColor)
+            end
         end
+        
+        storedValues.eggCount = -1
+        storedValues.Power = -1
+        storedValues.Team = team
         
     end
         
@@ -336,13 +344,6 @@ function GUIInsight_TechPoints:UpdateTechPoint(techPoint, techPointRecord, curre
             
                 infoText = "Destroyed"
                 info:SetColor(kDeadColor)
-
-                local text = string.format("%s Destroyed", location)
-                local icon = {Texture = kIconTexture, TextureCoordinates = GetTextureCoords(team, techId), Color = Color(1,1,1,0.5), Size = kIconSize}
-                local alertinfo = {Text = text, Scale = Vector(0.2,0.2,0.2), Color = storedValues.TeamColor, ShadowColor = Color(0,0.5,0.5,0.5)}
-                local position = techPoint.Background:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
-                local alert = GUIInsight_AlertQueue:CreateAlert(position, icon, alertinfo, team)
-                GUIInsight_AlertQueue:AddAlert(alert, Color(1,1,1,1), kDeadColor)
 
             end
 
@@ -445,13 +446,6 @@ function GUIInsight_TechPoints:SendKeyEvent( key, down )
 end
 
 function GUIInsight_TechPoints:CreateBackground()
-
-    -- Reuse an existing tech point item if there is one.
-    if table.count(self.reusebackgrounds) > 0 then
-        local returnbackground = self.reusebackgrounds[1]
-        table.remove(self.reusebackgrounds, 1)
-        return returnbackground
-    end
 
     -- Create background.
     local background = GUIManager:CreateGraphicItem()
