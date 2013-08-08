@@ -112,6 +112,9 @@ PhysicsMask = enum
     // The same as commander select mask, minus player entities and structures
     CommanderBuild = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CommanderUnitGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.PathingGroup),
     
+    // same as command build, minus CommanderPropsGroup (static props which set alpha to 0), otherwise cysts can be created outside of the map
+    CystBuild = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderUnitGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.PathingGroup),
+    
     // Dropped weapons don't collide with the player controller
     DroppedWeaponFilter = CreateMaskIncludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PathingGroup),
     

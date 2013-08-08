@@ -180,6 +180,8 @@ local function LoadStaticProp(className, groupName, values)
     if values.model == "" then
         return
     end
+    
+    local physicsModel
 
     local coords = values.angles:GetCoords(values.origin)
     
@@ -196,7 +198,7 @@ local function LoadStaticProp(className, groupName, values)
     if values.collidable ~= false then
     
         // Create the physical representation of the prop.
-        local physicsModel = Shared.CreatePhysicsModel(values.model, false, coords, nil) 
+        physicsModel = Shared.CreatePhysicsModel(values.model, false, coords, nil) 
         physicsModel:SetPhysicsType(CollisionObject.Static)
     
         // Make it not block selection and structure placement (GetCommanderPickTarget)

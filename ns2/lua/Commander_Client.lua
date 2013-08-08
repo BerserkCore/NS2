@@ -899,18 +899,19 @@ end
 
 local function UpdateGhostStructureVisuals(self)
 
+    local coords = Coords(GetCommanderGhostStructureCoords())
+    local validCoords = coords:GetIsFinite()
+    
     local commSpecifyingOrientation = GetCommanderGhostStructureSpecifyingOrientation()
     
     local sentryRangeModel = ClientResources.GetResource("CommSentryRange")
-    sentryRangeModel:SetIsVisible(self.currentTechId == kTechId.Sentry and commSpecifyingOrientation)
-    ClientResources.GetResource("CommSentryBatteryLine"):SetIsVisible(self.currentTechId == kTechId.SentryBattery)
-    
-    local coords = GetCommanderGhostStructureCoords()
+    sentryRangeModel:SetIsVisible(validCoords and self.currentTechId == kTechId.Sentry and commSpecifyingOrientation)
+    ClientResources.GetResource("CommSentryBatteryLine"):SetIsVisible(validCoords and self.currentTechId == kTechId.SentryBattery)
     
     local displayOrientation = GetCommanderGhostStructureValid() and commSpecifyingOrientation
     local orientationModel = ClientResources.GetResource("CommSentryOrientation")
-    orientationModel:SetIsVisible(displayOrientation)
-    if displayOrientation then
+    orientationModel:SetIsVisible(validCoords and displayOrientation)
+    if validCoords and displayOrientation then
     
         coords:Scale(Commander.kSentryArcScale)
         coords.zAxis = -coords.zAxis
@@ -918,12 +919,12 @@ local function UpdateGhostStructureVisuals(self)
         
     end
     
-    if self.currentTechId == kTechId.Sentry then
+    if validCoords and self.currentTechId == kTechId.Sentry then
     
         coords.zAxis = coords.zAxis * Sentry.kRange
         sentryRangeModel:SetCoords(coords)
         
-    elseif self.currentTechId == kTechId.SentryBattery then
+    elseif validCoords and self.currentTechId == kTechId.SentryBattery then
         UpdateSentryBatteryLine(self, coords.origin)
     end
     

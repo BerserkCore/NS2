@@ -759,9 +759,45 @@ local function UpdateFogAreaModifiers(fromOrigin)
     
 end
 
+local gShowDebugTrace = false
+function SetShowDebugTrace(value)
+    gShowDebugTrace = value
+end
+
+local kDebugTraceGUISize = Vector(40, 40, 0)
+local function UpdateDebugTrace()
+
+    if not debugTraceGUI then
+    
+        debugTraceGUI = GUI.CreateItem()
+        debugTraceGUI:SetSize(kDebugTraceGUISize)
+        debugTraceGUI:SetAnchor(GUIItem.Middle, GUIItem.Center)
+        debugTraceGUI:SetPosition(-kDebugTraceGUISize * 0.5)
+        
+    end
+
+    debugTraceGUI:SetIsVisible(gShowDebugTrace)
+    if gShowDebugTrace then
+    
+        local player = Client.GetLocalPlayer()
+        if player then
+            
+            local viewCoords = player:GetViewCoords()
+            local normalTrace = Shared.TraceRay(viewCoords.origin, viewCoords.origin + viewCoords.zAxis * 100, CollisionRep.Default, PhysicsMask.CystBuild, EntityFilterAll())
+            
+            local color = normalTrace.fraction == 1 and Color(1, 0, 0, 0.5) or Color(1,1,1,0.5)
+            debugTraceGUI:SetColor(color)
+        
+        end
+    
+    end
+
+end
+
 /**
  * Called once per frame to setup the camera for rendering the scene.
  */
+
 local function OnUpdateRender()
 
     Infestation_UpdateForPlayer()
@@ -835,6 +871,8 @@ local function OnUpdateRender()
         EquipmentOutline_SetEnabled( false )
         
     end
+    
+    UpdateDebugTrace()
     
 end
 

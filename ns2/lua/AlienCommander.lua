@@ -241,11 +241,11 @@ if Server then
                     
                         for i = 2, #cystPoints do
                         
-                            local normalTrace = Shared.TraceRay(cystPoints[i] + Vector(0, 0.25, 0), cystPoints[i] + Vector(0, -15, 0), CollisionRep.Default, PhysicsMask.CommanderBuild, EntityFilterAll())
+                            local normalTrace = Shared.TraceRay(cystPoints[i] + Vector(0, 0.25, 0), cystPoints[i] + Vector(0, -5, 0), CollisionRep.Default, PhysicsMask.CystBuild, EntityFilterAll())
                             
                             if normalTrace.fraction == 1 then
                             
-                                Shared.Message("Warning: Invalid trace")
+                                Shared.Message(string.format("Warning: Invalid trace at %.2f %.2f %.2f", cystPoints[i].x, cystPoints[i].y, cystPoints[i].z))
                                 normalTrace.normal = Vector(0, 1, 0)
                                 normalTrace.endPoint = cystPoints[i]
                                 

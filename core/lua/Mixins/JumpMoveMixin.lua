@@ -145,12 +145,8 @@ function JumpMoveMixin:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("JumpMoveMixin:OnUpdateAnimationInput")
     local allowJumpAnim = true
-    
-    if self.GetAllowJumpAnimation then
-        allowJumpAnim = self:GetAllowJumpAnimation()
-    end
 
-    if self:GetIsJumping() and (not HasMixin(self, "LadderMove") or not self:GetIsOnLadder()) and allowJumpAnim then
+    if self:GetIsJumping() and (not HasMixin(self, "LadderMove") or not self:GetIsOnLadder()) then
         modelMixin:SetAnimationInput("move", "jump")
     end
     
