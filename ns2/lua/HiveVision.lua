@@ -26,14 +26,14 @@ function HiveVision_Initialize()
     
 end
 
-function HiveVision_Shudown()
+function HiveVision_Shutdown()
 
     Client.DestroyRenderCamera(_camera)
     HiveVision_camera = nil
     
     Client.DestroyScreenEffect(_screenEffect)
     HiveVision_screenEffect = nil
-
+    
 end
 
 /** Enables or disabls the hive vision effect. When the effect is not needed it should 

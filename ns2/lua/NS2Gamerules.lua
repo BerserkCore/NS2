@@ -9,6 +9,7 @@
 
 Script.Load("lua/Gamerules.lua")
 Script.Load("lua/dkjson.lua")
+Script.Load("lua/ServerSponitor.lua")
 
 if Client then
     Script.Load("lua/NS2ConsoleCommands_Client.lua")
@@ -157,6 +158,9 @@ if Server then
 
         // Calls SetGamerules()
         Gamerules.OnCreate(self)
+
+        self.sponitor = ServerSponitor()
+        self.sponitor:Initialize(self)
         
         self.techPointRandomizer = Randomizer()
         self.techPointRandomizer:randomseed(Shared.GetSystemTime())
@@ -164,9 +168,11 @@ if Server then
         // Create team objects
         self.team1 = self:BuildTeam(kTeam1Type)
         self.team1:Initialize(kTeam1Name, kTeam1Index)
+        self.sponitor:ListenToTeam(self.team1)
         
         self.team2 = self:BuildTeam(kTeam2Type)
         self.team2:Initialize(kTeam2Name, kTeam2Index)
+        self.sponitor:ListenToTeam(self.team2)
         
         self.worldTeam = ReadyRoomTeam()
         self.worldTeam:Initialize("World", kTeamReadyRoom)
@@ -334,78 +340,9 @@ if Server then
         end
         
     end
-    
-    local function PostKillStat(targetEntity, attacker, doer)
-
-        if not attacker or not targetEntity or not doer then
-            return
-        end
-        
-        -- Send End Game statistics
-        local url = "/kill" 
-        local attackerOrigin = attacker:GetOrigin()
-        local targetWeapon = "None"
-        local targetOrigin = targetEntity:GetOrigin()
-        
-        if targetEntity.GetActiveWeapon and targetEntity:GetActiveWeapon() then
-            targetWeapon = targetEntity:GetActiveWeapon():GetClassName()
-        end
-
-        local params =
-        {
-            version               = ToString(Shared.GetBuildNumber()),
-            map                   = Shared.GetMapName(),
-            attacker_type         = attacker:GetClassName(),
-            attacker_team         = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType),
-            attacker_weapon       = doer:GetClassName(),
-            attackerx             = string.format("%.2f", attackerOrigin.x),
-            attackery             = string.format("%.2f", attackerOrigin.y),
-            attackerz             = string.format("%.2f", attackerOrigin.z),
-            target_type           = targetEntity:GetClassName(),
-            target_team           = targetEntity:GetTeamType(),
-            target_weapon         = targetWeapon,
-            targetx               = string.format("%.2f", targetOrigin.x),
-            targety               = string.format("%.2f", targetOrigin.y),
-            targetz               = string.format("%.2f", targetOrigin.z),
-            target_lifetime       = string.format("%.2f", Shared.GetTime() - targetEntity:GetCreationTime())
-        }
-
-        if HasMixin(attacker, "Upgradable") then
-            params['attacker_upgrade'] = json.encode( attacker:GetUpgradeListName() )
-        elseif HasMixin(targetEntity, "Upgradable") then
-            params['target_upgrade'] = json.encode( targetEntity:GetUpgradeListName() )
-        end
-
-        if attacker:isa("Marine") then
-
-            params['attacker_weaponlevel'] = attacker:GetWeaponLevel()
-            params['attacker_armorlevel']  = attacker:GetArmorLevel()
-
-        elseif targetEntity:isa("Marine") then
-
-            params['target_weaponlevel'] = targetEntity:GetWeaponLevel()
-            params['target_armorlevel']  = targetEntity:GetArmorLevel()
-
-        end
-
-		//Print("Posting kill stat to "..kStatisticsURL)
-        Shared.SendHTTPRequest(kStatisticsURL .. url, "POST", params, function(data) Shared.Message(data) end)
-        
-    end
-
-
 
     // Called whenever an entity is killed. Killer could be the same as targetEntity. Called before entity is destroyed.
     function NS2Gamerules:OnEntityKilled(targetEntity, attacker, doer, point, direction)
-    
-        // Limit how often we send up kill stats.
-        self.totalKills = (self.totalKills and self.totalKills + 1) or 1
-        if self.totalKills >= 5 then
-        
-            self.totalKills = 0
-            PostKillStat(targetEntity, attacker, doer)
-            
-        end
         
         // Also output to log if we're recording the game for playback in the game visualizer
         PostGameViz(string.format("%s killed %s", SafeClassName(doer), SafeClassName(targetEntity)), targetEntity)
@@ -414,7 +351,8 @@ if Server then
         self.team2:OnEntityKilled(targetEntity, attacker, doer, point, direction)
         self.worldTeam:OnEntityKilled(targetEntity, attacker, doer, point, direction)
         self.spectatorTeam:OnEntityKilled(targetEntity, attacker, doer, point, direction)
-        
+        self.sponitor:OnEntityKilled(targetEntity, attacker, doer)
+
     end
 
     // logs out any players currently as the commander
@@ -997,30 +935,11 @@ if Server then
             self.team1:ClearRespawnQueue()
             self.team2:ClearRespawnQueue()
             
-            -- Send End Game statistics
-            local initialHiveTechIdString = "None"
-            local url = "/endgame" 
-            
-            if self.initialHiveTechId then
-                initialHiveTechIdString = EnumToString(kTechId, self.initialHiveTechId)
-            end
-            
-            local params =
-            {
-                version = ToString(Shared.GetBuildNumber()),
-                winner = ToString(winningTeam:GetTeamType()),
-                length = string.format("%.2f", Shared.GetTime() - self.gameStartTime),
-                map = Shared.GetMapName(),
-                start_location1 = self.startingLocationNameTeam1,
-                start_location2 = self.startingLocationNameTeam2,
-                start_path_distance = self.startingLocationsPathDistance,
-                start_hive_tech = initialHiveTechIdString,
-            }
-            Shared.SendHTTPRequest(kStatisticsURL .. url, "POST", params)
-            
             // Automatically end any performance logging when the round has ended.
             Shared.ConsoleCommand("p_endlog")
-            
+
+            self.sponitor:OnEndMatch(winningTeam)
+
         end
         
     end
@@ -1368,7 +1287,7 @@ if Server then
                 self.team2:PlayPrivateTeamSound(ConditionalValue(self.team2:GetTeamType() == kAlienTeamType, NS2Gamerules.kAlienStartSound, NS2Gamerules.kMarineStartSound))
                 
                 self:SetGameState(kGameState.Started)
-                
+                self.sponitor:OnStartMatch()
             end
             
         end

@@ -161,7 +161,6 @@ function Whip:OnCreate()
     InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
-    InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
     
     self.attackYaw = 0

@@ -82,6 +82,8 @@ end
 
 local function UpdatePlayNowWindowLogic(playNowWindow, mainMenu)
 
+    PROFILE("GUIMainMenu:UpdatePlayNowWindowLogic")
+
     if playNowWindow:GetIsVisible() then
     
         playNowWindow.searchingForGameText.animateTime = playNowWindow.searchingForGameText.animateTime or Shared.GetTime()

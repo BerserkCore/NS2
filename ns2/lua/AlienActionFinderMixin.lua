@@ -72,7 +72,7 @@ if Client then
                          end
                          
                     else
-                        self.actionIconGUI:Hide()
+                        self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, nil, nil)
                     end
                     
                 else

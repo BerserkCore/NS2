@@ -47,14 +47,14 @@ function HexStringToNumber(hexString)
 end
 
 // pass a MenuElement as first parameter
-function CreateGraphicItem(self, attach)
+function CreateGraphicItem(self, attach, preventAnimation)
     local graphicItem = nil
 
-    if self.scriptHandle:isa("GUIAnimatedScript") then
+    if self.scriptHandle:isa("GUIAnimatedScript")  and not preventAnimation then
         graphicItem = self.scriptHandle:CreateAnimatedGraphicItem()
         graphicItem:SetIsScaling(self:GetIsScaling())
     else
-        graphicItem = GetGUIManager:CreateGraphicItem()
+        graphicItem = GetGUIManager():CreateGraphicItem()
     end
     
     graphicItem:SetInheritsParentStencilSettings(true)
@@ -66,14 +66,14 @@ function CreateGraphicItem(self, attach)
     return graphicItem
 end
 
-function CreateTextItem(self, attach)
+function CreateTextItem(self, attach, preventAnimation)
     local graphicItem = nil
 
-    if self.scriptHandle:isa("GUIAnimatedScript") then
+    if self.scriptHandle:isa("GUIAnimatedScript") and not preventAnimation then
         graphicItem = self.scriptHandle:CreateAnimatedTextItem()
         graphicItem:SetIsScaling(self:GetIsScaling())
     else
-        graphicItem = GetGUIManager:CreateTextItem()
+        graphicItem = GetGUIManager():CreateTextItem()
     end
     
     graphicItem:SetInheritsParentStencilSettings(true)

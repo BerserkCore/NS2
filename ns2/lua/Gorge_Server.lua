@@ -13,6 +13,7 @@ function Gorge:InitWeapons()
 
     self:GiveItem(SpitSpray.kMapName)
     self:GiveItem(DropStructureAbility.kMapName)
+    //self:GiveItem(BabblerAbility.kMapName)
     
     self:SetActiveWeapon(SpitSpray.kMapName)
     
@@ -22,11 +23,9 @@ function Gorge:GetTierTwoTechId()
     return kTechId.BileBomb
 end
 
-/*
 function Gorge:GetTierThreeTechId()
-    return kTechId.WebStalk
+    return kTechId.Web
 end
-*/
 
 function Gorge:OnCommanderStructureLogin(hive)
 

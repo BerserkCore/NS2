@@ -43,6 +43,9 @@ local kAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_cm.animatio
 local kDualModelName = PrecacheAsset("models/marine/exosuit/exosuit_mm.model")
 local kDualAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_mm.animation_graph")
 
+local kDualRailgunModelName = PrecacheAsset("models/marine/exosuit/exosuit_rr.model")
+local kDualRailgunAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_rr.animation_graph")
+
 Shared.PrecacheSurfaceShader("shaders/ExoScreen.surface_shader")
 
 local kIdle2D = PrecacheAsset("sound/NS2.fev/marine/heavy/idle_2D")
@@ -187,6 +190,11 @@ function Exo:OnInitialized()
             modelName = kDualModelName
             graphName = kDualAnimationGraph
             
+        elseif self.layout == "RailgunRailgun" then
+        
+            modelName = kDualRailgunModelName
+            graphName = kDualRailgunAnimationGraph
+            
         end
         
         // SetModel must be called before Player.OnInitialized is called so the attach points in
@@ -267,6 +275,8 @@ function Exo:InitWeapons()
         weaponHolder:SetWeapons(Claw.kMapName, Minigun.kMapName)
     elseif self.layout == "MinigunMinigun" then
         weaponHolder:SetWeapons(Minigun.kMapName, Minigun.kMapName)
+    elseif self.layout == "RailgunRailgun" then
+        weaponHolder:SetWeapons(Railgun.kMapName, Railgun.kMapName)
     else
         Print("Warning: incorrect layout set for exosuit")
         weaponHolder:SetWeapons(Claw.kMapName, Minigun.kMapName)

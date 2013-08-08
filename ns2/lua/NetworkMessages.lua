@@ -60,20 +60,22 @@ local kHitEffectMessage =
     surface = "enum kHitEffectSurface",
     targetId = "entityid",
     showtracer = "boolean",
-    altMode = "boolean"
+    altMode = "boolean",
+    damage = "integer (0 to 5000)"
 }
 
-function BuildHitEffectMessage(position, doer, surface, target, showtracer, altMode)
+function BuildHitEffectMessage(position, doer, surface, target, showtracer, altMode, damage)
 
-    local t = {}
+    local t = { }
     t.posx = position.x
     t.posy = position.y
     t.posz = position.z
     t.doerId = (doer and doer:GetId()) or Entity.invalidId
     t.surface = (surface and StringToEnum(kHitEffectSurface, surface)) or kHitEffectSurface.metal
     t.targetId = (target and target:GetId()) or Entity.invalidId
-    t.showtracer = showtracer == true   
-    t.altMode = altMode == true 
+    t.showtracer = showtracer == true
+    t.altMode = altMode == true
+    t.damage = damage
     return t
     
 end
@@ -86,17 +88,10 @@ function ParseHitEffectMessage(message)
     local target = Shared.GetEntity(message.targetId)
     local showtracer = message.showtracer
     local altMode = message.altMode
+    local damage = message.damage
     
-    /*
-    Print("position %s", ToString(position))
-    Print("doer %s", ToString(doer))
-    Print("surface %s", ToString(surface))
-    Print("target %s", ToString(target))
-    Print("showtracer %s", ToString(showtracer))
-    */
+    return position, doer, surface, target, showtracer, altMode, damage
     
-    return position, doer, surface, target, showtracer, altMode
-
 end
 
 Shared.RegisterNetworkMessage( "HitEffect", kHitEffectMessage )
@@ -551,21 +546,24 @@ local kGorgeBuildStructureMessage =
     origin = "vector",
     direction = "vector",
     structureIndex = "integer (1 to 5)",
+    lastClickedPosition = "vector"
 }
 
-function BuildGorgeDropStructureMessage(origin, direction, structureIndex)
+function BuildGorgeDropStructureMessage(origin, direction, structureIndex, lastClickedPosition)
 
     local t = {}
     
     t.origin = origin
     t.direction = direction
     t.structureIndex = structureIndex
-    
+    t.lastClickedPosition = lastClickedPosition or Vector(0,0,0)
+
     return t
+    
 end    
 
 function ParseGorgeBuildMessage(t)
-    return t.origin, t.direction, t.structureIndex
+    return t.origin, t.direction, t.structureIndex, t.lastClickedPosition
 end
 
 local kMutePlayerMessage = 

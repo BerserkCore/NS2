@@ -20,7 +20,11 @@ ScoringMixin.expectedCallbacks =
 }
 
 function ScoringMixin:__initmixin()
+
     self.score = 0
+    // Some types of points are added continuously. These are tracked here.
+    self.continuousScores = { }
+    
 end
 
 function ScoringMixin:GetScore()
@@ -46,7 +50,27 @@ function ScoringMixin:AddScore(points, res)
     end
     
 end
-AddFunctionContract(ScoringMixin.AddScore, { Arguments = { "Entity", "number", { "number", "nil" } }, Returns = { } })
+
+// Only award the pointsGivenOnScore once the amountNeededToScore are added into the score
+// determined by the passed in name.
+// An example, to give points based on health healed:
+// AddContinuousScore("Heal", amountHealed, 100, 1)
+function ScoringMixin:AddContinuousScore(name, addAmount, amountNeededToScore, pointsGivenOnScore)
+
+    if Server then
+    
+        self.continuousScores[name] = self.continuousScores[name] or { amount = 0 }
+        self.continuousScores[name].amount = self.continuousScores[name].amount + addAmount
+        while self.continuousScores[name].amount >= amountNeededToScore do
+        
+            self:AddScore(pointsGivenOnScore, 0)
+            self.continuousScores[name].amount = self.continuousScores[name].amount - amountNeededToScore
+            
+        end
+        
+    end
+    
+end
 
 function ScoringMixin:Reset()
     self.score = 0

@@ -400,6 +400,8 @@ function ConstructMixin:OnConstructionComplete(builder)
             
         end
 
+        team:OnConstructionComplete(self)
+
     end     
 
     self:TriggerEffects("construction_complete")

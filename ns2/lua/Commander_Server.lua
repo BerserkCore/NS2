@@ -531,6 +531,8 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
             self:SetTechCooldown(techId, cooldown, Shared.GetTime())
         end
                 
+        // inform the team
+        self:GetTeam():OnCommanderAction(techId)
     end
     
     // Tell client result of cast

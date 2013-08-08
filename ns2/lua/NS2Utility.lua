@@ -84,7 +84,8 @@ function GetPlayerCanUseEntity(player, target)
     
     //Print("GetPlayerCanUseEntity(%s, %s) returns %s", ToString(player), ToString(target), ToString(useSuccessTable.useSuccess))
 
-    return useSuccessTable.useSuccess
+    // really need to move this functionality into two mixin (when for user, one for useable)
+    return useSuccessTable.useSuccess or (target.GetCanAlwaysBeUsed and target:GetCanAlwaysBeUsed())
 
 end
 
@@ -159,7 +160,6 @@ function GetCircleSizeForEntity(entity)
     size = ConditionalValue(entity:isa("Drifter"), 2.5, size)
     size = ConditionalValue(entity:isa("PowerPoint"), 2.6, size)
     size = ConditionalValue(entity:isa("Hive"), 6.5, size)
-    size = ConditionalValue(entity:isa("CragBabblers"), 6, size)
     size = ConditionalValue(entity:isa("MAC"), 2.0, size)
     size = ConditionalValue(entity:isa("Door"), 4.0, size)
     size = ConditionalValue(entity:isa("InfantryPortal"), 3.5, size)
@@ -338,7 +338,7 @@ function GetInfestationRequirementsMet(techId, position)
         end
         
         // SA: Note that we don't check kTechDataNotOnInfestation anymore.
-	    // This function should only be used for stuff that REQUIRES infestation.
+        // This function should only be used for stuff that REQUIRES infestation.
     end
 
     return requirementsMet
@@ -1332,6 +1332,14 @@ function GetIsPointOnInfestation(point)
             break
             
         end
+        
+    end
+    
+    // count being inside of a gorge tunnel as on infestation
+    if not onInfestation then
+        
+        local tunnelEntities = GetEntitiesWithinRange("Tunnel", point, 40)
+        onInfestation = #tunnelEntities > 0
         
     end
     

@@ -161,7 +161,13 @@ function PrototypeLab:OnInitialized()
 end
 
 function PrototypeLab:GetTechButtons(techId)
-    return { kTechId.JetpackTech, kTechId.ExosuitTech,  kTechId.DualMinigunTech }    
+
+    if kRailgunEnabled then
+        return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.DualRailgunTech }
+    else
+        return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech }
+    end
+    
 end
 
 function PrototypeLab:GetRequiresPower()
@@ -238,18 +244,23 @@ function PrototypeLab:OnUpdate(deltaTime)
 end
 
 function PrototypeLab:GetItemList()
-    return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit }
+
+    if kRailgunEnabled then
+        return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.DualRailgunExosuit }
+    else
+        return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit }
+    end
+    
 end
 
-// TechName, UpgradeList, Max number of upgrades, upgrades mutual exlusive
+// { { TechName, UpgradeList, Max number of upgrades, upgrades mutual exlusive } }
 function PrototypeLab:GetUpgradeList()
 
-    local upgradeList = 
-    {
-        { kTechId.Exosuit, {kTechId.Minigun, kTechId.Railgun}, 2, false },
-    }
-    
-    return upgradeList
+    if kRailgunEnabled then
+        return { { kTechId.Exosuit, { kTechId.Minigun, kTechId.Railgun }, 2, false } }
+    else
+        return { { kTechId.Exosuit, { kTechId.Minigun }, 2, false } }
+    end
     
 end
 

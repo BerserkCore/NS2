@@ -67,6 +67,7 @@ local techIdGridPosition =
     [kTechId.JetpackTech] =         Vector(2, 2, 0),
     [kTechId.ExosuitTech] =         Vector(3, 2, 0),
     [kTechId.DualMinigunTech] =     Vector(4, 2, 0),
+    [kTechId.DualRailgunTech] =     Vector(4, 2, 0),
 
     [kTechId.ARCRoboticsFactory] =  Vector(0, 3, 0),
     [kTechId.MACEMPTech] =          Vector(1, 3, 0),
@@ -80,7 +81,7 @@ local techIdGridPosition =
     [kTechId.Stomp] =               Vector(4, 0, 0),
     
 --  [kTechId.Xenocide] =            Vector(4, 0, 0),
---  [kTechId.WebStalk] =            Vector(1, 3, 0),
+--  [kTechId.BabblerAbility] =      Vector(1, 3, 0),
 --  [kTechId.Umbra] =               Vector(4, 1, 0),
 --  [kTechId.Vortex] =              Vector(4, 2, 0),
 --  [kTechId.PrimalScream] =        Vector(3, 3, 0),
@@ -472,7 +473,7 @@ local WeaponsIdStrings = {
 local AlienTier3Strings = {
 
     ["Xenocide"] = true,
-    ["WebStalk"] = true,
+    ["BabblerAbility"] = true,
     ["Umbra"] = true,
     ["Vortex"] = true,
     ["Stomp"] = true -- Stomp is T3 right now, maybe Primal will be T2 or T4?
@@ -664,7 +665,7 @@ function GUIInsight_Tech:UpdateTechDisplay(techId, teamInfo, isMarine)
                         self.gUpgradeIcons["Leap"]:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(techId, false)))
                     end
                 
-                elseif techIdString == "WebStalk" then
+                elseif techIdString == "BabblerAbility" then
                 
                     if (capturedTechPoints > 2) then
                         self.gUpgradeIcons["BileBomb"]:SetColor(kIconColors[kTeam2Index])
@@ -795,7 +796,7 @@ function GUIInsight_Tech:UpdateTechDisplay(techId, teamInfo, isMarine)
                     
                     self.gUpgradeIcons["Leap"]:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(techId, false)))
                 
-                elseif techIdString == "WebStalk" then
+                elseif techIdString == "BabblerAbility" then
                 
                     self.gUpgradeIcons["BileBomb"]:SetColor(kIconColors[kTeam2Index])
                     

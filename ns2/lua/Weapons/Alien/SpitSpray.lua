@@ -185,7 +185,7 @@ function SpitSpray:OnUpdateAnimationInput(modelMixin)
 end
 
 function SpitSpray:GetDeathIconIndex()
-    return kDeathMessageIcon.Spit
+    return ConditionalValue(self.spitted, kDeathMessageIcon.Spit, kDeathMessageIcon.Spray)
 end
 
 function SpitSpray:GetDamageType()

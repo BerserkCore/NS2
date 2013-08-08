@@ -35,7 +35,12 @@ local kWelderEffectRate = 0.45
 
 local kFireLoopingSound = PrecacheAsset("sound/NS2.fev/marine/welder/weld")
 
-function Welder:OnCreate() 
+local kHealScoreAdded = 2
+// Every kAmountHealedForPoints points of damage healed, the player gets
+// kHealScoreAdded points to their score.
+local kAmountHealedForPoints = 600
+
+function Welder:OnCreate()
 
     Weapon.OnCreate(self)
     
@@ -229,9 +234,18 @@ function Welder:PerformWeld(player)
             if target:GetHealthScalar() < 1 then
                 
                 local prevHealthScalar = target:GetHealthScalar()
+                local prevHealth = target:GetHealth()
+                local prevArmor = target:GetArmor()
                 target:OnWeld(self, kWelderFireDelay, player)
                 success = prevHealthScalar ~= target:GetHealthScalar()
-            
+                
+                if success then
+                
+                    local addAmount = (target:GetHealth() - prevHealth) + (target:GetArmor() - prevArmor)
+                    player:AddContinuousScore("WeldHealth", addAmount, kAmountHealedForPoints, kHealScoreAdded)
+                    
+                end
+                
             end
             
             if HasMixin(target, "Construct") and target:GetCanConstruct(player) then

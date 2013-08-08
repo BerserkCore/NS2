@@ -9,6 +9,7 @@
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 			float4 tex = tex2D(emissiveMap, input.texCoord);
+			material.albedo   = float3(0, 0, 0);
 			material.emissive = tex.rgb * input.color.rgb;
 			material.opacity  = tex.a * input.color.a;
 		}

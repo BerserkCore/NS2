@@ -31,6 +31,7 @@ Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/BadgeMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
+Script.Load("lua/AFKMixin.lua")
 
 if Client then
     Script.Load("lua/HelpMixin.lua")
@@ -227,11 +228,11 @@ local networkVars =
     timeOfCrouchChange = "compensated time",
     
     // bodyYaw must be compenstated as it feeds into the animation as a pose parameter
-    bodyYaw = "compensated interpolated angle (11 bits)",
-    standingBodyYaw = "angle interpolated (11 bits)",
+    bodyYaw = "compensated interpolated float (-3.14159265 to 3.14159265 by 0.003)",
+    standingBodyYaw = "interpolated float (0 to 6.2831853 by 0.003)",
     
-    bodyYawRun = "compensated interpolated angle (11 bits)",
-    runningBodyYaw = "angle interpolated (11 bits)",
+    bodyYawRun = "compensated interpolated float (-3.14159265 to 3.14159265 by 0.003)",
+    runningBodyYaw = "interpolated float (0 to 6.2831853 by 0.003)",
     timeLastMenu = "private time",
     darwinMode = "private boolean",
     
@@ -277,6 +278,7 @@ local networkVars =
     communicationStatus = "enum kPlayerCommunicationStatus",
     
     waitingForAutoTeamBalance = "private boolean",
+
 }
 
 ------------
@@ -336,11 +338,16 @@ function Player:OnCreate()
     self:SetUpdates(true)
     
     if Server then
+    
+        InitMixin(self, AFKMixin)
+        
         self.name = ""
         self.giveDamageTime = 0
+        self.sendTechTreeBase = false
+        
     end
     
-    self.viewOffset = Vector( 0, 0, 0 )
+    self.viewOffset = Vector(0, 0, 0)
     
     self.bodyYaw = 0
     self.standingBodyYaw = 0
@@ -349,14 +356,10 @@ function Player:OnCreate()
     self.runningBodyYaw = 0
     
     self.clientIndex = -1
-   
+    
     self.showScoreboard = false
     
-    if Server then
-        self.sendTechTreeBase = false
-    end
-    
-    self.timeLastMenu = 0    
+    self.timeLastMenu = 0
     self.darwinMode = false
     self.kills = 0
     self.deaths = 0
@@ -369,13 +372,12 @@ function Player:OnCreate()
     self.primaryAttackLastFrame = false
     self.secondaryAttackLastFrame = false
     
-    self.requestsScores = false   
+    self.requestsScores = false
     self.viewModelId = Entity.invalidId
     
     self.usingStructure = nil
-    self.timeOfLastUse  = 0
-    self.respawnQueueEntryTime = nil
-
+    self.timeOfLastUse = 0
+    
     self.timeOfDeath = nil
     self.crouching = false
     self.timeOfCrouchChange = 0
@@ -389,27 +391,27 @@ function Player:OnCreate()
     self.resources = 0
     
     self.stepStartTime = 0
-    self.stepAmount    = 0
+    self.stepAmount = 0
     
     self.isMoveBlocked = false
     self.isRookie = false
-            
+    
     // Create the controller for doing collision detection.
     // Just use default values for the capsule size for now. Player will update to correct
     // values when they are known.
     self:CreateController(PhysicsGroup.PlayerControllersGroup)
-
+    
     // Make the player kinematic so that bullets and other things collide with it.
     self:SetPhysicsGroup(PhysicsGroup.PlayerGroup)
     
     self.isUsing = false
     self.slowAmount = 0
-
+    
     self.lastButtonReleased = TAP_NONE
     self.timeLastButtonReleased = 0
-    self.previousMove = Vector(0,0,0)
+    self.previousMove = Vector(0, 0, 0)
     
-    self.pushImpulse = Vector(0,0,0)
+    self.pushImpulse = Vector(0, 0, 0)
     self.pushTime = 0
     
     self.waitingForAutoTeamBalance = false
@@ -3045,6 +3047,35 @@ end
 
 function Player:GetIsWaitingForTeamBalance()
     return self.waitingForAutoTeamBalance
+end
+
+function Player:GetPositionForMinimap()
+
+    local tunnels = GetEntitiesWithinRange("Tunnel", self:GetOrigin(), 30)
+    local isInTunnel = #tunnels > 0
+    
+    if isInTunnel then
+        return tunnels[1]:GetRelativePosition(self:GetOrigin())        
+    else
+        return self:GetOrigin()
+    end
+
+end
+
+function Player:GetDirectionForMinimap()
+
+    local zAxis = self:GetViewAngles():GetCoords().zAxis
+    local direction = math.atan2(zAxis.x, zAxis.z)
+    
+    local tunnels = GetEntitiesWithinRange("Tunnel", self:GetOrigin(), 30)
+    local isInTunnel = #tunnels > 0
+    
+    if isInTunnel then
+        direction = direction + tunnels[1]:GetMinimapYawOffset()
+    end
+    
+    return direction
+
 end
 
 Shared.LinkClassToMap("Player", Player.kMapName, networkVars, true)

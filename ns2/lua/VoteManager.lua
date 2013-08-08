@@ -8,12 +8,11 @@
 
 class 'VoteManager'
 
-// Commander ejection
-VoteManager.kMinVotesNeeded = 2
-VoteManager.kTeamVotePercentage = .3
+local kMinVotesNeeded = 2
+local kTeamVotePercentage = 0.5
 
 // Seconds that a vote lasts before expiring
-VoteManager.kVoteDuration = 120
+local kVoteDuration = 120
 
 // Constructor
 function VoteManager:Initialize()
@@ -69,10 +68,10 @@ end
 
 function VoteManager:GetVotePassed()
 
-    // Round to nearest number of players (3.4 = 3, 3.5 = 4)
-    local votesNeeded = math.max(VoteManager.kMinVotesNeeded, math.floor((self.numPlayers * VoteManager.kTeamVotePercentage) + .5))
+    // Round to nearest number of players (3.4 = 3, 3.5 = 4).
+    local votesNeeded = math.max(kMinVotesNeeded, math.floor((self.numPlayers * kTeamVotePercentage) + 0.5))
     return table.count(self.playersVoted) >= votesNeeded
-
+    
 end
 
 function VoteManager:GetTarget()
@@ -80,32 +79,31 @@ function VoteManager:GetTarget()
 end
 
 function VoteManager:GetVoteStarted()
-    return (self.target ~= nil)
+    return self.target ~= nil
 end
 
-// Note - doesn't reset number of players
+// Note - doesn't reset number of players.
 function VoteManager:Reset()
-    self.playersVoted = {}
+
+    self.playersVoted = { }
     self.target = nil
+    
 end
 
 function VoteManager:SetNumPlayers(numPlayers)
 
     ASSERT(type(numPlayers) == "number")
     self.numPlayers = numPlayers
-
+    
 end
 
-// Pass current time in, returns true if vote timed out. Typically call Reset() after it
-// returns true.
+// Pass current time in, returns true if vote timed out. Typically call Reset() after it returns true.
 function VoteManager:GetVoteElapsed(time)
 
     if self.timeVoteStarted and type(time) == "number" then
     
-        if (time - self.timeVoteStarted) >= VoteManager.kVoteDuration then
-        
+        if (time - self.timeVoteStarted) >= kVoteDuration then
             return true
-            
         end
         
     end

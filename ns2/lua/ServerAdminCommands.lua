@@ -254,6 +254,11 @@ local function SetPassword(client, newPassword)
 end
 CreateServerAdminCommand("Console_sv_password", SetPassword, "<string>, Changes the password on the server")
 
+local function SetCheats(client, enabled)
+    Shared.ConsoleCommand("cheats " .. ((enabled == "true" or enabled == "1") and "1" or "0"))
+end
+CreateServerAdminCommand("Console_sv_cheats", SetCheats, "<boolean>, Turns cheats on and off")
+
 local bannedPlayersFileName = "BannedPlayers.json"
 local bannedPlayers = LoadConfigFile(bannedPlayersFileName) or { }
 
@@ -415,8 +420,18 @@ local function AutoBalance(client, enabled, playerCount, seconds)
     end
     
 end
-CreateServerAdminCommand("Console_sv_autobalance", AutoBalance, "<true/false> <player count> <seconds>, Toggles auto team balance. \
-                                                                The player count and seconds are optional. Count defaults to 2 over balance to enable. Defaults to 10 second wait to enable.")
+CreateServerAdminCommand("Console_sv_autobalance", AutoBalance, "<true/false> <player count> <seconds>, Toggles auto team balance. The player count and seconds are optional. Count defaults to 2 over balance to enable. Defaults to 10 second wait to enable.")
+
+local function AutoKickAFK(client, time, capacity)
+
+    time = tonumber(time) or 300
+    capacity = tonumber(capacity) or 0.5
+    Server.SetConfigSetting("auto_kick_afk_time", time)
+    Server.SetConfigSetting("auto_kick_afk_capacity", capacity)
+    ServerAdminPrint(client, "Auto-kick AFK players is " .. (time <= 0 and "disabled" or "enabled") .. ". Kick after: " .. math.floor(time) .. " seconds when server is at: " .. math.floor(capacity * 100) .. "% capacity")
+    
+end
+CreateServerAdminCommand("Console_sv_auto_kick_afk", AutoKickAFK, "<seconds> <number>, Auto-kick is disabled when the first argument is 0. A player will be kicked only when the server is at the defined capacity (0-1).")
 
 local function EnableEventTesting(client, enabled)
 

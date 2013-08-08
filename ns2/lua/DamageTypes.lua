@@ -204,7 +204,16 @@ local function ApplyTargetModifiers(target, attacker, doer, damage, armorFractio
         healthPerArmor = target:GetHealthPerArmorOverride(damageType, healthPerArmor)
     end
     
-    return damage, armorFractionUsed, healthPerArmor
+    local damageTable = {}
+    damageTable.damage = damage
+    damageTable.armorFractionUsed = armorFractionUsed
+    damageTable.healthPerArmor = healthPerArmor
+    
+    if target.ModifyDamageTaken then
+        target:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+    end
+    
+    return damageTable.damage, damageTable.armorFractionUsed, damageTable.healthPerArmor
 
 end
 

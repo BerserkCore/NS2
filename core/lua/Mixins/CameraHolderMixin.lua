@@ -275,6 +275,13 @@ end
 
 function CameraHolderMixin:SetOffsetAngles(offsetAngles)
 
+    // eliminate bad values
+    if offsetAngles.yaw > 2 * math.pi then
+        offsetAngles.yaw = offsetAngles.yaw - 2 * math.pi
+    elseif offsetAngles.yaw < 0 then
+        offsetAngles.yaw = offsetAngles.yaw + 2 * math.pi
+    end
+
     self:SetBaseViewAngles(offsetAngles)       
     self:SetViewAngles(Angles(0, 0, 0))
     self:SetAngles(Angles(0, offsetAngles.yaw, 0))

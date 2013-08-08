@@ -1,10 +1,10 @@
-// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. ======
+// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //
 // lua\menu\ServerList.lua
 //
 //    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
-// ========= For more inTableation, visit us at http://www.unknownworlds.com =====================
+// ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/menu/MenuElement.lua")
 Script.Load("lua/menu/ServerEntry.lua")
@@ -186,8 +186,19 @@ local function CheckShowTableEntry(self, entry)
     
 end
 
+local function GetBoundaries(self)
+
+    local minY = -self:GetParent():GetContentPosition().y
+    local maxY = minY + self:GetParent().contentStencil:GetSize().y
+    
+    return minY, maxY
+    
+end
+
 // Called after the table has changed (style or data).
 local function RenderServerList(self)
+
+    PROFILE("ServerList:RenderServerList")
 
     local renderPosition = 0
     
@@ -201,7 +212,14 @@ local function RenderServerList(self)
     if serverListSize < numServers then
     
         for i = 1, numServers - serverListSize do
-            table.insert(self.serverEntries, CreateMenuElement(self, 'ServerEntry', false))
+        
+            local entry = CreateMenuElement(self, 'ServerEntry', false)
+            entry:SetParentList(self)
+            entry:SetWidth(serverListWidth)
+            
+            table.insert(self.serverEntries, entry)
+            
+            
         end
         
     elseif serverListSize > numServers then
@@ -215,26 +233,29 @@ local function RenderServerList(self)
         
     end
     
+    local minY, maxY = GetBoundaries(self)
+    
     for i = 1, #self.tableData do
     
         local serverEntry = self.serverEntries[i]
         
         if CheckShowTableEntry(self, self.tableData[i]) then
-        
-            serverEntry:SetIsVisible(true)
-            serverEntry:SetWidth(serverListWidth)
+
             serverEntry:SetBackgroundPosition(Vector(0, renderPosition * kServerEntryHeight, 0))
             serverEntry:SetServerData(self.tableData[i])
             
             if self.tableData[i].serverId == lastSelectedServerId then
                 SelectServerEntry(serverEntry)
             end
-            
+                     
             renderPosition = renderPosition + 1
+            serverEntry:SetIsFiltered(false)
             
         else
-            serverEntry:SetIsVisible(false)
+            serverEntry:SetIsFiltered(true)
         end
+        
+        serverEntry:UpdateVisibility(minY, maxY, renderPosition * kServerEntryHeight)
         
     end
     
@@ -284,6 +305,16 @@ function ServerList:SetComparator(comparator)
     
 end
 
+function ServerList:OnParentSlide()
+
+    local minY, maxY = GetBoundaries(self)
+    
+    for _, entry in ipairs(self.serverEntries) do        
+        entry:UpdateVisibility(minY, maxY)    
+    end
+
+end
+
 function ServerList:Sort(tableData)
 
     if self.comparator then
@@ -314,14 +345,16 @@ function ServerList:ClearChildren()
     
 end
 
-function ServerList:AddEntry(serverEntry)
+function ServerList:AddEntry(serverEntry, noRender)
 
     table.insert(self.tableData, serverEntry)
-    RenderServerList(self)
+    if not noRender then
+        RenderServerList(self)
+    end
     
 end
 
-function ServerList:UpdateEntry(serverEntry)
+function ServerList:UpdateEntry(serverEntry, noRender)
 
     for s = 1, #self.tableData do
     
@@ -336,8 +369,14 @@ function ServerList:UpdateEntry(serverEntry)
         
     end
     
-    RenderServerList(self)
+    if not noRender then
+        RenderServerList(self)
+    end
     
+end
+
+function ServerList:RenderNow()
+    RenderServerList(self)
 end
 
 function ServerList:GetEntryExists(serverEntry)

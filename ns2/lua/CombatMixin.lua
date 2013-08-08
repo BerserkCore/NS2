@@ -115,10 +115,14 @@ end
 
 function CombatMixin:OnDamageDone(doer, target)
 
-    self.timeLastDamageDealt = Shared.GetTime()
+    if doer and (doer:isa("Projectile") or doer:isa("Weapon")) then
+
+        self.timeLastDamageDealt = Shared.GetTime()
+        
+        if target then    
+            self.lastTargetId = target:GetId()        
+        end
     
-    if target then    
-        self.lastTargetId = target:GetId()        
     end
 
 end

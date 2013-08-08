@@ -244,6 +244,8 @@ local function BuyExo(self, techId)
                 self:GiveExo(spawnPoint)
             elseif techId == kTechId.DualMinigunExosuit then
                 self:GiveDualExo(spawnPoint)
+            elseif techId == kTechId.DualRailgunExosuit then
+                self:GiveDualRailgunExo(spawnPoint)
             end
             
             return
@@ -256,6 +258,7 @@ local function BuyExo(self, techId)
     
 end
 
+local kIsExoTechId = { [kTechId.Exosuit] = true, [kTechId.DualMinigunExosuit] = true, [kTechId.DualRailgunExosuit] = true }
 function Marine:AttemptToBuy(techIds)
 
     local techId = techIds[1]
@@ -267,23 +270,37 @@ function Marine:AttemptToBuy(techIds)
         local mapName = LookupTechData(techId, kTechDataMapName)
         
         if mapName then
-                        
+        
             Shared.PlayPrivateSound(self, Marine.kSpendResourcesSoundName, nil, 1.0, self:GetOrigin())
             
             if techId == kTechId.Jetpack then
             
-                // need to apply this here since we change the class
+                // Need to apply this here since we change the class.
                 self:AddResources(-GetCostForTech(techId))
                 self:GiveJetpack()
+
+                if self.GetTeam and self:GetTeam().OnBought then
+                    self:GetTeam():OnBought(techId)
+                end
                 
-            elseif techId == kTechId.Exosuit or techId == kTechId.DualMinigunExosuit then
-                BuyExo(self, techId)              
+            elseif kIsExoTechId[techId] then
+                BuyExo(self, techId)
+
+                if self.GetTeam and self:GetTeam().OnBought then
+                    self:GetTeam():OnBought(techId)
+                end
+                    
             else
             
-                // Make sure we're ready to deploy new weapon so we switch to it properly
+                // Make sure we're ready to deploy new weapon so we switch to it properly.
                 if self:GiveItem(mapName) then
                 
                     Shared.PlayWorldSound(nil, Marine.kGunPickupSound, nil, self:GetOrigin())
+                    
+                    if self.GetTeam and self:GetTeam().OnBought then
+                        self:GetTeam():OnBought(techId)
+                    end
+                    
                     return true
                     
                 end
@@ -422,6 +439,13 @@ function Marine:GiveDualExo(spawnPoint)
 
     self:DropAllWeapons()
     self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "MinigunMinigun" })
+    
+end
+
+function Marine:GiveDualRailgunExo(spawnPoint)
+
+    self:DropAllWeapons()
+    self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "RailgunRailgun" })
     
 end
 

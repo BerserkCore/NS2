@@ -28,9 +28,9 @@ Script.Load("lua/CommAbilities/Alien/BoneWall.lua")
 
 class 'Hive' (CommandStructure)
 
-local networkVars = 
+local networkVars =
 {
-    scared = "boolean",
+    extendAmount = "float (0 to 1 by 0.01)"
 }
 
 AddMixinNetworkVars(CloakableMixin, networkVars)
@@ -98,18 +98,18 @@ function Hive:OnCreate()
     InitMixin(self, TeleportMixin)
     InitMixin(self, DetectableMixin)
     
+    self.extendAmount = 0
+    
     if Server then
-        
+    
         self.cystChildren = { }
         
-        self.lastImpulseFireTime = Shared.GetTime()    
+        self.lastImpulseFireTime = Shared.GetTime()
         
         self.timeOfLastEgg = Shared.GetTime()
         
-        self.playersInWave = {}
-    
     end
-
+    
 end
 
 function Hive:OnInitialized()
@@ -248,7 +248,7 @@ local function GetLifeFormButtons(self)
 
     local upgrades =
     {
-        kTechId.Leap, kTechId.BileBomb, kTechId.Spores, kTechId.None,
+        kTechId.Leap, kTechId.BileBomb, /*kTechId.GorgeTunnelTech,*/ kTechId.None,  kTechId.Spores,
         kTechId.Blink, kTechId.Stomp, kTechId.None, kTechId.RootMenu,
     }
     
@@ -258,27 +258,19 @@ local function GetLifeFormButtons(self)
     
         if GetIsTechResearched(teamNum, kTechId.Leap) then
             upgrades[1] = kTechId.Xenocide
-        end    
-        
-        if GetIsTechResearched(teamNum, kTechId.Spores) then
-            upgrades[3] = kTechId.Umbra
-        end   
-        
+        end  
         /*
         if GetIsTechResearched(teamNum, kTechId.BileBomb) then
-            upgrades[3] = kTechId.WebStalk
-        end  
+            upgrades[2] = kTechId.WebTech
+        end
         */
+        if GetIsTechResearched(teamNum, kTechId.Spores) then
+            upgrades[4] = kTechId.Umbra
+        end   
  
         if GetIsTechResearched(teamNum, kTechId.Blink) then
             upgrades[5] = kTechId.Vortex
         end  
-
-        /* 
-        if GetIsTechResearched(teamNum, kTechId.Stomp) then
-            upgrades[6] = kTechId.PrimalScream
-        end
-        */
 
     end
     
@@ -384,6 +376,10 @@ function Hive:GetTechAllowed(techId, techNode, player)
     
     return allowed, canAfford
     
+end
+
+function Hive:OnUpdatePoseParameters()
+    self:SetPoseParam("extend", self.extendAmount)
 end
 
 /**

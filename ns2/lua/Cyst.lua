@@ -56,7 +56,8 @@ Cyst.kExtents = Vector(0.2, 0.1, 0.2)
 Cyst.kBurstDuration = 3
 
 // range at which we can be a parent
-Cyst.kCystParentRange = kCystParentRange
+Cyst.kCystMaxParentRange = kCystMaxParentRange
+Cyst.kCystMinParentRange = kCystMinParentRange
 
 // size of infestation patch
 Cyst.kInfestationRadius = kInfestationRadius
@@ -378,7 +379,7 @@ function Cyst:GetInfestationRadius()
 end
 
 function Cyst:GetCystParentRange()
-    return Cyst.kCystParentRange
+    return Cyst.kCystMaxParentRange
 end  
 
 /**
@@ -624,7 +625,7 @@ end
 function GetCystParentAvailableAndSpaceClear(techId, origin, normal, commander)
 
     local parent, path = GetCystParentFromPoint(origin, normal, "GetIsConnected")
-    local spaceClear = #GetEntitiesWithinRange("Cyst", origin, 2) == 0
+    local spaceClear = #GetEntitiesWithinRange("Cyst", origin, kCystMinParentRange) == 0
     return parent ~= nil and spaceClear
     
 end
@@ -656,7 +657,7 @@ function GetSortedListOfPotentialParents(origin)
     table.sort(hives, sortByDistance)
     
     // add in the cysts. We get all cysts here, but mini-cysts have a shorter parenting range (bug, should be filtered out)
-    local cysts = GetEntitiesWithinRange("Cyst", origin, kCystParentRange)
+    local cysts = GetEntitiesWithinRange("Cyst", origin, kCystMaxParentRange)
     table.sort(cysts, sortByDistance)
     
     local parents = {}

@@ -18,7 +18,7 @@ class 'TechPoint' (ScriptActor)
 
 TechPoint.kMapName = "tech_point"
 
-// Note that these need to be changed in editor_setup.xml as well
+// Note that these need to be changed in editor_setup.xml as well.
 TechPoint.kModelName = PrecacheAsset("models/misc/tech_point/tech_point.model")
 local kGraphName = PrecacheAsset("models/misc/tech_point/tech_point.animation_graph")
 
@@ -36,7 +36,7 @@ local networkVars =
     showObjective = "boolean",
     occupiedTeam = string.format("integer (-1 to %d)", kSpectatorIndex),
     attachedId = "entityid",
-    
+    extendAmount = "float (0 to 1 by 0.01)"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -54,7 +54,7 @@ function TechPoint:OnCreate()
     if Server then
         InitMixin(self, InfestationTrackerMixin)
     elseif Client then
-        InitMixin(self, CommanderGlowMixin)    
+        InitMixin(self, CommanderGlowMixin)
     end
     
     // Anything that can be built upon should have this group
@@ -67,16 +67,12 @@ function TechPoint:OnCreate()
     // The higher the chooseWeight, the more likely this point will be randomly chosen for a team.
     self.chooseWeight = 1
     
-end
-
-function TechPoint:OnDestroy()
-
-    ScriptActor.OnDestroy(self)
+    self.extendAmount = 0
     
 end
 
 function TechPoint:GetCanBeUsed(player, useSuccessTable)
-    useSuccessTable.useSuccess = false    
+    useSuccessTable.useSuccess = false
 end
 
 function TechPoint:OnInitialized()
@@ -87,6 +83,8 @@ function TechPoint:OnInitialized()
     
     self:SetTechId(kTechId.TechPoint)
     
+    self.extendAmount = math.min(1, math.max(0, self.extendAmount))
+    
     if Server then
     
         // 0 indicates all teams allowed for random selection process.
@@ -95,7 +93,7 @@ function TechPoint:OnInitialized()
         self.smashScouted = false
         self.showObjective = false
         self.occupiedTeam = 0
-
+        
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
@@ -105,7 +103,7 @@ function TechPoint:OnInitialized()
         self:SetExcludeRelevancyMask(bit.bor(kRelevantToTeam1, kRelevantToTeam2, kRelevantToReadyRoom))
         
     elseif Client then
-
+    
         InitMixin(self, UnitStatusMixin)
         
         local coords = self:GetCoords()
@@ -113,7 +111,7 @@ function TechPoint:OnInitialized()
         self:AttachEffect(TechPoint.kTechPointLightEffect, coords, Cinematic.Repeat_Loop)
         
     end
-
+    
 end
 
 function TechPoint:GetChooseWeight()
@@ -135,29 +133,14 @@ function TechPoint:SetSmashScouted()
     
 end
 
+function TechPoint:GetExtendAmount()
+    return self.extendAmount
+end
+
 if Server then
 
     function TechPoint:GetTeamNumberAllowed()
         return self.allowedTeamNumber
-    end
-    
-elseif Client then
-
-    function TechPoint:OnUpdate(deltaTime)
-        
-        ScriptActor.OnUpdate(self, deltaTime)
-        
-        local player = Client.GetLocalPlayer()
-        if not player then
-            return
-        end    
-        
-        if not player:isa("Commander") or (self.occupiedTeam == 0 or ( player:GetTeamNumber() ~= GetEnemyTeamNumber(self.attachedTeamNumber) ) ) then
-
-            
-        end
-    
-    
     end
     
 end
@@ -165,30 +148,31 @@ end
 if Client then
 
     function TechPoint:OnUpdateAnimationInput(modelMixin)
+    
         PROFILE("TechPoint:OnUpdateAnimationInput")
         
         local player = Client.GetLocalPlayer()
         if player then
         
             local scouted = false
-        
+            
             if player:isa("Commander") and player:GetTeamNumber() == GetEnemyTeamNumber(self.occupiedTeam) then
                 scouted = self.smashScouted
             else
                 scouted = true
-            end    
-
+            end
+            
             modelMixin:SetAnimationInput("hive_deploy", self.smashed and scouted)
             
         end
         
     end
-
+    
 end
 
 local kTechPointHealthbarOffset = Vector(0, 2.0, 0)
 function TechPoint:GetHealthbarOffset()
     return kTechPointHealthbarOffset
-end 
+end
 
 Shared.LinkClassToMap("TechPoint", TechPoint.kMapName, networkVars)

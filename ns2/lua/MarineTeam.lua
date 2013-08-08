@@ -342,6 +342,12 @@ function MarineTeam:InitTechTree()
     self.techTree:AddTargetedActivation(kTechId.DropExosuit,     kTechId.ExosuitTech, kTechId.TwoCommandStations)
     self.techTree:AddResearchNode(kTechId.DualMinigunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
     self.techTree:AddResearchNode(kTechId.DualMinigunExosuit,    kTechId.DualMinigunTech, kTechId.TwoCommandStations)
+    if kRailgunEnabled then
+    
+        self.techTree:AddResearchNode(kTechId.DualRailgunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
+        self.techTree:AddResearchNode(kTechId.DualRailgunExosuit,    kTechId.DualRailgunTech, kTechId.TwoCommandStations)
+        
+    end
     
     self.techTree:AddResearchNode(kTechId.ExosuitLockdownTech,   kTechId.ExosuitTech, kTechId.TwoCommandStations)
     self.techTree:AddResearchNode(kTechId.ExosuitUpgradeTech,    kTechId.ExosuitTech, kTechId.TwoCommandStations)   
@@ -371,4 +377,18 @@ end
 
 function MarineTeam:GetSpectatorMapName()
     return MarineSpectator.kMapName
+end
+
+function MarineTeam:OnBought(techId)
+
+    local listeners = self.eventListeners['OnBought']
+
+    if listeners then
+
+        for _, listener in ipairs(listeners) do
+            listener(techId)
+        end
+
+    end
+
 end

@@ -9,28 +9,7 @@
 
 Script.Load("lua/Utility.lua")
 
-local hasNewData = true
-
 local kFavoritesFileName = "FavoriteServers.json"
-
-// List of server records - { {servername, gametype, map, playercount, ping, ipAddress}, {servername, gametype, map, playercount, ping, ipAddress}, etc. }
-local serverRecords = { }
-
-// Data to return to flash. Single-dimensional array like:
-// {servername, gametype, map, playercount, ping, ipAddress, servername, gametype, map, playercount, ping, ipAddress, ...)
-local returnServerList = { }
-
-local kNumColumns = 6
-
-local kSortTypeName = 1
-local kSortTypeGame = 2
-local kSortTypeMap = 3
-local kSortTypePlayers = 4
-local kSortTypePing = 5
-
-local sortType = kSortTypePing
-local ascending = true
-local justSorted = false
 
 local kFavoriteAddedSound = "sound/NS2.fev/common/checkbox_on"
 Client.PrecacheLocalSound(kFavoriteAddedSound)
@@ -42,7 +21,7 @@ local function SetLastServerInfo(address, password, mapname)
 
 	Client.SetOptionString(kLastServerConnected, address)
 	Client.SetOptionString(kLastServerPassword, password)
-	Client.SetOptionString(kLastServerMapName, GetTrimmedMapName(mapname) )
+	Client.SetOptionString(kLastServerMapName, GetTrimmedMapName(mapname))
 	
 end
 
@@ -97,6 +76,7 @@ function OnRetryCommand()
     
 end
 Event.Hook("Console_retry", OnRetryCommand)
+Event.Hook("Console_reconnect", OnRetryCommand)
 
 local gFavoriteServers = LoadConfigFile(kFavoritesFileName) or { }
 
@@ -120,6 +100,15 @@ local function UpgradeFavoriteServersFormat(favorites)
     
 end
 gFavoriteServers = UpgradeFavoriteServersFormat(gFavoriteServers)
+
+// Remove any entries lacking a server address. These are bogus entries.
+for f = #gFavoriteServers, 1, -1 do
+
+    if not gFavoriteServers[f].address then
+        table.remove(gFavoriteServers, f)
+    end
+    
+end
 
 function SetServerIsFavorite(serverData, isFavorite)
 

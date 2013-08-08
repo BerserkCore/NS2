@@ -131,31 +131,35 @@ function MapBlip:Update()
         
         self:SetAngles(Angles(0, yaw, 0))
         
-        local origin = nil
-        
-        if HasMixin(owner, "Target") then
+        local origin = nil        
+        if owner.GetPositionForMinimap then
+            origin = owner:GetPositionForMinimap()
+        elseif HasMixin(owner, "Target") then
             origin = owner:GetEngagementPoint()
         else
             origin = owner:GetOrigin()
         end
         
-        // always use zero y-origin (for now, if you want to use it for long-range hivesight, add it back
-        self:SetOrigin(Vector(origin.x, 0, origin.z))      
+        if origin then
         
-        self:UpdateRelevancy()
-        
-        local owner = Shared.GetEntity(self.ownerEntityId)
-        
-        if HasMixin(owner, "MapBlip") then
-        
-            local success, blipType, blipTeam, isInCombat = owner:GetMapBlipInfo()
-
-            self.mapBlipType = blipType
-            self.mapBlipTeam = blipTeam
-            self.isInCombat = isInCombat    
+            // always use zero y-origin (for now, if you want to use it for long-range hivesight, add it back
+            self:SetOrigin(Vector(origin.x, 0, origin.z))      
             
-        end    
-        
+            self:UpdateRelevancy()
+            
+            local owner = Shared.GetEntity(self.ownerEntityId)
+            
+            if HasMixin(owner, "MapBlip") then
+            
+                local success, blipType, blipTeam, isInCombat = owner:GetMapBlipInfo()
+
+                self.mapBlipType = blipType
+                self.mapBlipTeam = blipTeam
+                self.isInCombat = isInCombat    
+                
+            end 
+
+        end
         
     end
     

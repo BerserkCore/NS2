@@ -6,6 +6,8 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================   
 
+Script.Load("lua/Table.lua")
+
 /**
  * This function is used to create a mixin table. To allow for hot loading of scripts, the
  * existing mixin table should be passed in as the mixin parameter. This allows us to reuse

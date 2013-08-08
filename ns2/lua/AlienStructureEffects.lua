@@ -15,6 +15,15 @@ kAlienStructureEffects =
             {sound = "sound/NS2.fev/alien/structures/shift/energize", done = true},
         }    
     },
+    
+    babbler_hatch =
+    {
+        babblerEggLandEffects =
+        {
+            {cinematic = "cinematics/alien/structures/death_small.cinematic" },
+            {sound = "sound/NS2.fev/alien/structures/generic_spawn_large", world_space = true, done = true},
+        },
+    },
 
     structure_land =
     {

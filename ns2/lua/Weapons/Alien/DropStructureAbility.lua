@@ -9,6 +9,9 @@
 Script.Load("lua/Weapons/Alien/Ability.lua")
 Script.Load("lua/Weapons/Alien/HydraAbility.lua")
 Script.Load("lua/Weapons/Alien/ClogAbility.lua")
+Script.Load("lua/Weapons/Alien/GorgeTunnelAbility.lua")
+Script.Load("lua/Weapons/Alien/WebsAbility.lua")
+Script.Load("lua/Weapons/Alien/BabblerEggAbility.lua")
 
 class 'DropStructureAbility' (Ability)
 
@@ -19,15 +22,17 @@ DropStructureAbility.kMapName = "drop_structure_ability"
 local kCreateFailSound = PrecacheAsset("sound/NS2.fev/alien/gorge/create_fail")
 local kAnimationGraph = PrecacheAsset("models/alien/gorge/gorge_view.animation_graph")
 
-DropStructureAbility.kSupportedStructures = { HydraStructureAbility, ClogAbility }
+DropStructureAbility.kSupportedStructures = { HydraStructureAbility, ClogAbility } // , BabblerEggAbility, GorgeTunnelAbility, WebsAbility }
 
 local networkVars =
 {
     lastSecondaryAttackTime = "float",
     lastCreatedId = "entityid",
     numHydrasLeft = string.format("integer (0 to %d)", kMaxStructuresPerType),
-    numWebsStalksLeft = string.format("integer (0 to %d)", kMaxStructuresPerType),
+    numWebsLeft = string.format("integer (0 to %d)", kMaxStructuresPerType),
     numClogsLeft = string.format("integer (0 to %d)", kMaxStructuresPerType),
+    numTunnelsLeft = string.format("integer (0 to %d)", kMaxStructuresPerType),
+    numBabblersLeft = string.format("integer (0 to %d)", kMaxStructuresPerType),
 }
 
 function DropStructureAbility:GetAnimationGraphName()
@@ -35,7 +40,7 @@ function DropStructureAbility:GetAnimationGraphName()
 end
 
 function DropStructureAbility:GetActiveStructure()
-	return DropStructureAbility.kSupportedStructures[self.activeStructure]
+    return DropStructureAbility.kSupportedStructures[self.activeStructure]
 end
 
 function DropStructureAbility:OnCreate()
@@ -43,6 +48,7 @@ function DropStructureAbility:OnCreate()
     Ability.OnCreate(self)
     
     self.dropping = false
+    self.mouseDown = false
     self.showGhost = false
     self.droppedStructure = false
     self.activeStructure = 1
@@ -50,8 +56,11 @@ function DropStructureAbility:OnCreate()
     self.lastCreatedId = Entity.invalidId
     // for GUI
     self.numHydrasLeft = 0
-    self.numWebsStalksLeft = 0
+    self.numWebsLeft = 0
     self.numClogsLeft = 0
+    self.numTunnelsLeft = 0
+    self.numBabblersLeft = 0
+    self.lastClickedPosition = nil
     
 end
 
@@ -76,13 +85,21 @@ function DropStructureAbility:GetNumStructuresBuilt(techId)
     if techId == kTechId.Hydra then
         return self.numHydrasLeft
     end
-    
-    if techId == kTechId.WebStalk then
-        return self.numWebsStalksLeft
-    end
 
     if techId == kTechId.Clog then
         return self.numClogsLeft
+    end
+    
+    if techId == kTechId.GorgeTunnel then
+        return self.numTunnelsLeft
+    end
+    
+    if techId == kTechId.Web then
+        return self.numWebsLeft
+    end
+        
+    if techId == kTechId.Babbler then
+        return self.numBabblersLeft
     end
         
     // unlimited
@@ -93,15 +110,15 @@ function DropStructureAbility:OnPrimaryAttack(player)
 
     if Client then
 
-        if not self.dropping then
+        if not self.dropping and not self.mouseDown then
+        
+            self.mouseDown = true
         
             if player:GetEnergy() >= kDropStructureEnergyCost then
             
                 if self:PerformPrimaryAttack(player) then
-                
-                    self.dropping = true
                     self.showGhost = false
-                    
+                    self.dropping = true
                 end
 
             else
@@ -123,6 +140,7 @@ function DropStructureAbility:OnPrimaryAttackEnd(player)
         end
 
         self.dropping = false
+        self.mouseDown = false
         
     end
     
@@ -164,39 +182,52 @@ end
 
 function DropStructureAbility:PerformPrimaryAttack(player)
 
-    local success = true
+    local success = false
 
     // Ensure the current location is valid for placement.
-    local coords, valid = self:GetPositionForStructure(player:GetEyePos(), player:GetViewCoords().zAxis, self:GetActiveStructure())
-    if valid then
+    local coords, valid = self:GetPositionForStructure(player:GetEyePos(), player:GetViewCoords().zAxis, self:GetActiveStructure(), self.lastClickedPosition)
+    local secondClick = true
     
-        // Ensure they have enough resources.
-        local cost = GetCostForTech(self:GetActiveStructure().GetDropStructureId())
-        if player:GetResources() >= cost then
+    if LookupTechData(self:GetActiveStructure().GetDropStructureId(), kTechDataSpecifyOrientation, false) then
+        secondClick = self.lastClickedPosition ~= nil
+    end
+    
+    if secondClick then
+    
+        if valid then
 
-            local message = BuildGorgeDropStructureMessage(player:GetEyePos(), player:GetViewCoords().zAxis, self.activeStructure)
-            Client.SendNetworkMessage("GorgeBuildStructure", message, true)
-            
-        else
-            player:TriggerInvalidSound()
-            success = false
-        end
+            // Ensure they have enough resources.
+            local cost = GetCostForTech(self:GetActiveStructure().GetDropStructureId())
+            if player:GetResources() >= cost then
+
+                local message = BuildGorgeDropStructureMessage(player:GetEyePos(), player:GetViewCoords().zAxis, self.activeStructure, self.lastClickedPosition)
+                Client.SendNetworkMessage("GorgeBuildStructure", message, true)
+                success = true
+
+            end
         
+        end
+
+        self.lastClickedPosition = nil
+
     else
+        self.lastClickedPosition = Vector(coords.origin)
+    end
+    
+    if not valid then
         player:TriggerInvalidSound()
-        success = false
     end
         
     return success
     
 end
 
-local function DropStructure(self, player, origin, direction, structureAbility)
+local function DropStructure(self, player, origin, direction, structureAbility, lastClickedPosition)
 
     // If we have enough resources
     if Server then
     
-        local coords, valid, onEntity = self:GetPositionForStructure(origin, direction, structureAbility)
+        local coords, valid, onEntity = self:GetPositionForStructure(origin, direction, structureAbility, lastClickedPosition)
         local techId = structureAbility:GetDropStructureId()
         
         local maxStructures = -1
@@ -251,6 +282,10 @@ local function DropStructure(self, player, origin, direction, structureAbility)
                     player:DeductAbilityEnergy(kDropStructureEnergyCost)
                     self:TriggerEffects("spit_structure", {effecthostcoords = Coords.GetLookIn(origin, direction)} )
                     
+                    if structureAbility.OnStructureCreated then
+                        structureAbility:OnStructureCreated(structure, lastClickedPosition)
+                    end
+                    
                     return true
                     
                 else
@@ -280,7 +315,7 @@ local function DropStructure(self, player, origin, direction, structureAbility)
     
 end
 
-function DropStructureAbility:OnDropStructure(origin, direction, structureIndex)
+function DropStructureAbility:OnDropStructure(origin, direction, structureIndex, lastClickedPosition)
 
     local player = self:GetParent()
         
@@ -288,26 +323,26 @@ function DropStructureAbility:OnDropStructure(origin, direction, structureIndex)
     
         local structureAbility = DropStructureAbility.kSupportedStructures[structureIndex]        
         if structureAbility then        
-             DropStructure(self, player, origin, direction, structureAbility)
+             DropStructure(self, player, origin, direction, structureAbility, lastClickedPosition)
         end
         
     end
     
 end
 
-function DropStructureAbility:CreateStructure(coords, player, structureAbility)
-	local created_structure = structureAbility:CreateStructure(coords, player)
-	if created_structure then 
-		return created_structure
-	else
-    	return CreateEntity(structureAbility:GetDropMapName(), coords.origin, player:GetTeamNumber())
+function DropStructureAbility:CreateStructure(coords, player, structureAbility, lastClickedPosition)
+    local created_structure = structureAbility:CreateStructure(coords, player, lastClickedPosition)
+    if created_structure then 
+        return created_structure
+    else
+        return CreateEntity(structureAbility:GetDropMapName(), coords.origin, player:GetTeamNumber())
     end
 end
 
 // Given a gorge player's position and view angles, return a position and orientation
 // for structure. Used to preview placement via a ghost structure and then to create it.
 // Also returns bool if it's a valid position or not.
-function DropStructureAbility:GetPositionForStructure(startPosition, direction, structureAbility)
+function DropStructureAbility:GetPositionForStructure(startPosition, direction, structureAbility, lastClickedPosition)
 
     PROFILE("DropStructureAbility:GetPositionForStructure")
 
@@ -335,7 +370,7 @@ function DropStructureAbility:GetPositionForStructure(startPosition, direction, 
         if trace.entity == nil then
             validPosition = true
             
-        elseif trace.entity:isa("Infestation") or trace.entity:isa("Clog") then
+        elseif trace.entity:isa("Infestation") or trace.entity:isa("Clog") or trace.entity:isa("Tunnel") then
             validPosition = true
         end
         
@@ -360,7 +395,7 @@ function DropStructureAbility:GetPositionForStructure(startPosition, direction, 
         validPosition = false
     end
     
-    if not structureAbility:GetIsPositionValid(displayOrigin, player) then
+    if not structureAbility:GetIsPositionValid(displayOrigin, player, trace.normal, lastClickedPosition, trace.entity) then
         validPosition = false
     end    
     
@@ -380,7 +415,7 @@ function DropStructureAbility:GetPositionForStructure(startPosition, direction, 
     local coords = Coords.GetLookIn( displayOrigin, structureFacing, trace.normal )
     
     if structureAbility.ModifyCoords then
-        structureAbility:ModifyCoords(coords)
+        structureAbility:ModifyCoords(coords, lastClickedPosition)
     end
     
     return coords, validPosition, trace.entity
@@ -422,22 +457,30 @@ function DropStructureAbility:ProcessMoveOnWeapon(input)
             local team = player:GetTeam()
             local hiveCount = team:GetNumHives()
             local numAllowedHydras = LookupTechData(kTechId.Hydra, kTechDataMaxAmount, -1) 
-            local numAllowedWebStalks = LookupTechData(kTechId.WebStalk, kTechDataMaxAmount, -1) 
             local numAllowedClogs = LookupTechData(kTechId.Clog, kTechDataMaxAmount, -1) 
+            local numAllowedTunnels = LookupTechData(kTechId.GorgeTunnel, kTechDataMaxAmount, -1) 
+            local numAllowedWebs = LookupTechData(kTechId.Web, kTechDataMaxAmount, -1) 
+            local numAllowedBabblers = LookupTechData(kTechId.Babbler, kTechDataMaxAmount, -1) 
 
             if numAllowedHydras >= 0 then     
                 self.numHydrasLeft = team:GetNumDroppedGorgeStructures(player, kTechId.Hydra)           
-            end
-            
-            if numAllowedWebStalks >= 0 then     
-                self.numWebsStalksLeft = team:GetNumDroppedGorgeStructures(player, kTechId.WebStalk)            
             end
    
             if numAllowedClogs >= 0 then     
                 self.numClogsLeft = team:GetNumDroppedGorgeStructures(player, kTechId.Clog)           
             end
-        
-
+            
+            if numAllowedTunnels >= 0 then     
+                self.numTunnelsLeft = team:GetNumDroppedGorgeStructures(player, kTechId.GorgeTunnel)           
+            end
+            
+            if numAllowedWebs >= 0 then     
+                self.numWebsLeft = team:GetNumDroppedGorgeStructures(player, kTechId.Web)           
+            end
+            
+            if numAllowedBabblers >= 0 then     
+                self.numBabblersLeft = team:GetNumDroppedGorgeStructures(player, kTechId.Babbler)           
+            end
             
         end
         
@@ -470,7 +513,7 @@ if Client then
 
         if player then
 
-            self.ghostCoords, self.placementValid = self:GetPositionForStructure(player:GetEyePos(), viewDirection, self:GetActiveStructure())
+            self.ghostCoords, self.placementValid = self:GetPositionForStructure(player:GetEyePos(), viewDirection, self:GetActiveStructure(), self.lastClickedPosition)
             
             if player:GetResources() < LookupTechData(self:GetActiveStructure():GetDropStructureId(), kTechDataCostKey) then
                 self.placementValid = false

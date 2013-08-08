@@ -42,26 +42,18 @@ float4 DebugDepthPS(PS_DeferredPass_Input input) : COLOR0
     return float4( 1.0, 0, 0, 1 );
 }
 
-struct PS_ResizeDepth_Output
-{
-    half4 vsDepth            : COLOR0;
-    half  ssDepth            : DEPTH;
-};
-
-// Particles need VS depth (to do soften) and SS depth (to not draw over over stuff, especially view models)
-PS_ResizeDepth_Output ResizeDepthPS(PS_DeferredPass_Input input)
+// Particles need VS depth (to do soften)
+half4 ResizeDepthPS(PS_DeferredPass_Input input) : COLOR0
 {
     float2 uv = input.texCoord;
 
+    // Do some adjustments to correct for half-pixel-offset stuff
     uv.x += rcpFrame.x*0.25;
     uv.y += rcpFrame.y*0.25;
 	
     float vsDepth = tex2D( linearDepthTextureSampler, uv ).r;
 
-    PS_ResizeDepth_Output result;
-    result.vsDepth = half4(vsDepth, 0, 0, 1);
-    result.ssDepth = 1.0;
-    return result;
+    return half4(vsDepth, 0, 0, 1);
 }	
 
 technique ResizeDepth
@@ -69,7 +61,7 @@ technique ResizeDepth
     pass p0
     {
         ZFunc               = Always;
-        //ZWriteEnable        = True;
+        ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
         PixelShader         = compile ps_2_0 ResizeDepthPS();
         CullMode            = None;
@@ -89,7 +81,7 @@ technique Composite
 
         AlphaBlendEnable    = True;
         SrcBlend            = One;
-        DestBlend           = One;
+        DestBlend           = SrcAlpha;
     }
 }
 

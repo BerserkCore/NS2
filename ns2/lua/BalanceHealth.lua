@@ -21,7 +21,8 @@ kOnosHealth = 1300	kOnosArmor = 500	kOnosPointValue = 30
 		
 kEggHealth = 350	kEggArmor = 0	kEggPointValue = 2
 kMatureEggHealth = 350	kMatureEggArmor = 25
-kBabblerHealth = 30	kBabblerArmor = 0	kBabblerPointValue = 1
+
+kBabblerHealth = 30	kBabblerArmor = 0	kBabblerPointValue = 0
 		
 kArmorPerUpgradeLevel = 20
 kExosuitArmorPerUpgradeLevel = 60
@@ -105,13 +106,16 @@ kMatureHydraHealth = 450	kMatureHydraArmor = 50	kMatureHydraPointValue = 5
 
 kClogHealth = 250  kClogArmor = 0 kClogPointValue = 0
 
-kCystHealth = 100	kCystArmor = 0	kCystPointValue = 5
+kCystHealth = 50	kCystArmor = 0	kCystPointValue = 5
 kMatureCystHealth = 550	kMatureCystArmor = 0	kCystPointValue = 2
 
 kBoneWallHealth = 300 kBoneWallArmor = 300 kBoneWallPointValue = 5
 
 kPowerPointHealth = 2000	kPowerPointArmor = 1000	kPowerPointPointValue = 15
 kDoorHealth = 2000	kDoorArmor = 1000	kDoorPointValue = 15
+
+kTunnelEntranceHealth = 1400	kTunnelEntranceArmor = 0	kTunnelEntrancePointValue = 15
+kMatureTunnelEntranceHealth = 1600	kMatureTunnelEntranceArmor = 100
 
 // Hide armor
 kLerkHideArmor = 0

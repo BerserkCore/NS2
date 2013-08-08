@@ -393,7 +393,7 @@ local function UpdatePlayerIcon(self)
     else
     
         // Draw a player icon representing this player's position.
-        local playerOrigin = PlayerUI_GetOrigin()
+        local playerOrigin = PlayerUI_GetPositionOnMinimap()
         local playerRotation = PlayerUI_GetMinimapPlayerDirection()
 
         local posX, posY = PlotToMap(self, playerOrigin.x, playerOrigin.z)

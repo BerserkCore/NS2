@@ -11,14 +11,14 @@ Script.Load("lua/Alien.lua")
 Script.Load("lua/Weapons/Alien/SpitSpray.lua")
 Script.Load("lua/Weapons/Alien/InfestationAbility.lua")
 Script.Load("lua/Weapons/Alien/DropStructureAbility.lua")
-Script.Load("lua/Weapons/Alien/WebStalk.lua")
+Script.Load("lua/Weapons/Alien/BabblerAbility.lua")
 Script.Load("lua/Weapons/Alien/BileBomb.lua")
 Script.Load("lua/Weapons/Alien/Absorb.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
- 
+
 class 'Gorge' (Alien)
 
 if Server then    
@@ -502,6 +502,15 @@ if Client then
             return weapon:GetGhostModelCoords()
         end
 
+    end
+    
+    function Gorge:GetLastClickedPosition()
+    
+        local weapon = self:GetActiveWeapon()
+        if weapon and weapon:isa("DropStructureAbility") then
+            return weapon.lastClickedPosition
+        end
+        
     end
 
     function Gorge:GetIsPlacementValid()

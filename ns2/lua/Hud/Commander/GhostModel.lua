@@ -95,7 +95,6 @@ function GhostModel:Update()
     self.attachArrow:SetIsVisible(false)
     
     local modelName = GhostModelUI_GetModelName()
-    
     if not modelName then
     
         self:SetIsVisible(false)

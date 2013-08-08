@@ -68,6 +68,23 @@ function PlayingTeam:Initialize(teamName, teamNumber)
     self.entityTechIds = {}
     self.techIdCount = {}
 
+    self.eventListeners = {}
+
+end
+
+function PlayingTeam:AddListener( event, func )
+
+    local listeners = self.eventListeners[event]
+
+    if not listeners then
+        listeners = {}
+        self.eventListeners[event] = listeners
+    end
+
+    table.insert( listeners, func )
+
+    //DebugPrint( 'event %s has %d listeners', event, #self.eventListeners[event] )
+
 end
 
 function PlayingTeam:Uninitialize()
@@ -247,6 +264,7 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.ExosuitTech] = 3
         relevantResearchIds[kTechId.JetpackTech] = 3
         relevantResearchIds[kTechId.DualMinigunTech] = 3
+        relevantResearchIds[kTechId.DualRailgunTech] = 3
         
         relevantResearchIds[kTechId.Armor1] = 1
         relevantResearchIds[kTechId.Armor2] = 1
@@ -261,12 +279,13 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.Spores] = 1
         relevantResearchIds[kTechId.Blink] = 1
         relevantResearchIds[kTechId.Stomp] = 1
+        relevantResearchIds[kTechId.GorgeTunnel] = 1
         
         relevantResearchIds[kTechId.Xenocide] = 1
-        //relevantResearchIds[kTechId.WebStalk] = 1
         relevantResearchIds[kTechId.Umbra] = 1
         relevantResearchIds[kTechId.Vortex] = 1
-        //relevantResearchIds[kTechId.BoneShield] = 1
+        relevantResearchIds[kTechId.BoneShield] = 1
+        relevantResearchIds[kTechId.WebTech] = 1
     
     end
     
@@ -302,7 +321,47 @@ function PlayingTeam:OnResearchComplete(structure, researchId)
         teamInfoEntity:SetLatestResearchedTech(researchId, Shared.GetTime() + PlayingTeam.kResearchDisplayTime, techPriority) 
         
     end
+
+    // inform listeners
+
+    local listeners = self.eventListeners['OnResearchComplete']
+
+    if listeners then
     
+        for _, listener in ipairs(listeners) do
+            listener(structure, researchId)
+        end
+
+    end
+
+end
+
+function PlayingTeam:OnCommanderAction(techId)
+
+    local listeners = self.eventListeners['OnCommanderAction']
+
+    if listeners then
+
+        for _, listener in ipairs(listeners) do
+            listener(techId)
+        end
+
+    end
+
+end
+
+function PlayingTeam:OnConstructionComplete(structure)
+
+    local listeners = self.eventListeners['OnConstructionComplete']
+
+    if listeners then
+
+        for _, listener in ipairs(listeners) do
+            listener(structure)
+        end
+
+    end
+
 end
 
 // Returns sound name of last alert and time last alert played (for testing)

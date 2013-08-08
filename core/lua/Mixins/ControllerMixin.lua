@@ -6,6 +6,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/Vector.lua")
+
 ControllerMixin = CreateMixin( ControllerMixin )
 ControllerMixin.type = "Controller"
 

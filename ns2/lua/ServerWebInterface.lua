@@ -124,8 +124,21 @@ local function GetServerState()
     
 end
 
-local function DecToHex( id )
+local function DecToHex(id)
     return string.format("%x", tonumber(id))
+end
+
+local function URLEncodeChats(chatTable)
+
+    for t = 1, #chatTable do
+    
+        chatTable[t].message = url_encode(chatTable[t].message)
+        chatTable[t].player = url_encode(chatTable[t].player)
+        
+    end
+    
+    return chatTable
+    
 end
 
 local function OnWebRequest(actions)
@@ -135,7 +148,7 @@ local function OnWebRequest(actions)
     elseif actions.request == "getperfdata" then
         return "application/json", json.encode(perfDataBuffer:ToTable())
     elseif actions.request == "getchatlist" then
-        return "application/json", json.encode(Server.recentChatMessages:ToTable())
+        return "application/json", json.encode(URLEncodeChats(Server.recentChatMessages:ToTable()))
     elseif actions.request == "getinstalledmodslist" then
         return "application/json", json.encode(GetModList())
     elseif actions.request == "getmaplist" then
@@ -146,9 +159,10 @@ local function OnWebRequest(actions)
         MapCycle_SetMapCycle( json.decode(actions.data) )
         return ""
     elseif actions.request == "installmod" then
-        Server.InstallMod( DecToHex(actions.modid) )
+        Server.InstallMod(DecToHex(actions.modid))
         return ""
     elseif actions.request == "getmods" then
+    
         local url = "http://www.unknownworlds.com/spark/browse_workshop.php?appid=4920"
         local page = tostring(actions.p)
         if type(page) == "string" then
@@ -156,6 +170,7 @@ local function OnWebRequest(actions)
         end
         local result = Shared.GetHTTPRequest(url)
         return "application/json", result
+        
     end
     
     if actions.command then

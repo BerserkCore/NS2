@@ -36,21 +36,6 @@ function AmbientSound:OnDestroy()
     
 end
 
-local kFmod3DSound = 16
-local kFmodLogarithmicRolloff = 1048576
-local kFmodLinearRolloff = 2097152
-local kFmodCustomRolloff = 67108864
-
-local kFmodVolumePropertyIndex = 1
-local kFmodPitchPropertyIndex = 4
-local kFmodRolloffPropertyIndex = 16
-local kFmodMinDistancePropertyIndex = 17
-local kFmodMaxDistancePropertyIndex = 18
-
-local kFmodPositioningPropertyIndex = 19
-local kFmodWorldRelative = 524288
-local kFmodHeadRelative = 262144
-
 function AmbientSound:StartPlaying()
 
     if not self.playing then
@@ -67,29 +52,25 @@ function AmbientSound:StartPlaying()
         end
         
         self.soundEffectInstance:SetCoords(Coords.GetTranslation(listenerOrigin))
+        self.soundEffectInstance:SetPositional(self.positioning == 1)
         
-        local positioningType = ConditionalValue(self.positioning == 1, kFmodWorldRelative, kFmodHeadRelative)
-        self.soundEffectInstance:SetPropertyInt(kFmodPositioningPropertyIndex, positioningType, true)
-        
-        self.soundEffectInstance:SetPropertyInt(kFmodRolloffPropertyIndex, kFmod3DSound, true)
-        
-        local rolloffType = kFmodLogarithmicRolloff
+        local rolloffType = SoundSystem.Rolloff_Logarithmic
         if self.falloffType == 2 then
-            rolloffType = kFmodLinearRolloff
+            rolloffType = SoundSystem.Rolloff_Linear
         elseif self.falloffType == 3 then
-            rolloffType = kFmodCustomRolloff
+            rolloffType = SoundSystem.Rolloff_Custom
         end
-        self.soundEffectInstance:SetPropertyInt(kFmodRolloffPropertyIndex, rolloffType, true)
+        self.soundEffectInstance:SetRolloff(rolloffType)
         
         if self.minFalloff >= self.maxFalloff then
             Shared.Message("Warning: Min Falloff (" .. self.minFalloff .. ") is greater than Max Falloff (" .. self.maxFalloff .. ") for ambient sound event named: " .. self.eventName)
         end
         
-        self.soundEffectInstance:SetPropertyFloat(kFmodMaxDistancePropertyIndex, self.maxFalloff, true)
-        self.soundEffectInstance:SetPropertyFloat(kFmodMinDistancePropertyIndex, self.minFalloff, true)
+        self.soundEffectInstance:SetMaxDistance(self.maxFalloff)
+        self.soundEffectInstance:SetMinDistance(self.minFalloff)
         
-        self.soundEffectInstance:SetPropertyFloat(kFmodVolumePropertyIndex, self.volume, true)
-        self.soundEffectInstance:SetPropertyFloat(kFmodPitchPropertyIndex, self.pitch, true)
+        self.soundEffectInstance:SetVolume(self.volume)
+        self.soundEffectInstance:SetPitch(self.pitch)
         
         self.playing = true
         

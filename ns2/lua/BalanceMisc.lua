@@ -65,7 +65,7 @@ kOnosInfestationSpeedBonus = 0.0
 
 kHydrasPerHive = 3
 kClogsPerHive = 10
-kWebStalkPerHive = 2
+kNumWebsPerGorge = 10
 kCystInfestDuration = 37.5
 
 kSentriesPerBattery = 3
@@ -108,6 +108,9 @@ kExoEngagementDistance = 1.5
 kOnosEngagementDistance = 2
 kLerkSporeShootRange = 10
 
+// entrance and exit
+kNumGorgeTunnels = 2
+
 // maturation time for alien buildings
 kHiveMaturationTime = 180
 kHarvesterMaturationTime = 150
@@ -121,6 +124,7 @@ kShellMaturationTime = 60
 kCystMaturationTime = 90
 kHydraMaturationTime = 140
 kEggMaturationTime = 100
+kTunnelEntranceMaturationTime = 120
 
 kNutrientMistMaturitySpeedup = 3
 
@@ -166,11 +170,12 @@ kUpgradeGestationTime = 2
 
 // Cyst parent ranges, how far a cyst can support another cyst
 //
-// NOTE: I think the range is a bit long for kCystParentRange, there will be gaps between the
+// NOTE: I think the range is a bit long for kCystMaxParentRange, there will be gaps between the
 // infestation patches if the range is > kInfestationRadius * 1.75 (about).
 // 
 kHiveCystParentRange = 15 // distance from a hive a cyst can be connected
-kCystParentRange = 15 // distance from a cyst another cyst can be placed
+kCystMaxParentRange = 15 // distance from a cyst another cyst can be placed
+kCystMinParentRange = 6 // minimum distance to other cyst allowed
 
 // Damage over time that all cysts take when not connected
 kCystUnconnectedDamage = 12
@@ -280,3 +285,6 @@ kResourcesPerNode = -1
 kBileBombSplashRadius = 6
 
 kDropStructureEnergyCost = 20
+
+kMinWebLength = 1.5
+kMaxWebLength = 6

@@ -20,9 +20,9 @@ end
 
 function OnCommandHitEffect(hitEffectTable)
 
-    local position, doer, surface, target, showtracer, altMode = ParseHitEffectMessage(hitEffectTable)
-
-    local tableParams = {}
+    local position, doer, surface, target, showtracer, altMode, damage = ParseHitEffectMessage(hitEffectTable)
+    
+    local tableParams = { }
     tableParams[kEffectHostCoords] = Coords.GetTranslation(position)
     if doer then
         tableParams[kEffectFilterDoerName] = doer:GetClassName()
@@ -35,41 +35,43 @@ function OnCommandHitEffect(hitEffectTable)
         tableParams[kEffectFilterClassName] = target:GetClassName()
         
         if target.GetTeamType then
+        
             tableParams[kEffectFilterIsMarine] = target:GetTeamType() == kMarineTeamType
             tableParams[kEffectFilterIsAlien] = target:GetTeamType() == kAlienTeamType
+            
         end
         
     else
-            tableParams[kEffectFilterIsMarine] = false
-            tableParams[kEffectFilterIsAlien] = false
+    
+        tableParams[kEffectFilterIsMarine] = false
+        tableParams[kEffectFilterIsAlien] = false
+        
     end
     
-    // don't play the hit cinematic, those are made for third person
+    // Don't play the hit cinematic, those are made for third person.
     if target ~= Client.GetLocalPlayer() then
         GetEffectManager():TriggerEffects("damage", tableParams)
     end
     
-    // always play sound effect
+    // Always play sound effect.
     GetEffectManager():TriggerEffects("damage_sound", tableParams)
     
     if showtracer == true and doer then
     
-        
         local tracerStart = (doer.GetBarrelPoint and doer:GetBarrelPoint()) or (doer.GetEyePos and doer:GetEyePos()) or doer:GetOrigin()
-    
+        
         local tracerVelocity = GetNormalizedVector(position - tracerStart) * kTracerSpeed
         CreateTracer(tracerStart, position, tracerVelocity, doer)
-    
+        
     end
     
-    if target and target.OnTakeDamageClient then
-        // Damage not available here
-        target:OnTakeDamageClient(nil, doer, position)
+    if damage > 0 and target and target.OnTakeDamageClient then
+        target:OnTakeDamageClient(damage, doer, position)
     end
-
+    
 end
 
-// Show damage numbers for players
+// Show damage numbers for players.
 function OnCommandDamage(damageTable)
 
     local target, amount, hitpos = ParseDamageMessage(damageTable)

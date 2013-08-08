@@ -18,11 +18,10 @@ function Onos:InitWeapons()
 end
 
 function Onos:GetTierTwoTechId()
-    return kTechId.Stomp
+    return kTechId.BoneShield
 end
 
-/*
+
 function Onos:GetTierThreeTechId()
-    return kTechId.PrimalScream
+    return kTechId.Stomp
 end
-*/

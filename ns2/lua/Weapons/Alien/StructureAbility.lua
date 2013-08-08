@@ -76,6 +76,9 @@ function StructureAbility:CreateStructure()
 end
 
 function StructureAbility:IsAllowed(player)
-	return true
+
+    local techTree = GetTechTree(player:GetTeamNumber())
+	return techTree:GetIsTechAvailable(self:GetDropStructureId())
+	
 end
 

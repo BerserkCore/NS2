@@ -66,10 +66,13 @@ kExosuitTechResearchCost = 30
 kExosuitLockdownTechResearchCost = 20
 kExosuitUpgradeTechResearchCost = 20
 kDualExosuitCost = 75
+kDualRailgunExosuitCost = 75
 
 kMinigunCost = 30
+kRailgunCost = 30
 kDualMinigunCost = 25
 kDualMinigunTechResearchCost = 20
+kDualRailgunTechResearchCost = 20
 
 kWeapons1ResearchCost = 15
 kWeapons2ResearchCost = 25
@@ -95,7 +98,6 @@ kHarvesterCost = 10
 
 kShellCost = 15
 kCragCost = 10
-kEvolveBabblersCost = 15
 
 kSpurCost = 10
 kShiftCost = 10
@@ -115,6 +117,8 @@ kOnosCost = 75
 
 kHydraCost = 3
 kClogCost = 0
+kGorgeTunnelCost = 10
+kGorgeTunnelBuildTime = 15
 kRuptureCost = 1
 
 kEnzymeCloudDuration = 3
@@ -241,6 +245,10 @@ kMinigunClipSize = 250
 kClawDamage = 50
 kClawDamageType = kDamageType.Structural
 
+kRailgunDamage = 100
+kRailgunChargeDamage = 25
+kRailgunDamageType = kDamageType.Puncture
+
 kMACAttackDamage = 5
 kMACAttackDamageType = kDamageType.Normal
 kMACAttackFireDelay = 0.6
@@ -288,6 +296,11 @@ kSpitDamage = 40
 kSpitDamageType = kDamageType.Normal
 kSpitEnergyCost = 7
 
+kBabblerPheromoneEnergyCost = 7
+
+kBabblerEggBuildTime = 4
+kNumBabblersPerGorge = 10
+
 // Also see kHealsprayHealStructureRate
 kHealsprayDamage = 8
 kHealsprayDamageType = kDamageType.Biological
@@ -299,6 +312,9 @@ kBileBombDamage = 70 // per second
 kBileBombDamageType = kDamageType.Corrode
 kBileBombEnergyCost = 20
 kBileBombDuration = 5
+
+kWebBuildCost = 1
+kWebbedDuration = 1
 
 kLerkBiteDamage = 60
 kBitePoisonDamage = 6 // per second
@@ -347,6 +363,13 @@ kGoreDamage = 95
 kGoreDamageType = kDamageType.Puncture
 kGoreEnergyCost = 12
 kGoreMarineTossEnergyCost = 12
+
+kBoneShieldEnergyPerSecond = 15
+kStartBoneShieldCost = 10
+kBoneShieldDamageAbsorbPerEnergy = 10
+
+// bone shield absorbs maximum of 90% damage
+kBoneShieldAbsorbFraction = 0.9
 
 kSmashDamage = 100
 kSmashDamageType = kDamageType.Door
@@ -417,7 +440,6 @@ kInfantryPortalBuildTime = 7
 
 kRifleUpgradeTechResearchTime = 20
 kShotgunTechResearchTime = 30
-kDualMinigunTechResearchTime = 20
 kGrenadeLauncherTechResearchTime = 20
 
 kCommandStationBuildTime = 15
@@ -448,6 +470,7 @@ kFlamethrowerTechResearchTime = 60
 kFlamethrowerAltTechResearchTime = 60
 
 kDualMinigunTechResearchTime = 60
+kDualRailgunTechResearchTime = 60
 kCatPackTechResearchTime = 15
 
 kObservatoryBuildTime = 15
@@ -470,7 +493,6 @@ kHarvesterBuildTime = 45
 
 kShellBuildTime = 18
 kCragBuildTime = 25
-kEvolveBabblersResearchTime = 30
 
 kWhipBuildTime = 30
 kEvolveBombardResearchTime = 15
@@ -498,6 +520,10 @@ kLeapResearchCost = 25
 kLeapResearchTime = 60
 kBileBombResearchCost = 20
 kBileBombResearchTime = 60
+kGorgeTunnelResearchCost = 20
+kGorgeTunnelResearchTime = 60
+kWebResearchCost = 20
+kWebResearchTime = 60
 kSporesResearchCost = 20
 kSporesResearchTime = 60
 kBlinkResearchCost = 30
@@ -507,8 +533,8 @@ kStompResearchTime = 90
 
 kXenocideResearchCost = 30
 kXenocideResearchTime = 90
-kWebStalkResearchCost = 30
-kWebStalkResearchTime = 90
+kBabblerAbilityResearchCost = 30
+kBabblerAbilityResearchTime = 90
 kUmbraResearchCost = 30
 kUmbraResearchTime = 90
 kVortexResearchCost = 30
@@ -593,7 +619,6 @@ kCragInitialEnergy = 25  kCragMaxEnergy = 100
 kCragHealCost = 0  
 kCragHealWaveCost = 3
 kCragUmbraCost = 10
-kCragBabblersCost = 15
 kMatureCragMaxEnergy = 150
 
 kHydraDamage = 15 // From NS1

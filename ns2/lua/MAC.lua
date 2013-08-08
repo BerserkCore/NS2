@@ -767,7 +767,7 @@ function MAC:OnUpdate(deltaTime)
         if self.jetsCinematics then
 
             for id,cinematic in ipairs(self.jetsCinematics) do
-                self.jetsCinematics[id]:SetIsActive(self.moving)
+                self.jetsCinematics[id]:SetIsActive(self.moving and self:GetIsVisible())
             end
 
         end

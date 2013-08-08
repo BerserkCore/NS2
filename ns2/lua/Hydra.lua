@@ -204,7 +204,7 @@ function Hydra:GetCanAutoBuild()
 end
 
 function Hydra:GetShowHitIndicator()
-    return false
+    return true
 end
 
 function Hydra:GetDeathIconIndex()

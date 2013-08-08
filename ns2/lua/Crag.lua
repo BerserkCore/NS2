@@ -8,7 +8,6 @@
 //
 // Passive ability - heals nearby players and structures
 // Triggered ability - emit defensive umbra (8 seconds)
-// Active ability - stream Babblers out towards target, hampering their ability to attack
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
@@ -307,25 +306,10 @@ function Crag:OnUpdate(deltaTime)
     
 end
 
-function Crag:OnResearchComplete(researchId)
-
-    // Transform into mature crag
-    if researchId == kTechId.EvolveBabblers then
-        self:GiveUpgrade(kTechId.CragBabblers)
-    end 
-    
-end
-
 function Crag:GetTechButtons(techId)
 
     local techButtons = { kTechId.HealWave, kTechId.CragHeal, kTechId.None, kTechId.None, 
                           kTechId.None, kTechId.None, kTechId.None, kTechId.None }
-    
-    /*
-    if not self:GetHasUpgrade(kTechId.CragBabblers) then
-        techButtons[8] = kTechId.EvolveBabblers
-    end
-    */
     
     return techButtons
     
@@ -366,24 +350,12 @@ function Crag:GetTechAllowed(techId, techNode, player)
 
 end
 
-function Crag:TriggerBabblers(commander)
-
-    local babblers = CreateEntity(CragBabblers.kMapName, self:GetOrigin() + Vector(0, 0.2, 0), self:GetTeamNumber())
-    babblers:SetOwner(commander)
-    babblers:SetHostCrag(self)
-    babblers:ProcessRallyOrder(self)
-    return true
-    
-end
-
 function Crag:PerformActivation(techId, position, normal, commander)
 
     local success = false
     
     if techId == kTechId.HealWave then
         success = self:TriggerHealWave(commander)
-    elseif techId == kTechId.CragBabblers then
-        success = self:TriggerBabblers(commander)
     end
     
     return success, true

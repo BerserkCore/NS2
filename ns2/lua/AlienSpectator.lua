@@ -35,6 +35,13 @@ local function UpdateQueuePosition(self)
     
 end
 
+local function UpdateWaveTime(self)
+
+    self:SetWaveSpawnEndTime(self:GetTeam():GetWaveSpawnEndTime(self))
+    return true
+    
+end
+
 function AlienSpectator:OnCreate()
 
     TeamSpectator.OnCreate(self)
@@ -64,6 +71,7 @@ function AlienSpectator:OnInitialized()
     
         self.evolveTechIds = { kTechId.Skulk }
         self:AddTimedCallback(UpdateQueuePosition, 0.1)
+        self:AddTimedCallback(UpdateWaveTime, 0.1)
         UpdateQueuePosition(self)
         
     end
@@ -167,8 +175,6 @@ function AlienSpectator:OnProcessMove(input)
             self.waitingToSpawnMessageSent = true
             
         end
-        
-        self:SetWaveSpawnEndTime(self:GetTeam():GetWaveSpawnEndTime())
         
     end
     

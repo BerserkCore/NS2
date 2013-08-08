@@ -174,6 +174,8 @@ function RoboticsFactory:GetTechAllowed(techId, techNode, player)
     // there is a delay in the tech tree when tech is queued which causes
     // GetIsResearching() to return true before the research is 100% complete.
     // Checking the progress is 0 is the sure way to get around that limit.
+    // $AU: Which causes the cancel button to not work anymore. I want to make the tech tree
+    // finally entity based (this will also make both tech trees available for insight) with clearer API.
     allowed = allowed and not self.open and self:GetResearchProgress() == 0
     
     if techId == kTechId.ARC then

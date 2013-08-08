@@ -174,6 +174,8 @@ end
 
 function GUIMainMenu:UpdateFindPeople(deltatime)
 
+    PROFILE("GUIMainMenu:UpdateFindPeople")
+
     local window  = self.findPeopleWindow
     local visible = window:GetIsVisible()
 

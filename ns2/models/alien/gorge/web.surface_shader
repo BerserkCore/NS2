@@ -1,0 +1,17 @@
+<shader>
+	
+	<inputs>
+		<input name="albedoMap" type="texture" address="wrap" srgb="true"/>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float4 tex = tex2D(albedoMap, input.texCoord);
+			material.emissive = tex.rgb * input.color.rgb;
+		}
+	]]>
+	</code>
+
+</shader>

@@ -2,7 +2,11 @@
 	
 	<inputs>
 		<input name="albedoMap" type="texture" address="wrap" />
-		<input name="intensity" type="float">1.0</input>
+		<input name="normalMap" type="texture" address="wrap" />
+		<input name="amount" type="float"/>
+		<input name="origin" type="float3"/>
+		<input name="maxRadius" type="float"/>
+		<input name="infestationScale" type="float"/>
 	</inputs>
 	
 	<params>
@@ -15,15 +19,24 @@
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 			
-			float2 texCoord = input.osPosition.xz * 0.15;
+			float2 texCoord = input.osPosition.xz * 0.30;
+
+            const float growDist      = 0.8;
+            float blobDist            = length(input.wsPosition - origin);
+            float infestDist          = amount * maxRadius;
+            float scale               = saturate( (infestDist - blobDist) / growDist );
+
+			float3 albedo     = tex2D(albedoMap, texCoord);
+			float3 tsNormal   = tex2D(normalMap, texCoord);
 			
-			float3 map    = tex2D(albedoMap, texCoord);
-			float  amount = tex2D(albedoMap, input.texCoord).a;
+			float2 d = 2 * (input.texCoord - 0.5) / scale;
+			float opacity = 1 - dot(d, d);
 			
-			float a = (1 - length(map)) * 0.5;
+			float a = (1 - length(albedo)) * 0.5;
 			
-			material.albedo 	= map;
-			material.opacity 	= saturate( (amount - a) * 2 ) * intensity;
+			material.albedo 	= albedo;
+			material.tsNormal   = tsNormal * 2 - 1;
+			material.opacity 	= saturate( (opacity - a) * 8 );
 			
 		}
 	]]>

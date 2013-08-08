@@ -28,6 +28,7 @@
 //
 
 Script.Load("lua/PhysicsGroups.lua")
+Script.Load("lua/Utility.lua")
 
 // Cache frequently used globals for greater efficiency.
 local Shared_GetModel                           = Shared.GetModel

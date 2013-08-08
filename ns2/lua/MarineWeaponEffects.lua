@@ -408,6 +408,16 @@ kMarineWeaponEffects =
         }
     },
     
+    railgun_attack =
+    {
+        railgunAttackEffects =
+        {
+            //{viewmodel_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
+            //{weapon_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
+            // Sound effect
+            {sound = "sound/NS2.fev/marine/heavy/railgun_fire"}
+        },
+    },
 }
 
 GetEffectManager():AddEffectData("MarineWeaponEffects", kMarineWeaponEffects)

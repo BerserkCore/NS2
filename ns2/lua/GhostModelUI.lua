@@ -117,6 +117,15 @@ function GhostModelUI_GetGhostModelCoords()
     
 end
 
+function GhostModelUI_GetLastClickedPosition()
+
+    local player = Client.GetLocalPlayer()
+    if player then    
+        return player:GetLastClickedPosition()
+    end
+    
+end
+
 function GhostModelUI_GetIsValidPlacement()
 
     local player = Client.GetLocalPlayer()

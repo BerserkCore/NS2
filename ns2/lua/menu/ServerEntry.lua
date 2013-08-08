@@ -93,6 +93,8 @@ function ServerEntry:Initialize()
                     
                 end
                 
+                self.parentList:UpdateEntry(self.serverData, true)
+                
             else
             
                 SelectServerEntry(self)
@@ -167,6 +169,10 @@ function ServerEntry:Initialize()
 
 end
 
+function ServerEntry:SetParentList(parentList)
+    self.parentList = parentList
+end
+
 function ServerEntry:SetFontName(fontName)
 
     self.serverName:SetFontName(fontName)
@@ -189,64 +195,96 @@ function ServerEntry:SetTextColor(color)
     
 end
 
+function ServerEntry:SetIsFiltered(filtered)
+    self.filtered = filtered
+end
+
+function ServerEntry:GetIsFiltered()
+    return self.filtered == true
+end    
+
+local function GetHasDataChanged(oldData, newData)
+
+    return oldData == nil or newData == nil or
+        oldData.numPlayers ~= newData.numPlayers or
+        oldData.name ~= newData.name or
+        oldData.modded ~= newData.modded or    
+        oldData.rookieFriendly ~= newData.rookieFriendly or
+        oldData.mapName ~= newData.mapName or
+        oldData.ping ~= newData.ping or
+        oldData.tickrate ~= newData.tickrate or
+        oldData.requiresPassword ~= newData.requiresPassword or 
+        oldData.mode ~= newData.mode or
+        oldData.favorite ~= newData.favorite
+
+end
+
 function ServerEntry:SetServerData(serverData)
 
-    self.serverData = serverData
+    PROFILE("ServerEntry:SetServerData")
+
+    if self.serverData ~= serverData then
     
-    self.playerCount:SetText(string.format("%d/%d", serverData.numPlayers, serverData.maxPlayers))
-    if serverData.numPlayers >= serverData.maxPlayers then
-        self.playerCount:SetColor(kRed)
-    else
-        self.playerCount:SetColor(kWhite)
-    end 
- 
-    self.serverName:SetText(serverData.name)
-    
-    if serverData.modded then
-        self.serverName:SetColor(kYellow)
-    elseif serverData.rookieFriendly then
-        self.serverName:SetColor(kGreen)
-    else
-        self.serverName:SetColor(kWhite)
+        self.playerCount:SetText(string.format("%d/%d", serverData.numPlayers, serverData.maxPlayers))
+        if serverData.numPlayers >= serverData.maxPlayers then
+            self.playerCount:SetColor(kRed)
+        else
+            self.playerCount:SetColor(kWhite)
+        end 
+     
+        self.serverName:SetText(serverData.name)
+        
+        if serverData.modded then
+            self.serverName:SetColor(kYellow)
+        elseif serverData.rookieFriendly then
+            self.serverName:SetColor(kGreen)
+        else
+            self.serverName:SetColor(kWhite)
+        end
+        
+        self.mapName:SetText(serverData.map)
+        
+        self.ping:SetText(ToString(serverData.ping))    
+        if serverData.ping >= kBadPing then
+            self.ping:SetColor(kRed)
+        elseif serverData.ping >= kModeratePing then
+            self.ping:SetColor(kYellow)
+        else    
+            self.ping:SetColor(kGreen)
+        end
+        
+        // It's possible for a server to not repsond with the tickrate
+        if serverData.tickrate ~= nil then
+            local performance = Clamp(serverData.tickrate / 30, 0, 1)
+            self.tickRate:SetColor(Color(1 - performance, performance, performance - 0.8, 1))
+            self.tickRate:SetText(string.format("%d %%", math.round(performance * 100)))
+        else
+            self.tickRate:SetColor(Color(0.5, 0.5, 0.5, 1))
+            self.tickRate:SetText("??")
+        end
+        
+        self.private:SetIsVisible(serverData.requiresPassword)
+        
+        self.modName:SetText(serverData.mode)
+        if serverData.mode == "ns2" then
+            self.modName:SetColor(kWhite)
+        else
+            self.modName:SetColor(kWhite)
+        end
+        
+        if serverData.favorite then
+            self.favorite:SetTexture(kFavoriteTexture)
+        else
+            self.favorite:SetTexture(kNonFavoriteTexture)
+        end
+        
+        self:SetId(serverData.serverId)
+        self.serverData = { }
+        for name, value in pairs(serverData) do
+            self.serverData[name] = value
+        end
+        
     end
-    
-    self.mapName:SetText(serverData.map)
-    
-    self.ping:SetText(ToString(serverData.ping))    
-    if serverData.ping >= kBadPing then
-        self.ping:SetColor(kRed)
-    elseif serverData.ping >= kModeratePing then
-        self.ping:SetColor(kYellow)
-    else    
-        self.ping:SetColor(kGreen)
-    end
-    
-    // It's possible for a server to not repsond with the tickrate
-    if serverData.tickrate ~= nil then
-        local performance = Clamp(serverData.tickrate / 30, 0, 1)
-        self.tickRate:SetColor(Color(1 - performance, performance, performance - 0.8, 1))
-        self.tickRate:SetText(string.format("%d %%", math.round(performance * 100)))
-    else
-        self.tickRate:SetColor(Color(0.5, 0.5, 0.5, 1))
-        self.tickRate:SetText("??")
-    end
-    
-    self.private:SetIsVisible(serverData.requiresPassword)
-    
-    self.modName:SetText(serverData.mode)
-    if serverData.mode == "ns2" then
-        self.modName:SetColor(kWhite)
-    else
-        self.modName:SetColor(kWhite)
-    end
-    
-    if serverData.favorite then
-        self.favorite:SetTexture(kFavoriteTexture)
-    else
-        self.favorite:SetTexture(kNonFavoriteTexture)
-    end
-    
-    self:SetId(serverData.serverId)
     
 end
 
@@ -274,6 +312,30 @@ function ServerEntry:Uninitialize()
 
     MenuElement.Uninitialize(self)
 
+end
+
+function ServerEntry:UpdateVisibility(minY, maxY, desiredY)
+
+    if not self:GetIsFiltered() then
+
+        if not desiredY then
+            desiredY = self:GetBackground():GetPosition().y
+        end
+        
+        local yPosition = self:GetBackground():GetPosition().y
+        local ySize = self:GetBackground():GetSize().y
+        
+        local inBoundaries = ((yPosition + ySize) > minY) and yPosition < maxY
+        self:SetIsVisible(inBoundaries)
+        
+    else
+        self:SetIsVisible(false)
+    end    
+
+end
+
+function ServerEntry:SetBackgroundTexture()
+    Print("ServerEntry:SetBackgroundTexture")
 end
 
 // do nothing, save performance, save the world

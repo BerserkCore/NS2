@@ -19,9 +19,11 @@ local networkVars =
 }
 
 local kViewModelNames = { ["minigun+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_mm_view.model"),
-                          ["claw+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_cm_view.model") }
+                          ["claw+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_cm_view.model"),
+                          ["railgun+railgun"] = PrecacheAsset("models/marine/exosuit/exosuit_rr_view.model") }
 local kAnimationGraphs = { ["minigun+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_mm_view.animation_graph"),
-                           ["claw+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_cm_view.animation_graph") }
+                           ["claw+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_cm_view.animation_graph"),
+                           ["railgun+railgun"] = PrecacheAsset("models/marine/exosuit/exosuit_rr_view.animation_graph") }
 
 local kDeploy2DSoundEffect = PrecacheAsset("sound/NS2.fev/marine/heavy/deploy_2D")
 local kDeploy3DSoundEffect = PrecacheAsset("sound/NS2.fev/marine/heavy/deploy_3D")
@@ -166,6 +168,19 @@ local function SetViewModelParameter(self, paramName, paramValue)
             
         end
         
+    end
+    
+end
+
+function ExoWeaponHolder:UpdateViewModelPoseParameters(viewModel)
+
+    local leftWeapon = Shared.GetEntity(self.leftWeaponId)
+    if leftWeapon.UpdateViewModelPoseParameters then
+        leftWeapon:UpdateViewModelPoseParameters(viewModel)
+    end
+    local rightWeapon = Shared.GetEntity(self.rightWeaponId)
+    if rightWeapon.UpdateViewModelPoseParameters then
+        rightWeapon:UpdateViewModelPoseParameters(viewModel)
     end
     
 end

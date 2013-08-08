@@ -225,3 +225,49 @@ function DynamicMesh_SetPathMesh(mesh, pathPoints, lineWidth, defaultColor)
     return indices, texCoords, vertices, colors, totalPathDistance
 
 end
+
+local kTwoSidedSquareTexCoords = { 1,1, 0,1, 0,0, 1,0,  1,0,  0,0,  0,1,  1,1}
+local kTwoSidedSquareIndices = { 3, 0, 1, 1, 2, 3, 1, 0, 3, 3, 2, 1, }
+function DynamicMesh_SetTwoSidedLine(mesh, coords, width, length, startColor, endColor)
+
+    if not startColor then
+        startColor = Color(1,1,1,1)
+    end
+
+    if not endColor then
+        endColor = Color(1,1,1,1)
+    end    
+
+    local startPoint = Vector(0,0,0)
+    local endPoint = Vector(0,0,length)
+    local sideVector = Vector(width, 0, 0)
+    
+    local meshVertices = {
+    
+        endPoint.x + sideVector.x, endPoint.y, endPoint.z + sideVector.z,
+    
+        endPoint.x - sideVector.x, endPoint.y, endPoint.z - sideVector.z,
+        
+        startPoint.x - sideVector.x, startPoint.y, startPoint.z - sideVector.z,
+        
+        startPoint.x + sideVector.x, startPoint.y, startPoint.z + sideVector.z,
+        
+    }
+    
+    local colors = {
+        endColor.r, endColor.g, endColor.b, endColor.a,
+        endColor.r, endColor.g, endColor.b, endColor.a,    
+        startColor.r, startColor.g, startColor.b, startColor.a,
+        startColor.r, startColor.g, startColor.b, startColor.a,
+        startColor.r, startColor.g, startColor.b, startColor.a,
+        endColor.r, endColor.g, endColor.b, endColor.a,
+        endColor.r, endColor.g, endColor.b, endColor.a,
+    }
+
+    mesh:SetIndices(kTwoSidedSquareIndices, #kTwoSidedSquareIndices)
+    mesh:SetTexCoords(kTwoSidedSquareTexCoords, #kTwoSidedSquareTexCoords)
+    mesh:SetVertices(meshVertices, #meshVertices)
+    mesh:SetColors(colors, #colors)
+    mesh:SetCoords(coords)
+    
+end

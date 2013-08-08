@@ -66,6 +66,10 @@ function ContentBox:SetBackgroundSize(sizeVector, absolute, time, animateFunc, a
     
 end
 
+function ContentBox:GetContentPosition()
+    return self.contentBackground:GetPosition()
+end
+
 function ContentBox:OnSlide(slideFraction, align)
 
     local overHeadSize = self:GetContentSize() - self:GetBackground():GetSize()
@@ -83,6 +87,14 @@ function ContentBox:OnSlide(slideFraction, align)
     end
     
     self.contentBackground:SetPosition(currentPos)
+    
+    for _, child in ipairs(self.children) do
+        
+        if child.OnParentSlide then
+            child:OnParentSlide()
+        end
+        
+    end
 
 end
 

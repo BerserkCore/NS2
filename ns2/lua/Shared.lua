@@ -99,7 +99,6 @@ Script.Load("lua/ServerParticleEmitter.lua")
 
 // Alien Comm Abilities
 Script.Load("lua/CommAbilities/Alien/CragUmbra.lua")
-Script.Load("lua/CommAbilities/Alien/CragBabblers.lua")
 Script.Load("lua/Babbler.lua")
 Script.Load("lua/CommAbilities/Alien/ShadeInk.lua")
 
@@ -116,12 +115,14 @@ Script.Load("lua/Shift.lua")
 Script.Load("lua/Spur.lua")
 Script.Load("lua/Shade.lua")
 Script.Load("lua/Hydra.lua")
+Script.Load("lua/TunnelEntrance.lua")
 Script.Load("lua/Clog.lua")
 Script.Load("lua/Cyst.lua")
 Script.Load("lua/Drifter.lua")
 Script.Load("lua/Egg.lua")
 Script.Load("lua/Embryo.lua")
 Script.Load("lua/Hallucination.lua")
+Script.Load("lua/Weapons/Alien/Web.lua")
 
 // Base players
 Script.Load("lua/ReadyRoomPlayer.lua")
@@ -151,15 +152,13 @@ Script.Load("lua/Weapons/Marine/Pistol.lua")
 Script.Load("lua/Weapons/Marine/Shotgun.lua")
 Script.Load("lua/Weapons/Marine/Axe.lua")
 Script.Load("lua/Weapons/Marine/Minigun.lua")
+Script.Load("lua/Weapons/Marine/Railgun.lua")
 Script.Load("lua/Weapons/Marine/Claw.lua")
 Script.Load("lua/Weapons/Marine/GrenadeLauncher.lua")
 Script.Load("lua/Weapons/Marine/Flamethrower.lua")
 Script.Load("lua/Weapons/Marine/LayMines.lua")
 Script.Load("lua/Weapons/Marine/Welder.lua")
 Script.Load("lua/Jetpack.lua")
-
-// Holiday 2012
-Script.Load("lua/Weapons/SnowBallThrower.lua")
 
 Script.Load("lua/PowerPoint.lua")
 Script.Load("lua/SentryBattery.lua")

@@ -21,7 +21,9 @@ local defaultConfig = {
                             {
                                 rookie_friendly = true,
                                 auto_team_balance = { enabled_on_unbalance_amount = 2, enabled_after_seconds = 10 },
-                                end_round_on_team_unbalance = 0.4
+                                end_round_on_team_unbalance = 0.4,
+                                auto_kick_afk_time = 300,
+                                auto_kick_afk_capacity = 0.5
                             },
                         tags = { "rookie" }
                       }
@@ -51,6 +53,24 @@ function Server.GetConfigSetting(name)
     end
     return nil
     
+end
+
+function Server.GetHasTag(tag)
+
+    for i = 1, #config.tags do
+        if config.tags[i] == tag then
+            return true
+        end
+    end
+
+    return false
+
+end
+
+function Server.GetIsRookieFriendly()
+
+    return Server.GetHasTag("rookie");
+
 end
 
 /**

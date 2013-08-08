@@ -69,6 +69,7 @@ TeamInfo.kRelevantTechIdsMarine =
     kTechId.JetpackTech,
     kTechId.ExosuitTech,
     kTechId.DualMinigunTech,
+    kTechId.DualRailgunTech,
 
     kTechId.ARCRoboticsFactory,
     kTechId.MACEMPTech,
@@ -86,10 +87,10 @@ TeamInfo.kRelevantTechIdsAlien =
     kTechId.Stomp,
     
     kTechId.Xenocide,
-    kTechId.WebStalk,
+    kTechId.WebTech,
     kTechId.Umbra,
     kTechId.Vortex,
-    kTechId.PrimalScream,
+    kTechId.BoneShield,
     
     kTechId.CragHive,
     kTechId.RegenerationShell,

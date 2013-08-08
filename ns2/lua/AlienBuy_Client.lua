@@ -537,7 +537,7 @@ function GetAlienTierTwoFor(techId)
         gTierTwoTech[kTechId.Gorge] = kTechId.BileBomb
         gTierTwoTech[kTechId.Lerk] = kTechId.Spores
         gTierTwoTech[kTechId.Fade] = kTechId.Blink
-        gTierTwoTech[kTechId.Onos] = kTechId.Stomp
+        gTierTwoTech[kTechId.Onos] = kTechId.BoneShield
         
     end
     
@@ -553,10 +553,10 @@ function GetAlienTierThreeFor(techId)
         gTierThreeTech = {}
         
         gTierThreeTech[kTechId.Skulk] = kTechId.Xenocide
-        //gTierThreeTech[kTechId.Gorge] = kTechId.WebStalk
+        gTierThreeTech[kTechId.Gorge] = kTechId.WebTech
         gTierThreeTech[kTechId.Lerk] = kTechId.Umbra
         gTierThreeTech[kTechId.Fade] = kTechId.Vortex
-        //gTierThreeTech[kTechId.Onos] = kTechId.None
+        gTierThreeTech[kTechId.Onos] = kTechId.Stomp
         
     end
     

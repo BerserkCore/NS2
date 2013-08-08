@@ -18,13 +18,17 @@ local kHealStructuresMultiplier = 5
 local kRange = 6
 local kHealCylinderWidth = 3
 
+local kHealScoreAdded = 2
+// Every kAmountHealedForPoints points of damage healed, the player gets
+// kHealScoreAdded points to their score.
+local kAmountHealedForPoints = 400
+
 // HealSprayMixin:GetHasSecondary should completely override any existing
 // GetHasSecondary function defined in the object.
 HealSprayMixin.overrideFunctions =
 {
     "GetHasSecondary",
-    "GetSecondaryEnergyCost",
-    "GetDeathIconIndex"
+    "GetSecondaryEnergyCost"
 }
 
 HealSprayMixin.networkVars =
@@ -137,8 +141,8 @@ local function HealEntity(self, player, targetEntity)
     local onEnemyTeam = (GetEnemyTeamNumber(player:GetTeamNumber()) == targetEntity:GetTeamNumber())
     local isEnemyPlayer = onEnemyTeam and targetEntity:isa("Player")
     local toTarget = (player:GetEyePos() - targetEntity:GetOrigin()):GetUnit()
-
-    // Heal players by base amount plus a scaleable amount so it's effective vs. small and large targets            
+    
+    // Heal players by base amount plus a scaleable amount so it's effective vs. small and large targets.
     local health = kHealsprayDamage + targetEntity:GetMaxHealth() * kHealPlayerPercent / 100.0
     
     // Heal structures by multiple of damage(so it doesn't take forever to heal hives, ala NS1)
@@ -146,16 +150,21 @@ local function HealEntity(self, player, targetEntity)
         health = 60
     // Don't heal self at full rate - don't want Gorges to be too powerful. Same as NS1.
     elseif targetEntity == player then
-        health = health * .5
+        health = health * 0.5
     end
     
     local amountHealed = targetEntity:AddHealth(health)
-
+    
+    // Do not count amount self healed.
+    if targetEntity ~= player then
+        player:AddContinuousScore("HealSpray", amountHealed, kAmountHealedForPoints, kHealScoreAdded)
+    end
+    
     if targetEntity.OnHealSpray then
         targetEntity:OnHealSpray(player)
-    end         
+    end
     
-    // Put out entities on fire sometimes
+    // Put out entities on fire sometimes.
     if HasMixin(targetEntity, "GameEffects") and math.random() < kSprayDouseOnFireChance then
         targetEntity:SetGameEffectMask(kGameEffect.OnFire, false)
     end
@@ -163,7 +172,7 @@ local function HealEntity(self, player, targetEntity)
     if Server and amountHealed > 0 then
         targetEntity:TriggerEffects("sprayed")
     end
-        
+    
 end
 
 local kConeWidth = 0.6
@@ -297,7 +306,7 @@ local function GetEntitiesInCone(self, player)
 end
 
 local function PerformHealSpray(self, player)
- 
+
     for _, entity in ipairs(GetEntitiesInCone(self, player)) do
     
         if HasMixin(entity, "Team") then
@@ -307,11 +316,11 @@ local function PerformHealSpray(self, player)
             elseif GetAreEnemies(entity, player) then
                 DamageEntity(self, player, entity)
             end
-
+            
         end
-                
+        
     end
-
+    
 end
 
 function HealSprayMixin:OnTag(tagName)

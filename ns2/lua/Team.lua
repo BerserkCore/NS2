@@ -391,6 +391,34 @@ function Team:GetOldestQueuedPlayer()
     
 end
 
+function Team:GetSortedRespawnQueue()
+
+    local sortedQueue = {}
+    
+    for i = 1, #self.respawnQueue do
+    
+        local player = Shared.GetEntity(self.respawnQueue[i])
+        if player then
+            table.insertunique(sortedQueue, player)
+        end
+    
+    end
+    
+    local function SortByEntryTime(player1, player2) 
+
+        local time1 = player1.GetRespawnQueueEntryTime and player1:GetRespawnQueueEntryTime() or 0
+        local time2 = player2.GetRespawnQueueEntryTime and player2:GetRespawnQueueEntryTime() or 0
+        
+        return time1 < time2
+        
+    end
+    
+    table.sort(sortedQueue, SortByEntryTime)
+    
+    return sortedQueue
+
+end
+
 function Team:GetKills()
     return self.kills
 end

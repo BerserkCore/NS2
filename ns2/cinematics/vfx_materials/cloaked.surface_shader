@@ -1,8 +1,6 @@
 <shader>
 
 	<inputs>
-		<input name="greebMap" type="texture" address="wrap" srgb="true"/>
-		<input name="circuitMap" type="texture" address="wrap" srgb="true"/>
 		<input name="noiseMap" type="texture" address="wrap" />
 		<input name="cloakAmount" type="float">0.0</input>
 

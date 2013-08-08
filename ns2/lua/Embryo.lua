@@ -346,7 +346,6 @@ if Server then
                 // Now give new player all the upgrades they purchased
                 local upgradesGiven = 0
                 
-                local team = self:GetTeam()
                 for index, upgradeId in ipairs(self.evolvingUpgrades) do
 
                     if newPlayer:GiveUpgrade(upgradeId) then
@@ -364,6 +363,24 @@ if Server then
                 
                 if self.resOnGestationComplete then
                     newPlayer:AddResources(self.resOnGestationComplete)
+                end
+
+                // Notify team
+
+                local team = self:GetTeam()
+
+                if team and team.OnEvolved then
+
+                    team:OnEvolved(newPlayer:GetTechId())
+
+                    for _, upgradeId in ipairs(self.evolvingUpgrades) do
+
+                        if team.OnEvolved then
+                            team:OnEvolved(upgradeId)
+                        end
+                        
+                    end
+
                 end
                 
                 // Return false so that we don't get called again if the server time step

@@ -106,6 +106,15 @@ kAlienWeaponEffects =
         },
     },
     
+    babblerability_attack =
+    {
+        babblerabilityAttackEffects = 
+        {   
+            {sound = "", silenceupgrade = true, done = true}, 
+            {sound = "sound/NS2.fev/alien/gorge/create_structure_start", world_space = true},
+        },
+    },
+    
     healspray_collide =
     {
         healSpayCollideEffects =
@@ -176,18 +185,6 @@ kAlienWeaponEffects =
             
             {sound = "", silenceupgrade = true, done = true},
             {sound = "sound/NS2.fev/alien/gorge/bilebomb_hit", done = true},
-        },
-    },
-    
-    // Holiday 2012
-    snowball_hit =
-    {
-        snowballHitEffects = 
-        {
-            {cinematic = "seasonal/holiday2012/cinematics/snowball_hit.cinematic"},
-            
-            {sound = "", silenceupgrade = true, done = true},
-            {sound = "sound/NS2.fev/common/snowball", done = true},
         },
     },
     

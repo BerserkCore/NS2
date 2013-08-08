@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\Weapons\Babbler.lua
 //
@@ -7,18 +7,22 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/ScriptActor.lua")
-
-Script.Load("lua/Mixins/ModelMixin.lua")
+Script.Load("lua/Mixins/ClientModelMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/MobileTargetMixin.lua")
 Script.Load("lua/DamageMixin.lua")
+Script.Load("lua/EntityChangeMixin.lua")
+Script.Load("lua/OwnerMixin.lua")
+Script.Load("lua/TargetCacheMixin.lua")
+Script.Load("lua/ConstructMixin.lua")
 
 class 'Babbler' (ScriptActor)
 
 Babbler.kMapName = "babbler"
 
-Babbler.kModelName = PrecacheAsset("models/alien/babbler/babbler.model")
+//Babbler.kModelName = PrecacheAsset("models/alien/babbler/babbler.model")
+Babbler.kEggModelName = PrecacheAsset("models/alien/egg/egg.model")
 
 Babbler.kUpdateMoveInterval = 0.3
 
@@ -27,6 +31,8 @@ Babbler.kRadius = .25
 Babbler.kLinearDamping = 0
 Babbler.kRestitution = .65
 
+Babbler.kTargetSearchRange = 12
+
 Babbler.kMaxSpeed = 8
 Babbler.kMinSpeed = 3
 Babbler.kJumpForce = 5
@@ -34,17 +40,22 @@ Babbler.kJumpForce = 5
 Babbler.kAttackRate = 0.5
 Babbler.kDamage = 5
 
+Babbler.kLifeTime = 120
+
+local kAnimationGraph = nil
+
 local networkVars =
 {
     timeLastJump = "float",
-    timeLastAttack = "float"
+    timeLastAttack = "float",
+    targetId = "entityid"
 }
 
-// TODO: use maybe Client.RenderModel in case we don't have animations, would remove a ton of unused netvars
 AddMixinNetworkVars(BaseModelMixin, networkVars)
-AddMixinNetworkVars(ModelMixin, networkVars)
+AddMixinNetworkVars(ClientModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
+AddMixinNetworkVars(ConstructMixin, networkVars)
 
 if Server then
     Script.Load("lua/Babbler_Server.lua")
@@ -53,20 +64,25 @@ end
 function Babbler:OnCreate()
 
     ScriptActor.OnCreate(self)
-    
+
     InitMixin(self, BaseModelMixin)
-    InitMixin(self, ModelMixin)
+    InitMixin(self, ClientModelMixin)
+    
     InitMixin(self, LiveMixin)
     InitMixin(self, TeamMixin)
     InitMixin(self, DamageMixin)
-    
-    self.modelIndex = 0
+    InitMixin(self, ConstructMixin)
     
     if Server then
     
         self.targetId = Entity.invalidId
         self.timeLastJump = 0
         self.timeLastAttack = 0
+        
+        InitMixin(self, EntityChangeMixin)
+        InitMixin(self, OwnerMixin)
+        
+        self.targetId = Entity.invalidId
         
     elseif Client then
     
@@ -79,57 +95,139 @@ function Babbler:OnCreate()
 end
 
 function Babbler:OnInitialized()
-    
-    self:SetModel(Babbler.kModelName)
-    
+
+    self:SetModel(Babbler.kEggModelName, kAnimationGraph)
+
     if Server then
-    
-        self:AddTimedCallback(Babbler.UpdateMove, Babbler.kUpdateMoveInterval + 2 * math.random())        
-        self:SetVelocity(Vector( (math.random() * 3) - 1.5, 3, (math.random() * 3) - 1.5 ))
 
         InitMixin(self, MobileTargetMixin)
-
+        
+        InitMixin(self, TargetCacheMixin)
+        
+        self.targetSelector = TargetSelector():Init(
+                self,
+                Babbler.kTargetSearchRange, 
+                true,
+                { kAlienStaticTargets, kAlienMobileTargets })  
+    
     end
     
-end    
+end
 
-function Babbler:OnDestroy()
+if Server then
 
-    ScriptActor.OnDestroy(self)
-
-    if (Server) then
-        Shared.DestroyCollisionObject(self.physicsBody)
-        self.physicsBody = nil
+    function Babbler:OnConstructionComplete()
+    
+        self:SetModel(Babbler.kModelName, kAnimationGraph)
+        self:CreatePhysics()
+        self:AddTimedCallback(Babbler.UpdateMove, Babbler.kUpdateMoveInterval + 2 * math.random())
+        self:AddTimedCallback(Babbler.UpdateTarget, 0.5)
+        self:AddTimedCallback(Babbler.TimeUp, Babbler.kLifeTime)        
+        self:JumpRandom()
+        self:TriggerEffects("babbler_hatch")
+    
     end
+
+    function Babbler:OnEntityChange(oldId)
     
-    if (Client) then
-    
-        // Destroy the render model.
-        if (self.renderModel ~= nil) then
-            Client.DestroyRenderModel(self.renderModel)
-            self.renderModel = nil
+        if oldId == self.targetId then            
+            self.targetId = Entity.invalidId            
         end
+    
+    end
+    
+    function Babbler:Jump(velocity)
+    
+        self.physicsBody:SetCoords(self:GetCoords())
+        self.physicsBody:AddImpulse(self:GetOrigin(), velocity)
+        self.timeLastJump = Shared.GetTime()
+    
+    end
+    
+    function Babbler:JumpRandom()
+        self:Jump(Vector( (math.random() * 3) - 1.5, 3 + math.random() * 2, (math.random() * 3) - 1.5 ))
+    end
+    
+    function Babbler:MoveRandom()
+    
+        self.physicsBody:SetCoords(self:GetCoords())
+        self.physicsBody:AddImpulse(self:GetOrigin(), Vector( (math.random() * 6) - 3, 0.2, (math.random() * 6) - 3 ))
+        
+    end
+    
+    function Babbler:OnDestroy()
+
+        ScriptActor.OnDestroy(self)
+        
+        if self.physicsBody then
+        
+            Shared.DestroyCollisionObject(self.physicsBody)
+            self.physicsBody = nil
+            
+        end
+
+    end
+    
+    function Babbler:OnKill()
+
+        self:TriggerEffects("death", {effecthostcoords = Coords.GetTranslation(self:GetOrigin()) })
+        DestroyEntity(self)
+        
+    end
+    
+    function Babbler:TimeUp()
+
+        self:TriggerEffects("death", {effecthostcoords = Coords.GetTranslation(self:GetOrigin()) })
+        DestroyEntity(self)
+        
+    end
+    
+    function Babbler:OnUpdate(deltaTime)
+
+        ScriptActor.OnUpdate(self, deltaTime)
+
+        if self.physicsBody then
+
+            // If the Babbler has moved outside of the world, destroy it
+            local coords = self.physicsBody:GetCoords()
+            local origin = coords.origin
+            
+            local maxDistance = 1000
+            
+            if origin:GetLengthSquared() > maxDistance * maxDistance then
+                Print( "%s moved outside of the playable area, destroying", self:GetClassName() )
+                DestroyEntity(self)
+            else
+                // Update the position/orientation of the entity based on the current
+                // position/orientation of the physics object.
+                self:SetCoords( coords )
+            end
+            
+            // DL: Workaround for bouncing Babblers. Detect a change in velocity and find the impacted object
+            // by tracing a ray from the last frame's origin.
+            local velocity = self.physicsBody:GetLinearVelocity()
+            local origin = self:GetOrigin()
+            
+            if self.lastVelocity ~= nil then
+            
+                local delta = velocity - self.lastVelocity
+                if delta:GetLengthSquaredXZ() > 0.0001 then                    
+                    local endPoint = self.lastOrigin + 1.25*deltaTime*self.lastVelocity
+                    local trace = Shared.TraceCapsule(self.lastOrigin, endPoint, Babbler.kRadius, 0, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(self))
+
+                    self:SetOrigin(trace.endPoint)
+                    self:ProcessHit(trace.entity, trace.surface)
+                end
+                
+            end
+        
+        end
+        
+        self.lastVelocity = velocity
+        self.lastOrigin = origin
         
     end
 
-end
-
-// for testing only, babblers will be controlled as a swarm by another entity
-function Babbler:FindClosestEnemy()
-
-    local enemies = GetEntitiesForTeamWithinRange("Marine", kMarineTeamType, self:GetOrigin(), 15)
-    if enemies and enemies[1] then
-        self.targetId = enemies[1]:GetId()
-        Print("Enemy: %s", ToString(enemies[1]))
-    end
-    
-end
-
-function Babbler:OnKill()
-
-    self:TriggerEffects("death", {effecthostcoords = Coords.GetTranslation(self:GetOrigin()) })
-    DestroyEntity(self)
-    
 end
 
 function Babbler:GetMoveVelocity(targetPos)
@@ -150,15 +248,58 @@ function Babbler:GetMoveVelocity(targetPos)
 
 end
 
+function Babbler:UpdateTarget()
+
+    self.targetId = Entity.invalidId
+
+    local enemy = self.targetSelector:AcquireTarget()
+    if enemy then
+        self.targetId = enemy:GetId()    
+    else
+    
+        local babblerPheromone = GetEntitiesForTeamWithinRange("BabblerPheromone", self:GetTeamNumber(), self:GetOrigin(), Babbler.kTargetSearchRange)
+        if #babblerPheromone > 0 then
+            self.targetId = babblerPheromone[1]:GetId()
+        else
+
+            local ownerGorge = self:GetOwner()       
+            if ownerGorge then
+            
+                if (ownerGorge:GetOrigin() - self:GetOrigin()):GetLength() > 20 then
+                    DestroyEntity(self)
+                end
+                
+                if ownerGorge:isa("Gorge") then
+                    self.targetId = ownerGorge:GetId()
+                end
+            
+            end
+            
+        end
+    
+    end
+
+    return true
+
+end
+
+function Babbler:GetTarget()
+
+    local target = self.targetId ~= nil and Shared.GetEntity(self.targetId)
+    return target
+
+end
+
+local kEyeOffset = Vector(0, 0.2, 0)
+function Babbler:GetEyePos()
+    return self:GetOrigin() + kEyeOffset
+end
+
 function Babbler:UpdateMove()
 
     if self:GetVelocity():GetLength() < 0.5 then
     
-        local target = nil
-        if self.targetId ~= Entity.invalidId then
-            target = Shared.GetEntity(self.targetId)
-        end
-
+        local target = self:GetTarget()
         local moveVelocity = Vector(0, 0, 0)
 
         if target then
@@ -170,31 +311,26 @@ function Babbler:UpdateMove()
             end
 
             local attackOrigin = target:GetOrigin()
-            if target.GetEngagementPoint then
+            if HasMixin(target, "Target") then
                 attackOrigin = target:GetEngagementPoint()
             end    
             
             moveVelocity = self:GetMoveVelocity(attackOrigin + targetSpeed)
-            
-        
-        elseif self.targetPos then
-        
-            moveVelocity = self:GetMoveVelocity(self.targetPos)
+            self:Jump(moveVelocity)
         
         // no orders, babblers will jump randomly around
         else
         
-            local jump = Babbler.kJumpForce
-            if math.random() > 0.5 then
-                jump = Babbler.kJumpForce * .4
-            end        
-            moveVelocity = self:GetCoords().yAxis + Vector( (math.random() * Babbler.kMaxSpeed) - Babbler.kMaxSpeed * .5, jump, (math.random() * Babbler.kMaxSpeed) - Babbler.kMaxSpeed * .5 )
-            
+            if math.random() < 0.6 then
+                self:MoveRandom()
+            else
+                self:JumpRandom()
+            end    
+                
         end
-
-        self:SetVelocity(moveVelocity)  
-        self.timeLastJump = Shared.GetTime()
-
+        
+        self.targetSelector:AttackerMoved()
+        
     end
 
     return true   
@@ -202,15 +338,16 @@ function Babbler:UpdateMove()
 end
 
 function Babbler:GetVelocity()
+
     if self.physicsBody then
         return self.physicsBody:GetLinearVelocity()
     end
     return Vector(0, 0, 0)
+    
 end
 
 /**
- * Babbler manages it's own physics body and doesn't require
- * a physics model from Actor.
+ * Babbler manages it's own physics body
  */
 function Babbler:GetPhysicsModelAllowedOverride()
     return false
@@ -251,90 +388,63 @@ end
 
 if Client then
 
-    /*
-    function Babbler:OnUpdateAnimationInput(modelMixin)
-
-        PROFILE("Babbler:OnUpdateAnimationInput")
-        
-        local moveState = "idle"
-        if self.jumping then
-            moveState = "jump"
-        elseif self.running then
-            moveState = "run"
+    function Babbler:OnAdjustModelCoords(modelCoords)
+  
+        if self:GetIsBuilt() and self.moveDirection then
+            modelCoords = Coords.GetLookIn(modelCoords.origin, -self.moveDirection)
         end
-        modelMixin:SetAnimationInput("move", moveState)
-
-    end
-    */
     
+        return modelCoords
+    
+    end
+
+    // just updating effects here
     function Babbler:OnUpdate(deltaTime)
     
         ScriptActor.OnUpdate(self, deltaTime)
         
-        if self.clientTimeLastJump ~= self.timeLastJump then
-            self:TriggerEffects("babbler_jump") 
-            self.clientTimeLastJump = self.timeLastJump
-        end
-
-        if self.clientTimeLastAttack ~= self.timeLastAttack then
-            self:TriggerEffects("babbler_attack")
-            self.clientTimeLastAttack = self.timeLastAttack 
-        end    
-    
-    
-    end
-
-    function Babbler:OnUpdateRender()
-
-        PROFILE("Babbler:OnUpdateRender")
+        if self:GetIsBuilt() then
         
-        ScriptActor.OnUpdateRender(self)
-        
-        if self.oldModelIndex ~= self.modelIndex then
-
-            // Create/destroy the model as necessary.
-            if self.modelIndex == 0 then
-                Client.DestroyRenderModel(self.renderModel)
-                self.renderModel = nil
-            else
-                self.renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)
-                self.renderModel:SetModel(self.modelIndex)
+            if self.clientTimeLastJump ~= self.timeLastJump then
+                self:TriggerEffects("babbler_jump") 
+                self.clientTimeLastJump = self.timeLastJump
             end
-        
-            // Save off the model index so we can detect when it changes.
-            self.oldModelIndex = self.modelIndex
-            
-        end
-        
-        if self.renderModel ~= nil then
+
+            if self.clientTimeLastAttack ~= self.timeLastAttack then
+                self:TriggerEffects("babbler_attack")
+                self.clientTimeLastAttack = self.timeLastAttack 
+            end
             
             if self.lastPosition then
             
                 if not self.moveDirection then
                     self.moveDirection = Vector(0, 0, 0)
                 end
-            
-                local moveDirection = self:GetOrigin() - self.lastPosition
-                moveDirection.y = 0
-                moveDirection:Normalize()
+
+                local moveDirection = GetNormalizedVectorXZ(self:GetOrigin() - self.lastPosition)
+                
+                local target = self:GetTarget()
+                if target then
+                    local targetPosition = target:GetOrigin()
+                    moveDirection = GetNormalizedVectorXZ(targetPosition - self:GetOrigin())
+                end
                 
                 // smooth out turning of babblers
-                self.moveDirection = self.moveDirection + moveDirection * 0.2
+                self.moveDirection = self.moveDirection + moveDirection * deltaTime * 8
                 self.moveDirection:Normalize()
                 
-                self.renderModel:SetCoords( Coords.GetLookIn( self:GetOrigin(), self.moveDirection ) )
             end
 
             self.lastPosition = self:GetOrigin()
-            
+        
         end
-
+    
     end
 
 end
 
 function Babbler:GetShowHitIndicator()
-    return false
+    return true
 end
 
 Shared.LinkClassToMap("Babbler", Babbler.kMapName, networkVars)

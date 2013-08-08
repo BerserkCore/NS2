@@ -36,7 +36,7 @@ function StompMixin:GetIsStomping()
 end
 
 function StompMixin:GetHasSecondary(player)
-    return player:GetHasTwoHives()
+    return player:GetHasThreeHives()
 end
 
 function StompMixin:GetSecondaryEnergyCost(player)

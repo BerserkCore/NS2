@@ -102,7 +102,13 @@ if Server then
         local newCommand = function(client, ...)
         
             if not client or optionalAlwaysAllowed == true or GetClientCanRunCommand(client, fixedCommandName, true) then
+            
+                local player = client and client:GetControllingPlayer() or nil
+                local name = player and player:GetName() or "Admin"
+                local userId = client and client:GetUserId() or 0
+                Shared.Message("sv - " .. name .. " - " .. userId .. ": " .. fixedCommandName)
                 return commandFunction(client, ...)
+                
             end
             
         end

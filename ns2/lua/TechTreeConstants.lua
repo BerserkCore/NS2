@@ -67,7 +67,9 @@ kTechId = enum({
     'RifleUpgrade', 'FlamethrowerAlt',
     
     // Research 
-    'PhaseTech', 'MACSpeedTech', 'MACEMPTech', 'ARCArmorTech', 'ARCSplashTech', 'JetpackTech', 'ExosuitTech', 'DualMinigunTech', 'DualMinigunExosuit',
+    'PhaseTech', 'MACSpeedTech', 'MACEMPTech', 'ARCArmorTech', 'ARCSplashTech', 'JetpackTech', 'ExosuitTech',
+    'DualMinigunTech', 'DualMinigunExosuit',
+    'DualRailgunTech', 'DualRailgunExosuit',
     'DropJetpack', 'DropExosuit',
     
     // MAC (build bot) abilities
@@ -100,21 +102,22 @@ kTechId = enum({
     
     // Alien abilities (not all are needed, only ones with damage types)
     'Bite', 'LerkBite', 'Parasite',  'Spit', 'BuildAbility', 'Spray', 'Spores', 'HydraSpike', 'Swipe', 'StabBlink', 'Gore', 'Smash',
+    'Babbler',
 
     
     // upgradeable alien abilities (need to be unlocked)
     'LifeFormMenu',
-    'BileBomb', 'Leap', 'Blink', 'Stomp', 'Spikes', 'Umbra', 'PoisonDart', 'Xenocide', 'Vortex', 'PrimalScream', 'WebStalk',
+    'BileBomb', 'GorgeTunnelTech', 'WebTech', 'Leap', 'Blink', 'Stomp', 'BoneShield', 'Spikes', 'Umbra', 'PoisonDart', 'Xenocide', 'Vortex', 'PrimalScream', 'BabblerAbility',
 
     // Alien structures 
-    'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'Drifter', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'WebStalk',
+    'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'Drifter', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'GorgeTunnel', 'Web',
     'GorgeEgg', 'LerkEgg', 'FadeEgg', 'OnosEgg',
     
     // Infestation upgrades
     'HealingBed', 'MucousMembrane', 'BacterialReceptors',
 
     // Upgrade buildings and abilities (structure, upgraded structure, passive, triggered, targeted)
-    'Shell', 'Crag', 'EvolveBabblers', 'CragHeal', 'Babbler',
+    'Shell', 'Crag', 'CragHeal',
     'Whip', 'EvolveBombard', 'WhipBombard', 'WhipBombardCancel', 'WhipBomb', 'GrenadeWhack',
     'Spur', 'Shift', 'EvolveEcho', 'ShiftHatch', 'ShiftEcho', 'ShiftEnergize', 
     'Veil', 'Shade', 'EvolveHallucinations', 'ShadeDisorient', 'ShadeCloak', 'ShadePhantomMenu', 'ShadePhantomStructuresMenu',
@@ -145,7 +148,7 @@ kTechId = enum({
     'Infestation',
     
     // Commander abilities
-    'BoneWall', 'NutrientMist', 'HealWave', 'CragUmbra', 'CragBabblers', 'ShadeInk', 'EnzymeCloud', 'Rupture',
+    'BoneWall', 'NutrientMist', 'HealWave', 'CragUmbra', 'ShadeInk', 'EnzymeCloud', 'Rupture',
     
     // Alien Commander hallucinations
     'HallucinateDrifter', 'HallucinateSkulk', 'HallucinateGorge', 'HallucinateLerk', 'HallucinateFade', 'HallucinateOnos',

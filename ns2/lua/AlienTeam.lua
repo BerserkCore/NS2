@@ -364,15 +364,14 @@ local function UpdateSpawnWave(self)
     
     if self.timeNextWave ~= nil and self.timeNextWave < Shared.GetTime() then
     
-        local alienSpectators = GetEntitiesForTeam("AlienSpectator", self:GetTeamNumber())
-        
+        local alienSpectators = self:GetSortedRespawnQueue()
         local enemyTeamPosition = GetCriticalHivePosition(self)
         
         for i = 1, #alienSpectators do
         
             local alienSpectator = alienSpectators[i]
             // Do not spawn players waiting in the auto team balance queue.
-            if not alienSpectator:GetIsWaitingForTeamBalance() then
+            if alienSpectator:isa("AlienSpectator") and not alienSpectator:GetIsWaitingForTeamBalance() then
             
                 // Consider min death time.
                 if alienSpectator:GetRespawnQueueEntryTime() + kAlienMinDeathTime < Shared.GetTime() then
@@ -631,10 +630,8 @@ function AlienTeam:InitTechTree()
     self.techTree:AddTechInheritance(kTechId.Veil, kTechId.FeintVeil)
 
     // Crag
-    self.techTree:AddUpgradeNode(kTechId.EvolveBabblers,          kTechId.None,          kTechId.None)
     self.techTree:AddPassive(kTechId.CragHeal)
     self.techTree:AddActivation(kTechId.HealWave,                kTechId.None,          kTechId.None)
-    self.techTree:AddActivation(kTechId.CragBabblers,             kTechId.None,          kTechId.None)
 
     // Shift    
     self.techTree:AddUpgradeNode(kTechId.EvolveEcho,              kTechId.None,         kTechId.None)
@@ -679,44 +676,39 @@ function AlienTeam:InitTechTree()
     
     // Tier 2
     
-    self.techTree:AddResearchNode(kTechId.Leap,            kTechId.TwoHives,              kTechId.None)
-    self.techTree:AddResearchNode(kTechId.Spores,            kTechId.TwoHives,              kTechId.None)
-    self.techTree:AddResearchNode(kTechId.BileBomb,            kTechId.TwoHives,              kTechId.None)
-    self.techTree:AddResearchNode(kTechId.Blink,            kTechId.TwoHives,              kTechId.None)
-    
+    self.techTree:AddResearchNode(kTechId.Leap,             kTechId.TwoHives,          kTechId.None)
+    self.techTree:AddResearchNode(kTechId.Spores,           kTechId.TwoHives,          kTechId.None)
+    self.techTree:AddResearchNode(kTechId.BileBomb,         kTechId.TwoHives,          kTechId.None)
+    self.techTree:AddResearchNode(kTechId.GorgeTunnelTech,  kTechId.TwoHives,          kTechId.None)
+    self.techTree:AddResearchNode(kTechId.Blink,            kTechId.TwoHives,          kTechId.None)
+    //self.techTree:AddResearchNode(kTechId.BoneShield,       kTechId.TwoHives,         kTechId.None) 
 
     // Tier 3
      
-    self.techTree:AddResearchNode(kTechId.Xenocide,            kTechId.Leap,              kTechId.ThreeHives)
-    self.techTree:AddResearchNode(kTechId.Umbra,            kTechId.Spores,              kTechId.ThreeHives)
-    --self.techTree:AddResearchNode(kTechId.WebStalk,            kTechId.BileBomb,              kTechId.None)
+    self.techTree:AddResearchNode(kTechId.Xenocide,          kTechId.Leap,               kTechId.ThreeHives)
+    self.techTree:AddResearchNode(kTechId.Umbra,             kTechId.Spores,             kTechId.ThreeHives)
+    //self.techTree:AddResearchNode(kTechId.WebTech,           kTechId.BileBomb,           kTechId.ThreeHives)
     self.techTree:AddResearchNode(kTechId.Vortex,            kTechId.Blink,              kTechId.ThreeHives)
-    --self.techTree:AddResearchNode(kTechId.PrimalScream,            kTechId.Stomp,        kTechId.None)   
-    self.techTree:AddResearchNode(kTechId.Stomp,            kTechId.ThreeHives,              kTechId.None)
+    self.techTree:AddResearchNode(kTechId.BoneShield,        kTechId.TwoHives,           kTechId.None)  
+    self.techTree:AddResearchNode(kTechId.Stomp,             kTechId.ThreeHives,         kTechId.None)
 
-    // Global alien upgrades. Make sure the first prerequisite is the main tech required for it, as this is 
-    // what is used to display research % in the alien evolve menu.
-    // The second prerequisite is needed to determine the buy node unlocked when the upgrade is actually researched.
+    // gorge structures
+
+    self.techTree:AddBuildNode(kTechId.Hydra,            kTechId.None,               kTechId.None)
+    self.techTree:AddBuildNode(kTechId.Clog,             kTechId.None,               kTechId.None)
+    self.techTree:AddBuildNode(kTechId.Babbler,          kTechId.None,               kTechId.None)
+    self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.TwoHives) 
+    self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
+
+    // personal upgrades (all alien types)
+    
     self.techTree:AddBuyNode(kTechId.Carapace, kTechId.CarapaceShell, kTechId.None, kTechId.AllAliens)    
     self.techTree:AddBuyNode(kTechId.Regeneration, kTechId.RegenerationShell, kTechId.None, kTechId.AllAliens)
     self.techTree:AddBuyNode(kTechId.Silence, kTechId.SilenceVeil, kTechId.None, kTechId.AllAliens)
     self.techTree:AddBuyNode(kTechId.Camouflage, kTechId.CamouflageVeil, kTechId.None, kTechId.AllAliens)
     self.techTree:AddBuyNode(kTechId.Celerity, kTechId.CeleritySpur, kTechId.None, kTechId.AllAliens)  
     self.techTree:AddBuyNode(kTechId.Adrenaline, kTechId.AdrenalineSpur, kTechId.None, kTechId.AllAliens)  
-    //self.techTree:AddBuyNode(kTechId.HyperMutation, kTechId.HyperMutationSpur, kTechId.None, kTechId.AllAliens)
-    //self.techTree:AddBuyNode(kTechId.Feint, kTechId.FeintVeil, kTechId.None, kTechId.AllAliens)
-    
-    //self.techTree:AddBuyNode(kTechId.Aura, kTechId.AuraVeil, kTechId.None, kTechId.AllAliens)
-    
-    // Specific alien upgrades
-    self.techTree:AddBuildNode(kTechId.Hydra,               kTechId.None,               kTechId.None)
-    
-    
-    //self.techTree:AddBuyNode(kTechId.Sap, kTechId.SapTech, kTechId.TwoHives, kTechId.Fade)
-    
-    //self.techTree:AddResearchNode(kTechId.BoneShieldTech, kTechId.Crag, kTechId.TwoHives)
-    //self.techTree:AddBuyNode(kTechId.BoneShield, kTechId.BoneShieldTech, kTechId.None, kTechId.Onos)
-    
+
     self.techTree:SetComplete()
     
 end
@@ -924,6 +916,36 @@ function AlienTeam:GetSpectatorMapName()
     return AlienSpectator.kMapName
 end
 
-function AlienTeam:GetWaveSpawnEndTime()
-    return ConditionalValue(self.timeNextWave == nil, 0, self.timeNextWave)
+function AlienTeam:GetWaveSpawnEndTime(forPlayer)
+
+    local timeNextWave = 0
+    local queuePos = self:GetPlayerPositionInRespawnQueue(forPlayer)
+    
+    local function NotTooLate(waveTime, player)
+    
+        return player.GetRespawnQueueEntryTime ~= nil and 
+               player:GetRespawnQueueEntryTime() + kAlienMinDeathTime < waveTime
+    
+    end
+    
+    if self.timeNextWave and #GetEntitiesForTeam("Egg", self:GetTeamNumber()) >= queuePos and NotTooLate(self.timeNextWave, forPlayer) then
+        timeNextWave = self.timeNextWave
+    end
+
+    return timeNextWave
+
+end
+
+function AlienTeam:OnEvolved(techId)
+
+    local listeners = self.eventListeners['OnEvolved']
+
+    if listeners then
+
+        for _, listener in ipairs(listeners) do
+            listener(techId)
+        end
+
+    end
+
 end

@@ -326,13 +326,11 @@ function Player:OnUpdatePlayer(deltaTime)
     
     local gamerules = GetGamerules()
     self.gameStarted = gamerules:GetGameStarted()
-    // TODO: Change this after making NS2Player
     if self:GetTeamNumber() == kTeam1Index or self:GetTeamNumber() == kTeam2Index then
         self.countingDown = gamerules:GetCountingDown()
     else
         self.countingDown = false
     end
-    self.teamLastThink = self:GetTeam()
     
 end
 
@@ -341,14 +339,8 @@ function Player:SetRespawnQueueEntryTime(time)
     self.respawnQueueEntryTime = time
 end
 
-function Player:ReplaceRespawn()
-    return self:GetTeam():ReplaceRespawnPlayer(self, nil, nil)
-end
-
 function Player:GetRespawnQueueEntryTime()
-
     return self.respawnQueueEntryTime
-    
 end
 
 // For children classes to override if they need to adjust data
@@ -428,7 +420,6 @@ function Player:CopyPlayerDataFrom(player)
     self.communicationStatus = player.communicationStatus
     
     // Don't lose purchased upgrades when becoming commander
-    
     if self:GetTeamNumber() == kAlienTeamType or self:GetTeamNumber() == kMarineTeamType then
     
         self.upgrade1 = player.upgrade1
@@ -438,13 +429,6 @@ function Player:CopyPlayerDataFrom(player)
         self.upgrade5 = player.upgrade5
         self.upgrade6 = player.upgrade6
         
-        self.forbidden1 = player.forbidden1
-        self.forbidden2 = player.forbidden2
-        self.forbidden3 = player.forbidden3
-        self.forbidden4 = player.forbidden4
-        self.forbidden5 = player.forbidden5
-        self.forbidden6 = player.forbidden6
-    
     end
     
     // Remember this player's muted clients.

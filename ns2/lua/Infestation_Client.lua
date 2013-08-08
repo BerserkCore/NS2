@@ -20,6 +20,7 @@ local kTimeToCloakIfParentMissing = 0.3
 
 local kMaxOutCrop = 0.45 // should be low enough so skulks can always comfortably see over it
 local kMinOutCrop = 0.1 // should be 
+local kMaxIterations = 16
 
 local _quality = nil
 local _numBlobsGenerated = 0
@@ -88,9 +89,7 @@ function Infestation:CreateClientGeometry()
     if _quality == "rich" then
         self:CreateModelArrays(1, 0)
     else
-        self.infestationDecal = Client.CreateRenderDecal()
-        self.infestationDecal:SetMaterial(self.infestationMaterial)
-        self.infestationDecal:SetCoords(self:GetCoords())
+        self:CreateDecals()
     end
     
     self.hasClientGeometry = true
@@ -109,11 +108,13 @@ function Infestation:DestroyClientGeometry()
         self.infestationShellModelArray = nil
     end
     
-    if self.infestationDecal ~= nil then
-        Client.DestroyRenderDecal(self.infestationDecal)
-        self.infestationDecal = nil
+    if self.infestationDecals ~= nil then
+        for i=1,#self.infestationDecals do
+            Client.DestroyRenderDecal(self.infestationDecals[i])
+        end
+        self.infestationDecals = nil
     end
-    
+  
     self.hasClientGeometry = false
     
 end
@@ -158,40 +159,26 @@ function Infestation:UpdateClientGeometry()
     local maxRadius = self:GetMaxRadius()
     local radiusFraction = (radius / maxRadius) * kDebugVisualGrowthScale
     
-    local decal = self.infestationDecal
-    if decal then
-        
-        // lets the infestation decals genlty shrink and expand
-        local kClientPulseAmount = 0.05
-        
-        // the decals opacity drop off on the borders, so we increase it's radius client side to make the visuals match the game play
-        local kClientAddRange = 1
-        local kClientScalarRange = 1.1
-        
-        local radiusMod = math_sin(Shared_GetTime() + (self:GetId() % 10))
-        local radiusMod = radiusMod * kClientPulseAmount + (1 - radiusFraction) * radiusMod * radius * .2
-            
-        local clientRadius = radius * kClientScalarRange + kClientAddRange * (radiusFraction) + radiusMod
-        
-        decal:SetExtents( Vector(clientRadius, Infestation.kDecalVerticalSize, clientRadius) )
-        self.infestationMaterial:SetParameter("intensity", 1-cloakFraction)
-        
+    local origin = self.growthOrigin
+    local amount = radiusFraction
+    
+    if self.growStartTime ~= nil then
+        local time = Shared.GetTime() - self.growStartTime
+        amount = math.min(time * 5, amount)
     end
+
+    // apply cloaking effects
+    amount = amount * (1-cloakFraction)
     
     if self.infestationModelArray then
-        local origin = self.growthOrigin
-        local amount = radiusFraction
-        
-        if self.growStartTime ~= nil then
-            local time = Shared.GetTime() - self.growStartTime
-            amount = math.min(time * 5, amount)
-        end
-
-        // apply cloaking effects
-        amount = amount * (1-cloakFraction)
-        
         SetMaterialParameters(self.infestationModelArray, amount, origin, maxRadius)
         SetMaterialParameters(self.infestationShellModelArray, amount, origin, maxRadius)
+    end
+    
+    if self.infestationDecals then
+        self.infestationMaterial:SetParameter("amount", radiusFraction)
+        self.infestationMaterial:SetParameter("origin", origin)
+        self.infestationMaterial:SetParameter("maxRadius", maxRadius)
     end
 
 end
@@ -557,14 +544,24 @@ function Infestation:PlaceBlobs(numBlobGens)
         local yRadius = xRadius * 0.5   // Pancakes
         
         local minRand = 0.2
-        local maxRand = self:GetMaxRadius() - xRadius
+        local maxRand = maxRadius - xRadius
 
         // Get a uniformly distributed point the circle
         local x, z
-        repeat
+        local hasValidPoint = false
+        for iteration = 1, kMaxIterations do
             x = random(-maxRand, maxRand)
             z = random(-maxRand, maxRand)
-        until x * x + z * z < maxRand * maxRand
+            if x * x + z * z < maxRand * maxRand then
+                hasValidPoint = true
+                break
+            end
+        end
+        
+        if not hasValidPoint then
+            Print("Error placing blob, max radius is: %f", maxRadius)
+            x, z = 0, 0
+        end
         
         local position, normal = GetBlobPlacement(x, z, xRadius, hostCoords)
         
@@ -582,7 +579,7 @@ function Infestation:PlaceBlobs(numBlobGens)
             coords.xAxis  = coords.xAxis * xRadius
             coords.yAxis  = coords.yAxis * yRadius
             coords.zAxis  = coords.zAxis * xRadius
-            coords.origin = coords.origin - coords.yAxis * 0.3 // Embed slightly in the surface
+            coords.origin = coords.origin
             
             table.insert(self.blobCoords, coords)
             numBlobs = numBlobs + 1
@@ -741,7 +738,7 @@ local function CreateInfestationModelArray(modelName, blobCoords, origin, radial
             c.xAxis  = coords.xAxis  * radiusScale
             c.yAxis  = coords.yAxis  * radiusScale2
             c.zAxis  = coords.zAxis  * radiusScale
-            c.origin = coords.origin
+            c.origin = coords.origin - coords.yAxis * 0.3 // Embed slightly in the surface
             
             numModels = numModels + 1
             coordsArray[numModels] = c
@@ -777,6 +774,24 @@ function Infestation:CreateModelArrays( growthFraction, radialOffset )
     self.infestationModelArray      = CreateInfestationModelArray( "models/alien/infestation/infestation_blob.model", self.blobCoords, self.growthOrigin, radialOffset, growthFraction, self:GetMaxRadius(), 1, 1 * scale )
     self.infestationShellModelArray = CreateInfestationModelArray( "models/alien/infestation/infestation_shell.model", self.blobCoords, self.growthOrigin, radialOffset, growthFraction, self:GetMaxRadius(), 1.75, 1.25 * scale )
     
+end
+
+function Infestation:CreateDecals()
+
+    local decals = { }
+    
+    for index, coords in ipairs(self.blobCoords) do
+
+        local decal = Client.CreateRenderDecal()
+        decal:SetMaterial(self.infestationMaterial)
+        decal:SetCoords(coords)
+        decal:SetExtents(Vector(1.5, 0.1, 1.5))
+        decals[index] = decal
+        
+    end
+
+    self.infestationDecals = decals
+
 end
 
 local function OnCommandResizeBlobs()

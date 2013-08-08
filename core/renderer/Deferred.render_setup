@@ -55,7 +55,6 @@ resources =
 		{ name="accumulation_16"		format="A16B16G16R16F"	x_scale=0.0625 y_scale=0.0625 ping_pong=true } 	// 1/16 resolution
 
 		// Low-res particles
-		{ name="lowparts_ssdepth" 	    format="D16" 			x_scale=0.5 y_scale=0.5 }
 		{ name="lowparts_vsdepth"    	format="R16F" 			x_scale=0.5 y_scale=0.5 }
 		{ name="lowparts_accum"			format="A16B16G16R16F"	x_scale=0.5 y_scale=0.5 }
 		
@@ -78,6 +77,17 @@ layers =
 			objects_mask					= "~decal"
 		}
 		
+		//  Render the decals into the G-buffer.
+		{
+			name							= "gbuffer_decals"
+			color_targets					= "albedo normal specular_gloss"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "Decal"
+			parameters						= { depthTexture = "depth" }
+			generator						= "objects"
+			objects_mask					= "decal"
+		}		
+				
 		// Generate the infestation mask
 		{
 			name							= "infestation_mask"
@@ -144,17 +154,6 @@ layers =
 					infestationTextureScale	= "infestation_scale"
 				}
 		}	
-		
-		//  Render the decals into the G-buffer albedo.
-		{
-			name							= "gbuffer_decals"
-			color_targets					= "albedo"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "Decal"
-			parameters						= { depthTexture = "depth" normalTexture = "normal" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}		
 		
 		// Generate a low resolution version of the depth buffer used for atmospherics.
 		{
@@ -463,7 +462,6 @@ layers =
 			conditions						= { mode = "unlit" particles = "low" }
 
 			color_targets 					= "lowparts_vsdepth"
-			depth_stencil_target			= "lowparts_ssdepth"
             
 			shader							= "renderer/Particles.fx"
 			technique						= "ResizeDepth"
@@ -478,17 +476,16 @@ layers =
 			conditions						= { mode = "lit" particles = "low" }
 			conditions						= { mode = "unlit" particles = "low" }
 
-			color_targets					= "lowparts_accum"
-			//depth_stencil_target			= "lowparts_ssdepth"
-			clear							= "color"
-
 			technique						= "Particle"
 
 			parameters						= { depthTexture = "lowparts_vsdepth" }
 			generator						= "objects"
 			objects_mask					= "particles"
-
             zones_mask                      = "default"
+
+            clear							= "color"
+            clear_color                     = "0 0 0 1.0"   // Important that we clear to opaque black for alpha-product accumulation
+			color_targets					= "lowparts_accum"
 		}
 
         // Composite back into full res accumulation

@@ -1,55 +1,97 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\Weapons\Alien\BoneShield.lua
 //
-//    Created by:   Charlie Cleveland (charlie@unknownworlds.com) and
-//                  Max McGuire (max@unknownworlds.com)
-//
-//  
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
+
 Script.Load("lua/Weapons/Alien/Ability.lua")
+Script.Load("lua/Weapons/Alien/StompMixin.lua")
 
 class 'BoneShield' (Ability)
 
 BoneShield.kMapName = "boneshield"
 
-// View model animations
-BoneShield.kAnimAttackTable = {{1, "attack"}/*, {1, "attack2"}, {1, "attack3"}, {1, "attack4"}*/}
+local kAnimationGraph = PrecacheAsset("models/alien/onos/onos_view.animation_graph")
 
-// Player animations
-BoneShield.kAnimPlayerAttack = "shield"
+local networkVars =
+{
+}
 
-// Balance
+AddMixinNetworkVars(StompMixin, networkVars)
 
-// Primary
-BoneShield.kPrimaryEnergyCost = 10
+function BoneShield:OnCreate()
 
-// Secondary
-BoneShield.kSecondaryEnergyCost = 20   
+    Ability.OnCreate(self)
+    
+    InitMixin(self, StompMixin)
 
-function BoneShield:GetPrimaryEnergyCost(player)
-    return BoneShield.kPrimaryEnergyCost
 end
 
-function BoneShield:GetSecondaryEnergyCost(player)
-    return BoneShield.kSecondaryEnergyCost
+function BoneShield:GetEnergyCost()
+    return kStartBoneShieldCost
+end
+
+function BoneShield:GetAnimationGraphName()
+    return kAnimationGraph
 end
 
 function BoneShield:GetHUDSlot()
     return 2
 end
 
-function BoneShield:PerformPrimaryAttack(player)
-    return true
+function BoneShield:OnPrimaryAttack(player)
+
+    if self:GetEnergyCost() < player:GetEnergy() then
+        self.primaryAttacking = true
+    end
+
 end
 
-function BoneShield:PerformSecondaryAttack(player)
+function BoneShield:OnPrimaryAttackEnd(player)
+    self.primaryAttacking = false
+end
 
-    Shared.PlaySound(player, BoneShield.kStabSound)
+function BoneShield:OnUpdateAnimationInput(modelMixin)
+
+    local activityString = "none"
+    local abilityString = "boneshield"
     
-    return true
+    if self.primaryAttacking then
+        activityString = "none" // TODO: set anim input
+    end
+    
+    modelMixin:SetAnimationInput("ability", abilityString)
+    modelMixin:SetAnimationInput("activity", activityString)
     
 end
 
-Shared.LinkClassToMap("BoneShield", BoneShield.kMapName, {} )
+function BoneShield:OnHolster(player)
+
+    Ability.OnHolster(self, player)
+    
+    self.primaryAttacking = false
+    
+end
+
+function BoneShield:OnProcessMove(input)
+
+    if self.primaryAttacking then
+        
+        local player = self:GetParent()
+        if player then
+        
+            local energy = player:GetEnergy()
+            player:DeductAbilityEnergy(input.time * kBoneShieldEnergyPerSecond)
+            
+            if player:GetEnergy() == 0 then
+                self.primaryAttacking = false
+            end
+        end
+        
+    end
+
+end
+
+Shared.LinkClassToMap("BoneShield", BoneShield.kMapName, networkVars)

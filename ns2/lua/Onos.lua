@@ -12,6 +12,7 @@
 
 Script.Load("lua/Utility.lua")
 Script.Load("lua/Weapons/Alien/Gore.lua")
+Script.Load("lua/Weapons/Alien/BoneShield.lua")
 Script.Load("lua/Alien.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
@@ -600,6 +601,51 @@ end
 
 function Onos:OnClampSpeed(input, velocity)
     Player.OnClampSpeed(self, input, velocity)
+end
+
+function Onos:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+
+    // TODO: consider impact point
+    if self:GetIsBoneShieldActive() then
+        
+        local maxAbsorbDamage = self:GetEnergy() * kBoneShieldDamageAbsorbPerEnergy
+        local fullDamage = damageTable.damage
+        
+        damageTable.damage = damageTable.damage * (1 - kBoneShieldAbsorbFraction) + math.max(0, damageTable.damage - maxAbsorbDamage)
+        self:DeductAbilityEnergy((fullDamage - damageTable.damage) / kBoneShieldDamageAbsorbPerEnergy)
+        
+    end
+
+end
+
+function Onos:GetSurfaceOverride()
+
+    if self:GetIsBoneShieldActive() then
+        return "metal"    
+    end
+    
+    return "organic"
+    
+end
+
+function Onos:GetIsBoneShieldActive()
+
+    local activeWeapon = self:GetActiveWeapon()
+    if activeWeapon and activeWeapon:isa("BoneShield") and activeWeapon.primaryAttacking then
+        return true
+    end    
+    return false
+    
+end
+
+function Onos:SetCrouchState(crouching)
+
+    if self:GetIsBoneShieldActive() then
+        crouching = true
+    end
+
+    Alien.SetCrouchState(self, crouching)
+
 end
 
 Shared.LinkClassToMap("Onos", Onos.kMapName, networkVars)
