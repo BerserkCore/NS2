@@ -19,7 +19,7 @@ local kModeText =
     ["loading_assets"]          = { text = "LOADING ASSETS" },
     ["downloading_mods"]        = { text = "DOWNLOADING MODS" },
     ["checking_consistency"]    = { text = "CHECKING CONSISTENCY" },
-    ["compiling_shaders"]       = { text = "COMPILING SHADERS FOR FIRST RUN", display = "count" }
+    ["compiling_shaders"]       = { text = "COMPILING UPDATED SHADERS", display = "count" }
 }
 
 local kTipStrings =

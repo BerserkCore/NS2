@@ -550,7 +550,8 @@ function Player:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extra
     
     // There are some cases where the spectating player isn't set to nil.
     // Handle any edge cases here (like being dead when the game is reset).
-    if not player:isa("Spectator") then
+    // In some cases, client will be nil (when the map is changing for example).
+    if client and not player:isa("Spectator") then
         client:SetSpectatingPlayer(nil)
     end
     

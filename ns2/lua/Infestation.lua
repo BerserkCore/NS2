@@ -58,7 +58,7 @@ local function DestroyClientGeometry(self)
 end
 
 
-local function CreateInfestationModelArray(modelName, blobCoords, origin, radiusScale, radiusScale2 )
+function CreateInfestationModelArray(modelName, blobCoords, origin, radiusScale, radiusScale2 )
 
     local modelArray = nil
     
@@ -97,7 +97,7 @@ local function CreateInfestationModelArray(modelName, blobCoords, origin, radius
 
 end
 
-local function CreateModelArrays(self)
+function CreateModelArrays(self)
     
     // Make blobs on the ground thinner to so that Skulks and buildings aren't
     // obscured.

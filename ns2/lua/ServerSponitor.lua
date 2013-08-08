@@ -313,7 +313,7 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
             targetY        = string.format("%.2f", targetOrigin.y),
             targetZ        = string.format("%.2f", targetOrigin.z),
             targetAttrs    = GetUpgradeAttribsString(target),
-            targetLifeTime = string.format("%.2f", Shared.GetTime() - target:GetCreationTime()),
+            targetLifeTime = string.format("%.2f", ((target.GetCreationTime and Shared.GetTime() - target:GetCreationTime()) or 0)),
         })
 
         if jsonData then

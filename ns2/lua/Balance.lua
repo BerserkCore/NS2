@@ -195,8 +195,8 @@ kRifleDamage = 10
 kRifleDamageType = kDamageType.Normal
 kRifleClipSize = 50
 
-
-kRifleMeleeDamage = 20
+// since 2 * 20 = 40 we do here 2 * 20 * 0.5 to get 20. later we fix the animation maybe
+kRifleMeleeDamage = 10
 kRifleMeleeDamageType = kDamageType.Normal
 
 
