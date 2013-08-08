@@ -20,6 +20,8 @@ local kViewModelName = PrecacheAsset("models/marine/pistol/pistol_view.model")
 local kAnimationGraph = PrecacheAsset("models/marine/pistol/pistol_view.animation_graph")
 
 local kClipSize = 10
+// 10 bullets per second
+local kMaxRateOfFire = 10
 local kRange = 200
 local kSpread = ClipWeapon.kCone1Degrees
 local kAltSpread = ClipWeapon.kCone0Degrees
@@ -30,7 +32,6 @@ local networkVars =
 {
     altMode = "boolean",
     emptyPoseParam = "private float (0 to 1 by 0.01)",
-    timeLastShot = "time"
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -44,7 +45,6 @@ function Pistol:OnCreate()
     
     self.altMode = false
     self.emptyPoseParam = 0
-    self.timeLastShot = 0
 
 end
 
@@ -190,6 +190,10 @@ end
 
 function Pistol:GetHUDSlot()
     return kSecondaryWeaponSlot
+end
+
+function Pistol:GetPrimaryMaxRateOfFire()
+    return kMaxRateOfFire    
 end
 
 function Pistol:GetPrimaryAttackRequiresPress()

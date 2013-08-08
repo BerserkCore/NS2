@@ -6,8 +6,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 BaseMoveMixin = { }
 BaseMoveMixin.type = "BaseMove"
 
@@ -78,7 +76,6 @@ function BaseMoveMixin:SetVelocity(velocity)
     end
     
 end
-AddFunctionContract(BaseMoveMixin.SetVelocity, { Arguments = { "Entity", "Vector" }, Returns = { } })
 
 function BaseMoveMixin:GetVelocity()
 
@@ -90,25 +87,21 @@ function BaseMoveMixin:GetVelocity()
     return self.velocity
     
 end
-AddFunctionContract(BaseMoveMixin.GetVelocity, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
 // length of velocity vector
 function BaseMoveMixin:GetVelocityLength()
     return self.velocityLength
 end
-AddFunctionContract(BaseMoveMixin.GetVelocityLength, { Arguments = { "Entity" }, Returns = { "float" } })
 
 // yaw angle for velocity
 function BaseMoveMixin:GetVelocityYaw()
     return self.velocityYaw
 end
-AddFunctionContract(BaseMoveMixin.GetVelocityYaw, { Arguments = { "Entity" }, Returns = { "float" } })
 
 // pitch angle for velocity
 function BaseMoveMixin:GetVelocityPitch()
     return self.velocityPitch
 end
-AddFunctionContract(BaseMoveMixin.GetVelocityPitch, { Arguments = { "Entity" }, Returns = { "bool" } })
 
 // Get a velocity vector from the polar coordinates. 
 // This function is always available, while GetVelocity() is only available on 
@@ -123,17 +116,14 @@ function BaseMoveMixin:GetVelocityFromPolar()
     return Vector(x,y,z)
     
 end
-AddFunctionContract(BaseMoveMixin.GetVelocityFromPolar, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
 function BaseMoveMixin:SetGravityEnabled(state)
     self.gravityEnabled = state
 end
-AddFunctionContract(BaseMoveMixin.SetGravityEnabled, { Arguments = { "Entity", "boolean" }, Returns = { } })
 
 function BaseMoveMixin:GetGravityEnabled()
     return self.gravityEnabled
 end
-AddFunctionContract(BaseMoveMixin.GetGravityEnabled, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 function BaseMoveMixin:GetGravityForce(input)
 
@@ -146,7 +136,6 @@ function BaseMoveMixin:GetGravityForce(input)
     return gravity
     
 end
-AddFunctionContract(BaseMoveMixin.GetGravityForce, { Arguments = { "Entity", "Move" }, Returns = { "number" } })
 
 local kSmoothRate = 28
 function BaseMoveMixin:OnProcessMove(input)

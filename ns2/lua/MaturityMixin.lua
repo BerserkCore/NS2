@@ -9,9 +9,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
-
-MaturityMixin = CreateMixin( MaturityMixin )
+MaturityMixin = CreateMixin(MaturityMixin)
 MaturityMixin.type = "Maturity"
 
 kMaturityLevel = enum({ 'Newborn', 'Grown', 'Mature' })

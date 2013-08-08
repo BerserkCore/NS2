@@ -998,6 +998,13 @@ end
 
 Shared.RegisterNetworkMessage("Buy", kBuyMessage)
 
+local kAutoConcedeWarning =
+{
+    time = "time",
+    team1Conceding = "boolean"
+}
+Shared.RegisterNetworkMessage("AutoConcedeWarning", kAutoConcedeWarning)
+
 Shared.RegisterNetworkMessage("SpectatePlayer", { entityId = "entityid"})
 Shared.RegisterNetworkMessage("SwitchFromFirstPersonSpectate", { mode = "enum kSpectatorMode" })
 Shared.RegisterNetworkMessage("SwitchFirstPersonSpectatePlayer", { forward = "boolean" })

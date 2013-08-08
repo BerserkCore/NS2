@@ -225,6 +225,16 @@ function Embryo:GetName(forEntity)
     
 end
 
+function Embryo:OverrideHintString(hintString, forEntity)
+
+    if GetAreEnemies(self, forEntity) then
+        return LookupTechData(kTechId.Egg, kTechDataHint, "")
+    end
+    
+    return hintString
+
+end
+
 function Embryo:SetOriginalAngles(angles)
 
     self.originalAngles = angles

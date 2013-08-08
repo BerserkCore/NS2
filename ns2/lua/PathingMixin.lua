@@ -6,10 +6,9 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/PathingUtility.lua")
 
-PathingMixin = CreateMixin( PathingMixin )
+PathingMixin = CreateMixin(PathingMixin)
 PathingMixin.type = "Pathing"
 
 local pi2 = math.pi * 2

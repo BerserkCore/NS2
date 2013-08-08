@@ -6,10 +6,9 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/EquipmentOutline.lua")
 
-PickupableMixin = CreateMixin( PickupableMixin )
+PickupableMixin = CreateMixin(PickupableMixin)
 PickupableMixin.type = "Pickupable"
 
 PickupableMixin.expectedMixins =

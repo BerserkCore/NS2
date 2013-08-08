@@ -6,10 +6,9 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/PowerUtility.lua")
 
-PowerConsumerMixin = CreateMixin( PowerConsumerMixin )
+PowerConsumerMixin = CreateMixin(PowerConsumerMixin)
 PowerConsumerMixin.type = "PowerConsumer"
 
 PowerConsumerMixin.ClientPowerNodeCheckIntervall = 10

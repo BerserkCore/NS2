@@ -24,6 +24,10 @@ function MarineTeam:ResetTeam()
     local commandStructure = PlayingTeam.ResetTeam(self)
     
     self.updateMarineArmor = false
+
+    if self.brain ~= nil then
+        self.brain:Reset()
+    end
     
     return commandStructure
     

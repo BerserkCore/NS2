@@ -1349,7 +1349,6 @@ function GUIAlienBuyMenu:_ShowMouseOverInfo(lifeformText, infoText, costAmount, 
     
 
 end
-AddFunctionContract(GUIAlienBuyMenu._ShowMouseOverInfo, { Arguments = { "GUIAlienBuyMenu", "string", "string", { "number", "nil" }, "number", "number" }, Returns = { } })
 
 function GUIAlienBuyMenu:_HideMouseOverInfo()
 
@@ -1362,13 +1361,9 @@ function GUIAlienBuyMenu:_HideMouseOverInfo()
     self.mouseOverInfoArmorAmount:SetIsVisible(false)
     
 end
-AddFunctionContract(GUIAlienBuyMenu._HideMouseOverInfo, { Arguments = { "GUIAlienBuyMenu" }, Returns = { } })
-
 
 function GUIAlienBuyMenu:GetNewLifeFormSelected()
-
     return self.selectedAlienType ~= AlienBuy_GetCurrentAlien()
-
 end
 
 function GUIAlienBuyMenu:SetPurchasedSelected()

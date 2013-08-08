@@ -6,8 +6,6 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
-
 local function ClientOnly()
     return Client ~= nil
 end
@@ -47,7 +45,6 @@ function LoadEntityFromValues(entity, values, initOnly)
     end
     
 end
-AddFunctionContract(LoadEntityFromValues, { Arguments = { "userdata", "table", "boolean" }, Returns = { } })
 
 local function LoadLight(className, groupName, values)
             
@@ -140,7 +137,6 @@ local function LoadLight(className, groupName, values)
     return true
         
 end
-AddFunctionContract(LoadLight, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
 
 local function LoadBillboard(className, groupName, values)
 
@@ -159,7 +155,6 @@ local function LoadBillboard(className, groupName, values)
     return true
         
 end
-AddFunctionContract(LoadBillboard, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
 
 local function LoadDecal(className, groupName, values)
 
@@ -179,7 +174,6 @@ local function LoadDecal(className, groupName, values)
     return true
         
 end
-AddFunctionContract(LoadDecal, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
 
 local function LoadStaticProp(className, groupName, values)
 
@@ -195,6 +189,7 @@ local function LoadStaticProp(className, groupName, values)
     
     local renderModelCommAlpha = GetAndCheckValue(values.commAlpha, 0, 1, "commAlpha", 1, true)
     local blocksPlacement = groupName == kCommanderInvisibleGroupName or
+                            groupName == kCommanderInvisibleVentsGroupName or
                             groupName == kCommanderNoBuildGroupName
 
     // Test against false so that the default is true
@@ -212,8 +207,8 @@ local function LoadStaticProp(className, groupName, values)
     end
     
     // Only create Pathing objects if we are told too
-    if values.pathInclude == true then
-        Pathing.CreatePathingObject(values.model, coords)
+    if values.pathInclude and not Pathing.GetLevelHasPathingMesh() then
+        Pathing.CreatePathingObject(values.model, coords, values.pathWalkable or false)
     end
     
     if Client then
@@ -241,7 +236,6 @@ local function LoadStaticProp(className, groupName, values)
     return true
 
 end
-AddFunctionContract(LoadStaticProp, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
 
 local function LoadSoundEffect(className, groupName, values)
 
@@ -293,8 +287,6 @@ local function LoadReflectionProbe(className, groupName, values)
     return true
         
 end
-AddFunctionContract(LoadReflectionProbe, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })
-
 
 local loadTypes = { }
 loadTypes["light_spot"] = { LoadAllowed = ClientOnly, LoadFunction = LoadLight }
@@ -320,4 +312,3 @@ function LoadMapEntity(className, groupName, values)
     return false
 
 end
-AddFunctionContract(LoadMapEntity, { Arguments = { "string", "string", "table" }, Returns = { "boolean" } })

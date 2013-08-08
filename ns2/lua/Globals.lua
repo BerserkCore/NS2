@@ -238,13 +238,16 @@ kFadeToBlackTime = 3
 kZFightingConstant = 0.1
 
 // Any geometry or props with this name won't be drawn or affect commanders
-kCommanderInvisibleGroupName    = "CommanderInvisible"
+kCommanderInvisibleGroupName = "CommanderInvisible"
+kCommanderInvisibleVentsGroupName = "CommanderInvisibleVents"
 // Any geometry or props with this name will not support being built on top of
-kCommanderNoBuildGroupName      = "CommanderNoBuild"
-kCommanderBuildGroupName        = "CommanderBuild"
+kCommanderNoBuildGroupName = "CommanderNoBuild"
+kCommanderBuildGroupName = "CommanderBuild"
 
-kCollisionGeometryGroupName     = "CollisionGeometry"
-kNonCollisionGeometryGroupName  = "NonCollisionGeometry"
+kCollisionGeometryGroupName = "CollisionGeometry"
+kNonCollisionGeometryGroupName = "NonCollisionGeometry"
+
+kPathingLayerName = "Pathing"
 
 // Max players allowed in game
 kMaxPlayers = 32

@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// lua\Bot.lua
+// lua\bots\Bot.lua
 //
 // Created by Max McGuire (max@unknownworlds.com)
 // Copyright (c) 2011, Unknown Worlds Entertainment, Inc.
@@ -11,8 +11,10 @@ if (not Server) then
     error("Bot.lua should only be included on the Server")
 end
 
+Script.Load("lua/bots/BotDebug.lua")
+
 // Stores all of the bots
-server_bots = { }
+gServerBots = { }
 
 class 'Bot'
 
@@ -20,6 +22,7 @@ Script.Load("lua/TechMixin.lua")
 Script.Load("lua/ExtentsMixin.lua")
 Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
+
 
 function Bot:Initialize(forceTeam, active)
 
@@ -57,7 +60,7 @@ function Bot:UpdateTeam(joinTeam)
         end
         
         if GetGamerules():GetCanJoinTeamNumber(joinTeam) or Shared.GetCheatsEnabled() then
-            GetGamerules():JoinTeam(player, joinTeam)
+            GetGamerules():JoinTeam(player, joinTeam)            
         end
         
     end
@@ -74,23 +77,46 @@ function Bot:GetPlayer()
     return self.client:GetControllingPlayer()
 end
 
+//----------------------------------------
+//  NOTE: There is no real reason why this is different from GenerateMove - the C++ just calls one after another.
+//  For now, just put higher-level book-keeping here I guess.
+//----------------------------------------
 function Bot:OnThink()
-    self:UpdateTeam(self.forceTeam)        
+
+    self:UpdateTeam(self.forceTeam)
+    
+end
+
+//----------------------------------------
+//  Console commands for managing bots
+//----------------------------------------
+
+local function GetIsClientAllowedToManage(client)
+
+    return client == nil    // console command from server
+    or Shared.GetCheatsEnabled()
+    or Shared.GetDevMode()
+    or client:GetIsLocalClient()    // the client that started the listen server
+
 end
 
 function OnConsoleAddPassiveBots(client, numBotsParam, forceTeam, className)
     OnConsoleAddBots(client, numBotsParam, forceTeam, className, true)  
 end
 
-function OnConsoleAddBots(client, numBotsParam, forceTeam, className, passive)
+function OnConsoleAddBots(client, numBotsParam, forceTeam, botType, passive)
 
-    // Run from dedicated server or with dev or cheats on
-    if client == nil or Shared.GetCheatsEnabled() or Shared.GetDevMode() then
+    if GetIsClientAllowedToManage(client) then
+
+        local kType2Class =
+        {
+            test = TestBot,
+            com = CommanderBot
+        }
+        local class = kType2Class[ botType ]
     
-        local class = BotPlayer
-    
-        if className == "test" then
-            class = BotTest
+        if class == nil then
+            class = PlayerBot   // Default
         end
 
         local numBots = 1
@@ -102,7 +128,7 @@ function OnConsoleAddBots(client, numBotsParam, forceTeam, className, passive)
         
             local bot = class()
             bot:Initialize(tonumber(forceTeam), not passive)
-            table.insert( server_bots, bot )
+            table.insert( gServerBots, bot )
        
         end
         
@@ -112,8 +138,7 @@ end
 
 function OnConsoleRemoveBots(client, numBotsParam, teamNum)
 
-    // Run from dedicated server or with dev or cheats on
-    if client == nil or Shared.GetCheatsEnabled() or Shared.GetDevMode() then
+    if GetIsClientAllowedToManage(client) then
     
         local numBots = 1
         if numBotsParam then
@@ -123,9 +148,9 @@ function OnConsoleRemoveBots(client, numBotsParam, teamNum)
         teamNum = teamNum and tonumber(teamNum) or nil
         
         local numRemoved = 0
-        for index = #server_bots, 1, -1 do
+        for index = #gServerBots, 1, -1 do
         
-            local bot = server_bots[index]
+            local bot = gServerBots[index]
             if bot then
             
                 local disconnect = true
@@ -137,7 +162,7 @@ function OnConsoleRemoveBots(client, numBotsParam, teamNum)
                 
                     bot:Disconnect()
                     numRemoved = numRemoved + 1
-                    table.remove(server_bots, index)
+                    table.remove(gServerBots, index)
                     
                 end
                 
@@ -156,7 +181,7 @@ end
 function OnVirtualClientMove(client)
 
     // If the client corresponds to one of our bots, generate a move from it.
-    for i,bot in ipairs(server_bots) do
+    for i,bot in ipairs(gServerBots) do
     
         if bot.client == client then
         
@@ -174,7 +199,7 @@ end
 function OnVirtualClientThink(client, deltaTime)
 
     // If the client corresponds to one of our bots, allow it to think.
-    for i, bot in ipairs(server_bots) do
+    for i, bot in ipairs(gServerBots) do
     
         if bot.client == client then
             local player = bot:GetPlayer()
@@ -187,8 +212,10 @@ function OnVirtualClientThink(client, deltaTime)
     
 end
 
-Script.Load("lua/Bot_Player.lua")
-Script.Load("lua/BotTest.lua")
+// Make sure to load these after Bot is defined
+Script.Load("lua/bots/TestBot.lua")
+Script.Load("lua/bots/PlayerBot.lua")
+Script.Load("lua/bots/CommanderBot.lua")
 
 // Register the bot console commands
 Event.Hook("Console_addpassivebot",  OnConsoleAddPassiveBots)

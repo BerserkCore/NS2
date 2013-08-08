@@ -6,13 +6,11 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * GameEffectsMixin keeps track of anything that has an effect on an entity and
  * provides methods to query these effects.
  */
-GameEffectsMixin = CreateMixin( GameEffectsMixin )
+GameEffectsMixin = CreateMixin(GameEffectsMixin)
 GameEffectsMixin.type = "GameEffects"
 
 GameEffectsMixin.optionalCallbacks =
@@ -36,7 +34,6 @@ end
 function GameEffectsMixin:GetGameEffectMask(effect)
     return bit.band(self.gameEffectsFlags, effect) ~= 0
 end
-AddFunctionContract(GameEffectsMixin.GetGameEffectMask, { Arguments = { "Entity", "number" }, Returns = { "boolean" } })
 
 // Sets or clears a game effect flag
 function GameEffectsMixin:SetGameEffectMask(effectBitMask, state)
@@ -71,7 +68,6 @@ function GameEffectsMixin:SetGameEffectMask(effectBitMask, state)
     return startGameEffectsFlags ~= self.gameEffectsFlags
     
 end
-AddFunctionContract(GameEffectsMixin.SetGameEffectMask, { Arguments = { "Entity", "number", "boolean" }, Returns = { "boolean" } })
 
 function GameEffectsMixin:ClearGameEffects()
 
@@ -94,11 +90,7 @@ function GameEffectsMixin:ClearGameEffects()
     self.gameEffectsFlags = 0
     
 end
-AddFunctionContract(GameEffectsMixin.ClearGameEffects, { Arguments = { "Entity" }, Returns = { } })
 
 function GameEffectsMixin:OnKill()
-
     self:ClearGameEffects()
-
 end
-AddFunctionContract(GameEffectsMixin.OnKill, { Arguments = { "Entity" }, Returns = { } })

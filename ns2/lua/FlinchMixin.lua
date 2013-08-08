@@ -6,8 +6,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 FlinchMixin = CreateMixin(FlinchMixin)
 FlinchMixin.type = "Flinch"
 

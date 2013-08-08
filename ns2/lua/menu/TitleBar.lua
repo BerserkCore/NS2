@@ -83,7 +83,7 @@ function TitleBar:Drag(mousePressed)
 
         // move the window
         local windowPos = self:GetParent():GetBackground():GetPosition()
-        windowPos = windowPos + MouseTracker_GetMouseMovement()
+        windowPos = windowPos + MouseTracker_GetMouseMovement() / self.background.scale
         
         local horizontalAlign, verticalAlign = self:GetParent():GetAlign()
         local xOffset = 0

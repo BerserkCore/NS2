@@ -6,10 +6,9 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/PowerUtility.lua")
 
-PowerSourceMixin = CreateMixin( PowerSourceMixin )
+PowerSourceMixin = CreateMixin(PowerSourceMixin)
 PowerSourceMixin.type = "PowerSource"
 
 // This is needed so alien structures can be cloaked, but not marine structures

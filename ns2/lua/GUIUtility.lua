@@ -19,6 +19,36 @@ local function ScreenSmallAspect()
 
 end
 
+local function CalculateScreenPosition(guiItem)
+
+    local itemScreenPosition = guiItem:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
+    local itemText = guiItem:GetText()
+    if itemText ~= "" then
+    
+        local addX = 0
+        local alignX = guiItem:GetTextAlignmentX()
+        if alignX == GUIItem.Align_Center then
+            addX = -guiItem:GetTextWidth(guiItem:GetText()) / 2
+        elseif alignX == GUIItem.Align_Max then
+            addX = -guiItem:GetTextWidth(guiItem:GetText())
+        end
+        
+        local addY = 0
+        local alignY = guiItem:GetTextAlignmentY()
+        if alignY == GUIItem.Align_Center then
+            addY = -guiItem:GetTextHeight(guiItem:GetText()) / 2
+        elseif alignY == GUIItem.Align_Max then
+            addY = -guiItem:GetTextHeight(guiItem:GetText())
+        end
+        
+        itemScreenPosition = itemScreenPosition + Vector(addX, addY, 0)
+        
+    end
+    
+    return itemScreenPosition
+    
+end
+
 // Returns true if the passed in point is contained within the passed in GUIItem.
 // Also returns the point inside the passed in GUIItem where that point is located.
 // Returns false if the point is not contained in the passed in GUIItem.
@@ -28,7 +58,7 @@ function GUIItemContainsPoint(guiItem, pointX, pointY)
     ASSERT(pointX ~= nil)
     ASSERT(pointY ~= nil)
     
-    local itemScreenPosition = guiItem:GetScreenPosition(Client.GetScreenWidth(), Client.GetScreenHeight())
+    local itemScreenPosition = CalculateScreenPosition(guiItem)
     local itemSize = guiItem:GetSize()
     
     if guiItem.GetIsScaling and guiItem:GetIsScaling() and guiItem.scale then

@@ -787,7 +787,7 @@ function Skulk:OnClampSpeed(input, velocity)
     
 end
 
-local kSkulkEngageOffset = Vector(0, 0.28, 0)
+local kSkulkEngageOffset = Vector(0, 0.5, 0)
 function Skulk:GetEngagementPointOverride()
     return self:GetOrigin() + kSkulkEngageOffset
 end

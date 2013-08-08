@@ -6,13 +6,11 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * ExtentsMixin allows an entity to define how much space it takes up.
  * The GetExtents() function is expected to be provided by anything that uses this mixin.
  */
-ExtentsMixin = CreateMixin( ExtentsMixin )
+ExtentsMixin = CreateMixin(ExtentsMixin)
 ExtentsMixin.type = "Extents"
 
 ExtentsMixin.expectedMixins =
@@ -75,9 +73,7 @@ function ExtentsMixin:GetExtents()
     return self:GetMaxExtents()
 
 end
-AddFunctionContract(ExtentsMixin.GetExtents, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
 function ExtentsMixin:GetMaxExtents()
     return Vector(InternalGetMaxExtents(self))
 end
-AddFunctionContract(ExtentsMixin.GetMaxExtents, { Arguments = { "Entity" }, Returns = { "Vector" } })

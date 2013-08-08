@@ -49,7 +49,10 @@ local _keyBinding =
     RequestOrder = InputKey.H,
     Taunt = InputKey.T,
     PingLocation = InputKey.MouseButton2,
+    VoteYes = InputKey.VoteYes,
+    VoteNo = InputKey.VoteNo,
     NextWeapon = InputKey.MouseZ,
+    QuickSwitch = InputKey.V,
     ScrollForward = InputKey.Up,
     ScrollBackward = InputKey.Down,
     ScrollLeft = InputKey.Left,
@@ -76,7 +79,6 @@ local _keyBinding =
     Z = InputKey.Z,
     X = InputKey.X,
     C = InputKey.C,
-    V = InputKey.V,
     B = InputKey.B,
     N = InputKey.N,
     M = InputKey.M,
@@ -352,6 +354,10 @@ local function GenerateMove()
         end
         if _keyPressed[ _keyBinding.Weapon5 ] then
             move.commands = bit.bor(move.commands, Move.Weapon5)
+        end
+        if _keyPressed[ _keyBinding.QuickSwitch ] then
+            Print("Adding quick switch")
+            move.commands = bit.bor(move.commands, Move.QuickSwitch)
         end
         
         // Process FPS actions only if mouse captured

@@ -62,6 +62,10 @@ function GrenadeThrower:GetViewModelName()
     assert(false)
 end
 
+function GrenadeThrower:GetAnimationGraphName()
+    assert(false)
+end
+
 function GrenadeThrower:GetGrenadeMapName()
     assert(false)
 end

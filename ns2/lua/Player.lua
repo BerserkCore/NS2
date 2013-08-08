@@ -2516,7 +2516,7 @@ function Player:HandleButtons(input)
         // The following inputs are disabled when the player cannot control themself.
         input.commands = bit.band(input.commands, bit.bnot(bit.bor(Move.Use, Move.Buy, Move.Jump,
                                                                    Move.PrimaryAttack, Move.SecondaryAttack,
-                                                                   Move.NextWeapon, Move.PrevWeapon, Move.Reload,
+                                                                   Move.NextWeapon, Move.PrevWeapon, Move.Reload, Move.QuickSwitch,
                                                                    Move.Taunt, Move.Weapon1, Move.Weapon2,
                                                                    Move.Weapon3, Move.Weapon4, Move.Weapon5, Move.Crouch)))
                                                                    
@@ -2597,6 +2597,10 @@ function Player:HandleButtons(input)
         
         if bit.band(input.commands, Move.Weapon5) ~= 0 then
             self:SwitchWeapon(5)
+        end
+        
+        if bit.band(input.commands, Move.QuickSwitch) ~= 0 then
+            self:QuickSwitchWeapon()
         end
         
     end

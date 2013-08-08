@@ -12,7 +12,7 @@ Script.Load("lua/OwnerMixin.lua")
 class 'GasGrenade' (Projectile)
 
 GasGrenade.kMapName = "gasgrenade"
-GasGrenade.kModelName = PrecacheAsset("models/marine/rifle/rifle_grenade.model")
+GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_nerve.model")
 
 local networkVars = 
 {
@@ -48,6 +48,7 @@ function GasGrenade:OnCreate()
     end
     
     self.releaseGas = false
+    self.clientGasReleased = false
     
 end
 
@@ -63,10 +64,22 @@ function GasGrenade:ProcessHit(targetHit, surface)
     
 end
 
-if Server then
+if Client then
+
+    function GasGrenade:OnUpdateRender()
     
-    function GasGrenade:ReleaseGas()   
-        self:TriggerEffects("release_nervegas") 
+        if self.releaseGas and not self.clientGasReleased then
+
+            self:TriggerEffects("release_nervegas")        
+            self.clientGasReleased = true
+        
+        end
+    
+    end
+
+elseif Server then
+    
+    function GasGrenade:ReleaseGas()  
         self.releaseGas = true    
     end
     

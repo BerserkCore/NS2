@@ -150,35 +150,8 @@ if Server then
         return techId == kTechId.ThreatMarker or techId == kTechId.LargeThreatMarker or techId ==  kTechId.NeedHealingMarker or techId == kTechId.WeakMarker or techId == kTechId.ExpandingMarker    
     end
     
-    function AlienCommander:CreateCyst(position, normal, orientation, pickVec)
-
-        if not self.cystAllowed then
-            return false
-        end
-
-        // check for energy
-        local hive = self:GetClassHasEnergy("Hive", LookupTechData(kTechId.Cyst, kTechDataCostKey) )
-        local success = false
-
-        if hive then
-        
-            success = self:AttemptToBuild(kTechId.Cyst, position, normal, orientation, pickVec, false, hive)
-            
-            if success then
-            
-                Shared.PlayPrivateSound(self, self:GetSpendTeamResourcesSoundName(), nil, 1.0, self:GetOrigin())            
-                hive:SetEnergy(hive:GetEnergy() - LookupTechData(kTechId.Cyst, kTechDataCostKey))
-                
-            end
-            
-        end
-
-        return success
-    
-    end
-    
     // check if a notification should be send for successful actions
-    function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace, targetId)
+    function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, isCommanderPicked, orientation, entity, trace, targetId, isBot)
     
         local techId = techNode:GetTechId()
         local success = false
@@ -190,7 +163,7 @@ if Server then
             keepProcessing = false
         
         else
-            success, keepProcessing = Commander.ProcessTechTreeActionForEntity(self, techNode, position, normal, pickVec, orientation, entity, trace, targetId)
+            success, keepProcessing = Commander.ProcessTechTreeActionForEntity(self, techNode, position, normal, isCommanderPicked, orientation, entity, trace, targetId, isBot)
         end
         
         if success then

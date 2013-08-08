@@ -9,12 +9,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * WallMovementMixin handles processing attack orders.
  */
-WallMovementMixin = CreateMixin( WallMovementMixin )
+WallMovementMixin = CreateMixin(WallMovementMixin)
 WallMovementMixin.type = "WallMovement"
 
 WallMovementMixin.expectedMixins =

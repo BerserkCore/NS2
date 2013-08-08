@@ -572,6 +572,7 @@ function PlayerUI_GetWaypointType()
 
 end
 
+local kAnimateFields = { x = true, y = true, scale = true, dist = true }
 /**
  * Gives the UI the screen space coordinates of where to display
  * the final waypoint for when players have an order location.
@@ -648,7 +649,6 @@ function PlayerUI_GetFinalWaypointInScreenspace()
     local nextWPDist = nextWPDir:GetLength()
     local nextWPMaxDist = 25
     local nextWPScale = isCommander and 0.3 or math.max(0.5, 1 - (nextWPDist / nextWPMaxDist))
-    local entriesPerWaypoint = 7
     
     if isCommander then
         nextWPDist = 0
@@ -658,11 +658,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
     
         player.nextWPInScreenSpace = true
         player.nextWPDoingTrans = false
-        player.nextWPLastVal = { }
-        
-        for i = 1, entriesPerWaypoint do
-            player.nextWPLastVal[i] = 0
-        end
+        player.nextWPLastVal = { x = 0, y = 0, scale = 0, dist = 0, id = 0 }
         
         player.nextWPCurrWP = Vector(orderWayPoint)
         
@@ -708,7 +704,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
         finalScreenPos.x = Clamp(finalScreenPos.x, minWidthBuff, maxWidthBuff)
         finalScreenPos.y = Clamp(finalScreenPos.y, minHeightBuff, maxHeightBuff)
         
-        returnTable = { finalScreenPos.x, finalScreenPos.y, nextWPScale, orderTypeName, nextWPDist, orderType, orderId, showArrow }
+        returnTable = { x = finalScreenPos.x, y = finalScreenPos.y, scale = nextWPScale, name = orderTypeName, dist = nextWPDist, type = orderType, id = orderId, showArrow = showArrow }
         
     else
     
@@ -721,7 +717,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
         
         local bounceY = screenPos.y + (math.sin(Shared.GetTime() * 3) * (10 * nextWPScale))
         
-        returnTable = { screenPos.x, bounceY, nextWPScale, orderTypeName, nextWPDist, orderType, orderId }
+        returnTable = { x = screenPos.x, y = bounceY, scale = nextWPScale, name = orderTypeName, dist = nextWPDist, type = orderType, id = orderId }
         
     end
     
@@ -729,15 +725,15 @@ function PlayerUI_GetFinalWaypointInScreenspace()
     
         local replaceTable = { }
         local allEqual = true
-        for i = 1, entriesPerWaypoint do
+        for name, field in pairs(returnTable) do
         
-            if type(returnTable[i]) == "number" then
+            if kAnimateFields[name] then
             
-                replaceTable[i] = Slerp(player.nextWPLastVal[i], returnTable[i], 50)
-                allEqual = allEqual and replaceTable[i] == returnTable[i]
+                replaceTable[name] = Slerp(player.nextWPLastVal[name], returnTable[name], 50)
+                allEqual = allEqual and replaceTable[name] == returnTable[name]
                 
             else
-                replaceTable[i] = returnTable[i]
+                replaceTable[name] = returnTable[name]
             end
             
         end
@@ -750,8 +746,8 @@ function PlayerUI_GetFinalWaypointInScreenspace()
         
     end
     
-    for i = 1, entriesPerWaypoint do
-        player.nextWPLastVal[i] = returnTable[i]
+    for name, field in pairs(returnTable) do
+        player.nextWPLastVal[name] = field
     end
     
     // Save current for next update.
@@ -2135,7 +2131,7 @@ function Player:OnInitLocalClient()
     self.damageIndicators = { }
     
     // Set commander geometry visible
-    Client.SetGroupIsVisible(kCommanderInvisibleGroupName, true)
+    SetLocalPlayerIsOverhead(false)
     
     local loopingIdleSound = self:GetIdleSoundName()
     if loopingIdleSound then

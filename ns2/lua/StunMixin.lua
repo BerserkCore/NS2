@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-StunMixin = CreateMixin( StunMixin )
+StunMixin = CreateMixin(StunMixin)
 StunMixin.type = "Stun"
 
 StunMixin.optionalCallbacks =
@@ -48,7 +46,6 @@ end
 function StunMixin:GetIsStunned()
     return Shared.GetTime() < self.stunTime
 end
-AddFunctionContract(StunMixin.GetIsStunned, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 local function SharedUpdate(self)
 

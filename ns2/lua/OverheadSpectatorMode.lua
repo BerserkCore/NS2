@@ -35,7 +35,8 @@ function OverheadSpectatorMode:Initialize(spectator)
     	SetCommanderPropState(true)
         SetSkyboxDrawState(false)
         Client.SetSoundGeometryEnabled(false)
-        Client.SetGroupIsVisible(kCommanderInvisibleGroupName, false)
+        
+        SetLocalPlayerIsOverhead(true)
         
         Client.SetPitch(overheadAngle.pitch)
         Client.SetYaw(overheadAngle.yaw)
@@ -77,7 +78,8 @@ function OverheadSpectatorMode:Uninitialize(spectator)
         SetCommanderPropState(false)
         SetSkyboxDrawState(true)
         Client.SetSoundGeometryEnabled(true)
-        Client.SetGroupIsVisible(kCommanderInvisibleGroupName, true)
+        
+        SetLocalPlayerIsOverhead(false)
         
         Client.SetPitch(viewAngles.pitch)
         

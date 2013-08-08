@@ -8,7 +8,6 @@
 //    
 // =========== For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 
 FollowMoveMixin = CreateMixin(FollowMoveMixin)

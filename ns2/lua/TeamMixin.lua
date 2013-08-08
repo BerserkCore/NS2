@@ -6,12 +6,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * TeamMixin has functionality for an Entity to be on a team.
  */
-TeamMixin = CreateMixin( TeamMixin )
+TeamMixin = CreateMixin(TeamMixin)
 TeamMixin.type = "Team"
 
 TeamMixin.networkVars =

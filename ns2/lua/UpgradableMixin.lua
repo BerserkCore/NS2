@@ -6,13 +6,11 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * UpgradableMixin handles two forms of upgrades. There are the upgrades that it owns (upgrade1 - upgrade4).
  * It can also handle upgrading the entire entity to another tech Id independent of the upgrades it owns.
  */
-UpgradableMixin = CreateMixin( UpgradableMixin )
+UpgradableMixin = CreateMixin(UpgradableMixin)
 UpgradableMixin.type = "Upgradable"
 
 UpgradableMixin.expectedCallbacks =
@@ -54,7 +52,6 @@ function UpgradableMixin:GetHasUpgrade(techId)
                                        or techId == self.upgrade4 or techId == self.upgrade5 or techId == self.upgrade6)
     
 end
-AddFunctionContract(UpgradableMixin.GetHasUpgrade, { Arguments = { "Entity", "number" }, Returns = { "boolean" } })
 
 function UpgradableMixin:GetUpgradeList()
 
@@ -114,7 +111,6 @@ function UpgradableMixin:GetUpgrades()
     return upgrades
     
 end
-AddFunctionContract(UpgradableMixin.GetUpgrades, { Arguments = { "Entity" }, Returns = { "table" } })
 
 function UpgradableMixin:GiveUpgrade(techId) 
 
@@ -165,7 +161,6 @@ function UpgradableMixin:GiveUpgrade(techId)
     return upgradeGiven
     
 end
-AddFunctionContract(UpgradableMixin.GiveUpgrade, { Arguments = { "Entity", "number" }, Returns = { "boolean" } })
 
 function UpgradableMixin:RemoveUpgrade(techId)
 
@@ -210,21 +205,16 @@ function UpgradableMixin:RemoveUpgrade(techId)
     return removed
     
 end
-AddFunctionContract(UpgradableMixin.RemoveUpgrade, { Arguments = { "Entity", "number" }, Returns = { "boolean" } })
 
 function UpgradableMixin:Reset()
 
     self:ClearUpgrades()
     
 end
-AddFunctionContract(UpgradableMixin.Reset, { Arguments = { "Entity" }, Returns = { } })
 
 function UpgradableMixin:OnKill()
-
     self:ClearUpgrades()
-    
 end
-AddFunctionContract(UpgradableMixin.OnKill, { Arguments = { "Entity" }, Returns = { } })
 
 function UpgradableMixin:ClearUpgrades()
 

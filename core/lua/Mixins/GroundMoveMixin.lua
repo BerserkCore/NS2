@@ -6,10 +6,9 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 
-GroundMoveMixin = CreateMixin( GroundMoveMixin )
+GroundMoveMixin = CreateMixin(GroundMoveMixin)
 GroundMoveMixin.type = "GroundMove"
 
 GroundMoveMixin.expectedMixins =
@@ -125,4 +124,3 @@ function GroundMoveMixin:UpdateMove(input)
     self.fullPrecisionOrigin = Vector(self:GetOrigin())
     
 end
-AddFunctionContract(GroundMoveMixin.UpdateMove, { Arguments = { "Entity", "Move" }, Returns = { } })

@@ -56,6 +56,18 @@ if Server then
         
     end
     
+    function StartSoundEffect2D(soundEffectName, volume)
+    
+        local soundEffectEntity = Server.CreateEntity(SoundEffect.kMapName)
+        soundEffectEntity:SetAsset(soundEffectName)
+        soundEffectEntity:SetVolume(volume)
+        soundEffectEntity:SetPositional(false)
+        soundEffectEntity:Start()
+        
+        return soundEffectEntity
+        
+    end
+    
 end
 
 if Client then
@@ -102,6 +114,7 @@ SoundEffect.kMapName = "sound_effect"
 local networkVars =
 {
     playing = "boolean",
+    positional = "boolean",
     assetIndex = "resource",
     startTime = "time",
     predictorId  = "entityid",
@@ -115,6 +128,7 @@ function SoundEffect:OnCreate()
     InitMixin(self, SignalListenerMixin)
     
     self.playing = false
+    self.positional = true
     self.assetIndex = 0
     self.volume = 1
     
@@ -149,16 +163,34 @@ end
 
 function GetSoundEffectLength(soundName)
 
-    local fevStart, fevEnd = string.find(soundName, ".fev")
-    local fixedAssetPath = string.sub(soundName, fevEnd + 1)
+    local fixedAssetPath = ""
+    local _, extEnd = string.find(soundName, ".fev")
+    if extEnd then
+        fixedAssetPath = string.sub(soundName, extEnd + 1)
+    else
+    
+        local extStart = string.find(soundName, ".wav")
+        if extStart then
+            fixedAssetPath = string.sub(soundName, 0, extStart - 1)
+        end
+        
+        local _, soundPathEnd = string.find(fixedAssetPath, "sound/")
+        fixedAssetPath = string.sub(fixedAssetPath, soundPathEnd + 1)
+        
+    end
+    
     return Server.GetSoundLength(fixedAssetPath)
-
+    
 end
 
 if Server then
 
     function SoundEffect:SetVolume(volume)
         self.volume = volume or 1
+    end
+    
+    function SoundEffect:SetPositional(positional)
+        self.positional = positional
     end
     
     function SoundEffect:SetPredictor(predictor)
@@ -312,7 +344,16 @@ if Client then
                 
             end
             
-        end    
+        end
+        
+        -- Update 3D positional setting.
+        if self.soundEffectInstance and self.clientPositional ~= self.positional then
+        
+            self.soundEffectInstance:SetPositional(self.positional)
+            self.clientPositional = self.positional
+            
+        end
+        
     end
     
     function SoundEffect:OnUpdate(deltaTime)

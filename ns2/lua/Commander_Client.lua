@@ -739,7 +739,7 @@ function Commander:OnInitLocalClient()
     Client.SetSoundGeometryEnabled(false)
     
     // Set commander geometry invisible.
-    Client.SetGroupIsVisible(kCommanderInvisibleGroupName, false)
+    SetLocalPlayerIsOverhead(true)
     
     // Set our location so we are viewing the command structure we're in.
     SetStartPosition(self)
@@ -1173,6 +1173,7 @@ function Commander:SetCurrentTech(techId)
     end
     
     CommanderGhostStructureSetTech(self.currentTechId)
+    CancelCommanderMarqueeSelect()
     
 end
 

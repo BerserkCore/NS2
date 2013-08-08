@@ -26,28 +26,10 @@ local mainMenuMusic = nil
 local mainMenuAlertMessage  = nil
 
 mods = { "ns2" }
-mapnames = { }
-maps = { }
+mapnames, maps = GetInstalledMapList()
 
 local loadLuaMenu = true
 local gMainMenu = nil
-
-local matchingFiles = { }
-Shared.GetMatchingFileNames("maps/*.level", false, matchingFiles)
-
-for _, mapFile in pairs(matchingFiles) do
-
-    local _, _, filename = string.find(mapFile, "maps/(.*).level")
-    local mapname = string.gsub(filename, 'ns2_', '', 1):gsub("^%l", string.upper)
-    local tagged,_ = string.match(filename, "ns2_", 1)
-    if tagged ~= nil then
-    
-        table.insert(mapnames, mapname)
-        table.insert(maps, {["name"] = mapname, ["fileName"] = filename})
-        
-    end
-    
-end
 
 function MainMenu_GetIsOpened()
 
@@ -121,12 +103,21 @@ function MainMenu_HostGame(mapFileName, modName)
     
 end
 
-function MainMenu_SelectServer(serverNum)
+function MainMenu_SelectServer(serverNum, serverData)
     gSelectedServerNum = serverNum
+    gSelectedServerData = serverData
+end
+
+function MainMenu_SelectServerAddress(address)
+    gSelectedServerAddress = address
 end
 
 function MainMenu_GetSelectedServer()
     return gSelectedServerNum
+end
+
+function MainMenu_GetSelectedServerData()
+    return gSelectedServerData
 end
 
 function MainMenu_SetSelectedServerPassword(password)
@@ -140,7 +131,7 @@ function MainMenu_GetSelectedRequiresPassword()
         if gSelectedServerNum >= 0 then
             return Client.GetServerRequiresPassword(gSelectedServerNum)
         else
-            return GetFavoriteServers()[-gSelectedServerNum].requiresPassword
+            return GetStoredServers()[-gSelectedServerNum].requiresPassword
         end
         
     end
@@ -169,13 +160,25 @@ function MainMenu_JoinSelected()
 
     local address = nil
     local mapName = nil
+    local entry = nil
+    
     if gSelectedServerNum >= 0 then
     
         address = Client.GetServerAddress(gSelectedServerNum)
         mapName = Client.GetServerMapName(gSelectedServerNum)
+        entry = BuildServerEntry(gSelectedServerNum)
         
     else
-        address = GetFavoriteServers()[-gSelectedServerNum].address
+    
+        local storedServers = GetStoredServers()
+    
+        address = storedServers[-gSelectedServerNum].address
+        entry = storedServers[-gSelectedServerNum]
+
+    end
+    
+    if entry then
+        AddServerToHistory(entry)
     end
     
     MainMenu_SBJoinServer(address, gPassword, mapName)
@@ -302,7 +305,7 @@ end
  */
 local kMouseInSound = "sound/NS2.fev/common/hovar"
 local kMouseOutSound = "sound/NS2.fev/common/tooltip"
-local kClickSound = "sound/NS2.fev/common/button_press"
+local kClickSound = "sound/NS2.fev/common/button_click"
 local kCheckboxOnSound = "sound/NS2.fev/common/checkbox_on"
 local kCheckboxOffSound = "sound/NS2.fev/common/checkbox_off"
 local kCheckboxOffSound = "sound/NS2.fev/common/checkbox_off"

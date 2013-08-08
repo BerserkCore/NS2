@@ -68,6 +68,7 @@ function WindowManager:OnMouseDown(key, doubleClick)
 
     if window then
         self:SetWindowActive(window, windowLayer)
+        self:HandleFocusBlur(window, element)
         if window.OnMouseDown then
             window:OnMouseDown(key, doubleClick)
         end
@@ -77,8 +78,6 @@ function WindowManager:OnMouseDown(key, doubleClick)
         element:OnMouseDown(key, doubleClick)
     end
     
-    window = self:GetActiveWindow()
-    self:HandleFocusBlur(window, element)
 
 end
 
@@ -130,9 +129,6 @@ function WindowManager:OnMouseUp(key)
         
     end
     
-    window = self:GetActiveWindow()
-    self:HandleFocusBlur(window, element)
-
 end
 
 function WindowManager:Initialize()

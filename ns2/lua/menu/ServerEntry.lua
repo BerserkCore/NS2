@@ -32,7 +32,8 @@ function SelectServerEntry(entry)
     local topOffSet = entry:GetBackground():GetPosition().y + entry:GetParent():GetBackground():GetPosition().y
     entry.scriptHandle.selectServer:SetBackgroundPosition(Vector(0, topOffSet, 0), true)
     entry.scriptHandle.selectServer:SetIsVisible(true)
-    MainMenu_SelectServer(entry:GetId())
+    MainMenu_SelectServer(entry:GetId(), entry.serverData)
+    MainMenu_SelectServerAddress(entry.serverData.address)
     
 end
 
@@ -77,6 +78,13 @@ function ServerEntry:Initialize()
         
         OnMouseDown = function(self, key, doubleClick)
         
+            if key == InputKey.MouseButton1 then
+            
+                self.scriptHandle.serverDetailsWindow:SetServerData(self.serverData, self:GetId() or 0)
+                 self.scriptHandle.serverDetailsWindow:SetIsVisible(true)
+                 
+            end
+            
             if GUIItemContainsPoint(self.favorite, Client.GetCursorPosScreen()) then
             
                 if not self.serverData.favorite then
@@ -201,22 +209,6 @@ end
 
 function ServerEntry:GetIsFiltered()
     return self.filtered == true
-end    
-
-local function GetHasDataChanged(oldData, newData)
-
-    return oldData == nil or newData == nil or
-        oldData.numPlayers ~= newData.numPlayers or
-        oldData.name ~= newData.name or
-        oldData.modded ~= newData.modded or    
-        oldData.rookieFriendly ~= newData.rookieFriendly or
-        oldData.mapName ~= newData.mapName or
-        oldData.ping ~= newData.ping or
-        oldData.tickrate ~= newData.tickrate or
-        oldData.requiresPassword ~= newData.requiresPassword or 
-        oldData.mode ~= newData.mode or
-        oldData.favorite ~= newData.favorite
-
 end
 
 function ServerEntry:SetServerData(serverData)
@@ -303,12 +295,6 @@ function ServerEntry:SetWidth(width, isPercentage, time, animateFunc, callBack)
         self.storedWidth = width
     
     end
-
-end
-
-function ServerEntry:Uninitialize()
-
-    MenuElement.Uninitialize(self)
 
 end
 

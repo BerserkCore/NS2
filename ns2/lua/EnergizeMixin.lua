@@ -6,12 +6,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * EnergizeMixin drags out parts of an umbra cloud to protect an alien for additional EnergizeMixin.kUmbraDragTime seconds.
  */
-EnergizeMixin = { }
+EnergizeMixin = CreateMixin(EnergizeMixin)
 EnergizeMixin.type = "Energize"
 
 EnergizeMixin.kSegment1Cinematic = PrecacheAsset("cinematics/alien/crag/umbraTrail1.cinematic")
@@ -101,12 +99,10 @@ end
 function EnergizeMixin:OnUpdate(deltaTime)
     SharedUpdate(self, deltaTime)
 end
-AddFunctionContract(EnergizeMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function EnergizeMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
 end
-AddFunctionContract(EnergizeMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })
 
 /*
 function EnergizeMixin:AddEnergy(energy)

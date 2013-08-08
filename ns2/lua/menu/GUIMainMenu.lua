@@ -20,6 +20,8 @@ Script.Load("lua/menu/Ticker.lua")
 Script.Load("lua/ServerBrowser.lua")
 Script.Load("lua/menu/Form.lua")
 Script.Load("lua/menu/ServerList.lua")
+Script.Load("lua/menu/ServerTabs.lua")
+Script.Load("lua/menu/PlayerEntry.lua")
 Script.Load("lua/dkjson.lua")
 
 local kMainMenuLinkColor = Color(137 / 255, 137 / 255, 137 / 255, 1)
@@ -158,7 +160,6 @@ function GUIMainMenu:Initialize()
     
     if MainMenu_IsInGame() then
     
-        // Create "resume playing" button
         self.resumeLink = self:CreateMainLink("RESUME GAME", "resume_ingame", "01")
         self.resumeLink:AddEventCallbacks(
         {
@@ -167,17 +168,29 @@ function GUIMainMenu:Initialize()
             end
         })
         
-        // Create "go to ready room" button
         self.readyRoomLink = self:CreateMainLink("GO TO READY ROOM", "readyroom_ingame", "02")
         self.readyRoomLink:AddEventCallbacks(
         {
             OnClick = function(self)
+            
                 self.scriptHandle:SetIsVisible(not self.scriptHandle:GetIsVisible())
                 Shared.ConsoleCommand("rr")
+                
             end
         })
         
-        self.playLink = self:CreateMainLink("PLAY", "play_ingame", "03")
+        self.voteLink = self:CreateMainLink("VOTE", "vote_ingame", "03")
+        self.voteLink:AddEventCallbacks(
+        {
+            OnClick = function(self)
+            
+                OpenVoteMenu()
+                self.scriptHandle:SetIsVisible(false)
+                
+            end
+        })
+        
+        self.playLink = self:CreateMainLink("PLAY", "play_ingame", "04")
         self.playLink:AddEventCallbacks(
         {
             OnClick = function(self)
@@ -191,7 +204,7 @@ function GUIMainMenu:Initialize()
             end
         })
         
-        self.optionLink = self:CreateMainLink("OPTIONS", "options_ingame", "04")
+        self.optionLink = self:CreateMainLink("OPTIONS", "options_ingame", "05")
         self.optionLink:AddEventCallbacks(
         {
             OnClick = function(self)
@@ -205,7 +218,7 @@ function GUIMainMenu:Initialize()
             end
         })
         
-        self.tutorialLink = self:CreateMainLink("TRAINING", "tutorial_ingame", "05")
+        self.tutorialLink = self:CreateMainLink("TRAINING", "tutorial_ingame", "06")
         self.tutorialLink:AddEventCallbacks(
         {
             OnClick = function(self)
@@ -220,7 +233,7 @@ function GUIMainMenu:Initialize()
         })
         
         // Create "disconnect" button
-        self.disconnectLink = self:CreateMainLink("DISCONNECT", "disconnect_ingame", "06")
+        self.disconnectLink = self:CreateMainLink("DISCONNECT", "disconnect_ingame", "07")
         self.disconnectLink:AddEventCallbacks(
         {
             OnClick = function(self)
@@ -412,30 +425,9 @@ local function FinishWindowAnimations(self)
     self:GetBackground():EndAnimations()
 end
 
-local function FormatServerName(serverName, rookieFriendly)
-
-    // Change name to display "rookie friendly" at the end of the line.
-    if rookieFriendly then
-    
-        local maxLen = 34
-        local separator = ConditionalValue(string.len(serverName) > maxLen, "... ", " ")
-        serverName = serverName:sub(0, maxLen) .. separator .. Locale.ResolveString("ROOKIE_FRIENDLY")
-        
-    else
-    
-        local maxLen = 50
-        local separator = ConditionalValue(string.len(serverName) > maxLen, "... ", " ")
-        serverName = serverName:sub(0, maxLen) .. separator
-        
-    end
-    
-    return serverName
-    
-end
-
 local function AddFavoritesToServerList(serverList)
 
-    local favoriteServers = GetFavoriteServers()
+    local favoriteServers = GetStoredServers()
     for f = 1, #favoriteServers do
     
         local currentFavorite = favoriteServers[f]
@@ -458,7 +450,8 @@ local function AddFavoritesToServerList(serverList)
         serverEntry.tickrate = 30
         serverEntry.serverId = -f
         serverEntry.modded = currentFavorite.modded or false
-        serverEntry.favorite = true
+        serverEntry.favorite = currentFavorite.favorite
+        serverEntry.history = currentFavorite.history
         
         serverEntry.name = FormatServerName(serverEntry.name, serverEntry.rookieFriendly)
         
@@ -475,6 +468,7 @@ end
 
 local function UpdateServerList(self)
 
+    self.serverTabs:Reset()
     self.numServers = 0
     Client.RebuildServerList()
     self.playWindow.updateButton:SetText("UPDATING...")
@@ -598,28 +592,32 @@ end
 function GUIMainMenu:CreatePasswordPromptWindow()
 
     self.passwordPromptWindow = self:CreateWindow()
-    self.passwordPromptWindow:SetWindowName("ENTER PASSWORD")
-    self.passwordPromptWindow:SetInitialVisible(false)
-    self.passwordPromptWindow:SetIsVisible(false)
-    self.passwordPromptWindow:DisableResizeTile()
-    self.passwordPromptWindow:DisableSlideBar()
-    self.passwordPromptWindow:DisableContentBox()
-    self.passwordPromptWindow:SetCSSClass("passwordprompt_window")
-    self.passwordPromptWindow:DisableCloseButton()
-    
-    self.passwordPromptWindow:AddEventCallbacks({ OnBlur = function(self) self:SetIsVisible(false) end })
-    
-    self.passwordForm = CreateMenuElement(self.passwordPromptWindow, "Form", false)
+    local passwordPromptWindow = self.passwordPromptWindow
+    passwordPromptWindow:SetWindowName("ENTER PASSWORD")
+    passwordPromptWindow:SetInitialVisible(false)
+    passwordPromptWindow:SetIsVisible(false)
+    passwordPromptWindow:DisableResizeTile()
+    passwordPromptWindow:DisableSlideBar()
+    passwordPromptWindow:DisableContentBox()
+    passwordPromptWindow:SetCSSClass("passwordprompt_window")
+    passwordPromptWindow:DisableCloseButton()
+        
+    self.passwordForm = CreateMenuElement(passwordPromptWindow, "Form", false)
     self.passwordForm:SetCSSClass("passwordprompt")
     
     local textinput = self.passwordForm:CreateFormElement(Form.kElementType.TextInput, "PASSWORD", Client.GetOptionString("serverPassword", ""))
-    textinput:SetCSSClass("serverpassword")
+    textinput:SetCSSClass("serverpassword")    
+    textinput:AddEventCallbacks({
+        OnEscape = function(self)
+            passwordPromptWindow:SetIsVisible(false) 
+        end 
+    })
     
-    local descriptionText = CreateMenuElement(self.passwordPromptWindow.titleBar, "Font", false)
+    local descriptionText = CreateMenuElement(passwordPromptWindow.titleBar, "Font", false)
     descriptionText:SetCSSClass("passwordprompt_title")
     descriptionText:SetText("ENTER PASSWORD")
     
-    local joinServer = CreateMenuElement(self.passwordPromptWindow, "MenuButton")
+    local joinServer = CreateMenuElement(passwordPromptWindow, "MenuButton")
     joinServer:SetCSSClass("bottomcenter")
     joinServer:SetText("JOIN")
     
@@ -631,6 +629,26 @@ function GUIMainMenu:CreatePasswordPromptWindow()
         JoinServer(self.scriptHandle)
         
     end })
+
+    passwordPromptWindow:AddEventCallbacks({ 
+    
+        OnBlur = function(self) 
+            self:SetIsVisible(false) 
+        end,
+        
+        OnEnter = function(self)
+        
+            local formData = self.scriptHandle.passwordForm:GetFormData()
+            MainMenu_SetSelectedServerPassword(formData.PASSWORD)
+            JoinServer(self.scriptHandle)
+        
+        end,
+
+        OnShow = function(self)
+            GetWindowManager():HandleFocusBlur(self, textinput)
+        end,
+
+    })
     
 end
 
@@ -641,7 +659,7 @@ local function CreateFilterForm(self)
 
     self.filterForm = CreateMenuElement(self.playWindow, "Form", false)
     self.filterForm:SetCSSClass("filter_form")
-    
+    /*
     self.filterGameMode = self.filterForm:CreateFormElement(Form.kElementType.TextInput, "GAME MODE")
     self.filterGameMode:SetCSSClass("filter_gamemode")
     self.filterGameMode:AddSetValueCallback(function(self)
@@ -657,6 +675,23 @@ local function CreateFilterForm(self)
     description:SetText("GAME")
     description:SetCSSClass("filter_description")
     
+    */
+    
+    self.filterServerName = self.filterForm:CreateFormElement(Form.kElementType.TextInput, "SERVER NAME")
+    self.filterServerName:SetCSSClass("filter_servername")
+    self.filterServerName:AddSetValueCallback(function(self)
+    
+        local value = StringTrim(self:GetValue())
+        self.scriptHandle.serverList:SetFilter(12, FilterServerName(value))
+        
+        Client.SetOptionString("filter_servername", value)
+        
+    end)
+    
+    local description = CreateMenuElement(self.filterServerName, "Font")
+    description:SetText("SERVER NAME")
+    description:SetCSSClass("filter_description")
+    
     self.filterMapName = self.filterForm:CreateFormElement(Form.kElementType.TextInput, "MAP NAME")
     self.filterMapName:SetCSSClass("filter_mapname")
     self.filterMapName:AddSetValueCallback(function(self)
@@ -668,7 +703,7 @@ local function CreateFilterForm(self)
     end)
     
     local description = CreateMenuElement(self.filterMapName, "Font")
-    description:SetText("MAP")
+    description:SetText("MAP NAME")
     description:SetCSSClass("filter_description")
     
     self.filterTickrate = self.filterForm:CreateFormElement(Form.kElementType.SlideBar, "TICK RATE")
@@ -733,7 +768,7 @@ local function CreateFilterForm(self)
     local description = CreateMenuElement(self.filterFull, "Font")
     description:SetText("FILTER FULL")
     description:SetCSSClass("filter_description")
-    
+    /*
     self.filterFavorites = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FAVORITES")
     self.filterFavorites:SetCSSClass("filter_favorites")
     self.filterFavorites:AddSetValueCallback(function(self)
@@ -750,6 +785,8 @@ local function CreateFilterForm(self)
     description:SetText("FAVORITES")
     description:SetCSSClass("filter_description")
     
+    */
+    
     self.filterPassworded = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "PASSWORDED")
     self.filterPassworded:SetCSSClass("filter_passworded")
     self.filterPassworded:AddSetValueCallback(function(self)
@@ -762,7 +799,7 @@ local function CreateFilterForm(self)
     local description = CreateMenuElement(self.filterPassworded, "Font")
     description:SetText("PASSWORDED")
     description:SetCSSClass("filter_description")
-    
+
     self.filterRookie = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER ROOKIE")
     self.filterRookie:SetCSSClass("filter_rookie")
     self.filterRookie:AddSetValueCallback(function(self)
@@ -776,19 +813,281 @@ local function CreateFilterForm(self)
     description:SetText("FILTER ROOKIE")
     description:SetCSSClass("filter_description")
     
-    self.filterGameMode:SetValue(Client.GetOptionString("filter_gamemode", ""))
+    //self.filterGameMode:SetValue(Client.GetOptionString("filter_gamemode", ""))
     self.filterMapName:SetValue(Client.GetOptionString("filter_mapname", ""))
     self.filterTickrate:SetValue(tonumber(Client.GetOptionString("filter_tickrate", "0")) or 0)
     self.filterHasPlayers:SetValue(Client.GetOptionString("filter_hasplayers", "false"))
     self.filterFull:SetValue(Client.GetOptionString("filter_full", "false"))
     self.filterMaxPing:SetValue(tonumber(Client.GetOptionString("filter_maxping", "1")) or 1)
     self.filterRookie:SetValue(Client.GetOptionString("filter_rookie", "false"))
-    self.filterFavorites:SetValue(Client.GetOptionString("filter_favorites", "false"))
+    //self.filterFavorites:SetValue(Client.GetOptionString("filter_favorites", "false"))
     self.filterPassworded:SetValue(Client.GetOptionString("filter_passworded", "true"))
     
 end
 
+local function TestGetServerPlayerDetails(index, table)
+
+    table[1] = { name = "Test 1", score = 1, timePlayed = 200 }
+    table[2] = { name = "Test 2", score = 10, timePlayed = 300 }
+    table[3] = { name = "Test 3", score = 12, timePlayed = 450 }
+    table[4] = { name = "Test 4", score = 100, timePlayed = 332 }
+    table[5] = { name = "Test 5", score = 24, timePlayed = 800.6 }
+    table[6] = { name = "Test 6", score = 22, timePlayed = 212.7 }
+    table[7] = { name = "Test 7", score = 15, timePlayed = 80 }
+    table[8] = { name = "Test 8", score = 90, timePlayed = 60 }
+    table[9] = { name = "Test 9", score = 45, timePlayed = 1231 }
+    table[10] = { name = "Test 10", score = 340, timePlayed = 564 }
+    table[11] = { name = "Test 11", score = 400, timePlayed = 55 }
+    table[12] = { name = "Test 1", score = 1, timePlayed = 645 }
+    table[13] = { name = "Test 2", score = 10, timePlayed = 987 }
+    table[14] = { name = "Test 3", score = 12, timePlayed = 456 }
+    table[15] = { name = "Test 4", score = 100, timePlayed = 321 }
+    table[16] = { name = "Test 5", score = 24, timePlayed = 458 }
+    table[17] = { name = "Test 6", score = 22, timePlayed = 159 }
+    table[18] = { name = "Test 7", score = 15, timePlayed = 852 }
+    table[19] = { name = "Test 8", score = 90, timePlayed = 753 }
+    table[20] = { name = "Test 9", score = 45, timePlayed = 50 }
+    table[21] = { name = "Test 10", score = 340, timePlayed = 220 }
+    table[22] = { name = "Test 11", score = 400, timePlayed = 443 }
+    table[23] = { name = "Test 11", score = 400, timePlayed = 20 }
+    table[24] = { name = "Test 11", score = 400, timePlayed = 30 }
+    table[25] = { name = "Test 11", score = 400, timePlayed = 23 }
+    table[26] = { name = "Test 11", score = 400, timePlayed = 5 }
+    table[27] = { name = "Test 11", score = 400, timePlayed = 12 }
+    table[28] = { name = "Test 11", score = 400, timePlayed = 800 }
+    table[29] = { name = "Test 11", score = 400, timePlayed = 865 }
+    table[30] = { name = "Test 11", score = 400, timePlayed = 744 }
+    table[31] = { name = "Test 11", score = 400, timePlayed = 45.786 }
+    table[32] = { name = "Test 11", score = 400, timePlayed = 558.987 }
+
+end
+
+local downloadedModDetails = { }
+local currentlyDownloadingModDetails = nil
+
+local function ModDetailsCallback(modId, title, description)
+
+    downloadedModDetails[modId] = title
+    currentlyDownloadingModDetails = nil
+    
+end
+
+function GUIMainMenu:CreateServerDetailsWindow()
+
+    self.serverDetailsWindow = self:CreateWindow()
+    
+    self.serverDetailsWindow:SetWindowName("SERVER DETAILS")
+    self.serverDetailsWindow:SetInitialVisible(false)
+    self.serverDetailsWindow:SetIsVisible(false)
+    self.serverDetailsWindow:DisableResizeTile()
+    self.serverDetailsWindow:SetCSSClass("serverdetails_window")
+    self.serverDetailsWindow:DisableCloseButton()
+    
+    self.serverDetailsWindow:AddEventCallbacks({
+        OnBlur = function(self)
+            self:SetIsVisible(false)
+        end
+    })
+    
+    self.serverDetailsWindow.serverName = CreateMenuElement(self.serverDetailsWindow, "Font")
+    
+    self.serverDetailsWindow.serverAddress = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.serverAddress:SetTopOffset(32)    
+    
+    self.serverDetailsWindow.playerCount = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.playerCount:SetTopOffset(64)
+    
+    self.serverDetailsWindow.ping = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.ping:SetTopOffset(96)
+    
+    self.serverDetailsWindow.gameMode = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.gameMode:SetTopOffset(128)
+    
+    self.serverDetailsWindow.map = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.map:SetTopOffset(160)
+    
+    self.serverDetailsWindow.performance = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.performance:SetTopOffset(192)
+    
+    self.serverDetailsWindow.modsDesc = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.modsDesc:SetTopOffset(224)
+    self.serverDetailsWindow.modsDesc:SetText("Installed Mods:")
+    
+    local windowWidth = self.serverDetailsWindow.background.guiItem:GetSize().x - 16
+    
+    self.serverDetailsWindow.modList = CreateMenuElement(self.serverDetailsWindow, "Font")
+    self.serverDetailsWindow.modList:SetTopOffset(256)
+    self.serverDetailsWindow.modList:SetCSSClass("serverdetails_modlist")
+    self.serverDetailsWindow.modList.text:SetTextClipped(true, windowWidth, 200)
+    
+    self.serverDetailsWindow.favoriteIcon = CreateMenuElement(self.serverDetailsWindow, "Image")
+    self.serverDetailsWindow.favoriteIcon:SetBackgroundSize(Vector(26, 26, 0))
+    self.serverDetailsWindow.favoriteIcon:SetTopOffset(64)
+    self.serverDetailsWindow.favoriteIcon:SetRightOffset(24)
+    self.serverDetailsWindow.favoriteIcon:SetBackgroundTexture("ui/menu/favorite.dds")
+    
+    self.serverDetailsWindow.passwordedIcon = CreateMenuElement(self.serverDetailsWindow, "Image")
+    self.serverDetailsWindow.passwordedIcon:SetBackgroundSize(Vector(26, 26, 0))
+    self.serverDetailsWindow.passwordedIcon:SetTopOffset(96)
+    self.serverDetailsWindow.passwordedIcon:SetRightOffset(24)
+    self.serverDetailsWindow.passwordedIcon:SetBackgroundTexture("ui/lock.dds")
+    
+    self.serverDetailsWindow.playerEntries = {}
+    
+    self.serverDetailsWindow.SetServerData = function(self, serverData, serverIndex)
+    
+        self.serverIndex = serverIndex
+        
+        for i = 1,  #self.playerEntries do
+        
+            self.playerEntries[#self.playerEntries]:Uninitialize()
+            self.playerEntries[#self.playerEntries] = nil
+        
+        end
+        
+        self.serverName:SetText("")
+        self.serverAddress:SetText("Address:")
+        self.playerCount:SetText("Players:")
+        self.ping:SetText("Ping:")
+        self.gameMode:SetText("Game Mode:")
+        self.map:SetText("Map:")
+        self.modsDesc:SetText("Installed Mods:")
+        self.modList:SetText("...")
+        self.performance:SetText("Performance:")
+        
+        if serverData then
+    
+            self.serverName:SetText(serverData.name)
+            self.serverAddress:SetText(string.format("Address: %s", ToString(serverData.address)))
+            self.playerCount:SetText(string.format("Players: %d / %d", serverData.numPlayers, serverData.maxPlayers))
+            self.ping:SetText(string.format("Ping: %d", serverData.ping))
+            self.gameMode:SetText(string.format("Game Mode: %s", serverData.mode))
+            self.map:SetText(string.format("Map: %s", serverData.map))
+            
+            self.favoriteIcon:SetIsVisible(serverData.favorite)
+            self.passwordedIcon:SetIsVisible(serverData.requiresPassword)
+        
+        elseif serverIndex > 0 then  
+            self:SetRefreshed()  
+        end
+        
+        if serverIndex > 0 then
+            Client.RequestServerDetails(serverIndex)
+        end
+    
+    end  
+    
+    self.serverDetailsWindow.SetRefreshed = function(self)
+    
+        if self.serverIndex > 0 then  
+
+             local serverName = FormatServerName(Client.GetServerName(self.serverIndex), Client.GetServerHasTag(self.serverIndex, "rookie"))
+    
+             self.serverName:SetText(serverName)
+             self.serverAddress:SetText(string.format("Address: %s", ToString(Client.GetServerAddress(self.serverIndex))))
+             self.playerCount:SetText(string.format("Players: %d / %d", Client.GetServerNumPlayers(self.serverIndex), Client.GetServerMaxPlayers(self.serverIndex)))
+             self.ping:SetText(string.format("Ping: %d", Client.GetServerPing(self.serverIndex)))
+             self.gameMode:SetText(string.format("Game Mode: %s", FormatGameMode(Client.GetServerGameMode(self.serverIndex))))
+             self.map:SetText(string.format("Map: %s", GetTrimmedMapName(Client.GetServerMapName(self.serverIndex))))
+             
+             local performance = math.round(Clamp(Client.GetServerTickRate(self.serverIndex) / 30, 0, 1) * 100)
+             self.performance:SetText(string.format("Performance: %s%%", ToString(performance)))
+             
+             local modString = Client.GetServerKeyValue(self.serverIndex, "mods") // "7c59c34 7b986f5 5f9ccf1 5fd7a38 5fdc381 6ec6bcd 676c71a 7619dc7"
+             local modTitles = nil
+             
+             local mods = StringSplit(StringTrim(modString), " ")
+             local modCount = string.len(modString) == 0 and 0 or #mods
+             for m = 1, #mods do
+             
+                local modId = tonumber("0x" .. mods[m])             
+                if not currentlyDownloadingModDetails and modId and not downloadedModDetails[modId] then
+
+                    Client.GetModDetails(modId, ModDetailsCallback)
+                    currentlyDownloadingModDetails = modId
+            
+                end
+                
+                local modTitle = downloadedModDetails[modId]
+                if modTitle then
+                
+                    if not modTitles then
+                        modTitles = modTitle
+                    else                
+                        modTitles = modTitles .. ", " .. modTitle
+                    end    
+                        
+                end
+                
+             end
+             
+             self.modsDesc:SetText(string.format("Installed Mods: %d", modCount))
+             if modTitles then
+                self.modList:SetText(modTitles)
+             end
+             
+             self.passwordedIcon:SetIsVisible(Client.GetServerRequiresPassword(self.serverIndex))
+             
+             local playersInfo = { }
+             Client.GetServerPlayerDetails(self.serverIndex, playersInfo)
+             //TestGetServerPlayerDetails(self.serverIndex, playersInfo)
+             
+             // update entry count:
+             local numEntries = #self.playerEntries
+             local numCurrentEntries = #playersInfo
+             
+             if numEntries > numCurrentEntries then
+             
+                for i = 1,  numEntries - numCurrentEntries do
+                
+                    self.playerEntries[#self.playerEntries]:Uninitialize()
+                    self.playerEntries[#self.playerEntries] = nil
+                
+                end
+             
+             elseif numCurrentEntries > numEntries then
+             
+                for i = 1, numCurrentEntries - numEntries do
+                
+                    local entry = CreateMenuElement(self:GetContentBox(), "PlayerEntry")
+                    table.insert(self.playerEntries, entry)                    
+                
+                end
+             
+             end
+             
+             // update data and positions
+             for i = 1, numCurrentEntries do
+             
+                local data = playersInfo[i]
+                local entry = self.playerEntries[i]
+                
+                entry:SetTopOffset( (i-1) * kPlayerEntryHeight )
+                entry:SetPlayerData(data)
+             
+             end
+    
+        end
+    
+    end
+    
+    self.serverDetailsWindow.slideBar:AddCSSClass("window_scroller_playernames")
+    self.serverDetailsWindow:ResetSlideBar()
+
+end
+
 function GUIMainMenu:CreateServerListWindow()
+
+    self.playWindow.detailsButton = CreateMenuElement(self.playWindow, "MenuButton")
+    self.playWindow.detailsButton:SetCSSClass("serverdetailsbutton")
+    self.playWindow.detailsButton:SetText("DETAILS")
+
+    self.playWindow.detailsButton:AddEventCallbacks({
+        OnClick = function(self)
+            self.scriptHandle.serverDetailsWindow:SetServerData(MainMenu_GetSelectedServerData(), MainMenu_GetSelectedServer() or 0)
+            self.scriptHandle.serverDetailsWindow:SetIsVisible(true)
+        end
+    })
 
     local update = CreateMenuElement(self.playWindow, "MenuButton")
     update:SetCSSClass("update")
@@ -874,18 +1173,21 @@ function GUIMainMenu:CreateServerListWindow()
     self.serverCountDisplay = CreateMenuElement(self.playWindow, "MenuButton")
     self.serverCountDisplay:SetCSSClass("server_count_display")
     
+    self.serverTabs = CreateMenuElement(self.playWindow, "ServerTabs", true)
+    self.serverTabs:SetCSSClass("main_server_tabs")
+    self.serverTabs:SetServerList(self.serverList)
+    
 end
 
 function GUIMainMenu:ResetServerSelection()
     
     self.selectServer:SetIsVisible(false)
-    MainMenu_SelectServer(nil)
+    MainMenu_SelectServer(nil, nil)
     
 end
 
-local function SaveServerSettings(self)
+local function SaveServerSettings(formData)
 
-    local formData = self.createServerForm:GetFormData()
     Client.SetOptionString("serverName", formData.ServerName)
     Client.SetOptionString("mapName", formData.Map)
     Client.SetOptionString("lastServerMapName", formData.Map)
@@ -921,8 +1223,8 @@ end
 
 local function CreateServer(self)
 
-    SaveServerSettings(self)
     local formData = self.createServerForm:GetFormData()
+    SaveServerSettings(formData)
     
     local modIndex      = self.createServerForm.modIds[formData.Map_index]
     local password      = formData.Password
@@ -941,15 +1243,6 @@ local function CreateServer(self)
         end
     end
     
-end
-
-function GUIMainMenu:CreateServerDetailWindow()
-
-    self.serverDetailWindow = self:CreateWindow()
-    self:SetupWindow(self.hostGameWindow, "SERVER DETAIL")
-    self.serverDetailWindow:DisableSlideBar()
-    self.serverDetailWindow:AddEventCallbacks({ OnShow = function() LoadServerDetails(self) end })
-
 end
  
 local function GetMaps()
@@ -984,6 +1277,7 @@ GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options, optionEleme
     
         local option = options[i]
         local input
+        local defaultInputClass = "option_input"
         
         if option.type == "select" then
             input = form:CreateFormElement(Form.kElementType.DropDown, option.name, option.value)
@@ -1003,6 +1297,9 @@ GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options, optionEleme
             end
         elseif option.type == "progress" then
             input = form:CreateFormElement(Form.kElementType.ProgressBar, option.name, option.value)       
+        elseif option.type == "checkbox" then
+            input = form:CreateFormElement(Form.kElementType.Checkbox, option.name, option.value)
+            defaultInputClass = "option_checkbox"
         else
             input = form:CreateFormElement(Form.kElementType.TextInput, option.name, option.value)
         end
@@ -1013,14 +1310,14 @@ GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options, optionEleme
         
         local y = rowHeight * (i - 1)
         
-        local inputClass = "option_input"
+        local inputClass = defaultInputClass
         if option.inputClass then
             inputClass = option.inputClass
         end
         
         input:SetCSSClass(inputClass)
         input:SetTopOffset(y)
-        
+
         local label = CreateMenuElement(form, "Font", false)
         label:SetCSSClass("option_label")
         label:SetText(option.label .. ":")
@@ -1028,7 +1325,7 @@ GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options, optionEleme
         label:SetIgnoreEvents(true)
 
         optionElements[option.name] = input
-        
+
     end
     
     form:SetCSSClass("options")
@@ -1103,7 +1400,9 @@ end
 
 function GUIMainMenu:CreateHostGameWindow()
 
-    self.createGame:AddEventCallbacks({ OnHide = function() SaveServerSettings(self) end })
+    self.createGame:AddEventCallbacks({ OnHide = function()
+            SaveServerSettings(self.createServerForm:GetFormData())
+            end })
 
     local minPlayers            = 2
     local maxPlayers            = 24
@@ -2041,33 +2340,6 @@ function GUIMainMenu:CreateOptionWindow()
   
 end
 
-local function BuildServerEntry(serverIndex)
-
-    local mods = Client.GetServerKeyValue(serverIndex, "mods")
-    
-    local serverEntry = { }
-    serverEntry.name = Client.GetServerName(serverIndex)
-    serverEntry.mode = Client.GetServerGameMode(serverIndex)
-    serverEntry.map = GetTrimmedMapName(Client.GetServerMapName(serverIndex))
-    serverEntry.numPlayers = Client.GetServerNumPlayers(serverIndex)
-    serverEntry.maxPlayers = Client.GetServerMaxPlayers(serverIndex)
-    serverEntry.ping = Client.GetServerPing(serverIndex)
-    serverEntry.address = Client.GetServerAddress(serverIndex)
-    serverEntry.requiresPassword = Client.GetServerRequiresPassword(serverIndex)
-    serverEntry.rookieFriendly = Client.GetServerHasTag(serverIndex, "rookie")
-    serverEntry.friendsOnServer = false
-    serverEntry.lanServer = false
-    serverEntry.tickrate = Client.GetServerTickRate(serverIndex)
-    serverEntry.serverId = serverIndex
-    serverEntry.modded = Client.GetServerIsModded(serverIndex)
-    serverEntry.favorite = GetServerIsFavorite(serverEntry.address)
-    
-    serverEntry.name = FormatServerName(serverEntry.name, serverEntry.rookieFriendly)
-    
-    return serverEntry
-    
-end
-
 function GUIMainMenu:Update(deltaTime)
 
     PROFILE("GUIMainMenu:Update")
@@ -2140,6 +2412,10 @@ function GUIMainMenu:Update(deltaTime)
                                 UpdateFavoriteServerData(serverEntry)
                             end
                             
+                            if GetServerIsHistory(serverEntry.address) then
+                                UpdateHistoryServerData(serverEntry)
+                            end
+                            
                         else
                         
                             self.serverList:AddEntry(serverEntry, true)
@@ -2160,6 +2436,7 @@ function GUIMainMenu:Update(deltaTime)
             
             if listChanged then
                 self.serverList:RenderNow()
+                self.serverTabs:SetGameTypes(self.serverList:GetGameTypes())
             end
             
             local countTxt = ToString(Client.GetNumServers()) .. (Client.GetServerListRefreshed() and "" or "...")
@@ -2196,6 +2473,27 @@ function GUIMainMenu:Update(deltaTime)
             
         end
         
+        if self.serverDetailsWindow and self.serverDetailsWindow:GetIsVisible() then
+
+            if not self.timeDetailsRefreshed or self.timeDetailsRefreshed + 0.5 < Shared.GetTime() then
+            
+                local index = self.serverDetailsWindow.serverIndex    
+                
+                if index > 0 then
+                
+                    local function RefreshCallback(index)
+                        MainMenu_OnServerRefreshed(index)
+                    end
+                    Client.RefreshServer(index, RefreshCallback)
+                    
+                    self.timeDetailsRefreshed = Shared.GetTime()   
+                
+                end
+            
+            end
+        
+        end
+        
     end
     
 end
@@ -2204,6 +2502,10 @@ function GUIMainMenu:OnServerRefreshed(serverIndex)
 
     local serverEntry = BuildServerEntry(serverIndex)
     self.serverList:UpdateEntry(serverEntry)
+    
+    if self.serverDetailsWindow and self.serverDetailsWindow:GetIsVisible() then
+        self.serverDetailsWindow:SetRefreshed()
+    end
     
 end
 
@@ -2229,6 +2531,9 @@ function GUIMainMenu:HideMenu()
     end
     if self.readyRoomLink then
         self.readyRoomLink:SetIsVisible(false)
+    end
+    if self.voteLink then
+        self.voteLink:SetIsVisible(false)
     end
     if self.modsLink then
         self.modsLink:SetIsVisible(false)
@@ -2280,6 +2585,9 @@ function GUIMainMenu:OnAnimationCompleted(animatedItem, animationName, itemHandl
         if self.readyRoomLink then
             table.insert(animBackgroundLink, self.readyRoomLink)
         end
+        if self.voteLink then
+            table.insert(animBackgroundLink, self.voteLink)
+        end
         table.insert(animBackgroundLink, self.playLink)
         table.insert(animBackgroundLink, self.tutorialLink)
         table.insert(animBackgroundLink, self.optionLink)
@@ -2311,6 +2619,9 @@ function GUIMainMenu:OnAnimationCompleted(animatedItem, animationName, itemHandl
             end
             if self.readyRoomLink then
                 self.readyRoomLink:SetIsVisible(true)
+            end
+            if self.voteLink then
+                self.voteLink:SetIsVisible(true)
             end
             if self.modsLink then
                 self.modsLink:SetIsVisible(true)

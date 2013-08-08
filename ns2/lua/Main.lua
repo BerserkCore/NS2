@@ -58,3 +58,7 @@ end
 
 Event.Hook("UpdateRender", OnUpdateRender)
 Event.Hook("LoadComplete", OnLoadComplete)
+
+// Run bot-related unit tests. These are quick and silent.
+Script.Load("lua/bots/UnitTests.lua")
+

@@ -6,7 +6,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/BalanceHealth.lua")
 
 // forces predicted health/armor to update after 1 second
@@ -155,7 +154,6 @@ function LiveMixin:GetHealthDescription()
     end
     
 end
-AddFunctionContract(LiveMixin.GetHealthDescription, { Arguments = { "Entity" }, Returns = { "string", "number" } })
 
 function LiveMixin:GetHealthFraction()
 
@@ -185,17 +183,14 @@ function LiveMixin:GetHealthScalar()
     return current / max
     
 end
-AddFunctionContract(LiveMixin.GetHealthScalar, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function LiveMixin:SetHealth(health)
     self.health = Clamp(health, 0, self:GetMaxHealth())
 end
-AddFunctionContract(LiveMixin.SetHealth, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function LiveMixin:GetMaxHealth()
     return self.maxHealth
 end
-AddFunctionContract(LiveMixin.GetMaxHealth, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function LiveMixin:SetMaxHealth(setMax)
 
@@ -205,7 +200,6 @@ function LiveMixin:SetMaxHealth(setMax)
     self.maxHealth = setMax
     
 end
-AddFunctionContract(LiveMixin.SetMaxHealth, { Arguments = { "Entity", "number" }, Returns = { } })
 
 // instead of simply setting self.maxHealth the fraction of current health will be stored and health increased (so 100% health remains 100%)
 function LiveMixin:AdjustMaxHealth(setMax)
@@ -218,7 +212,6 @@ function LiveMixin:AdjustMaxHealth(setMax)
     self.health = self.maxHealth * healthFraction
 
 end
-AddFunctionContract(LiveMixin.AdjustMaxHealth, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function LiveMixin:GetArmorScalar()
 
@@ -229,7 +222,6 @@ function LiveMixin:GetArmorScalar()
     return self:GetArmor() / self:GetMaxArmor()
     
 end
-AddFunctionContract(LiveMixin.GetArmorScalar, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function LiveMixin:SetArmor(armor, hideEffect)
 
@@ -245,12 +237,10 @@ function LiveMixin:SetArmor(armor, hideEffect)
     end
     
 end
-AddFunctionContract(LiveMixin.SetArmor, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function LiveMixin:GetMaxArmor()
     return self.maxArmor
 end
-AddFunctionContract(LiveMixin.GetMaxArmor, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function LiveMixin:SetMaxArmor(setMax)
 
@@ -261,7 +251,6 @@ function LiveMixin:SetMaxArmor(setMax)
     self.maxArmor = setMax
     
 end
-AddFunctionContract(LiveMixin.SetMaxArmor, { Arguments = { "Entity", "number" }, Returns = { } })
 
 // instead of simply setting self.maxArmor the fraction of current Armor will be stored and Armor increased (so 100% Armor remains 100%)
 function LiveMixin:AdjustMaxArmor(setMax)
@@ -274,7 +263,6 @@ function LiveMixin:AdjustMaxArmor(setMax)
     self.armor = self.maxArmor * armorFraction
 
 end
-AddFunctionContract(LiveMixin.AdjustMaxArmor, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function LiveMixin:Heal(amount)
 
@@ -291,27 +279,22 @@ function LiveMixin:Heal(amount)
     return healed
     
 end
-AddFunctionContract(LiveMixin.Heal, { Arguments = { "Entity", "number" }, Returns = { "boolean" } })
 
 function LiveMixin:GetIsAlive()
     return self.alive
 end
-AddFunctionContract(LiveMixin.GetIsAlive, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 function LiveMixin:SetIsAlive(state)
     self.alive = state
 end
-AddFunctionContract(LiveMixin.SetIsAlive, { Arguments = { "Entity", "boolean" }, Returns = { } })
 
 function LiveMixin:GetTimeOfLastDamage()
     return self.timeOfLastDamage
 end
-AddFunctionContract(LiveMixin.GetTimeOfLastDamage, { Arguments = { "Entity" }, Returns = { { "number", "nil" } } })
 
 function LiveMixin:GetAttackerIdOfLastDamage()
     return self.lastDamageAttackerId
 end
-AddFunctionContract(LiveMixin.GetAttackerIdOfLastDamage, { Arguments = { "Entity" }, Returns = { { "number", "nil" } } })
 
 local function SetLastDamage(self, time, attacker)
 
@@ -326,7 +309,6 @@ local function SetLastDamage(self, time, attacker)
     self.timeLastCombatAction = Shared.GetTime()
     
 end
-AddFunctionContract(SetLastDamage, { Arguments = { "Entity", "number", { "Entity", "nil" } }, Returns = { } })
 
 function LiveMixin:GetCanTakeDamage()
 
@@ -334,7 +316,6 @@ function LiveMixin:GetCanTakeDamage()
     return canTakeDamage and not GetIsRecycledUnit(self)
     
 end
-AddFunctionContract(LiveMixin.GetCanTakeDamage, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 function LiveMixin:GetCanDie(byDeathTrigger)
 
@@ -342,7 +323,6 @@ function LiveMixin:GetCanDie(byDeathTrigger)
     return canDie
     
 end
-AddFunctionContract(LiveMixin.GetCanDie, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 function LiveMixin:GetCanGiveDamage()
 
@@ -352,7 +332,6 @@ function LiveMixin:GetCanGiveDamage()
     return false
     
 end
-AddFunctionContract(LiveMixin.GetCanGiveDamage, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 /**
  * Returns true if the damage has killed the entity.
@@ -413,7 +392,6 @@ function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUse
     return killedFromDamage
     
 end
-AddFunctionContract(LiveMixin.TakeDamage, { Arguments = { "Entity", "number", "Entity", "Entity", { "Vector", "nil" }, { "Vector", "nil" } }, Returns = { "boolean" } })
 
 //
 // How damaged this entity is, ie how much healing it can receive.
@@ -427,7 +405,6 @@ function LiveMixin:AmountDamaged()
     return (self:GetMaxHealth() - self:GetHealth()) + (self:GetMaxArmor() - self:GetArmor())
     
 end
-AddFunctionContract(LiveMixin.AmountDamaged, { Arguments = { "Entity" }, Returns = { "number" } })
 
 // used for situtations where we don't have an attacker. Always normal damage and normal armor use rate
 function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly, armorOnly)
@@ -451,7 +428,6 @@ function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly, armorOnly)
     self:TakeDamage(damage, attacker, doer, engagePoint, nil, armorUsed, healthUsed, kDamageType.Normal)
     
 end
-AddFunctionContract(LiveMixin.DeductHealth, { Arguments = { "Entity", "number", "Entity" }, Returns = { } })
 
 function LiveMixin:GetCanBeHealed()
 
@@ -516,7 +492,6 @@ function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
     return total
     
 end
-AddFunctionContract(LiveMixin.AddHealth, { Arguments = { "Entity", "number", "boolean" }, Returns = { "number" } })
 
 function LiveMixin:Kill(attacker, doer, point, direction)
 
@@ -538,7 +513,6 @@ function LiveMixin:Kill(attacker, doer, point, direction)
     end
     
 end
-AddFunctionContract(LiveMixin.Kill, { Arguments = { "Entity", "Entity", "Entity", { "Vector", "nil" }, { "Vector", "nil" } }, Returns = { } })
 
 // This function needs to be tested.
 function LiveMixin:GetSendDeathMessage()
@@ -549,7 +523,6 @@ function LiveMixin:GetSendDeathMessage()
     return true
     
 end
-AddFunctionContract(LiveMixin.GetSendDeathMessage, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 /**
  * Entities using LiveMixin are only selectable when they are alive.
@@ -557,7 +530,6 @@ AddFunctionContract(LiveMixin.GetSendDeathMessage, { Arguments = { "Entity" }, R
 function LiveMixin:OnGetIsSelectable(result, byTeamNumber)
     result.selectable = result.selectable and self:GetIsAlive()
 end
-AddFunctionContract(LiveMixin.OnGetIsSelectable, { Arguments = { "Entity", "table" }, Returns = { } })
 
 function LiveMixin:GetIsHealable()
 
@@ -568,7 +540,6 @@ function LiveMixin:GetIsHealable()
     return self:GetIsAlive()
     
 end
-AddFunctionContract(LiveMixin.GetIsHealable, { Arguments = { "Entity" }, Returns = { } })
 
 function LiveMixin:OnUpdateAnimationInput(modelMixin)
 
@@ -712,24 +683,20 @@ if Server or Predict then
     function LiveMixin:GetHealth()
         return self.health
     end
-    AddFunctionContract(LiveMixin.GetHealth, { Arguments = { "Entity" }, Returns = { "number" } })
     
     function LiveMixin:GetArmor()
         return self.armor
     end
-    AddFunctionContract(LiveMixin.GetArmor, { Arguments = { "Entity" }, Returns = { "number" } })
     
 elseif Client then
 
     function LiveMixin:GetHealth()
         return self.healthClient
     end
-    AddFunctionContract(LiveMixin.GetHealth, { Arguments = { "Entity" }, Returns = { "number" } })
     
     function LiveMixin:GetArmor()
         return self.armorClient
     end
-    AddFunctionContract(LiveMixin.GetArmor, { Arguments = { "Entity" }, Returns = { "number" } })
     
 end
 

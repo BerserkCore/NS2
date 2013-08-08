@@ -125,6 +125,10 @@ function FilterServerMode(mode)
     return function(entry) return string.find(entry.mode, mode) ~= nil end
 end
 
+function FilterServerName(name)
+    return function(entry) return string.find(entry.name, name) ~= nil end
+end
+
 function FilterMapName(map)
     return function(entry) return string.find(entry.map, map) ~= nil end
 end
@@ -162,6 +166,10 @@ end
 
 function FilterFavoriteOnly(active)
     return function(entry) return not active or entry.favorite == true end
+end
+
+function FilterHistoryOnly(active)
+    return function(entry) return not active or entry.history == true end
 end
 
 function FilterPassworded(active)
@@ -234,6 +242,7 @@ local function RenderServerList(self)
     end
     
     local minY, maxY = GetBoundaries(self)
+    self.gameTypes = {}
     
     for i = 1, #self.tableData do
     
@@ -257,6 +266,19 @@ local function RenderServerList(self)
         
         serverEntry:UpdateVisibility(minY, maxY, renderPosition * kServerEntryHeight)
         
+        local gameType = self.tableData[i].mode
+        local rating = math.max(1, self.tableData[i].numPlayers)
+        
+        if gameType then
+        
+            if not self.gameTypes[gameType] then
+                self.gameTypes[gameType] = rating
+            else
+                self.gameTypes[gameType] = self.gameTypes[gameType] + rating
+            end  
+
+        end        
+        
     end
     
     self:SetHeight(renderPosition * kServerEntryHeight)
@@ -275,6 +297,7 @@ function ServerList:Initialize()
     self.tableData = { }
     self.serverEntries = { }
     self.filter = { }
+    self.gameTypes = { }
     
     // Default sorting is set in GUIMainMenu.
     self.comparator = nil
@@ -288,6 +311,10 @@ function ServerList:Uninitialize()
     self.tableData = { }
     self.serverEntries = { }
     
+end
+
+function ServerList:GetGameTypes()
+    return self.gameTypes
 end
 
 function ServerList:GetTagName()

@@ -12,7 +12,7 @@ kCommanderClickSelectionDelay = 0.35
 
 local function GetSelectionAllowed(commander)
 
-    if Client and commander.timeLastTargetedAction and commander.timeLastTargetedAction + kCommanderClickSelectionDelay > Shared.GetTime() then
+    if ( commander.timeLastTargetedAction and commander.timeLastTargetedAction + kCommanderClickSelectionDelay > Shared.GetTime() ) or commander.currentTechId ~= kTechId.None then
         return false
     end
     

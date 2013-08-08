@@ -111,3 +111,43 @@ function Class_Reload(className, networkVars)
     Shared.LinkClassToMap(className, nil, networkVars)
 
 end
+
+-- Pass in a function and a table of local variables (Lua "upvalues") used in that
+-- function and these variables will be replaced.
+-- Example: ReplaceLocals(Player.GetJumpHeight, { kMaxHeight = 10 })
+-- This example assumed a local variable with the name kMaxHeight is referenced
+-- from inside the Player:GetJumpHeight() function.
+function ReplaceLocals(originalFunction, replacedLocals)
+
+    for name, value in pairs(replacedLocals) do
+    
+        local index = 1
+        local foundIndex = nil
+        while true do
+        
+            local n, v = debug.getupvalue(originalFunction, index)
+            if not n then
+                break
+            end
+            
+            -- Find the highest index matching the name.
+            if n == name then
+                foundIndex = index
+            end
+            
+            index = index + 1
+            
+        end
+        
+        if foundIndex then
+        
+            debug.setupvalue(originalFunction, foundIndex, value)
+            return true
+            
+        end
+        
+    end
+    
+    return false
+    
+end

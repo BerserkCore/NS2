@@ -27,7 +27,7 @@ local kTipStrings =
     "LOADING_TIP_FF", "LOADING_TIP_MUTE", "LOADING_TIP_INFESTATION", "LOADING_TIP_POWER", "LOADING_TIP_RESOURCES",
     "LOADING_TIP_SPAWN", "LOADING_TIP_MAP", "LOADING_TIP_EVOLVE", "LOADING_TIP_F4", "LOADING_TIP_VENTS", "LOADING_TIP_WALLRUN",
     "LOADING_TIP_ROOKIES", "LOADING_TIP_REQ_MENU", "LOADING_TIP_SAYINGS_MENU", "LOADING_TIP_EXPLORE", "LOADING_TIP_SCOREBOARD",
-    "LOADING_TIP_GOTOALERT", "LOADING_TIP_RAMBO", "LOADING_TIP_NOIINTEAM", "LOADING_TIP_MODS", "LOADING_TIP_COMMANDER_SPEAKING", 
+    "LOADING_TIP_GOTOALERT", "LOADING_TIP_RAMBO", "LOADING_TIP_NOIINTEAM", "LOADING_TIP_COMMANDER_SPEAKING", 
     "LOADING_TIP_SPEEDYGONZALES", "LOADING_TIP_BEARARMS", "LOADING_TIP_ABILITIES", "LOADING_TIP_SUPPORT", "LOADING_TIP_PRIORITY", 
     "LOADING_TIP_GOODCOMM",
 }
@@ -43,6 +43,7 @@ local tipNextHint = nil
 local tipNextHintBg = nil
 local modsBg = nil
 local modsText = nil
+local modsTextShadow = nil
 
 local tipIndex = 0
 local timeOfLastTip = nil
@@ -62,11 +63,13 @@ local kBgFadeTime = 2.0
 local kBgStayTime = 3.0
 
 local function GetMapName()
+
     local mapName = Shared.GetMapName()
     if mapName == '' then
         mapName = Client.GetOptionString("lastServerMapName", "")
     end
     return mapName
+    
 end
 
 local function UpdateServerInformation()
@@ -105,10 +108,17 @@ local function UpdateServerInformation()
     end
     
     if text == "" then
+    
         modsText:SetIsVisible(false)
+        modsTextShadow:SetIsVisible(false)
+        
     else
+    
         modsText:SetIsVisible(true)
         modsText:SetText(text)
+        modsTextShadow:SetIsVisible(true)
+        modsTextShadow:SetText(text)
+        
     end    
 
 end
@@ -429,15 +439,23 @@ function OnLoadComplete()
     modsText:SetOptionFlag(GUIItem.ManageRender)
     modsText:SetPosition(Vector(Client.GetScreenWidth() * 0.15, Client.GetScreenHeight() * 0.18, 0))
     modsText:SetFontName("fonts/AgencyFB_small.fnt")
-    modsText:SetLayer(3)  
-    modsText:SetIsVisible( false )
+    modsText:SetLayer(3)
+    modsText:SetIsVisible(false)
+    
+    modsTextShadow = GUI.CreateItem()
+    modsTextShadow:SetOptionFlag(GUIItem.ManageRender)
+    modsTextShadow:SetPosition(Vector(Client.GetScreenWidth() * 0.15 + 1, Client.GetScreenHeight() * 0.18 + 1, 0))
+    modsTextShadow:SetFontName("fonts/AgencyFB_small.fnt")
+    modsTextShadow:SetLayer(2)
+    modsTextShadow:SetIsVisible(false)
+    modsTextShadow:SetColor(Color(0, 0, 0, 1))
     
 end
 
 // Return true if the event should be stopped here.
 local function OnSendKeyEvent(key, down)
 
-    if key == InputKey.Space and (timeOfLastSpace == nil or Shared.GetTime() > timeOfLastSpace + .5) then
+    if key == InputKey.Space and (timeOfLastSpace == nil or Shared.GetTime() > timeOfLastSpace + 0.5) then
     
         NextTip()
         timeOfLastSpace = Shared.GetTime()

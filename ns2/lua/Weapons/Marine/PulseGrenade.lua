@@ -10,8 +10,10 @@ Script.Load("lua/Weapons/Projectile.lua")
 
 class 'PulseGrenade' (Projectile)
 
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/elec_trails.surface_shader")
+
 PulseGrenade.kMapName = "pulsegrenade"
-PulseGrenade.kModelName = PrecacheAsset("models/marine/rifle/rifle_grenade.model")
+PulseGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
 
 local networkVars = { }
 

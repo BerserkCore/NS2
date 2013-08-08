@@ -76,7 +76,8 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                 // Many types of damage events are server-only, such as grenades.
                 // Send the player a message so they get feedback about what damage they've done.
                 // We use messages to handle multiple-hits per frame, such as splash damage from grenades.
-                if Server and attacker:isa("Player") and (not doer.GetShowHitIndicator or doer:GetShowHitIndicator()) then
+                if Server and attacker:isa("Player") then
+                
                     local showNumbers = GetAreEnemies(attacker,target) and target:GetIsAlive()
                     if showNumbers then
                     
@@ -94,7 +95,10 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                     end
                     
                     // This makes the cross hair turn red. Show it when hitting anything
-                    attacker.giveDamageTime = Shared.GetTime()
+                    if not doer.GetShowHitIndicator or doer:GetShowHitIndicator() then
+                        attacker.giveDamageTime = Shared.GetTime()
+                    end
+                    
                 end
                 
                 killedFromDamage = target:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType)

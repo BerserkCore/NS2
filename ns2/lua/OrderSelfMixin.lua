@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-OrderSelfMixin = { }
+OrderSelfMixin = CreateMixin(OrderSelfMixin)
 OrderSelfMixin.type = "OrderSelf"
 
 local kFindStructureRange = 20
@@ -102,7 +100,6 @@ local function FindPlayerOrdersToCopy(self, friendlyPlayersNearby)
     return false
 
 end
-AddFunctionContract(FindPlayerOrdersToCopy, { Arguments = { "Entity", "table" }, Returns = { "boolean" } })
 
 /**
  * Find closest structure with health less than the kPriorityAttackHealthScalar, otherwise just closest matching kPriorityAttackTargets, otherwise closest structure.
@@ -143,7 +140,6 @@ local function FindBuildOrder(self, structuresNearby)
     return false
 
 end
-AddFunctionContract(FindBuildOrder, { Arguments = { "Entity", "table" }, Returns = { "boolean" } })
 
 /**
  * Find closest structure with health less than the kPriorityAttackHealthScalar, otherwise just closest matching kPriorityAttackTargets, otherwise closest structure.
@@ -217,7 +213,6 @@ local function FindWeldOrder(self, entitiesNearby)
     return false
 
 end
-AddFunctionContract(FindWeldOrder, { Arguments = { "Entity", "table" }, Returns = { "boolean" } })
 
 local function GetCanOverwriteOrderType(orderType)
     return orderType == kTechId.AutoHeal or orderType == kTechId.AutoWeld
@@ -244,7 +239,6 @@ function OrderSelfMixin:_UpdateOrderSelf()
     return true
     
 end
-AddFunctionContract(OrderSelfMixin._UpdateOrderSelf, { Arguments = { "Entity" }, Returns = { "boolean" } })
 
 if Server then
 

@@ -7,9 +7,7 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 if Client then
 
-Script.Load("lua/FunctionContracts.lua")
-
-CommanderGlowMixin = CreateMixin( CommanderGlowMixin )
+CommanderGlowMixin = CreateMixin(CommanderGlowMixin)
 CommanderGlowMixin.type = "CommanderGlow"
 
 CommanderGlowMixin.expectedMixins =
@@ -23,10 +21,11 @@ CommanderGlowMixin.optionalCallbacks =
 }
 
 function CommanderGlowMixin:OnUpdateRender()
+
     PROFILE("CommanderGlowMixin:OnUpdateRender")
     self:UpdateHighlight()
+    
 end
-AddFunctionContract(CommanderGlowMixin.OnUpdateRender, { Arguments = { "Entity" }, Returns = { } })
 
 function CommanderGlowMixin:UpdateHighlight()
 

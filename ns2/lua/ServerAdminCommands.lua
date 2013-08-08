@@ -331,6 +331,13 @@ CreateServerAdminCommand("Console_sv_ban", Ban, "<player id> <duration in minute
 
 local function UnBan(client, steamId)
 
+    if not steamId then
+    
+        ServerAdminPrint(client, "No Id passed into sv_unban")
+        return
+        
+    end
+    
     local found = false
     for p = #bannedPlayers, 1, -1 do
     

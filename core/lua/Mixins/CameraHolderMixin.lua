@@ -134,13 +134,11 @@ end
 
 function CameraHolderMixin:SetCameraOffsetSmoothrate(smoothRate)
     self.offsetSmoothRate = smoothRate
-end  
-AddFunctionContract(CameraHolderMixin.SetCameraOffsetSmoothrate, { Arguments = { "Entity", "number" }, Returns = { } })  
+end
 
 function CameraHolderMixin:GetEyePos()
     return self:GetOrigin() + self:GetViewOffset() + Vector(0, self.cameraYOffset, 0)
 end
-AddFunctionContract(CameraHolderMixin.GetEyePos, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
 function CameraHolderMixin:GetCameraViewCoords()
 
@@ -173,7 +171,6 @@ function CameraHolderMixin:GetCameraViewCoords()
     return viewCoords
     
 end
-AddFunctionContract(CameraHolderMixin.GetCameraViewCoords, { Arguments = { "Entity" }, Returns = { "Coords" } })
 
 function CameraHolderMixin:IsAnimated()
     return self.animatePosition or self.animateAngles or self.animateDistance or self.animateYOffset
@@ -240,22 +237,18 @@ function CameraHolderMixin:GetRenderFov()
     return math.rad(self:GetFov())
 
 end
-AddFunctionContract(CameraHolderMixin.GetRenderFov, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function CameraHolderMixin:SetFov(fov)
     self.fov = fov
 end
-AddFunctionContract(CameraHolderMixin.SetFov, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function CameraHolderMixin:GetFov()
     return self.fov
 end
-AddFunctionContract(CameraHolderMixin.GetFov, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function CameraHolderMixin:GetViewAngles()
     return Angles(self.viewPitch, self.viewYaw, self.viewRoll)
 end
-AddFunctionContract(CameraHolderMixin.GetViewAngles, { Arguments = { "Entity" }, Returns = { "Angles" } })
 
 /**
  * Sets the view angles for the player. Note that setting the yaw of the
@@ -362,7 +355,6 @@ function CameraHolderMixin:SetDesiredCameraYOffset(yOffset)
     end
 
 end  
-AddFunctionContract(CameraHolderMixin.SetDesiredCameraYOffset, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function CameraHolderMixin:SetCameraYOffset(yOffset)
     self.cameraYOffset = yOffset

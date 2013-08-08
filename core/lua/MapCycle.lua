@@ -33,10 +33,27 @@ function MapCycle_SetMapCycle(newCycle)
 end
 
 local function GetMapName(map)
+
     if type(map) == "table" and map.map ~= nil then
         return map.map
     end
     return map
+    
+end
+
+function MapCycle_GetMapIsInCycle(mapName)
+
+    for m = 1, #cycle.maps do
+    
+        local map = cycle.maps[m]
+        if GetMapName(map) == mapName then
+            return true
+        end
+        
+    end
+    
+    return false
+    
 end
 
 local function StartMap(map)

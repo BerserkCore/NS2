@@ -8,9 +8,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-RecycleMixin = CreateMixin( RecycleMixin )
+RecycleMixin = CreateMixin(RecycleMixin)
 RecycleMixin.type = "Recycle"
 
 local kRecycleEffectDuration = 2
@@ -172,9 +170,7 @@ end
 function RecycleMixin:OnUpdate(deltaTime)
     SharedUpdate(self, deltaTime)
 end
-AddFunctionContract(RecycleMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function RecycleMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
 end
-AddFunctionContract(RecycleMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })

@@ -9,10 +9,9 @@
 //    
 // =========== For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/OverheadMoveMixin.lua")
 
-MinimapMoveMixin = CreateMixin( MinimapMoveMixin )
+MinimapMoveMixin = CreateMixin(MinimapMoveMixin)
 MinimapMoveMixin.type = "MinimapMove"
 
 MinimapMoveMixin.expectedMixin =

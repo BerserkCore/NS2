@@ -29,7 +29,7 @@ Move.ToggleSayings          = bit.lshift(1, 26)
 Move.ToggleVoteMenu         = bit.lshift(1, 27)
 Move.TextChat               = bit.lshift(1, 28)
 Move.TeamChat               = bit.lshift(1, 29)
-Move.ShowMap                = bit.lshift(1, 30)
+Move.QuickSwitch            = bit.lshift(1, 30)
 Move.ReadyRoom              = bit.lshift(1, 31)
 
 // Hotkeys

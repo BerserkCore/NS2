@@ -8,9 +8,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-DigestMixin = CreateMixin( DigestMixin )
+DigestMixin = CreateMixin(DigestMixin)
 DigestMixin.type = "Digest"
 
 local kDefaultDigestDuration = 2

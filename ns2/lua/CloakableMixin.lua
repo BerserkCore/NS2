@@ -9,9 +9,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-CloakableMixin = CreateMixin( CloakableMixin )
+CloakableMixin = CreateMixin(CloakableMixin)
 CloakableMixin.type = "Cloakable"
 
 // Uncloak faster than cloaking

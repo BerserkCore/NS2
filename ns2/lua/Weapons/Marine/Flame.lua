@@ -113,6 +113,10 @@ end
 function Flame:GetDamageType()
     return kFlamethrowerDamageType
 end
+
+function Flame:GetShowHitIndicator()
+    return false
+end
     
 if Server then
 

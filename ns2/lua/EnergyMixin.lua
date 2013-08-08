@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-EnergyMixin = CreateMixin( EnergyMixin )
+EnergyMixin = CreateMixin(EnergyMixin)
 EnergyMixin.type = "Energy"
 local kMaxEnergy = 300
 
@@ -47,27 +45,22 @@ end
 function EnergyMixin:GetEnergy()
     return self.energy
 end
-AddFunctionContract(EnergyMixin.GetEnergy, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function EnergyMixin:SetEnergy(newEnergy)
     self.energy = Clamp(newEnergy, 0, self.maxEnergy)
 end
-AddFunctionContract(EnergyMixin.SetEnergy, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function EnergyMixin:AddEnergy(amount)
     self.energy = Clamp(self.energy + amount, 0, self.maxEnergy)
 end
-AddFunctionContract(EnergyMixin.AddEnergy, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function EnergyMixin:SetMaxEnergy(amount)
     self.maxEnergy = Clamp(amount, 0, kMaxEnergy)
 end
-AddFunctionContract(EnergyMixin.SetMaxEnergy, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function EnergyMixin:GetMaxEnergy()
     return self.maxEnergy
 end
-AddFunctionContract(EnergyMixin.GetMaxEnergy, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function EnergyMixin:GetEnergyFraction()
     return self:GetEnergy() / self:GetMaxEnergy()
@@ -84,9 +77,9 @@ if Server then
         return kEnergyUpdateRate
         
     end
-
+    
     local function SharedUpdate(self, timePassed)
-        
+    
         if GetGamerules():GetGameStarted() and self:GetCanUpdateEnergy() then
         
             local scalar = ConditionalValue(self:GetGameEffectMask(kGameEffect.OnFire), kOnFireEnergyRecuperationScalar, 1)
@@ -94,18 +87,16 @@ if Server then
             local energyRate = GetEnergyUpdateRate(self) * scalar            
             self:AddEnergy(timePassed * energyRate)
             
-        end    
+        end
         
     end
-
+    
     function EnergyMixin:OnUpdate(deltaTime)
         SharedUpdate(self, deltaTime)
     end
-    AddFunctionContract(EnergyMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
-
+    
     function EnergyMixin:OnProcessMove(input)
         SharedUpdate(self, input.time)
     end
-    AddFunctionContract(EnergyMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })
-
+    
 end

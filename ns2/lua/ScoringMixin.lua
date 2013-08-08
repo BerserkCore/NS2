@@ -6,12 +6,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * ScoringMixin keeps track of a score. It provides function to allow changing the score.
  */
-ScoringMixin = CreateMixin( ScoringMixin )
+ScoringMixin = CreateMixin(ScoringMixin)
 ScoringMixin.type = "Scoring"
 
 ScoringMixin.expectedCallbacks =
@@ -30,7 +28,6 @@ end
 function ScoringMixin:GetScore()
     return self.score
 end
-AddFunctionContract(ScoringMixin.GetScore, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function ScoringMixin:AddScore(points, res)
 

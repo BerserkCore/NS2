@@ -9,9 +9,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-TeleportMixin = CreateMixin( TeleportMixin )
+TeleportMixin = CreateMixin(TeleportMixin)
 TeleportMixin.type = "TeleportAble"
 
 TeleportMixin.kDefaultDelay = 3

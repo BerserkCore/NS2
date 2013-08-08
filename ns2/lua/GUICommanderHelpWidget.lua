@@ -74,7 +74,7 @@ function GUICommanderHelpWidget:Update(deltaTime)
     PROFILE("GUICommanderHelpWidget:Update")
 
     local commanderButtons = CommanderHelp_GetWorldButtons()
-    
+
     local showHelp = CommanderHelp_GetShowWorldButtons()
 
     self.background:SetIsVisible(showHelp)
@@ -116,7 +116,10 @@ function GUICommanderHelpWidget:Update(deltaTime)
             local button = self.worldButtons[i]
             
             button.graphic:SetTexturePixelCoordinates( unpack( GetTextureCoordinatesForIcon(commanderButton.TechId, self.teamType == kMarineTeamType) ) )
-            button.graphic:SetPosition(commanderButton.Position + kDefaultOffset)
+            button.graphic:SetPosition(
+                    Client.WorldToScreen(commanderButton.wsPosition)
+                    + (commanderButton.ssOffset or Vector(0,0,0))
+                    + kDefaultOffset)
             button.TechId = commanderButton.TechId
             button.Entity = commanderButton.Entity
         
@@ -190,7 +193,7 @@ function GUICommanderHelpWidget:SendKeyEvent(key, down)
         
         if buttonHit then
             
-            CommanderHelp_ProccessTechIdAction(buttonHit.TechId, buttonHit.Entity)            
+            CommanderHelp_ProcessTechIdAction(buttonHit.TechId, buttonHit.Entity)            
             success = true
         
         end

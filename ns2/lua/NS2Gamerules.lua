@@ -1079,7 +1079,25 @@ if Server then
     
     -- No enforced balanced teams on join as the auto team balance system balances teams.
     function NS2Gamerules:GetCanJoinTeamNumber(teamNumber)
+    
+        local forceEvenTeams = Server.GetConfigSetting("force_even_teams_on_join")
+        -- This option was added after shipping, so support older config files that don't include it.
+        -- Fallback to forcing even teams if they don't have this entry in the config file.
+        if not (forceEvenTeams == false) then
+        
+            local team1Players = self.team1:GetNumPlayers()
+            local team2Players = self.team2:GetNumPlayers()
+            
+            if (team1Players > team2Players) and (teamNumber == self.team1:GetTeamNumber()) then
+                return false
+            elseif (team2Players > team1Players) and (teamNumber == self.team2:GetTeamNumber()) then
+                return false
+            end
+            
+        end
+        
         return true
+        
     end
     
     function NS2Gamerules:GetCanSpawnImmediately()
@@ -1281,6 +1299,63 @@ if Server then
         
     end
     
+    local function CheckAutoConcede(self)
+    
+        // This is an optional end condition based on the teams being unbalanced.
+        local endGameOnUnbalancedAmount = Server.GetConfigSetting("end_round_on_team_unbalance")
+        if endGameOnUnbalancedAmount and endGameOnUnbalancedAmount > 0 then
+        
+            local gameLength = Shared.GetTime() - self:GetGameStartTime()
+            // Don't start checking for auto-concede until the game has started for some time.
+            local checkAutoConcedeAfterTime = Server.GetConfigSetting("end_round_on_team_unbalance_check_after_time") or 300
+            if gameLength > checkAutoConcedeAfterTime then
+            
+                local team1Players = self.team1:GetNumPlayers()
+                local team2Players = self.team2:GetNumPlayers()
+                local totalCount = team1Players + team2Players
+                
+                // Don't consider unbalanced game end until enough people are playing.
+                if totalCount > 6 then
+                
+                    local team1ShouldLose = false
+                    local team2ShouldLose = false
+                    
+                    if (1 - (team1Players / team2Players)) >= endGameOnUnbalancedAmount then
+                        team1ShouldLose = true
+                    elseif (1 - (team2Players / team1Players)) >= endGameOnUnbalancedAmount then
+                        team2ShouldLose = true
+                    end
+                    
+                    if team1ShouldLose or team2ShouldLose then
+                    
+                        // Send a warning before ending the game.
+                        local warningTime = Server.GetConfigSetting("end_round_on_team_unbalance_after_warning_time") or 30
+                        if self.sentAutoConcedeWarningAtTime and Shared.GetTime() - self.sentAutoConcedeWarningAtTime >= warningTime then
+                            return team1ShouldLose, team2ShouldLose
+                        elseif not self.sentAutoConcedeWarningAtTime then
+                        
+                            Shared.Message((team1ShouldLose and "Marine" or "Alien") .. " team auto-concede in " .. warningTime .. " seconds")
+                            Server.SendNetworkMessage("AutoConcedeWarning", { time = warningTime, team1Conceding = team1ShouldLose }, true)
+                            self.sentAutoConcedeWarningAtTime = Shared.GetTime()
+                            
+                        end
+                        
+                    else
+                        self.sentAutoConcedeWarningAtTime = nil
+                    end
+                    
+                end
+                
+            else
+                self.sentAutoConcedeWarningAtTime = nil
+            end
+            
+        end
+        
+        return false, false
+        
+    end
+    
     function NS2Gamerules:CheckGameEnd()
     
         if self:GetGameStarted() and self.timeGameEnded == nil and not Shared.GetCheatsEnabled() and not self.preventGameEnd then
@@ -1292,21 +1367,9 @@ if Server then
                 local team1Won = self.team1:GetHasTeamWon()
                 local team2Won = self.team2:GetHasTeamWon()
                 
-                local team1Players = self.team1:GetNumPlayers()
-                local team2Players = self.team2:GetNumPlayers()
-                local totalCount = team1Players + team2Players
-                
-                // This is an optional end condition based on the teams being unbalanced.
-                local endGameOnUnbalancedAmount = Server.GetConfigSetting("end_round_on_team_unbalance")
-                // Don't consider unbalanced game end until enough people are playing.
-                if totalCount > 6 and endGameOnUnbalancedAmount and endGameOnUnbalancedAmount ~= 0 then
-                
-                    if (1 - (team1Players / team2Players)) >= endGameOnUnbalancedAmount then
-                        team1Lost = true
-                    elseif (1 - (team2Players / team1Players)) >= endGameOnUnbalancedAmount then
-                        team2Lost = true
-                    end
-                    
+                -- Check for auto-concede if neither team lost.
+                if not team1Lost and not team2Lost then
+                    team1Lost, team2Lost = CheckAutoConcede(self)
                 end
                 
                 if (team1Lost and team2Lost) or (team1Won and team2Won) then

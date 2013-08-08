@@ -15,7 +15,6 @@
  * all of the weapons).
  */
 Script.Load("lua/Globals.lua")
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
 
 class 'ViewModel' (Entity)
@@ -57,7 +56,6 @@ function ViewModel:SetWeapon(weapon)
     end
     
 end
-AddFunctionContract(ViewModel.SetWeapon, { Arguments = { "ViewModel", { "Weapon", "nil" } }, Returns = { } })
 
 function ViewModel:OnGetIsRelevant(player)
     

@@ -112,10 +112,138 @@ local function CreateExplorePage(self)
     
 end
 
-function GUIMainMenu:SetTutorialContentInvisible()
+function GUIMainMenu:CreateBotsPage()
+
+    self.botsPage = CreateMenuElement(self.tutorialWindow:GetContentBox(), "Image")
+    self.botsPage:SetCSSClass("play_now_content")
+    
+    local minPlayers            = 2
+    local maxPlayers            = 32
+    local playerLimitOptions    = { }
+    
+    for i = minPlayers, maxPlayers do
+        table.insert(playerLimitOptions, i)
+    end
+
+    local hostOptions = 
+    {
+        {   
+            name   = "ServerName",            
+            label  = "SERVER NAME",
+            value  = "Training vs. Bots"
+        },
+        {   
+            name   = "Password",            
+            label  = "PASSWORD [OPTIONAL]",
+        },
+        {
+            name    = "Map",
+            label   = "MAP",
+            type    = "select",
+            value  = "Descent",
+        },
+        {
+            name    = "PlayerLimit",
+            label   = "PLAYER LIMIT",
+            type    = "select",
+            values  = playerLimitOptions,
+            value   = 16
+        },
+        {
+            name    = "NumMarineBots",
+            label   = "# MARINE BOTS",
+            value   = "8"
+        },
+        /* TEMP - renable when marine com actually does something
+        {
+            name    = "AddMarineCommander",
+            label   = "MARINE COMMANDER BOT",
+            value   = "false",
+            type    = "checkbox"
+        },
+        */
+        {
+            name    = "NumAlienBots",
+            label   = "# ALIEN BOTS",
+            value   = "8"
+        },
+        {
+            name    = "AddAlienCommander",
+            label   = "ALIEN COMMANDER BOT",
+            value   = "true",
+            type    = "checkbox"
+        }
+    }
+        
+    local createdElements = {}
+    local content = self.botsPage
+    local form = GUIMainMenu.CreateOptionsForm(self, content, hostOptions, createdElements)
+    form:SetCSSClass("createserver")
+    
+    local mapList = createdElements.Map
+    
+    self.playBotsButton = CreateMenuElement(self.tutorialWindow, "MenuButton")
+    self.playBotsButton:SetCSSClass("apply")
+    self.playBotsButton:SetText("PLAY")
+    
+    self.playBotsButton:AddEventCallbacks(
+    {
+        OnClick = function()
+
+            local formData = form:GetFormData()
+
+            // validate
+            if tonumber(formData.NumMarineBots) == nil then
+                MainMenu_SetAlertMessage("Not a valid number for # MARINE BOTS: "..formData.NumMarineBots)
+            elseif tonumber(formData.NumAlienBots) == nil then
+                MainMenu_SetAlertMessage("Not a valid number for # ALIEN BOTS: "..formData.NumAlienBots)
+            else
+
+                // start server!
+                local password   = formData.Password
+                local port       = 27015
+                local maxPlayers = formData.PlayerLimit
+                local serverName = formData.ServerName
+                local mapName    = "ns2_" .. string.lower(formData.Map)
+                Client.SetOptionString("lastServerMapName", mapName)
+
+                Client.SetOptionBoolean("sendBotsCommands", true)
+                Client.SetOptionInteger("botsSettings_numMarineBots", tonumber(formData.NumMarineBots))
+                Client.SetOptionInteger("botsSettings_numAlienBots", tonumber(formData.NumAlienBots))
+                // TEMP Client.SetOptionBoolean("botsSettings_marineCom", formData.AddMarineCommander)
+                Client.SetOptionBoolean("botsSettings_alienCom", formData.AddAlienCommander)
+                
+                if Client.StartServer(mapName, serverName, password, port, maxPlayers) then
+                    LeaveMenu()
+                end
+
+            end
+            
+        end
+    })
+
+    local betaNotice = CreateMenuElement( form, "Font", false )
+    betaNotice:SetCSSClass("warning_text")
+    betaNotice:SetText("NOTE: Bots are a work-in-progress. We recommend using the default # of bots\nand making yourself Marine commander. Enjoy!")
+
+    self.botsPage:AddEventCallbacks(
+    {
+     OnShow = function (self)
+
+            // TODO add more maps when they become more bot-friendly
+            local mapNames = { "Descent" }
+            mapList:SetOptions( mapNames )
+
+        end
+    })
+    
+end
+
+function GUIMainMenu:SetAllInvisible()
 
     self.tutorial:SetIsVisible(false)
     self.explore:SetIsVisible(false)
+    self.botsPage:SetIsVisible(false)
     self.tutorialWindow:DisableSlideBar()
     self.tutorialWindow:ResetSlideBar()
     self.exploreButton:SetIsVisible(false)
@@ -136,8 +264,9 @@ function GUIMainMenu:CreateTutorialWindow()
     
     local tabs = 
         {
-            { label = "TUTORIAL", func = function(self) self.scriptHandle:SetTutorialContentInvisible() self.scriptHandle.tutorial:SetIsVisible(true) end },
-            { label = "EXPLORE MODE", func = function(self) self.scriptHandle:SetTutorialContentInvisible() self.scriptHandle.explore:SetIsVisible(true) self.scriptHandle.exploreButton:SetIsVisible(true) end },
+            { label = "VS. BOTS", func = function(self) self.scriptHandle:SetAllInvisible() self.scriptHandle.botsPage:SetIsVisible(true) end },
+            { label = "VIDEOS", func = function(self) self.scriptHandle:SetAllInvisible() self.scriptHandle.tutorial:SetIsVisible(true) end },
+            { label = "EXPLORE MODE", func = function(self) self.scriptHandle:SetAllInvisible() self.scriptHandle.explore:SetIsVisible(true) self.scriptHandle.exploreButton:SetIsVisible(true) end },
         }
         
     local xTabWidth = 256
@@ -170,11 +299,12 @@ function GUIMainMenu:CreateTutorialWindow()
         
     end
 
+    self:CreateBotsPage()
     CreateTutorialPage(self)
     CreateExplorePage(self)
     
-    self:SetTutorialContentInvisible()
-    self.tutorial:SetIsVisible(true)
+    self:SetAllInvisible()
+    self.botsPage:SetIsVisible(true)
 
 
 end

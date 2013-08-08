@@ -251,6 +251,37 @@ local function OnMessageBuy(client, buyMessage)
     
 end
 
+// function made public so bots can emit voice msgs
+function CreateVoiceMessage(player, voiceId)
+
+    local soundData = GetVoiceSoundData(voiceId)
+    if soundData then
+    
+        local soundName = soundData.Sound
+        
+        if soundData.Function then            
+            soundName = soundData.Function(player) or soundName    
+        end
+        
+        // the request sounds always play for everyone since its something the player is doing actively
+        // the auto voice overs are triggered somewhere else server side and play for team only
+        if soundName then
+            StartSoundEffectOnEntity(soundName, player)
+        end
+        
+        local team = player:GetTeam()
+        if team then
+
+            // send alert so a marine commander for example gets notified about players who need a medpack / ammo etc.
+            if not GetIsPointInGorgeTunnel(player:GetOrigin()) and soundData.AlertTechId and soundData.AlertTechId ~= kTechId.None then
+                team:TriggerAlert(soundData.AlertTechId, player)
+            end
+            
+        end
+    
+    end
+
+end
 
 local function OnVoiceMessage(client, message)
 
@@ -258,34 +289,7 @@ local function OnVoiceMessage(client, message)
     local player = client:GetControllingPlayer()
     
     if player then
-    
-        local soundData = GetVoiceSoundData(voiceId)
-        if soundData then
-        
-            local soundName = soundData.Sound
-            
-            if soundData.Function then            
-                soundName = soundData.Function(player) or soundName    
-            end
-            
-            // the request sounds always play for everyone since its something the player is doing actively
-            // the auto voice overs are triggered somewhere else server side and play for team only
-            if soundName then
-                StartSoundEffectOnEntity(soundName, player)
-            end
-            
-            local team = player:GetTeam()
-            if team then
-
-                // send alert so a marine commander for example gets notified about players who need a medpack / ammo etc.
-                if not GetIsPointInGorgeTunnel(player:GetOrigin()) and soundData.AlertTechId and soundData.AlertTechId ~= kTechId.None then
-                    team:TriggerAlert(soundData.AlertTechId, player)
-                end
-                
-            end
-        
-        end
-    
+        CreateVoiceMessage(player, voiceId)  
     end
 
 end

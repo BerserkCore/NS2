@@ -10,9 +10,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-GorgeStructureMixin = CreateMixin( GorgeStructureMixin )
+GorgeStructureMixin = CreateMixin(GorgeStructureMixin)
 GorgeStructureMixin.type = "GorgeStructure"
 
 GorgeStructureMixin.kStarveDelay = 60
@@ -89,15 +87,7 @@ end
 function GorgeStructureMixin:OnUpdate(deltaTime)
     SharedUpdate(self, deltaTime)
 end
-AddFunctionContract(GorgeStructureMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function GorgeStructureMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
-end
-AddFunctionContract(GorgeStructureMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })
-
-function GorgeStructureMixin:OnUpdateAnimationInput(modelMixin)
-
-    PROFILE("ConstructMixin:OnUpdateAnimationInput")
-    
 end

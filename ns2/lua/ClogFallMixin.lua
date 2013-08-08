@@ -9,9 +9,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-ClogFallMixin = CreateMixin( ClogFallMixin )
+ClogFallMixin = CreateMixin(ClogFallMixin)
 ClogFallMixin.type = "ClogFall"
 
 local kClogFallSpeed = 5
@@ -190,9 +188,7 @@ end
 function ClogFallMixin:OnUpdate(deltaTime)
     SharedUpdate(self, deltaTime)
 end
-AddFunctionContract(ClogFallMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function ClogFallMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
 end
-AddFunctionContract(ClogFallMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })

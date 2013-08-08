@@ -342,15 +342,19 @@ function DebugLineSuccess(startPoint, endPoint, lifetime, success)
 end
 
 // rgba are normalized values (0-1)
-function DebugLine(startPoint, endPoint, lifetime, r, g, b, a)
+function DebugLine(startPoint, endPoint, lifetime, r, g, b, a, forceSharedAPI)
 
-    if Client and not Shared.GetIsRunningPrediction() then
+    if (Client or forceSharedAPI)
+        and not Shared.GetIsRunningPrediction() then
     
-        Client.DebugColor(r, g, b, a)
-        Client.DebugLine(startPoint, endPoint, lifetime)
+        Shared.DebugColor(r, g, b, a)
+        Shared.DebugLine(startPoint, endPoint, lifetime)
         
     elseif Server then
+    
+        // TODO - get rid of this eventually
         Server.SendNetworkMessage("DebugLine", BuildDebugLineMessage(startPoint, endPoint, lifetime, r, g, b, a), true)
+
     end
     
 end
@@ -401,10 +405,10 @@ end
 
 function DebugPoint(point, size, lifetime, r, g, b, a)
 
-    if Client and not Shared.GetIsRunningPrediction() then
+    if not Shared.GetIsRunningPrediction() then
     
-        Client.DebugColor(r, g, b, a)
-        Client.DebugPoint(point, size, lifetime)
+        Shared.DebugColor(r, g, b, a)
+        Shared.DebugPoint(point, size, lifetime)
         
     end
     
@@ -413,8 +417,9 @@ end
 function DebugCapsule(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime)
 
     if Client and not Shared.GetIsRunningPrediction() then
-        Client.DebugCapsule(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime)
+        Shared.DebugCapsule(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime)
     elseif Server then
+        // TODO - get rid of this eventually
         Server.SendNetworkMessage("DebugCapsule", BuildDebugCapsuleMessage(sweepStart, sweepEnd, capsuleRadius, capsuleHeight, lifetime), true)
     end
     
@@ -504,26 +509,6 @@ function DebugPrint(formatString, ...)
     elseif Server then
         Shared.Message(string.format("Server  : %f : %s", Shared.GetTime(), result))
     end
-    
-end
-
-// Print message with stamp showing if it is on client or server, along with timestamp. Good for time-sensitive
-// or client/server logging.
-// Print(4.5)
-// Print("%s", "testing")
-function PrintDetailed(formatString, ...)
-
-    local result = string.format(formatString, ...)
-    
-    local timestampedMessage = result .. " (at " .. Shared.GetTime() .. ")"
-
-    if(Server) then
-        Server.Broadcast(player, timestampedMessage .. " (Server)")
-    elseif(Client and not Shared.GetIsRunningPrediction()) then
-        Client.DebugMessage(timestampedMessage .. " (Client)")
-    end    
-    
-    return result
     
 end
 
@@ -2551,4 +2536,81 @@ function GetIndexFromVector(vector)
 end
 
 
+//----------------------------------------
+//  Counts the number of entries in the hash table. Apparently this is the fastest way to do it.
+//----------------------------------------
+function GetTableSize(t)
 
+    local c = 0
+    for _,_ in pairs(t) do
+        c = c + 1
+    end
+    return c
+
+end
+
+//----------------------------------------
+//  LPF == Linear Piecewise Function
+//----------------------------------------
+function EvalLPF( x, points )
+
+    local N = #points
+    assert( N >= 2 )
+    assert( x >= points[1][1] )
+
+    // If x is beyond the key points, then just hold the last Y key
+    if x >= points[N][1] then
+        return points[N][2]
+    end
+
+    for i = 2,N do
+        if x <= points[i][1] then
+
+            // got it
+            local x1 = points[i-1][1]
+            local y1 = points[i-1][2]
+            local x2 = points[i][1]
+            local y2 = points[i][2]
+            assert( x1 < x2 )
+
+            local t = (x-x1) / (x2-x1)
+            return (1-t)*y1 + t*y2
+            
+        end
+    end
+
+    return 0.0
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
+function AssertFloatEqual( x, y )
+    assert( math.abs(x-y) < 1e-8 )
+end
+
+//----------------------------------------
+//  Also handles the case if both are equal
+//----------------------------------------
+function VectorsApproxEqual( a, b, squareTol )
+
+    if a ~= nil and b ~= nil then
+        return a:GetDistanceSquared(b) < squareTol
+    elseif a == nil and b == nil then
+        return true
+    else
+        return false
+    end
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
+function GetRandomDirXZ()
+
+    local azimuth = math.random() * 2 * math.pi
+    return Vector( math.cos(azimuth), 0, math.sin(azimuth) )
+
+end

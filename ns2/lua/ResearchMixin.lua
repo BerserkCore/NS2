@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-ResearchMixin = CreateMixin( ResearchMixin )
+ResearchMixin = CreateMixin(ResearchMixin)
 ResearchMixin.type = "Research"
 
 ResearchMixin.networkVars =
@@ -104,17 +102,9 @@ end
 function ResearchMixin:OnUpdate(deltaTime)
     SharedUpdate(self, deltaTime)
 end
-AddFunctionContract(ResearchMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function ResearchMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
-end
-AddFunctionContract(ResearchMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })
-
-function ResearchMixin:OnUpdateAnimationInput(modelMixin)
-
-    PROFILE("ResearchMixin:OnUpdateAnimationInput")
-    
 end
 
 function ResearchMixin:GetResearchingId()

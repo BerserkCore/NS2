@@ -9,9 +9,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-CatalystMixin = CreateMixin( CatalystMixin )
+CatalystMixin = CreateMixin(CatalystMixin)
 CatalystMixin.type = "Catalyst"
 
 CatalystMixin.kDefaultDuration = 10
@@ -82,7 +80,7 @@ if Client then
             self.timeLastCatalystEffect = Shared.GetTime()
         end
         
-        local showEffect = not HasMixin(self, "Cloakable") or not self:GetIsCloaked() or not GetAreEnemies(self, player)
+        local showEffect = not GetAreEnemies(self, player) or ( not self:isa("Player") and (not HasMixin(self, "Cloakable") or not self:GetIsCloaked()) )
 
         if self.timeLastCatalystEffect + CatalystMixin.kEffectIntervall < Shared.GetTime() then
         

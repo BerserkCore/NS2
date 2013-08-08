@@ -4,7 +4,7 @@
 //
 // Created by: Andreas Urwalek (a_urwa@sbox.tugraz.at)
 //
-//   Interpretes the current state of the client world and returns a list of techIds / screenPositions,
+//   Interpretes the current state of the client world and returns a list of techIds / world-space positions,
 //   which can be clicked like the regular commander menu buttons.
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
@@ -12,8 +12,38 @@
 local gGetMarineCommanderHelp = nil
 local gGetAlienCommanderHelp = nil
 
-kWorldButtonSize = GUIScale(80)
+//----------------------------------------
+//  This is used by the client, but as well as the server for commander bots.
+//  Set up the "API" all here
+//----------------------------------------
 
+kWorldButtonSize = nil
+
+local GetCallingCommander = nil
+local gServerCallingCommander = nil
+
+if Client or Predict then
+
+    kWorldButtonSize = GUIScale(80)
+
+    GetCallingCommander = function()
+        return Client.GetLocalPlayer()
+    end
+
+elseif Server then
+
+    kWorldButtonSize = 1
+
+    function CommanderHelp_SetCallingCommander(commander)
+        assert( commander:isa("Commander") )
+        gServerCallingCommander = commander
+    end
+
+    GetCallingCommander = function()
+        return gServerCallingCommander
+    end
+
+end
 
 // --------- Resource Tower help function --------------------
 
@@ -26,7 +56,7 @@ local function GetEmptyResourceNodes( conditionFunc )
         if resourceNode:GetAttached() == nil and conditionFunc(resourceNode) then
 
             local result = {}
-            result.Position = Client.WorldToScreen(resourceNode:GetOrigin())
+            result.wsPosition = resourceNode:GetOrigin()
             result.Entity = nil
         
             table.insert(resultList, result)
@@ -63,7 +93,7 @@ end
 
 local function GetShowResearch(techId)
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
     
     if localPlayer then        
         return not GetIsTechResearched(localPlayer:GetTeamNumber(), techId) and not GetIsTechResearching(localPlayer, techId)        
@@ -84,7 +114,8 @@ local function GetResearchList(className, techId, xOffset, yOffset)
             if researchStructure:GetCanResearch(techId) then
             
                 local entry = {}
-                entry.Position = Client.WorldToScreen(researchStructure:GetOrigin()) + Vector(xOffset, yOffset, 0)
+                entry.wsPosition = researchStructure:GetOrigin()
+                entry.ssOffset = Vector(xOffset, yOffset, 0)
                 entry.Entity = researchStructure
             
                 table.insert(resultList, entry)
@@ -107,7 +138,7 @@ end
 
 local function GetUpgradeList(className, techId, upgradedId, xOffset)
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
     local resultList = {}
     
     if localPlayer and not GetHasTech(localPlayer, upgradedId) and not GetIsTechResearching(localPlayer, techId) then
@@ -118,7 +149,8 @@ local function GetUpgradeList(className, techId, upgradedId, xOffset)
             if upgradeAble:GetCanResearch(techId) and upgradeAble:GetTechId() == defaultTechId then 
                 
                 local entry = {}
-                entry.Position = Client.WorldToScreen(upgradeAble:GetOrigin()) + Vector(xOffset, 0, 0)
+                entry.wsPosition = upgradeAble:GetOrigin()
+                entry.ssOffset = Vector(xOffset, 0, 0)
                 entry.Entity = upgradeAble
            
                 table.insert(resultList, entry)            
@@ -140,7 +172,7 @@ end
 
 local function GetClosestCommStructure()
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
     local closestCommStructure = nil
     
     if localPlayer then
@@ -165,7 +197,7 @@ end
 
 local function GetIsStructureInRange(techId)
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
     if localPlayer then
     
         for _, structure in ipairs(GetEntitiesWithMixinForTeam("Construct", localPlayer:GetTeamNumber())) do
@@ -189,7 +221,7 @@ local gLastSingletonTechId = kTechId.None
 
 local function GetPlaceInBaseForTechIdSingleton(techId)
 
-    if gTimeLastUpdate ~= Shared.GetTime() and not GetHasTech(Client.GetLocalPlayer(), techId) and not GetIsStructureInRange(techId) then
+    if gTimeLastUpdate ~= Shared.GetTime() and not GetHasTech(GetCallingCommander(), techId) and not GetIsStructureInRange(techId) then
 
         local closestCommStructure = GetClosestCommStructure()
     
@@ -207,7 +239,7 @@ local function GetPlaceInBaseForTechIdSingleton(techId)
         
             gTimeLastUpdate = Shared.GetTime()
             gLastSingletonTechId = techId
-            return {{ Position = Client.WorldToScreen(gCachedRandomPos) }}
+            return {{ wsPosition = gCachedRandomPos }}
             
         end
     
@@ -236,11 +268,11 @@ local function GetEmptyTechPoints( conditionFunc, TechId )
         
             local attached = techPoint:GetAttached()
         
-            if ( not attached or (GetAreEnemies(Client.GetLocalPlayer(), techPoint) and not attached:GetIsSighted()) ) and 
+            if ( not attached or (GetAreEnemies(GetCallingCommander(), techPoint) and not attached:GetIsSighted()) ) and 
                ( not conditionFunc or conditionFunc(techPoint) ) then
 
                 local result = {}
-                result.Position = Client.WorldToScreen(techPoint:GetOrigin())
+                result.wsPosition = techPoint:GetOrigin()
                 result.Entity = nil
             
                 table.insert(resultList, result)
@@ -291,7 +323,8 @@ local function GetAmmoHelpFunction()
         if marine:GetIsAlive() and GetRequiresAmmo(marine) then
         
             local entry = {}
-            entry.Position = Client.WorldToScreen(marine:GetOrigin()) - Vector(kWorldButtonSize *.5, 0, 0)
+            entry.wsPosition = marine:GetOrigin()
+            entry.ssOffset = -1 * Vector(kWorldButtonSize *.5, 0, 0)
             table.insert(resultList, entry )
         
         end
@@ -311,7 +344,8 @@ local function GetMedpackHelpFunction()
         if marine:GetIsAlive() and marine:GetHealth() < 40 then
         
             local entry = {}
-            entry.Position = Client.WorldToScreen(marine:GetOrigin()) - Vector(kWorldButtonSize *.5, 0, 0)
+            entry.wsPosition = marine:GetOrigin()
+            entry.ssOffset = -1 * Vector(kWorldButtonSize *.5, 0, 0)
             table.insert(resultList, entry )
             
         end
@@ -324,7 +358,7 @@ end
 
 local function GetClosestHive()
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
 
     if localPlayer then
 
@@ -348,7 +382,7 @@ local gCachedCystHelp = nil
 
 local function GetCystHelpFunction()
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
 
     if localPlayer then
     
@@ -391,7 +425,7 @@ local function GetCystHelpFunction()
     end
     
     if gCachedCystHelp then
-        return {{ Position = Client.WorldToScreen(gCachedCystHelp) }}
+        return {{ wsPosition = gCachedCystHelp }}
     else
         return {}
     end
@@ -468,11 +502,11 @@ local function BuildCommanderHelpFunctions()
 end
 
 // function returns a list of worldbutton info:
-// { TechId, Position, Entity }
+// { TechId, wsPosition, ssOffset, Entity }
 
 function CommanderHelp_GetWorldButtons()
 
-    local localPlayer = Client.GetLocalPlayer()
+    local localPlayer = GetCallingCommander()
     local useFunctions = nil
     local worldButtons = {}
     
@@ -501,7 +535,11 @@ function CommanderHelp_GetWorldButtons()
         
                 local resultList = helpFunc()
                 for j = 1, #resultList do
-                    table.insert(worldButtons, { TechId = techId, Position = resultList[j].Position, Entity = resultList[j].Entity })
+                    table.insert(worldButtons, {
+                            TechId = techId,
+                            wsPosition = resultList[j].wsPosition,
+                            ssOffset = resultList[j].ssOffset,
+                            Entity = resultList[j].Entity })
                 end
             
             end
@@ -520,7 +558,7 @@ end
 
 function CommanderHelp_GetShowWorldButtons()
 
-    local commander = Client.GetLocalPlayer()
+    local commander = GetCallingCommander()
     local showButtons = false
     
     if commander and commander:isa("Commander") and commander:GetGameStarted() then    
@@ -532,9 +570,9 @@ function CommanderHelp_GetShowWorldButtons()
 
 end
 
-function CommanderHelp_ProccessTechIdAction(techId, entity)
+function CommanderHelp_ProcessTechIdAction(techId, entity)
 
-    local commander = Client.GetLocalPlayer()
+    local commander = GetCallingCommander()
     
     if commander and commander:isa("Commander") and commander:GetGameStarted() then
     

@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-ObstacleMixin = CreateMixin( ObstacleMixin )
+ObstacleMixin = CreateMixin(ObstacleMixin)
 ObstacleMixin.type = "Obstacle"
 
 gAllObstacles = { }
@@ -98,15 +96,10 @@ end
 
 function ObstacleMixin:_GetPathingInfo()
 
-    local radius = 1.0
-    local height = 2.0
-    local position = self:GetOrigin() 
-    local extents = self:GetExtents()
-
-    // chose the bigger value to make sure units cannot path through obstacles
-    radius = extents.x > extents.z and extents.x * 0.5 or extents.z * 0.5
-    position = position + Vector(0, -100, 0)
-  
-    return position, radius, 1000
+    local position = self:GetOrigin() + Vector(0, -100, 0)  
+    local radius = LookupTechData(self:GetTechId(), kTechDataObstacleRadius, 1.0)
+    local height = 1000.0
+    
+    return position, radius, height
   
 end

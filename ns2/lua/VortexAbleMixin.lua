@@ -8,12 +8,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-VortexAbleMixin = CreateMixin( VortexAbleMixin )
+VortexAbleMixin = CreateMixin(VortexAbleMixin)
 VortexAbleMixin.type = "VortexAble"
 
-VortexAbleMixin.expectedCallbacks = {}
+VortexAbleMixin.expectedCallbacks = { }
 
 VortexAbleMixin.kEffectInterval = 1
 local kVortexEffectOffset = Vector(0, 0.7, 0)

@@ -495,25 +495,25 @@ local function AnimateFinalWaypoint(self)
     self.finalWaypoint:SetIsVisible(showWayPoint)
     
     if finalWaypointData then
-
+    
         self.finalDistanceText:SetIsVisible(true)
         self.finalNameText:SetIsVisible(true)
-    
-        local x = finalWaypointData[1]
-        local y = finalWaypointData[2]
-        local scale = finalWaypointData[3] * kDefaultSize
-        local name = finalWaypointData[4]
-        local distance = finalWaypointData[5]
-        local type = finalWaypointData[6]
-        local id = finalWaypointData[7]
-        local showArrow = finalWaypointData[8]
-
+        
+        local x = finalWaypointData.x
+        local y = finalWaypointData.y
+        local scale = finalWaypointData.scale * kDefaultSize
+        local name = finalWaypointData.name
+        local distance = finalWaypointData.dist
+        local type = finalWaypointData.type
+        local id = finalWaypointData.id
+        local showArrow = finalWaypointData.showArrow
+        
         self.waypointDirection:SetIsVisible(showArrow == true)
-        local direction = self.finalWaypoint:GetPosition() - Vector(Client.GetScreenWidth()/2, Client.GetScreenHeight()/2, 0)
+        local direction = self.finalWaypoint:GetPosition() - Vector(Client.GetScreenWidth() / 2, Client.GetScreenHeight() / 2, 0)
         local alphaFraction = math.abs(direction:GetLength()) / self.screenDiagonalLength
         
-        self.finalWaypoint:SetColor(Color(1, 1, 1, alphaFraction * 2 + 0.1 ))
-        self.animatedCircle:SetColor(Color(1,1,1,alphaFraction))
+        self.finalWaypoint:SetColor(Color(1, 1, 1, alphaFraction * 2 + 0.1))
+        self.animatedCircle:SetColor(Color(1, 1, 1, alphaFraction))
         
         local size = Vector(scale, scale, 1)
         
@@ -530,19 +530,20 @@ local function AnimateFinalWaypoint(self)
         
         if showArrow then
         
-            
             direction:Normalize()
             
             local angle = math.atan2(direction.x, direction.y)
-            self.waypointDirection:SetPosition(-kArrowSize/2 + direction * kArrowDistance )
+            self.waypointDirection:SetPosition(-kArrowSize / 2 + direction * kArrowDistance)
             self.waypointDirection:SetRotation(Vector(0, 0, angle))
-        
+            
         end
         
-        if (self.lastOrderId ~= id or self.lastOrderType ~= type) then
+        if self.lastOrderId ~= id or self.lastOrderType ~= type then
+        
             AnimateOrderChanged(self, type)
             self.lastOrderId = id
             self.lastOrderType = type
+            
         end
         
         local rotationPercentage = (Shared.GetTime() % kRotationDuration) / kRotationDuration
@@ -556,12 +557,14 @@ local function AnimateFinalWaypoint(self)
         self.waypointDirection:SetIsVisible(false)
         
         if self.lastOrderId then
+        
             self.lastOrderId = nil
             AnimateOrderVanish(self)
+            
         end
-    
+        
     end
-
+    
 end
 
 function GUIWaypoints:Update(deltaTime)

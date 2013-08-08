@@ -20,10 +20,14 @@ local defaultConfig = {
                         settings =
                             {
                                 rookie_friendly = true,
+                                force_even_teams_on_join = true,
                                 auto_team_balance = { enabled_on_unbalance_amount = 2, enabled_after_seconds = 10 },
                                 end_round_on_team_unbalance = 0.4,
+                                end_round_on_team_unbalance_check_after_time = 300,
+                                end_round_on_team_unbalance_after_warning_time = 30,
                                 auto_kick_afk_time = 300,
-                                auto_kick_afk_capacity = 0.5
+                                auto_kick_afk_capacity = 0.5,
+                                voting = { votekickplayer = true, votechangemap = true, voteresetgame = true, voterandomizerr = true }
                             },
                         tags = { "rookie" }
                       }

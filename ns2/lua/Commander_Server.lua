@@ -179,7 +179,7 @@ end
 // Return whether action should continue to be processed for the next selected unit. Position will be nil
 // for non-targeted actions and will be the world position target for the action for targeted actions.
 // targetId is the entityId which was hit by the client side trace
-function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace)
+function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, isCommanderPicked, orientation, entity, trace, isBot)
 
     local success = false
     local keepProcessing = true
@@ -189,8 +189,11 @@ function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, pi
     
     local techButtons = self:GetCurrentTechButtons(self.currentMenu, entity)
     
-    if techButtons == nil or table.find(techButtons, techId) == nil then
-        return success, keepProcessing
+    // For bots, do not worry about which menu is active
+    if isBot ~= true then
+        if techButtons == nil or table.find(techButtons, techId) == nil then
+            return success, keepProcessing
+        end
     end
 
     // TODO: check if this really works fine. the entity should check here if something is alloed / can be afforded.
@@ -239,7 +242,7 @@ function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, pi
                                 
             elseif techNode:GetIsBuild() or techNode:GetIsEnergyBuild() then
             
-                success = self:AttemptToBuild(techId, position, normal, orientation, pickVec, false, entity)
+                success = self:AttemptToBuild(techId, position, normal, orientation, isCommanderPicked, false, entity)
                 if success then 
                     keepProcessing = false
                 end
@@ -273,7 +276,7 @@ function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, pi
             if(techNode:GetIsAction()) then            
                 success = entity:PerformAction(techNode, position)
             elseif(techNode:GetIsBuy()) then
-                success = self:AttemptToBuild(techId, position, normal, orientation, pickVec, false)
+                success = self:AttemptToBuild(techId, position, normal, orientation, isCommanderPicked, false)
             elseif(techNode:GetIsPlasmaManufacture()) then
                 success = self:AttemptToResearchOrUpgrade(techNode, entity)
             end
@@ -497,7 +500,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
                 
                     local actionSuccess = false
                     local keepProcessing = false
-                    actionSuccess, keepProcessing = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec, orientation, selectedEntity, trace, targetId)
+                    actionSuccess, keepProcessing = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec ~= nil, orientation, selectedEntity, trace, targetId)
                     
                     // Successful if just one of our entities handled action
                     if actionSuccess then
@@ -511,7 +514,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
                 end
                 
             else
-                success = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec, orientation, nil, trace, targetId)
+                success = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec ~= nil, orientation, nil, trace, targetId)
             end
             
         end

@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// lua/BotTest.lua
+// lua/bots/TestBot.lua
 //
 // Created by Max McGuire (max@unknownworlds.com)
 // Copyright (c) 2011, Unknown Worlds Entertainment, Inc.
@@ -9,13 +9,13 @@
 //
 //=============================================================================
 
-Script.Load("lua/Bot.lua")
+Script.Load("lua/bots/Bot.lua")
 
 local gFreezeBots = false
 
-class 'BotTest' (Bot)
+class 'TestBot' (Bot)
 
-function BotTest:GenerateMove()
+function TestBot:GenerateMove()
 
     local move = Move()
     

@@ -6,14 +6,12 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * OwnerMixin gives an Entity the ability to own other Entities or
  * to be owned by another Entity. One Entity can only be owned by
  * one other Entity. But one Entity can own multiple Entities.
  */
-OwnerMixin = CreateMixin( OwnerMixin )
+OwnerMixin = CreateMixin(OwnerMixin)
 OwnerMixin.type = "Owner"
 
 OwnerMixin.optionalCallbacks =

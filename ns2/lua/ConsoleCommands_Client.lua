@@ -7,8 +7,6 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
-
 function OnCommandOnClientDisconnect(clientIndexString)
     Scoreboard_OnClientDisconnect(tonumber(clientIndexString))
 end
@@ -168,10 +166,6 @@ function OnCommandSetName(nickname)
     
 end
 
-local function OnCommandFunctionContractsEnabled(enabled)
-    SetFunctionContractsEnabled(enabled == "true")
-end
-
 local function OnCommandClearDebugLines()
     Client.ClearDebugLines()
 end
@@ -243,7 +237,6 @@ Event.Hook("Console_distance", OnCommandDistance)
 Event.Hook("Console_animinputs", OnCommandAnimInputs)
 Event.Hook("Console_fps", OnCommandDisplayFPS)
 Event.Hook("Console_name", OnCommandSetName)
-Event.Hook("Console_functioncontractsenabled", OnCommandFunctionContractsEnabled)
 Event.Hook("Console_cleardebuglines", OnCommandClearDebugLines)
 Event.Hook("Console_guiinfo", OnCommandGUIInfo)
 

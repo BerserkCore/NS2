@@ -221,6 +221,27 @@ function Scoreboard_GetPlayerRecord(clientIndex)
     
 end
 
+function Scoreboard_GetPlayerName(clientIndex)
+
+    local record = Scoreboard_GetPlayerRecord(clientIndex)
+    return record and record.Name
+    
+end
+
+function Scoreboard_GetPlayerList()
+
+    local playerList = { }
+    for p = 1, #playerData do
+    
+        local playerRecord = playerData[p]
+        table.insert(playerList, { name = playerRecord.Name, client_index = playerRecord.ClientIndex })
+        
+    end
+    
+    return playerList
+    
+end
+
 function Scoreboard_GetPlayerData(clientIndex, dataType)
 
     local playerRecord = Scoreboard_GetPlayerRecord(clientIndex)

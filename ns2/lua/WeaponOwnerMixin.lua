@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-WeaponOwnerMixin = CreateMixin( WeaponOwnerMixin )
+WeaponOwnerMixin = CreateMixin(WeaponOwnerMixin)
 WeaponOwnerMixin.type = "WeaponOwner"
 
 WeaponOwnerMixin.optionalCallbacks =
@@ -78,7 +76,6 @@ end
 function WeaponOwnerMixin:SetWeaponsProcessMove(processMove)
     self.processMove = processMove
 end
-AddFunctionContract(WeaponOwnerMixin.SetWeaponsProcessMove, { Arguments = { "Entity", "boolean" }, Returns = { } })
 
 function WeaponOwnerMixin:ProcessMoveOnWeapons(input)
 
@@ -100,7 +97,6 @@ function WeaponOwnerMixin:ProcessMoveOnWeapons(input)
     end
     
 end
-AddFunctionContract(WeaponOwnerMixin.ProcessMoveOnWeapons, { Arguments = { "Entity", "Move" }, Returns = { } })
 
 /**
  * Sorter used in WeaponOwnerMixin:GetHUDOrderedWeaponList().
@@ -128,7 +124,6 @@ function WeaponOwnerMixin:GetHUDOrderedWeaponList()
     return hudOrderedWeaponList
     
 end
-AddFunctionContract(WeaponOwnerMixin.GetHUDOrderedWeaponList, { Arguments = { "Entity" }, Returns = { "table" } })
 
 // Returns true if we switched to weapon or if weapon is already active. Returns false if we 
 // don't have that weapon.
@@ -203,21 +198,18 @@ function WeaponOwnerMixin:SetActiveWeapon(weaponMapName)
     return false
 
 end
-AddFunctionContract(WeaponOwnerMixin.SetActiveWeapon, { Arguments = { "Entity", "string" }, Returns = { "boolean" } })
 
-function WeaponOwnerMixin:PreviousWeapon()
+function WeaponOwnerMixin:QuickSwitchWeapon()
     self:SwitchWeapon(self.prevHudSlot)
 end
 
 function WeaponOwnerMixin:GetActiveWeapon()
     return Shared.GetEntity(self.activeWeaponId)
 end
-AddFunctionContract(WeaponOwnerMixin.GetActiveWeapon, { Arguments = { "Entity" }, Returns = { { "Weapon", "nil" } } })
 
 function WeaponOwnerMixin:GetTimeOfLastWeaponSwitch()
     return self.timeOfLastWeaponSwitch
 end
-AddFunctionContract(WeaponOwnerMixin.GetTimeOfLastWeaponSwitch, { Arguments = { "Entity" }, Returns = { "number" } })
 
 function WeaponOwnerMixin:SwitchWeapon(hudSlot)
 
@@ -244,7 +236,6 @@ function WeaponOwnerMixin:SwitchWeapon(hudSlot)
     return success
     
 end
-AddFunctionContract(WeaponOwnerMixin.SwitchWeapon, { Arguments = { "Entity", "number" }, Returns = { "boolean" } })
 
 function WeaponOwnerMixin:SelectNextWeaponInDirection(direction)
 
@@ -278,7 +269,6 @@ function WeaponOwnerMixin:SelectNextWeaponInDirection(direction)
     end
     
 end
-AddFunctionContract(WeaponOwnerMixin.SelectNextWeaponInDirection, { Arguments = { "Entity", "number" }, Returns = { } })
 
 function WeaponOwnerMixin:GetActiveWeaponName()
 
@@ -292,12 +282,10 @@ function WeaponOwnerMixin:GetActiveWeaponName()
     return activeWeaponName
     
 end
-AddFunctionContract(WeaponOwnerMixin.GetActiveWeaponName, { Arguments = { "Entity" }, Returns = { "string" } })
 
 function WeaponOwnerMixin:GetActiveWeaponId()
     return self.activeWeaponId
 end
-AddFunctionContract(WeaponOwnerMixin.GetActiveWeaponId, { Arguments = { "Entity" }, Returns = { "number" } })
 
 /**
  * Checks to see if self already has a weapon with the passed in map name.
@@ -322,7 +310,6 @@ function WeaponOwnerMixin:GetWeapon(weaponMapName)
     return found
 
 end
-AddFunctionContract(WeaponOwnerMixin.GetWeapon, { Arguments = { "Entity", "string" }, Returns = { { "Weapon", "nil" } } })
 
 /**
  * Checks to see if self already has a weapon in the passed in HUD slot.
@@ -343,7 +330,6 @@ function WeaponOwnerMixin:GetWeaponInHUDSlot(slot)
     return nil
     
 end
-AddFunctionContract(WeaponOwnerMixin.GetWeaponInHUDSlot, { Arguments = { "Entity", "number" }, Returns = { { "Weapon", "nil" } } })
 
 function WeaponOwnerMixin:AddWeapon(weapon, setActive)
 
@@ -393,7 +379,6 @@ function WeaponOwnerMixin:AddWeapon(weapon, setActive)
     return hasWeapon
     
 end
-AddFunctionContract(WeaponOwnerMixin.AddWeapon, { Arguments = { "Entity", "Weapon", "boolean" }, Returns = { } })
 
 function WeaponOwnerMixin:RemoveWeapon(weapon)
 
@@ -415,7 +400,6 @@ function WeaponOwnerMixin:RemoveWeapon(weapon)
     UpdateWeaponsWeight(self)
     
 end
-AddFunctionContract(WeaponOwnerMixin.RemoveWeapon, { Arguments = { "Entity", "Weapon" }, Returns = { } })
 
 function WeaponOwnerMixin:DestroyWeapons()
 

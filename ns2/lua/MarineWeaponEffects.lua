@@ -306,6 +306,7 @@ kMarineWeaponEffects =
     {
         releaseNerveGasEffects = 
         {
+            {parented_cinematic = "cinematics/marine/grenades/nerve_explo.cinematic"},
             {sound = "sound/NS2.fev/marine/flamethrower/attack"},
         },    
     },
@@ -350,6 +351,24 @@ kMarineWeaponEffects =
         },
     },
     
+    cluster_grenade_explode =
+    {
+        grenadeExplodeEffects =
+        {  
+            {sound = "sound/NS2.fev/marine/common/explode"},
+            {cinematic = "cinematics/marine/grenades/cluster_main_explo.cinematic", done = true}
+        }
+    },
+    
+    cluster_fragment_explode =
+    {
+        grenadeExplodeEffects =
+        {  
+            {sound = "sound/NS2.fev/marine/common/explode"},
+            {cinematic = "cinematics/marine/grenades/cluster_small_explos.cinematic", done = true}
+        }
+    },
+    
     clusterfragment_residue = 
     {
         clusterFragmentResiudeEffect = 
@@ -363,7 +382,7 @@ kMarineWeaponEffects =
         pulseGrenadeEffects =
         {   
             {sound = "sound/NS2.fev/marine/heavy/railgun_fire"},
-            {cinematic = "cinematics/materials/metal/ricochetRailgun.cinematic", done = true},
+            {cinematic = "cinematics/marine/grenades/pulse_explo.cinematic", done = true},
         },
     },
     

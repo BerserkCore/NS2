@@ -214,6 +214,7 @@ end
 local function CreateJoinServerPage(self)
 
     self:CreateServerListWindow()
+    self:CreateServerDetailsWindow()
     self.playWindow:AddEventCallbacks({ 
         OnShow =
             function(self) UpdatePlayFirstTimeWindow(self.scriptHandle) end,
@@ -238,10 +239,12 @@ end
 local function ShowServerWindow(self)
 
     self.playWindow.updateButton:SetIsVisible(true)
+    self.playWindow.detailsButton:SetIsVisible(true)
     self.joinServerButton:SetIsVisible(true)
     self.highlightServer:SetIsVisible(true)
     self.selectServer:SetIsVisible(true)
     self.serverRowNames:SetIsVisible(true)
+    self.serverTabs:SetIsVisible(true)
     self.serverList:SetIsVisible(true)
     self.filterForm:SetIsVisible(true)
     
@@ -254,10 +257,12 @@ end
 local function HideServerWindow(self)
 
     self.playWindow.updateButton:SetIsVisible(false)
+    self.playWindow.detailsButton:SetIsVisible(false)
     self.joinServerButton:SetIsVisible(false)
     self.highlightServer:SetIsVisible(false)
     self.selectServer:SetIsVisible(false)
     self.serverRowNames:SetIsVisible(false)
+    self.serverTabs:SetIsVisible(false)
     self.serverList:SetIsVisible(false)
     self.filterForm:SetIsVisible(false)
     

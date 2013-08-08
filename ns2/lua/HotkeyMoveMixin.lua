@@ -9,10 +9,9 @@
 //    
 // =========== For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/OverheadMoveMixin.lua")
 
-HotkeyMoveMixin = CreateMixin( HotkeyMoveMixin )
+HotkeyMoveMixin = CreateMixin(HotkeyMoveMixin)
 HotkeyMoveMixin.type = "CommanderMove"
 
 HotkeyMoveMixin.expectedMixin =
@@ -35,13 +34,14 @@ HotkeyMoveMixin.expectedConstants =
  *       It should be in this mixin.
  */
 function HotkeyMoveMixin:UpdateMove(input)
+
 	local position = Vector()
-
+    
 	if self:ProcessNumberKeysMove(input, position) then
-
+    
 		position = self:ConstrainToOverheadPosition(position)
 		self:SetOrigin(position)
 		
 	end
+	
 end
-AddFunctionContract(HotkeyMoveMixin.UpdateMove, { Arguments = { "Entity", "Move" }, Returns = { } })

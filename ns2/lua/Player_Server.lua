@@ -88,7 +88,6 @@ function Player:SetClientMuted(muteClientIndex, setMuted)
     self.mutedClients[muteClientIndex] = setMuted
     
 end
-AddFunctionContract(Player.SetClientMuted, { Arguments = { "Player", "number", "boolean" }, Returns = { } })
 
 /**
  * Returns true if the passed in client is muted by this Player.
@@ -99,7 +98,6 @@ function Player:GetClientMuted(checkClientIndex)
     return self.mutedClients[checkClientIndex] == true
     
 end
-AddFunctionContract(Player.GetClientMuted, { Arguments = { "Player", "number" }, Returns = { "boolean" } })
 
 // Changes the visual appearance of the player to the special edition version.
 function Player:MakeSpecialEdition()

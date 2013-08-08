@@ -6,12 +6,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
-
 local kDissolveSpeed = 1
 local kDissolveDelay = 6
 
-DissolveMixin = CreateMixin( DissolveMixin )
+DissolveMixin = CreateMixin(DissolveMixin)
 DissolveMixin.type = "Dissolve"
 
 DissolveMixin.expectedMixins =

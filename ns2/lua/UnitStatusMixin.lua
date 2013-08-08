@@ -6,8 +6,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 kUnitStatus = enum({
     'None',
     'Inactive',
@@ -18,7 +16,7 @@ kUnitStatus = enum({
     'Researching'
 })
 
-UnitStatusMixin = CreateMixin( UnitStatusMixin )
+UnitStatusMixin = CreateMixin(UnitStatusMixin)
 UnitStatusMixin.type = "UnitStatus"
 
 function UnitStatusMixin:__initmixin()
@@ -97,12 +95,11 @@ function UnitStatusMixin:GetUnitHint(forEntity)
     if HasMixin(self, "Tech") then
     
         local hintString = LookupTechData(self:GetTechId(), kTechDataHint, "")
-        if hintString ~= "" then
-            
-            if self.OverrideHintString then
-                hintString = self:OverrideHintString(hintString)
-            end
-            
+        if self.OverrideHintString then
+            hintString = self:OverrideHintString(hintString, forEntity)
+        end
+        
+        if hintString ~= "" then            
             return Locale.ResolveString(hintString)
         end
         

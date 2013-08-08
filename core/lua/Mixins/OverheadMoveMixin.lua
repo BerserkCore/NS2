@@ -9,12 +9,11 @@
 //    
 // =========== For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 
 local kZoomVelocity = 60
 local kMaxZoomHeight = 50
-OverheadMoveMixin = CreateMixin( OverheadMoveMixin )
+OverheadMoveMixin = CreateMixin(OverheadMoveMixin)
 OverheadMoveMixin.type = "OverheadMove"
 
 OverheadMoveMixin.networkVars =

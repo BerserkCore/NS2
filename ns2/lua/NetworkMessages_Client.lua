@@ -155,27 +155,30 @@ end
 
 function OnCommandJoinError(message)
     ChatUI_AddSystemMessage( Locale.ResolveString("JOIN_ERROR_TOO_MANY") )
-
 end
 
 function OnVoteConcedeCast(message)
-    local text = string.format( Locale.ResolveString("VOTE_CONCEDE_BROADCAST"), message.voterName, message.votesMoreNeeded )
-    ChatUI_AddSystemMessage( text )
+
+    local text = string.format(Locale.ResolveString("VOTE_CONCEDE_BROADCAST"), message.voterName, message.votesMoreNeeded)
+    ChatUI_AddSystemMessage(text)
+    
 end
 
 function OnVoteEjectCast(message)
-    local text = string.format( Locale.ResolveString("VOTE_EJECT_BROADCAST"), message.voterName, message.votesMoreNeeded )
-    ChatUI_AddSystemMessage( text )
+
+    local text = string.format(Locale.ResolveString("VOTE_EJECT_BROADCAST"), message.voterName, message.votesMoreNeeded)
+    ChatUI_AddSystemMessage(text)
+    
 end
 
 function OnTeamConceded(message)
 
     if message.teamNumber == kMarineTeamType then
-        ChatUI_AddSystemMessage( Locale.ResolveString("TEAM_MARINES_CONCEDED") )
-    else 
-        ChatUI_AddSystemMessage( Locale.ResolveString("TEAM_ALIENS_CONCEDED") )
+        ChatUI_AddSystemMessage(Locale.ResolveString("TEAM_MARINES_CONCEDED"))
+    else
+        ChatUI_AddSystemMessage(Locale.ResolveString("TEAM_ALIENS_CONCEDED"))
     end
-
+    
 end
 
 local function OnCommandCreateDecal(message)
@@ -209,6 +212,14 @@ local function OnSetClientTeamNumber(message)
     Client.localClientTeamNumber = message.teamNumber
 end
 Client.HookNetworkMessage("SetClientTeamNumber", OnSetClientTeamNumber)
+
+local function OnMessageAutoConcedeWarning(message)
+
+    local warningText = StringReformat(Locale.ResolveString("AUTO_CONCEDE_WARNING"), { time = message.time, teamName = message.team1Conceding and "Marines" or "Aliens" })
+    ChatUI_AddSystemMessage(warningText)
+    
+end
+Client.HookNetworkMessage("AutoConcedeWarning", OnMessageAutoConcedeWarning)
 
 Client.HookNetworkMessage("Ping", OnCommandPing)
 Client.HookNetworkMessage("HitEffect", OnCommandHitEffect)

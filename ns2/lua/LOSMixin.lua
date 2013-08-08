@@ -6,9 +6,7 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
-LOSMixin = CreateMixin( LOSMixin )
+LOSMixin = CreateMixin(LOSMixin)
 
 LOSMixin.type = "LOS"
 

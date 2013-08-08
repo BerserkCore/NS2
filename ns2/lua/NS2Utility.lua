@@ -7,9 +7,9 @@
 // NS2-specific utility functions.
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
+
 Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
-Script.Load("lua/FunctionContracts.lua")
 
 /**
  * Return an extents vector for tracing a bullet with the given caliber (diameter) along direction. 
@@ -1954,13 +1954,7 @@ function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceR
     local width, height = weapon:GetMeleeBase()
     width = scale * width
     height = scale * height
-    
-    /*
-    if Client then
-        Client.DebugCapsule(eyePoint, eyePoint + axis * range, width, 0, 3)
-    end
-    */
-    
+        
     // extents defines a world-axis aligned box, so x and z must be the same. 
     local extents = Vector(width / 6, height / 6, width / 6)
     if not filter then
@@ -2193,7 +2187,6 @@ function GetSpriteGridByClass(class, classToGrid)
     return unpack(classToGrid[class])
     
 end
-AddFunctionContract(GetSpriteGridByClass, { Arguments = { "string", "array" }, Returns = { "number", "number" } })
 
 /*
  * Non-linear egg spawning. Eggs spawn slower the more of them you have, but speed up with more players. 
@@ -2500,3 +2493,28 @@ function GetSelectablesOnScreen(commander, className, minPos, maxPos)
 
 end
 
+function GetInstalledMapList()
+
+    local matchingFiles = { }
+    Shared.GetMatchingFileNames("maps/*.level", false, matchingFiles)
+    
+    local mapNames = { }
+    local mapFiles = { }
+    
+    for _, mapFile in pairs(matchingFiles) do
+    
+        local _, _, filename = string.find(mapFile, "maps/(.*).level")
+        local mapname = string.gsub(filename, 'ns2_', '', 1):gsub("^%l", string.upper)
+        local tagged,_ = string.match(filename, "ns2_", 1)
+        if tagged ~= nil then
+        
+            table.insert(mapNames, mapname)
+            table.insert(mapFiles, {["name"] = mapname, ["fileName"] = filename})
+            
+        end
+        
+    end
+    
+    return mapNames, mapFiles
+    
+end

@@ -10,7 +10,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/CommAbilities/Alien/ShadeInk.lua")
 
 DisorientableMixin = CreateMixin(DisorientableMixin)

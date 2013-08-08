@@ -6,8 +6,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * AttackOrderMixin handles processing attack orders.
  */
@@ -186,11 +184,9 @@ if Server then
         end
         
     end
-    AddFunctionContract(AttackOrderMixin.ProcessAttackOrder, { Arguments = { "Entity", "number", "number", "number" }, Returns = { } })
-
+    
 end
 
 function AttackOrderMixin:GetTimeOfLastAttackOrder()
     return self.timeOfLastAttackOrder
 end
-AddFunctionContract(AttackOrderMixin.GetTimeOfLastAttackOrder, { Arguments = { "Entity" }, Returns = { "number" } })

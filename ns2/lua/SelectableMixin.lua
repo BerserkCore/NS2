@@ -6,12 +6,10 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * SelectableMixin marks entities as selectable to a commander.
  */
-SelectableMixin = CreateMixin( SelectableMixin )
+SelectableMixin = CreateMixin(SelectableMixin)
 SelectableMixin.type = "Selectable"
 
 SelectableMixin.networkVars =
@@ -195,8 +193,6 @@ function SelectableMixin:GetIsSelectable(byTeamNumber)
     return isValid
     
 end
-AddFunctionContract(SelectableMixin.GetIsSelectable, { Arguments = { "Entity", "Player" }, Returns = { "boolean" } })
-
 
 function SelectableMixin:UpdateIncludeRelevancyMask()
 

@@ -114,7 +114,7 @@ function ClusterGrenade:Detonate(targetHit)
         params[kEffectHostCoords] = Coords.GetLookIn( self:GetOrigin(), self:GetCoords().zAxis)
     end
     
-    self:TriggerEffects("grenade_explode", params)
+    self:TriggerEffects("cluster_grenade_explode", params)
     CreateExplosionDecals(self)
     DestroyEntity(self)
 
@@ -177,7 +177,7 @@ function ClusterFragment:Detonate(targetHit)
         params[kEffectHostCoords] = Coords.GetLookIn( self:GetOrigin(), self:GetCoords().zAxis)
     end
     
-    self:TriggerEffects("grenade_explode", params)
+    self:TriggerEffects("cluster_fragment_explode", params)
     CreateExplosionDecals(self)
     DestroyEntity(self)
 

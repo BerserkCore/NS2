@@ -33,12 +33,16 @@ function SetCommanderMarqueeeSelectorDown(mouseX, mouseY)
     if selectorCursorDown == true then
         return
     end
-    
+
 	selectorCursorDown = true
 	
 	selectorStartX = mouseX
 	selectorStartY = mouseY
     
+end
+
+function CancelCommanderMarqueeSelect()
+    selectorCursorDown = false
 end
 
 function SetCommanderMarqueeeSelectorUp(mouseX, mouseY)

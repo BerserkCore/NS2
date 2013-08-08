@@ -6,7 +6,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-function BotPlayer:ChooseOrder()
+function PlayerBot:ChooseOrder()
 
     local player = self:GetPlayer()
     local order = player:GetCurrentOrder()
@@ -20,7 +20,7 @@ end
  * Responsible for generating the "input" for the bot. This is equivalent to
  * what a client sends across the network.
  */
-function BotPlayer:GenerateMove()
+function PlayerBot:GenerateMove()
 
     local player = self:GetPlayer()
     local move = Move()

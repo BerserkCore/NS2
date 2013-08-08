@@ -19,8 +19,13 @@ Script.Load("lua/TargetCache.lua")
 Script.Load("lua/MarineTeam.lua")
 Script.Load("lua/AlienTeam.lua")
 
-Script.Load("lua/Bot.lua")
+Script.Load("lua/bots/Bot.lua")
 Script.Load("lua/VoteManager.lua")
+Script.Load("lua/Voting.lua")
+Script.Load("lua/VotingKickPlayer.lua")
+Script.Load("lua/VotingChangeMap.lua")
+Script.Load("lua/VotingResetGame.lua")
+Script.Load("lua/VotingRandomizeRR.lua")
 
 Script.Load("lua/ServerConfig.lua")
 Script.Load("lua/ServerAdmin.lua")
@@ -213,12 +218,16 @@ local function LoadServerMapEntity(mapName, groupName, values)
             if (mapName == "tech_point") or values.pathInclude == true then
             
                 local coords = values.angles:GetCoords(values.origin)
-                Pathing.CreatePathingObject(entity:GetModelName(), coords)
+                if not Pathing.GetLevelHasPathingMesh() then
+                    Pathing.CreatePathingObject(entity:GetModelName(), coords, true)
+                    Pathing.AddFillPoint(values.origin)
+                end    
                 
             end
             
             local renderModelCommAlpha = GetAndCheckValue(values.commAlpha, 0, 1, "commAlpha", 1, true)
             local blocksPlacement = groupName == kCommanderInvisibleGroupName or
+                                    groupName == kCommanderInvisibleVentsGroupName or
                                     groupName == kCommanderNoBuildGroupName
             
             if HasMixin(entity, "Model") and (renderModelCommAlpha < 1 or blocksPlacement) then
@@ -268,10 +277,15 @@ function OnMapPreLoad()
     
     // Any geometry in kCommanderInvisibleGroupName or kCommanderNoBuildGroupName shouldn't interfere with selection or other commander actions
     Shared.PreLoadSetGroupPhysicsId(kCommanderInvisibleGroupName, PhysicsGroup.CommanderPropsGroup)
+    Shared.PreLoadSetGroupPhysicsId(kCommanderInvisibleVentsGroupName, PhysicsGroup.CommanderPropsGroup)
     Shared.PreLoadSetGroupPhysicsId(kCommanderNoBuildGroupName, PhysicsGroup.CommanderPropsGroup)
     
     // Don't have bullets collide with collision geometry
     Shared.PreLoadSetGroupPhysicsId(kCollisionGeometryGroupName, PhysicsGroup.CollisionGeometryGroup)
+    
+    // Pathing mesh
+    Shared.PreLoadSetGroupNeverVisible(kPathingLayerName)
+    Shared.PreLoadSetGroupPhysicsId(kPathingLayerName, PhysicsGroup.PathingGroup)    
     
     // Clear spawn points
     Server.readyRoomSpawnList = {}

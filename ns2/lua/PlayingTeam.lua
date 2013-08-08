@@ -11,6 +11,7 @@
 Script.Load("lua/Team.lua")
 Script.Load("lua/Entity.lua")
 Script.Load("lua/TeamDeathMessageMixin.lua")
+Script.Load("lua/bots/TeamBrain.lua")
 
 class 'PlayingTeam' (Team)
 
@@ -70,6 +71,9 @@ function PlayingTeam:Initialize(teamName, teamNumber)
     self.techIdCount = {}
 
     self.eventListeners = {}
+
+    self.brain = TeamBrain()
+    self.brain:Initialize(teamName.."-Brain", teamNumber)
 
 end
 
@@ -756,6 +760,10 @@ function PlayingTeam:Update(timePassed)
     if GetGamerules():GetGameStarted() then
         self:UpdateResourceTowers()
     end
+        
+    if #gServerBots > 0 and self.brain then
+        self.brain:Update(timePassed)
+    end
     
 end
 
@@ -938,45 +946,39 @@ function PlayingTeam:UpdateVotes()
     // Update with latest team size
     self.ejectCommVoteManager:SetNumPlayers(self:GetNumPlayers())
     self.concedeVoteManager:SetNumPlayers(self:GetNumPlayers())
-
+    
     // Eject commander if enough votes cast
-    if self.ejectCommVoteManager:GetVotePassed() then    
-        
-        local targetCommander = GetPlayerFromUserId( self.ejectCommVoteManager:GetTarget() )
+    if self.ejectCommVoteManager:GetVotePassed() then
+    
+        local targetCommander = GetPlayerFromUserId(self.ejectCommVoteManager:GetTarget())
         
         if targetCommander and targetCommander.Eject then
             targetCommander:Eject()
-        end        
+        end
         
         self.ejectCommVoteManager:Reset()
         
     elseif self.ejectCommVoteManager:GetVoteElapsed(Shared.GetTime()) then
-    
         self.ejectCommVoteManager:Reset()
-            
     end
     
-    // give up when enough votes
+    -- Give up when enough votes
     if self.concedeVoteManager:GetVotePassed() then
     
         self.concedeVoteManager:Reset()
         self.conceded = true
-
-        // Notify all players
-        Server.SendNetworkMessage( "TeamConceded", {teamNumber=self:GetTeamNumber()} )
+        
+        Server.SendNetworkMessage("TeamConceded", { teamNumber = self:GetTeamNumber() })
         
     elseif self.concedeVoteManager:GetVoteElapsed(Shared.GetTime()) then
-    
         self.concedeVoteManager:Reset()
-            
-    end 
-        
+    end
     
 end
 
 function PlayingTeam:GetHasConceded()
     return self.conceded
-end    
+end
 
 function PlayingTeam:GetPresRecipientCount()
 
@@ -1066,4 +1068,11 @@ function PlayingTeam:SetCommanderPing(position)
         self.lastCommPingPosition = position
     end
     
+end
+
+function PlayingTeam:OnEntityChange(oldId, newId)
+
+    Team.OnEntityChange( self, oldId, newId )
+    self.brain:OnEntityChange( oldId, newId )
+
 end
