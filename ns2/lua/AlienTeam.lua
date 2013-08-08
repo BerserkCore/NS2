@@ -21,12 +21,9 @@ AlienTeam.kAutoHealInterval = 2
 AlienTeam.kStructureAutoHealInterval = 0.5
 AlienTeam.kAutoHealUpdateNum = 20 // number of structures to update per autoheal update
 
-AlienTeam.kOrganicStructureHealRate = kHealingBedStructureRegen     // Health per second
 AlienTeam.kInfestationUpdateRate = 2
 
 AlienTeam.kSupportingStructureClassNames = {[kTechId.Hive] = {"Hive"} }
-AlienTeam.kUpgradeStructureClassNames = {[kTechId.Crag] = {"Crag", "MatureCrag"}, [kTechId.Shift] = {"Shift", "MatureShift"}, [kTechId.Shade] = {"Shade", "MatureShift"} }
-AlienTeam.kUpgradedStructureTechTable = {[kTechId.Crag] = {kTechId.MatureCrag}, [kTechId.Shift] = {kTechId.MatureShift}, [kTechId.Shade] = {kTechId.MatureShade}}
 
 AlienTeam.kTechTreeIdsToUpdate = {} // {kTechId.Crag, kTechId.MatureCrag, kTechId.Shift, kTechId.MatureShift, kTechId.Shade, kTechId.MatureShade}
 
@@ -52,9 +49,10 @@ function AlienTeam:Initialize(teamName, teamNumber)
     
     self.updateAlienArmorInTicks = nil
     
-    self.cloakables = {}
-    self.cloakableCloakCount = {}
     self.timeLastWave = 0
+    self.bioMassLevel = 0
+    self.bioMassAlertLevel = 0
+    self.maxBioMassLevel = 0
     
 end
 
@@ -66,15 +64,71 @@ function AlienTeam:OnInitialized()
     
     self.clientOwnedStructures = { }
     
-    self.cloakables = { }
-    self.cloakableCloakCount = { }
-    
     self.timeLastWave = 0
+    self.bioMassLevel = 0
+    self.bioMassAlertLevel = 0
+    self.maxBioMassLevel = 0
     
 end
 
 function AlienTeam:GetTeamInfoMapName()
     return AlienTeamInfo.kMapName
+end
+
+function AlienTeam:GetEggCount()
+    return self.eggCount or 0
+end
+
+function AlienTeam:UpdateBioMassLevel()
+
+    local lastBioMassLevel = self.bioMassLevel
+
+    self.bioMassLevel = 0
+    self.bioMassAlertLevel = 0
+    
+    local ents = GetEntitiesWithMixinForTeam("Biomass", self:GetTeamNumber()) // GetEntitiesForTeam("Hive", self:GetTeamNumber())
+    
+    for _, entity in ipairs(ents) do
+    
+        if GetIsUnitActive(entity) then
+    
+            local currentBioMass = entity:GetBioMassLevel()
+            self.bioMassLevel = self.bioMassLevel + currentBioMass
+
+            if HasMixin(entity, "Combat") and Shared.GetTime() - entity:GetTimeLastDamageTaken() < 7 then
+                self.bioMassAlertLevel = self.bioMassAlertLevel + currentBioMass
+            end
+        
+        end
+    
+    end
+    
+    if lastBioMassLevel ~= self.bioMassLevel and self.techTree then
+        self.techTree:SetTechChanged()
+    end
+    
+    self.maxBioMassLevel = 0
+    
+    for _, hive in ipairs(GetEntitiesForTeam("Hive", self:GetTeamNumber())) do
+    
+        if GetIsUnitActive(hive) then
+            self.maxBioMassLevel = self.maxBioMassLevel + 3
+        end
+    
+    end
+    
+end
+
+function AlienTeam:GetMaxBioMassLevel()
+    return self.maxBioMassLevel
+end
+
+function AlienTeam:GetBioMassLevel()
+    return self.bioMassLevel
+end
+
+function AlienTeam:GetBioMassAlertLevel()
+    return self.bioMassAlertLevel
 end
 
 local function RemoveGorgeStructureFromClient(self, techId, clientId)
@@ -127,7 +181,7 @@ function AlienTeam:AddGorgeStructure(player, structure)
         local clientId = Server.GetOwner(player):GetUserId()
         local structureId = structure:GetId()
         local techId = structure:GetTechId()
-
+        
         if not self.clientOwnedStructures[clientId] then
             self.clientOwnedStructures[clientId] = { }
         end
@@ -215,7 +269,7 @@ function AlienTeam:OnEntityChange(oldEntityId, newEntityId)
     // handle the change.
     
     self:UpdateClientOwnedStructures(oldEntityId)
-
+    
 end
 
 local function CreateCysts(hive, harvester, teamNumber)
@@ -264,71 +318,60 @@ function AlienTeam:GetHasAbilityToRespawn()
     
 end
 
+local function UpdateEggCount(self)
+
+    self.eggCount = 0
+
+    for _, egg in ipairs(GetEntitiesForTeam("Egg", self:GetTeamNumber())) do
+    
+        if egg:GetIsFree() and egg:GetGestateTechId() == kTechId.Skulk then        
+            self.eggCount = self:GetEggCount() + 1
+        end
+    
+    end
+
+end
+
 local function AssignPlayerToEgg(self, player, enemyTeamPosition)
 
     local success = false
     
-    // prioritize shift eggs first
-    if not success then
+    // use non-preevolved eggs sorted by "critical hives position"
+    local lifeFormEgg = nil
+
+    if not enemyTeamPosition then
+        enemyTeamPosition = player:GetOrigin()
+    end
+
+    local eggs = GetEntitiesForTeam("Egg", self:GetTeamNumber())        
+    Shared.SortEntitiesByDistance(enemyTeamPosition, eggs)
     
-        local shifts = GetEntitiesForTeam("Shift", self:GetTeamNumber())
-        Shared.SortEntitiesByDistance(player:GetOrigin(), shifts)
+    // Find the closest egg, doesn't matter which Hive owns it.
+    for _, egg in ipairs(eggs) do
+    
+        // Any unevolved egg is fine as long as it is free.
+        if egg:GetIsFree() then
         
-        for _, shift in ipairs(shifts) do
+            if egg:GetGestateTechId() == kTechId.Skulk then
         
-            local egg = shift:GetEgg()
-            if egg and egg:GetIsFree() then
-            
                 egg:SetQueuedPlayerId(player:GetId())
                 success = true
                 break
-                
+            
+            elseif lifeFormEgg == nil then
+                lifeFormEgg = egg
             end
             
         end
         
     end
     
-    // if no shift eggs found, use non-preevolved eggs sorted by "critical hives position"
-    if not success then
+    // use life form egg
+    if not success and lifeFormEgg then
     
-        local lifeFormEgg = nil
-    
-        if not enemyTeamPosition then
-            enemyTeamPosition = player:GetOrigin()
-        end
-    
-        local eggs = GetEntitiesForTeam("Egg", self:GetTeamNumber())        
-        Shared.SortEntitiesByDistance(enemyTeamPosition, eggs)
-        
-        // Find the closest egg, doesn't matter which Hive owns it.
-        for _, egg in ipairs(eggs) do
-        
-            // Any unevolved egg is fine as long as it is free.
-            if egg:GetIsFree() then
-            
-                if egg:GetGestateTechId() == kTechId.Skulk then
-            
-                    egg:SetQueuedPlayerId(player:GetId())
-                    success = true
-                    break
-                
-                elseif lifeFormEgg == nil then
-                    lifeFormEgg = egg
-                end
-                
-            end
-            
-        end
-        
-        // use life form egg
-        if not success and lifeFormEgg then
-        
-            lifeFormEgg:SetQueuedPlayerId(player:GetId())
-            success = true
+        lifeFormEgg:SetQueuedPlayerId(player:GetId())
+        success = true
 
-        end
-        
     end
     
     return success
@@ -358,18 +401,54 @@ local function GetCriticalHivePosition(self)
 
 end
 
-local function UpdateSpawnWave(self)
+local function UpdateEggGeneration(self)
 
-    if self.timeLastWave + 2 > Shared.GetTime() then
-        return
+    if not self.timeLastEggUpdate then
+        self.timeLastEggUpdate = Shared.GetTime()
     end
+
+    if self.timeLastEggUpdate + ScaleWithPlayerCount(kEggGenerationRate, #GetEntitiesForTeam("Player", self:GetTeamNumber())) < Shared.GetTime() then
+
+        local enemyTeamPosition = GetCriticalHivePosition(self)
+        local hives = GetEntitiesForTeam("Hive", self:GetTeamNumber())
+        
+        local builtHives = {}
+        
+        // allow only built hives to spawn eggs
+        for _, hive in ipairs(hives) do
+        
+            if hive:GetIsBuilt() and hive:GetIsAlive() then
+                table.insert(builtHives, hive)
+            end
+        
+        end
+        
+        if enemyTeamPosition then
+            Shared.SortEntitiesByDistance(enemyTeamPosition, builtHives)
+        end
+        
+        for _, hive in ipairs(builtHives) do
+        
+            if hive:UpdateSpawnEgg() then
+                break
+            end
+        
+        end
+        
+        self.timeLastEggUpdate = Shared.GetTime()
     
-    if self.timeNextWave == nil and self:GetNumPlayersInQueue() > 0 then
-        self.timeNextWave = kAlienWaveSpawnInterval + Shared.GetTime()
     end
-    
-    if self.timeNextWave ~= nil and self.timeNextWave < Shared.GetTime() then
-    
+
+end
+
+local function UpdateAlienSpectators(self)
+
+    if self.timeLastSpectatorUpdate == nil then
+        self.timeLastSpectatorUpdate = Shared.GetTime() - 1
+    end
+
+    if self.timeLastSpectatorUpdate + 1 <= Shared.GetTime() then
+
         local alienSpectators = self:GetSortedRespawnQueue()
         local enemyTeamPosition = GetCriticalHivePosition(self)
         
@@ -380,7 +459,7 @@ local function UpdateSpawnWave(self)
             if alienSpectator:isa("AlienSpectator") and not alienSpectator:GetIsWaitingForTeamBalance() then
             
                 // Consider min death time.
-                if alienSpectator:GetRespawnQueueEntryTime() + kAlienMinDeathTime < Shared.GetTime() then
+                if alienSpectator:GetRespawnQueueEntryTime() + kAlienSpawnTime < Shared.GetTime() then
                 
                     local egg = nil
                     if alienSpectator.GetHostEgg then
@@ -404,10 +483,9 @@ local function UpdateSpawnWave(self)
             end
             
         end
-        
-        self.timeNextWave = nil
-        self.timeLastWave = Shared.GetTime()
-        
+    
+        self.timeLastSpectatorUpdate = Shared.GetTime()
+
     end
     
 end
@@ -416,27 +494,19 @@ function AlienTeam:Update(timePassed)
 
     PROFILE("AlienTeam:Update")
     
-    if self.updateAlienArmorInTicks then
-    
-        if self.updateAlienArmorInTicks == 0 then
-        
-            for index, alien in ipairs(GetEntitiesForTeam("Alien", self:GetTeamNumber())) do
-                alien:UpdateArmorAmount()
-            end
-            
-            self.updateAlienArmorInTicks = nil
-        
-        else
-            self.updateAlienArmorInTicks = self.updateAlienArmorInTicks - 1
-        end
-        
-    end
-
     PlayingTeam.Update(self, timePassed)
     
     self:UpdateTeamAutoHeal(timePassed)
-    self:UpdateCloakables()
-    UpdateSpawnWave(self)
+    UpdateEggGeneration(self)
+    UpdateEggCount(self)
+    UpdateAlienSpectators(self)
+    self:UpdateBioMassLevel()
+    
+    local shellLevel = GetShellLevel(self:GetTeamNumber())  
+    for index, alien in ipairs(GetEntitiesForTeam("Alien", self:GetTeamNumber())) do
+        alien:UpdateArmorAmount(shellLevel)
+        alien:UpdateHealAmount(math.min(12, self.bioMassLevel), self.maxBioMassLevel)
+    end
     
 end
 
@@ -469,8 +539,6 @@ function AlienTeam:UpdateTeamAutoHeal(timePassed)
         local numEnts = table.count(gameEnts)
         local toIndex = self.lastAutoHealIndex + AlienTeam.kAutoHealUpdateNum - 1
         toIndex = ConditionalValue(toIndex <= numEnts , toIndex, numEnts)
-        local hasHealingBedUpgrade = GetHasHealingBedUpgrade(self:GetTeamNumber())
-        
         for index = self.lastAutoHealIndex, toIndex do
 
             local entity = gameEnts[index]
@@ -494,10 +562,9 @@ function AlienTeam:UpdateTeamAutoHeal(timePassed)
                 if requiresInfestation and not isOnInfestation then
                     // Take damage!
                     local damage = entity:GetMaxHealth() * kBalanceInfestationHurtPercentPerSecond/100 * deltaTime
+                    damage = math.max(damage, kMinHurtPerSecond)
                     entity:DeductHealth(damage)
-                    
-                elseif isOnInfestation and isHealable and hasHealingBedUpgrade then
-                    entity:AddHealth(math.min(AlienTeam.kOrganicStructureHealRate * deltaTime, 0.02*entity:GetMaxHealth()), true)                
+                               
                 end
             
             end
@@ -525,8 +592,10 @@ function AlienTeam:InitTechTree()
     self.techTree:AddMenu(kTechId.UpgradesMenu)
     self.techTree:AddMenu(kTechId.ShadePhantomMenu)
     self.techTree:AddMenu(kTechId.ShadePhantomStructuresMenu)
-    self.techTree:AddMenu(kTechId.ShiftEcho)
+    self.techTree:AddMenu(kTechId.ShiftEcho, kTechId.ShiftHive)
     self.techTree:AddMenu(kTechId.LifeFormMenu)
+    
+    self.techTree:AddOrder(kTechId.Grow)
     
     self.techTree:AddPassive(kTechId.Infestation)
     self.techTree:AddPassive(kTechId.SpawnAlien)
@@ -534,25 +603,42 @@ function AlienTeam:InitTechTree()
     self.techTree:AddPassive(kTechId.CollectResources)
     
     // Add markers (orders)
-    self.techTree:AddSpecial(kTechId.ThreatMarker, true)
-    self.techTree:AddSpecial(kTechId.LargeThreatMarker, true)
-    self.techTree:AddSpecial(kTechId.NeedHealingMarker, true)
-    self.techTree:AddSpecial(kTechId.WeakMarker, true)
-    self.techTree:AddSpecial(kTechId.ExpandingMarker, true)
+    self.techTree:AddSpecial(kTechId.ThreatMarker, kTechId.None, kTechId.None, true)
+    self.techTree:AddSpecial(kTechId.LargeThreatMarker, kTechId.None, kTechId.None, true)
+    self.techTree:AddSpecial(kTechId.NeedHealingMarker, kTechId.None, kTechId.None, true)
+    self.techTree:AddSpecial(kTechId.WeakMarker, kTechId.None, kTechId.None, true)
+    self.techTree:AddSpecial(kTechId.ExpandingMarker, kTechId.None, kTechId.None, true)
     
-    // Gorge specific orders
-    self.techTree:AddOrder(kTechId.AlienMove)
-    self.techTree:AddOrder(kTechId.AlienAttack)
-    //self.techTree:AddOrder(kTechId.AlienDefend)
-    self.techTree:AddOrder(kTechId.AlienConstruct)
-    self.techTree:AddOrder(kTechId.Heal)
+    // bio mass levels (required to unlock new abilities)
+    self.techTree:AddSpecial(kTechId.BioMassOne)
+    self.techTree:AddSpecial(kTechId.BioMassTwo)
+    self.techTree:AddSpecial(kTechId.BioMassThree)
+    self.techTree:AddSpecial(kTechId.BioMassFour)
+    self.techTree:AddSpecial(kTechId.BioMassFive)
+    self.techTree:AddSpecial(kTechId.BioMassSix)
+    self.techTree:AddSpecial(kTechId.BioMassSeven)
+    self.techTree:AddSpecial(kTechId.BioMassEight)
+    self.techTree:AddSpecial(kTechId.BioMassNine)
     
     // Commander abilities
-    self.techTree:AddBuildNode(kTechId.Cyst,                      kTechId.None,           kTechId.None)
-    self.techTree:AddBuildNode(kTechId.NutrientMist,              kTechId.None,           kTechId.None)
-    self.techTree:AddBuildNode(kTechId.BoneWall,                  kTechId.TwoHives,           kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.EnzymeCloud,      kTechId.None,           kTechId.None)
-    self.techTree:AddActivation(kTechId.Rupture,                  kTechId.None,           kTechId.None)
+    self.techTree:AddBuildNode(kTechId.Cyst)
+    self.techTree:AddBuildNode(kTechId.NutrientMist)
+    self.techTree:AddBuildNode(kTechId.Rupture, kTechId.BioMassTwo)
+    self.techTree:AddBuildNode(kTechId.BoneWall, kTechId.BioMassThree)
+    self.techTree:AddAction(kTechId.SelectDrifter)
+    self.techTree:AddAction(kTechId.SelectShift, kTechId.ShiftHive)
+    
+    // Drifter triggered abilities
+    self.techTree:AddTargetedActivation(kTechId.EnzymeCloud,      kTechId.None,      kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.Hallucinate,      kTechId.ShadeHive,      kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.MucousMembrane,   kTechId.CragHive,      kTechId.None)    
+    self.techTree:AddTargetedActivation(kTechId.Storm,            kTechId.ShiftHive,       kTechId.None)
+    self.techTree:AddActivation(kTechId.DestroyHallucination)
+    
+    // Drifter passive abilities
+    self.techTree:AddPassive(kTechId.DrifterCamouflage)
+    self.techTree:AddPassive(kTechId.DrifterCelerity)
+    self.techTree:AddPassive(kTechId.DrifterRegeneration)
            
     // Hive types
     self.techTree:AddBuildNode(kTechId.Hive,                    kTechId.None,           kTechId.None)
@@ -561,20 +647,17 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuildNode(kTechId.ShadeHive,               kTechId.Hive,                kTechId.None)
     self.techTree:AddBuildNode(kTechId.ShiftHive,               kTechId.Hive,                kTechId.None)
     
+    self.techTree:AddUpgradeNode(kTechId.ResearchBioMassOne)
+    self.techTree:AddUpgradeNode(kTechId.ResearchBioMassTwo)
+    self.techTree:AddUpgradeNode(kTechId.ResearchBioMassThree)
+    self.techTree:AddUpgradeNode(kTechId.ResearchBioMassFour)
+
     self.techTree:AddUpgradeNode(kTechId.UpgradeToCragHive,     kTechId.Hive,                kTechId.None)
     self.techTree:AddUpgradeNode(kTechId.UpgradeToShadeHive,    kTechId.Hive,                kTechId.None)
     self.techTree:AddUpgradeNode(kTechId.UpgradeToShiftHive,    kTechId.Hive,                kTechId.None)
     
-    // infestation upgrades
-    self.techTree:AddResearchNode(kTechId.HealingBed,            kTechId.CragHive,            kTechId.None)
-    self.techTree:AddResearchNode(kTechId.MucousMembrane,        kTechId.ShiftHive,           kTechId.None)
-    self.techTree:AddResearchNode(kTechId.BacterialReceptors,    kTechId.ShadeHive,           kTechId.None)
-    
-    // Tier 1
-    self.techTree:AddResearchNode(kTechId.GorgeTunnelTech,        kTechId.None,                kTechId.None)
-    self.techTree:AddBuildNode(kTechId.Harvester,                 kTechId.None,                kTechId.None)
-    self.techTree:AddManufactureNode(kTechId.Drifter,             kTechId.None,                kTechId.None)
-    self.techTree:AddPassive(kTechId.DrifterCamouflage)
+    self.techTree:AddBuildNode(kTechId.Harvester)
+    self.techTree:AddActivation(kTechId.Drifter)
 
     // Whips
     self.techTree:AddBuildNode(kTechId.Whip,                      kTechId.None,                kTechId.None)
@@ -593,127 +676,87 @@ function AlienTeam:InitTechTree()
     self.techTree:AddAction(kTechId.Onos,                      kTechId.None,                kTechId.None)
     self.techTree:AddBuyNode(kTechId.Egg,                      kTechId.None,                kTechId.None)
     
-    self.techTree:AddUpgradeNode(kTechId.GorgeEgg,          kTechId.None,                kTechId.None)
-    self.techTree:AddUpgradeNode(kTechId.LerkEgg,          kTechId.None,                kTechId.None)
-    self.techTree:AddUpgradeNode(kTechId.FadeEgg,          kTechId.TwoHives,                kTechId.None)
-    self.techTree:AddUpgradeNode(kTechId.OnosEgg,          kTechId.ThreeHives,                kTechId.None)
+    self.techTree:AddUpgradeNode(kTechId.GorgeEgg, kTechId.None)
+    self.techTree:AddUpgradeNode(kTechId.LerkEgg, kTechId.BioMassTwo)
+    self.techTree:AddUpgradeNode(kTechId.FadeEgg, kTechId.BioMassFive)
+    self.techTree:AddUpgradeNode(kTechId.OnosEgg, kTechId.BioMassSeven)
     
     // Special alien structures. These tech nodes are modified at run-time, depending when they are built, so don't modify prereqs.
-    self.techTree:AddBuildNode(kTechId.Crag,                      kTechId.CragHive,          kTechId.None)
-    self.techTree:AddBuildNode(kTechId.Shift,                     kTechId.ShiftHive,          kTechId.None)
-    self.techTree:AddBuildNode(kTechId.Shade,                     kTechId.ShadeHive,          kTechId.None)
+    self.techTree:AddBuildNode(kTechId.Crag,                      kTechId.None,          kTechId.None)
+    self.techTree:AddBuildNode(kTechId.Shift,                     kTechId.None,          kTechId.None)
+    self.techTree:AddBuildNode(kTechId.Shade,                     kTechId.None,          kTechId.None)
     
     // Alien upgrade structure
-    self.techTree:AddBuildNode(kTechId.Shell, kTechId.CragHive, kTechId.None)
-    self.techTree:AddUpgradeNode(kTechId.UpgradeRegenerationShell, kTechId.CragHive, kTechId.None)
-    self.techTree:AddBuildNode(kTechId.RegenerationShell, kTechId.None, kTechId.None)
-    self.techTree:AddTechInheritance(kTechId.Shell, kTechId.RegenerationShell)
-    self.techTree:AddUpgradeNode(kTechId.UpgradeCarapaceShell, kTechId.CragHive, kTechId.None)
-    self.techTree:AddBuildNode(kTechId.CarapaceShell, kTechId.None, kTechId.None)
-    self.techTree:AddTechInheritance(kTechId.Shell, kTechId.CarapaceShell)
+    self.techTree:AddBuildNode(kTechId.Shell, kTechId.CragHive)
+    self.techTree:AddSpecial(kTechId.TwoShells, kTechId.Shell)
+    self.techTree:AddSpecial(kTechId.ThreeShells, kTechId.TwoShells)
     
-    self.techTree:AddBuildNode(kTechId.Spur,                     kTechId.ShiftHive,          kTechId.None)    
-    self.techTree:AddUpgradeNode(kTechId.UpgradeCeleritySpur,    kTechId.ShiftHive,          kTechId.None)
-    self.techTree:AddBuildNode(kTechId.CeleritySpur,             kTechId.None,          kTechId.None)
-    self.techTree:AddTechInheritance(kTechId.Spur, kTechId.CeleritySpur) 
-    self.techTree:AddUpgradeNode(kTechId.UpgradeAdrenalineSpur,    kTechId.ShiftHive,          kTechId.None)
-    self.techTree:AddBuildNode(kTechId.AdrenalineSpur,             kTechId.None,          kTechId.None)  
-    self.techTree:AddTechInheritance(kTechId.Spur, kTechId.AdrenalineSpur)  
-    //self.techTree:AddUpgradeNode(kTechId.UpgradeHyperMutationSpur, kTechId.ShiftHive,        kTechId.None) 
-    //self.techTree:AddBuildNode(kTechId.HyperMutationSpur,          kTechId.None,        kTechId.None)  
-    self.techTree:AddTechInheritance(kTechId.Spur, kTechId.HyperMutationSpur)   
+    self.techTree:AddBuildNode(kTechId.Veil, kTechId.ShadeHive)
+    self.techTree:AddSpecial(kTechId.TwoVeils, kTechId.Veil)
+    self.techTree:AddSpecial(kTechId.ThreeVeils, kTechId.TwoVeils)
     
-    self.techTree:AddBuildNode(kTechId.Veil,                     kTechId.ShadeHive,        kTechId.None)
-    self.techTree:AddUpgradeNode(kTechId.UpgradeSilenceVeil,     kTechId.ShadeHive,        kTechId.None)
-    self.techTree:AddBuildNode(kTechId.SilenceVeil,              kTechId.None,        kTechId.None)
-    self.techTree:AddTechInheritance(kTechId.Veil, kTechId.SilenceVeil)
-    self.techTree:AddUpgradeNode(kTechId.UpgradeCamouflageVeil,  kTechId.ShadeHive,        kTechId.None) 
-    self.techTree:AddBuildNode(kTechId.CamouflageVeil,           kTechId.None,        kTechId.None)
-    self.techTree:AddTechInheritance(kTechId.Veil, kTechId.CamouflageVeil)   
-    //self.techTree:AddUpgradeNode(kTechId.UpgradeAuraVeil,  kTechId.ShadeHive,        kTechId.None) 
-    //self.techTree:AddBuildNode(kTechId.AuraVeil,           kTechId.None,        kTechId.None) 
-    //self.techTree:AddUpgradeNode(kTechId.UpgradeFeintVeil,  kTechId.ShadeHive,        kTechId.None) 
-    //self.techTree:AddBuildNode(kTechId.FeintVeil,           kTechId.None,        kTechId.None)
-    self.techTree:AddTechInheritance(kTechId.Veil, kTechId.FeintVeil)
+    self.techTree:AddBuildNode(kTechId.Spur, kTechId.ShiftHive)  
+    self.techTree:AddSpecial(kTechId.TwoSpurs, kTechId.Spur)
+    self.techTree:AddSpecial(kTechId.ThreeSpurs, kTechId.TwoSpurs)
+    
+    // personal upgrades (all alien types)
+    self.techTree:AddBuyNode(kTechId.Carapace, kTechId.Shell, kTechId.None, kTechId.AllAliens)    
+    self.techTree:AddBuyNode(kTechId.Regeneration, kTechId.Shell, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuyNode(kTechId.Aura, kTechId.Veil, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuyNode(kTechId.Phantom, kTechId.Veil, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuyNode(kTechId.Celerity, kTechId.Spur, kTechId.None, kTechId.AllAliens)  
+    self.techTree:AddBuyNode(kTechId.Adrenaline, kTechId.Spur, kTechId.None, kTechId.AllAliens)  
 
     // Crag
     self.techTree:AddPassive(kTechId.CragHeal)
-    self.techTree:AddActivation(kTechId.HealWave,                kTechId.None,          kTechId.None)
+    self.techTree:AddActivation(kTechId.HealWave,                kTechId.CragHive,          kTechId.None)
 
     // Shift    
-    self.techTree:AddUpgradeNode(kTechId.EvolveEcho,              kTechId.None,         kTechId.None)
     self.techTree:AddActivation(kTechId.ShiftHatch,               kTechId.None,         kTechId.None) 
     self.techTree:AddPassive(kTechId.ShiftEnergize,               kTechId.None,         kTechId.None)
     
-    self.techTree:AddTargetedActivation(kTechId.TeleportHydra,       kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportWhip,        kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportCrag,        kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportShade,       kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportShift,       kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportVeil,        kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportSpur,        kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportShell,       kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportHive,       kTechId.None,         kTechId.None)
-    self.techTree:AddTargetedActivation(kTechId.TeleportEgg,       kTechId.None,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportHydra,       kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportWhip,        kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportTunnel,        kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportCrag,        kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportShade,       kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportShift,       kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportVeil,        kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportSpur,        kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportShell,       kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportHive,       kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportEgg,       kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.TeleportHarvester,       kTechId.ShiftHive,         kTechId.None)
 
     // Shade
-    self.techTree:AddUpgradeNode(kTechId.EvolveHallucinations,    kTechId.None,        kTechId.None)
     self.techTree:AddPassive(kTechId.ShadeDisorient)
     self.techTree:AddPassive(kTechId.ShadeCloak)
-    self.techTree:AddActivation(kTechId.ShadeInk,                 kTechId.None,         kTechId.None) 
-
-    // Hallucinations
-    self.techTree:AddManufactureNode(kTechId.HallucinateDrifter,  kTechId.None,   kTechId.None)
-    self.techTree:AddManufactureNode(kTechId.HallucinateSkulk,    kTechId.None,   kTechId.None)
-    self.techTree:AddManufactureNode(kTechId.HallucinateGorge,    kTechId.None,   kTechId.None)
-    self.techTree:AddManufactureNode(kTechId.HallucinateLerk,     kTechId.None,   kTechId.None)
-    self.techTree:AddManufactureNode(kTechId.HallucinateFade,     kTechId.None,   kTechId.None)
-    self.techTree:AddManufactureNode(kTechId.HallucinateOnos,     kTechId.None,   kTechId.None)
-    
-    self.techTree:AddBuildNode(kTechId.HallucinateHive,           kTechId.None,           kTechId.None)
-    self.techTree:AddBuildNode(kTechId.HallucinateWhip,           kTechId.None,           kTechId.None)
-    self.techTree:AddBuildNode(kTechId.HallucinateShade,          kTechId.ShadeHive,      kTechId.None)
-    self.techTree:AddBuildNode(kTechId.HallucinateCrag,           kTechId.CragHive,       kTechId.None)
-    self.techTree:AddBuildNode(kTechId.HallucinateShift,          kTechId.ShiftHive,      kTechId.None)
-    self.techTree:AddBuildNode(kTechId.HallucinateHarvester,      kTechId.None,           kTechId.None)
-    self.techTree:AddBuildNode(kTechId.HallucinateHydra,          kTechId.None,           kTechId.None)
+    self.techTree:AddActivation(kTechId.ShadeInk,                 kTechId.ShadeHive,         kTechId.None) 
     
     self.techTree:AddSpecial(kTechId.TwoHives)
     self.techTree:AddSpecial(kTechId.ThreeHives)
     
-    // Tier 2
+    // abilities unlocked by bio mass: 
     
-    self.techTree:AddResearchNode(kTechId.Leap,             kTechId.TwoHives,          kTechId.None)
-    self.techTree:AddResearchNode(kTechId.Spores,           kTechId.TwoHives,          kTechId.None)
-    self.techTree:AddResearchNode(kTechId.BileBomb,         kTechId.TwoHives,          kTechId.None)
-    self.techTree:AddResearchNode(kTechId.Blink,            kTechId.TwoHives,          kTechId.None)
-    //self.techTree:AddResearchNode(kTechId.BoneShield,       kTechId.TwoHives,         kTechId.None) 
-
-    // Tier 3
-     
-    self.techTree:AddResearchNode(kTechId.Xenocide,          kTechId.Leap,               kTechId.ThreeHives)
-    self.techTree:AddResearchNode(kTechId.Umbra,             kTechId.Spores,             kTechId.ThreeHives)
-    //self.techTree:AddResearchNode(kTechId.WebTech,           kTechId.BileBomb,           kTechId.ThreeHives)
-    self.techTree:AddResearchNode(kTechId.Vortex,            kTechId.Blink,              kTechId.ThreeHives)
-    self.techTree:AddResearchNode(kTechId.BoneShield,        kTechId.TwoHives,           kTechId.None)  
-    self.techTree:AddResearchNode(kTechId.Stomp,             kTechId.ThreeHives,         kTechId.None)
+    self.techTree:AddResearchNode(kTechId.GorgeTunnelTech,   kTechId.BioMassOne, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddResearchNode(kTechId.BileBomb,          kTechId.BioMassTwo, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddResearchNode(kTechId.Umbra,             kTechId.BioMassThree, kTechId.None, kTechId.AllAliens)    
+    self.techTree:AddResearchNode(kTechId.Leap,              kTechId.BioMassFour, kTechId.None, kTechId.AllAliens) 
+    self.techTree:AddResearchNode(kTechId.ShadowStep,        kTechId.BioMassFive, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddResearchNode(kTechId.Spores,            kTechId.BioMassSix, kTechId.None, kTechId.AllAliens)     
+    self.techTree:AddResearchNode(kTechId.Xenocide,          kTechId.BioMassSeven, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddResearchNode(kTechId.Vortex,            kTechId.BioMassEight, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddResearchNode(kTechId.Stomp,             kTechId.BioMassNine, kTechId.None, kTechId.AllAliens)
+    //self.techTree:AddResearchNode(kTechId.BoneShield,        kTechId.ThreeHives, kTechId.None, kTechId.AllAliens) 
+    //self.techTree:AddResearchNode(kTechId.WebTech,           kTechId.ThreeHives, kTechId.None, kTechId.AllAliens)
 
     // gorge structures
 
-    self.techTree:AddBuildNode(kTechId.Hydra,            kTechId.None,               kTechId.None)
-    self.techTree:AddBuildNode(kTechId.Clog,             kTechId.None,               kTechId.None)
-    self.techTree:AddBuildNode(kTechId.BabblerEgg,       kTechId.None,               kTechId.None)
-    self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.None) 
+    self.techTree:AddBuildNode(kTechId.Hydra)
+    self.techTree:AddBuildNode(kTechId.Clog)
+    self.techTree:AddBuildNode(kTechId.BabblerEgg)
+    self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech)
     //self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
-
-    // personal upgrades (all alien types)
-    
-    self.techTree:AddBuyNode(kTechId.Carapace, kTechId.CarapaceShell, kTechId.None, kTechId.AllAliens)    
-    self.techTree:AddBuyNode(kTechId.Regeneration, kTechId.RegenerationShell, kTechId.None, kTechId.AllAliens)
-    self.techTree:AddBuyNode(kTechId.Silence, kTechId.SilenceVeil, kTechId.None, kTechId.AllAliens)
-    self.techTree:AddBuyNode(kTechId.Camouflage, kTechId.CamouflageVeil, kTechId.None, kTechId.AllAliens)
-    self.techTree:AddBuyNode(kTechId.Celerity, kTechId.CeleritySpur, kTechId.None, kTechId.AllAliens)  
-    self.techTree:AddBuyNode(kTechId.Adrenaline, kTechId.AdrenalineSpur, kTechId.None, kTechId.AllAliens)  
 
     self.techTree:SetComplete()
     
@@ -858,15 +901,6 @@ function AlienTeam:OnResearchComplete(structure, researchId)
     
 end
 
-function AlienTeam:UpdateCloakables()
-
-    for index, cloakableId in ipairs(self.cloakables) do
-        local cloakable = Shared.GetEntity(cloakableId)
-        cloakable:SetIsCloaked(true, 1, false)
-    end
- 
-end
-
 function AlienTeam:GetSpectatorMapName()
     return AlienSpectator.kMapName
 end
@@ -876,23 +910,6 @@ local function NotTooLate(waveTime, player)
     return player.GetRespawnQueueEntryTime ~= nil and player:GetRespawnQueueEntryTime() ~= nil and
            player:GetRespawnQueueEntryTime() + kAlienMinDeathTime < waveTime
     
-end
-
-function AlienTeam:GetWaveSpawnEndTime(forPlayer)
-
-    local timeNextWave = 0
-    if self.timeNextWave then
-    
-        local queuePos = self:GetPlayerPositionInRespawnQueue(forPlayer)
-        
-        if self.timeNextWave and #GetEntitiesForTeam("Egg", self:GetTeamNumber()) >= queuePos and NotTooLate(self.timeNextWave, forPlayer) then
-            timeNextWave = self.timeNextWave
-        end
-        
-    end
-
-    return timeNextWave
-
 end
 
 function AlienTeam:OnEvolved(techId)

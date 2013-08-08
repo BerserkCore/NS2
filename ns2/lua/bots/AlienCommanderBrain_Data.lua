@@ -339,7 +339,7 @@ function CreateAlienComSenses()
                 if lastInfestorPos ~= nil then
 
                     // DebugPrint("finding path from %s to %s", ToString(lastInfestorPos), ToString(rpPos))
-                    local pathPoints = {}
+                    local pathPoints = PointArray()
                     local reachable = Pathing.GetPathPoints( lastInfestorPos, rpPos, pathPoints )
 
                     if not reachable then
@@ -353,7 +353,11 @@ function CreateAlienComSenses()
                         // walk the path until we get within cyst parenting range
                         local prevPos = nil
                         local totalDist = 0
-                        for _,pos in ipairs(pathPoints) do
+                        
+                        for i=1,#pathPoints do
+                            
+                            local pos = pathPoints[i]
+                            
                             if prevPos ~= nil then
                                 totalDist = totalDist + prevPos:GetDistance(pos)
 

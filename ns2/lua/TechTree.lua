@@ -186,13 +186,6 @@ function TechTree:GetRequiresText(techId)
                 addedPrereq2 = true
             end
             
-            if(techNode.addOnTechId ~= kTechId.None) then
-                local missing = string.format("<missing display for %s>", EnumToString(kTechId, techNode.addOnTechId))
-                local displayName = GetDisplayNameForTechId(techNode.addOnTechId, missing)
-                local prereqText = ConditionalValue(addedPrereq1 or addedPrereq2, " on ", ""), displayName
-                text = string.format("%s%s", text, prereqText)
-            end
-            
         end
         
     end

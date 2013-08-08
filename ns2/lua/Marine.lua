@@ -10,6 +10,9 @@
 Script.Load("lua/Player.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
+Script.Load("lua/Mixins/JumpMoveMixin.lua")
+Script.Load("lua/Mixins/CrouchMoveMixin.lua")
+Script.Load("lua/Mixins/LadderMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/OrderSelfMixin.lua")
 Script.Load("lua/MarineActionFinderMixin.lua")
@@ -35,6 +38,7 @@ Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/WebableMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/Weapons/PredictedProjectile.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -87,7 +91,7 @@ Marine.kRunMaxSpeed = 6.0               // 10 miles an hour = 16,093 meters/hour
 Marine.kRunInfestationMaxSpeed = 5.2    // 10 miles an hour = 16,093 meters/hour = 4.4 meters/second (increase for FPS tastes)
 
 // How fast does our armor get repaired by welders
-Marine.kArmorWeldRate = 25
+Marine.kArmorWeldRate = kMarineArmorWeldRate
 Marine.kWeldedEffectsInterval = .5
 
 Marine.kSpitSlowDuration = 3
@@ -137,6 +141,9 @@ local networkVars =
 AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
+AddMixinNetworkVars(JumpMoveMixin, networkVars)
+AddMixinNetworkVars(CrouchMoveMixin, networkVars)
+AddMixinNetworkVars(LadderMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(StunMixin, networkVars)
@@ -156,6 +163,9 @@ function Marine:OnCreate()
 
     InitMixin(self, BaseMoveMixin, { kGravity = Player.kGravity })
     InitMixin(self, GroundMoveMixin)
+    InitMixin(self, JumpMoveMixin)
+    InitMixin(self, CrouchMoveMixin)
+    InitMixin(self, LadderMoveMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kDefaultFov })
     InitMixin(self, MarineActionFinderMixin)
     InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
@@ -172,6 +182,8 @@ function Marine:OnCreate()
     InitMixin(self, WebableMixin)
     InitMixin(self, CorrodeMixin)
     InitMixin(self, TunnelUserMixin)
+    
+    InitMixin(self, PredictedProjectileShooterMixin)
     
     //self.loopingSprintSoundEntId = Entity.invalidId
     
@@ -209,6 +221,15 @@ function Marine:OnCreate()
         
     end
 
+end
+
+local function UpdateNanoArmor(self)
+    self.hasNanoArmor = false // self:GetWeapon(Welder.kMapName)
+    return true
+end
+
+function Marine:GetCanJump()
+    return self:GetIsOnGround() or self:GetIsOnLadder()
 end
 
 function Marine:OnInitialized()
@@ -261,6 +282,8 @@ function Marine:OnInitialized()
         
         self.lastPoisonAttackerId = Entity.invalidId
         
+        self:AddTimedCallback(UpdateNanoArmor, 1)
+       
     elseif Client then
     
         InitMixin(self, HiveVisionMixin)
@@ -363,19 +386,23 @@ function Marine:GetSlowOnLand()
     return true
 end
 
-function Marine:GetArmorAmount()
+function Marine:GetArmorAmount(armorLevels)
 
-    local armorLevels = 0
+    if not armorLevels then
     
-    if(GetHasTech(self, kTechId.Armor3, true)) then
-        armorLevels = 3
-    elseif(GetHasTech(self, kTechId.Armor2, true)) then
-        armorLevels = 2
-    elseif(GetHasTech(self, kTechId.Armor1, true)) then
-        armorLevels = 1
+        armorLevels = 0
+    
+        if GetHasTech(self, kTechId.Armor3, true) then
+            armorLevels = 3
+        elseif GetHasTech(self, kTechId.Armor2, true) then
+            armorLevels = 2
+        elseif GetHasTech(self, kTechId.Armor1, true) then
+            armorLevels = 1
+        end
+    
     end
     
-    return Marine.kBaseArmor + armorLevels*Marine.kArmorPerUpgradeLevel
+    return Marine.kBaseArmor + armorLevels * Marine.kArmorPerUpgradeLevel
     
 end
 
@@ -388,7 +415,7 @@ function Marine:OnDestroy()
     Player.OnDestroy(self)
     
     if Client then
-    
+
         if self.ruptureMaterial then
         
             Client.DestroyRenderMaterial(self.ruptureMaterial)
@@ -399,7 +426,7 @@ function Marine:OnDestroy()
         if self.flashlight ~= nil then
             Client.DestroyRenderLight(self.flashlight)
         end
-        
+
         if self.buyMenu then
         
             GetGUIManager():DestroyGUIScript(self.buyMenu)
@@ -407,13 +434,9 @@ function Marine:OnDestroy()
             MouseTracker_SetIsVisible(false)
             
         end
-        
+
     end
     
-end
-
-function Marine:GetGroundFrictionForce()
-    return ConditionalValue(self.crouching or self.isUsing, 28, Marine.kGroundFrictionForce) 
 end
 
 function Marine:HandleButtons(input)
@@ -481,10 +504,6 @@ function Marine:HandleButtons(input)
     
 end
 
-function Marine:GetOnGroundRecently()
-    return (self.timeLastOnGround ~= nil and Shared.GetTime() < self.timeLastOnGround + 0.4) 
-end
-
 function Marine:SetFlashlightOn(state)
     self.flashlightOn = state
 end
@@ -501,28 +520,25 @@ function Marine:GetCrouchSpeedScalar()
     return Player.kCrouchSpeedScalar
 end
 
+function Marine:ModifyGroundFraction(groundFraction)
+    return groundFraction > 0 and 1 or 0
+end
+
 function Marine:GetMaxSpeed(possible)
 
     if possible then
         return Marine.kRunMaxSpeed
     end
 
-    local onInfestation = self:GetGameEffectMask(kGameEffect.OnInfestation)
     local sprintingScalar = self:GetSprintingScalar()
-    local maxSprintSpeed = ConditionalValue(onInfestation, Marine.kWalkMaxSpeed + (Marine.kRunInfestationMaxSpeed - Marine.kWalkMaxSpeed)*sprintingScalar, Marine.kWalkMaxSpeed + (Marine.kRunMaxSpeed - Marine.kWalkMaxSpeed)*sprintingScalar)
+    local maxSprintSpeed = Marine.kWalkMaxSpeed + (Marine.kRunMaxSpeed - Marine.kWalkMaxSpeed)*sprintingScalar
     local maxSpeed = ConditionalValue(self:GetIsSprinting(), maxSprintSpeed, Marine.kWalkMaxSpeed)
     
     // Take into account our weapon inventory and current weapon. Assumes a vanilla marine has a scalar of around .8.
-    local inventorySpeedScalar = self:GetInventorySpeedScalar() + .17
-
-    // Take into account crouching
-    if not self:GetIsJumping() then
-        maxSpeed = ( 1 - self:GetCrouchAmount() * self:GetCrouchSpeedScalar() ) * maxSpeed
-    end
-
-    local adjustedMaxSpeed = maxSpeed * self:GetCatalystMoveSpeedModifier() * self:GetSlowSpeedModifier() * inventorySpeedScalar 
-    //Print("Adjusted max speed => %.2f (without inventory: %.2f)", adjustedMaxSpeed, adjustedMaxSpeed / inventorySpeedScalar )
-    return adjustedMaxSpeed
+    local inventorySpeedScalar = self:GetInventorySpeedScalar() + .17    
+    local useModifier = self.isUsing and 0.5 or 1
+    
+    return maxSpeed * self:GetCatalystMoveSpeedModifier() * self:GetSlowSpeedModifier() * inventorySpeedScalar  * useModifier
     
 end
 
@@ -538,12 +554,8 @@ function Marine:GetMaxBackwardSpeedScalar()
     return Marine.kWalkBackwardSpeedScalar
 end
 
-function Marine:GetAirMoveScalar()
-    return 0.1
-end
-
-function Marine:GetAirFrictionForce()
-    return 2 * self.slowAmount
+function Marine:GetPlayerControllersGroup()
+    return PhysicsGroup.BigPlayerControllersGroup
 end
 
 function Marine:GetJumpHeight()
@@ -552,27 +564,6 @@ end
 
 function Marine:GetCanBeWeldedOverride()
     return not self:GetIsVortexed() and self:GetArmor() < self:GetMaxArmor(), false
-end
-
-function Marine:GetAcceleration()
-
-    local acceleration = Marine.kAcceleration 
-    
-    if self:GetIsSprinting() then
-        acceleration = Marine.kAcceleration + (Marine.kSprintAcceleration - Marine.kAcceleration) * self:GetSprintingScalar()
-    end
-
-    acceleration = acceleration * self:GetSlowSpeedModifier()
-    acceleration = acceleration * self:GetInventorySpeedScalar()
-
-    /*
-    if self.timeLastSpitHit + Marine.kSpitSlowDuration > Shared.GetTime() then
-        acceleration = acceleration * 0.5
-    end
-    */
-
-    return acceleration * self:GetCatalystMoveSpeedModifier()
-
 end
 
 // Returns -1 to 1
@@ -744,9 +735,13 @@ end
 
 function Marine:OnWeldOverride(doer, elapsedTime)
 
+    // macs weld marines by only 50% of the rate
+    local macMod = self:GetIsInCombat() and 0.2 or 0.5    
+    local weldMod = ( doer ~= nil and doer:isa("MAC") ) and macMod or 1
+
     if self:GetArmor() < self:GetMaxArmor() then
     
-        local addArmor = Marine.kArmorWeldRate * elapsedTime
+        local addArmor = Marine.kArmorWeldRate * elapsedTime * weldMod
         self:SetArmor(self:GetArmor() + addArmor)
         
     end
@@ -765,10 +760,6 @@ end
 function Marine:GetCanChangeViewAngles()
     return not self:GetIsStunned()
 end    
-
-function Marine:GetPlayFootsteps()
-    return self:GetVelocityLength() > .75 and self:GetIsOnGround() and self:GetIsAlive()
-end
 
 function Marine:OnUseTarget(target)
 
@@ -817,31 +808,12 @@ function Marine:OnUpdateAnimationInput(modelMixin)
     
 end
 
-function Marine:ModifyVelocity(input, velocity)
+function Marine:GetDeflectMove()
+    return true
+end    
 
-    Player.ModifyVelocity(self, input, velocity)
-    
-    if not self:GetIsOnGround() and input.move:GetLength() ~= 0 then
-    
-        local moveLengthXZ = velocity:GetLengthXZ()
-        local previousY = velocity.y
-        local adjustedZ = false
-        local viewCoords = self:GetViewCoords()
-        
-        if input.move.x ~= 0  then
-        
-            local redirectedVelocityX = GetNormalizedVectorXZ(self:GetViewCoords().xAxis) * input.move.x
-            redirectedVelocityX = redirectedVelocityX * input.time * Marine.kAirStrafeWeight + GetNormalizedVectorXZ(velocity)
-            
-            redirectedVelocityX:Normalize()            
-            redirectedVelocityX:Scale(moveLengthXZ)
-            redirectedVelocityX.y = previousY            
-            VectorCopy(redirectedVelocityX,  velocity)
-            
-        end
-        
-    end
-    
+function Marine:ModifyJump(input, velocity, jumpVelocity)
+    jumpVelocity:Scale(self:GetSlowSpeedModifier())
 end
 
 function Marine:OnProcessMove(input)
@@ -884,6 +856,11 @@ function Marine:OnProcessMove(input)
             
         end
         
+        // check nano armor
+        if not self:GetIsInCombat() and self.hasNanoArmor then            
+            self:SetArmor(self:GetArmor() + input.time * kNanoArmorHealPerSecond, true)            
+        end
+        
     end
     
     Player.OnProcessMove(self, input)
@@ -894,13 +871,13 @@ function Marine:GetIsInterrupted()
     return self.interruptAim
 end
 
-function Marine:OnUpdateCamera(deltaTime)
+function Marine:OnPostUpdateCamera(deltaTime)
 
     if self:GetIsStunned() then
         self:SetDesiredCameraYOffset(-1.3)
-    else
-        Player.OnUpdateCamera(self, deltaTime)
     end
+    
+    return done
 
 end
 
@@ -911,7 +888,7 @@ end
 // dont allow marines to me chain stomped. this gives them breathing time and the onos needs to time the stomps instead of spamming
 // and being able to permanently disable the marine
 function Marine:GetIsStunAllowed()
-    return not self.timeLastStun or self.timeLastStun + kDisruptMarineTimeout < Shared.GetTime()
+    return not self.timeLastStun or self.timeLastStun + kDisruptMarineTimeout < Shared.GetTime() and not self:GetIsVortexed()
 end
 
 Shared.LinkClassToMap("Marine", Marine.kMapName, networkVars)

@@ -93,6 +93,22 @@ end
 //----------------------------------------
 //  
 //----------------------------------------
+function FilterTableEntries(ents, filterFunc)
+
+    result = {}
+    for key, entry in pairs(ents) do
+        if filterFunc(entry) then
+            table.insert(result, entry)
+        end
+    end
+    
+    return result
+    
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
 function GetMaxTableEntry(table, valueFunc)
 
     local maxEntry = nil

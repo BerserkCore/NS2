@@ -8,19 +8,34 @@
 
 class 'EtherealGate' (ScriptActor)
 
-Script.Load("lua/EntityChangeMixin.lua")
-
 EtherealGate.kMapName = "etherealgate"
 
 local kLifeTime = 4
 local kGrowDuration = 1
 local kRange = 4
 local kThinkTime = 0.2
+local kCollisionRadius = 0.8
+
+local kUpdateRate = 0.2
+local kPlayerInsideTimeout = 0.7
 
 local networkVars = { }
 
 local kVortexLoopingSound = PrecacheAsset("sound/NS2.fev/alien/fade/vortex_loop")
 local kVortexLoopingCinematic = PrecacheAsset("cinematics/alien/fade/vortex.cinematic")
+
+local function CreateHitBox(self)
+
+    if not self.hitBox then
+    
+        self.hitBox = Shared.CreatePhysicsSphereBody(false, kCollisionRadius, 1, self:GetCoords())
+        self.hitBox:SetGroup(PhysicsGroup.SmallStructuresGroup)
+        self.hitBox:SetEntity(self)
+        self.hitBox:SetPhysicsType(CollisionObject.Kinematic)
+        
+    end
+
+end
 
 function EtherealGate:OnCreate()
 
@@ -31,14 +46,11 @@ function EtherealGate:OnCreate()
     if Server then
     
         self:AddTimedCallback(EtherealGate.TimeUp, kLifeTime)
-        self:AddTimedCallback(EtherealGate.SuckIntoNether, kThinkTime)
+        self:AddTimedCallback(EtherealGate.CheckForPlayersInside, kUpdateRate)
 
         self.loopingVortexSound = Server.CreateEntity(SoundEffect.kMapName)
         self.loopingVortexSound:SetAsset(kVortexLoopingSound)
         self.loopingVortexSound:SetParent(self)
-        
-        self.vortexedEntities = {}
-        InitMixin(self, EntityChangeMixin)
         
     end
 
@@ -62,9 +74,44 @@ function EtherealGate:OnInitialized()
             
         end
         
-    end    
+    end   
+
+    CreateHitBox(self) 
 
 end 
+
+function EtherealGate:GetSurfaceOverride()
+    return "ethereal"
+end
+
+function EtherealGate:CheckForPlayersInside()
+
+    local playersInside = false
+    
+    for _, player in ipairs(GetEntitiesWithinRange("Player", self:GetOrigin(), kRange)) do
+    
+        if player:GetTeamType() == kMarineTeamType or player:GetTeamType() == kAlienTeamType then
+            
+            playersInside = true
+            break
+            
+        end
+    
+    end
+    
+    if playersInside then
+    
+        if not self.timeSincePlayersInside then
+            self.timeSincePlayersInside = Shared.GetTime()
+        end
+    
+    else
+        self.timeSincePlayersInside = nil
+    end
+    
+    return true
+
+end
 
 function EtherealGate:OnDestroy()
 
@@ -73,7 +120,6 @@ function EtherealGate:OnDestroy()
     if Server then
     
         self.loopingVortexSound = nil
-        self:FreeAllVortexed()
         
     elseif Client then
     
@@ -87,54 +133,13 @@ function EtherealGate:OnDestroy()
         end
         
     end
-
-end
-
-function EtherealGate:OnEntityChange(oldId, newId)
-
-    if oldId and table.removevalue(self.vortexedEntities, oldId) and newId then
-        table.insertunique(self.vortexedEntities, newId)
-    end
     
-end
-
-function EtherealGate:FreeAllVortexed()
-
-    for _, vortexedId in ipairs(self.vortexedEntities) do
+    if self.hitBox then
     
-        local vortexedEnt = Shared.GetEntity(vortexedId)
-        if vortexedEnt and HasMixin(vortexedEnt, "VortexAble") then
-            vortexedEnt:FreeVortexed()
-        end
-    
-    end
-
-end
-
-function EtherealGate:SuckIntoNether()
-
-    local remainingLifeTime = math.max(0, kLifeTime - (Shared.GetTime() - self.creationTime))
-
-    if remainingLifeTime == 0 then
-        return false
-    end
-    
-    local range = (math.min(kGrowDuration, Shared.GetTime() - self.creationTime) / kGrowDuration) * kRange
-
-    local vortexAbles = GetEntitiesWithMixinWithinRange("VortexAble", self:GetOrigin(), range)
-    
-    for _, vortexAble in ipairs(vortexAbles) do
-    
-        if not vortexAble:GetIsVortexed() and (not HasMixin(vortexAble, "NanoShieldAble") or not vortexAble:GetIsNanoShielded()) then
-        
-            vortexAble:SetVortexDuration(remainingLifeTime)            
-            table.insertunique(self.vortexedEntities, vortexAble:GetId())
-        
-        end
+        Shared.DestroyCollisionObject(self.hitBox)
+        self.hitBox = nil
         
     end
-    
-    return true
 
 end
 
@@ -143,6 +148,33 @@ function EtherealGate:TimeUp()
     DestroyEntity(self)
     return false
     
+end
+
+if Server then
+
+    function EtherealGate:OnUpdate(deltaTime)
+
+        ScriptActor.OnUpdate(self, deltaTime)
+        
+        // detonate all nearby projectiles
+        /*
+        for _, projectile in ipairs( GetEntitiesWithinRange("Projectile", self:GetOrigin(), kCollisionRadius * 1.5) ) do
+        
+            if projectile.Detonate then
+                projectile:Detonate()
+            elseif projectile.ProcessHit then
+                projectile:ProcessHit(self, "ethereal", GetNormalizedVector(projectile:GetOrigin() - self:GetOrigin()))
+            end
+            
+        end
+        
+        if self.timeSincePlayersInside and self.timeSincePlayersInside + kPlayerInsideTimeout < Shared.GetTime() then
+            DestroyEntity(self)        
+        end
+        */
+
+    end
+
 end
 
 Shared.LinkClassToMap("EtherealGate", EtherealGate.kMapName, networkVars)

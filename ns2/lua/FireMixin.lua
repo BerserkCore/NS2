@@ -50,25 +50,19 @@ kFireLoopingSound["Hive"] = PrecacheAsset("sound/NS2.fev/common/fire_large")
 local function GetOnFireSound(entClassName)
     return kFireLoopingSound[entClassName] or kFireLoopingSound["Entity"]
 end
-
 FireMixin.networkVars =
 {
-    isOnFire = "boolean",
-    numStacks = string.format("integer (0 to %d)", kFlamethrowerMaxStacks)
+    isOnFire = "boolean"
 }
 
 function FireMixin:__initmixin()
 
-    self.numStacks = 0
-    
     if Server then
     
         self.fireAttackerId = Entity.invalidId
         self.fireDoerId = Entity.invalidId
         
-        self.timeBurnInit = 0
-        self.timeLastStackAdded = 0
-        
+        self.timeBurnInit = 0        
         self.isOnFire = false
         
         self.onFireSound = Server.CreateEntity(SoundEffect.kMapName)
@@ -96,7 +90,7 @@ end
 
 function FireMixin:SetOnFire(attacker, doer)
 
-    if Server then
+    if Server and not self:GetIsDestroyed() then
     
         if not self:GetCanBeSetOnFire() then
             return
@@ -110,15 +104,6 @@ function FireMixin:SetOnFire(attacker, doer)
         
         if doer then
             self.fireDoerId = doer:GetId()
-        end
-        
-        if self.timeLastStackAdded == 0 or Shared.GetTime() - self.timeLastStackAdded > kFlamethrowerStackRate then
-        
-            self.timeLastStackAdded = Shared.GetTime()
-            if self.numStacks < kFlamethrowerMaxStacks then
-                self.numStacks = self.numStacks + 1;
-            end
-            
         end
         
         self.timeBurnInit = Shared.GetTime()
@@ -206,11 +191,10 @@ local function SharedUpdate(self, deltaTime)
     end
     
     if Server then
-   
+    
         if not self.timeLastFireDamageUpdate or self.timeLastFireDamageUpdate + kBurnUpdateRate <= Shared.GetTime() then
-            
-            // stacks are applied at ComputeDamageOverride
-            local damageOverTime = kBurnDamagePerStackPerSecond * kBurnUpdateRate
+    
+            local damageOverTime = kBurnUpdateRate * kBurnDamagePerSecond
             if self.GetIsFlameAble and self:GetIsFlameAble() then
                 damageOverTime = damageOverTime * kFlameableMultiplier
             end
@@ -226,7 +210,7 @@ local function SharedUpdate(self, deltaTime)
             end
             
             self:DeductHealth(damageOverTime, attacker, doer)
-            
+
             if attacker then
             
                 local msg = BuildDamageMessage(self, damageOverTime, self:GetOrigin())
@@ -252,16 +236,6 @@ local function SharedUpdate(self, deltaTime)
         end
         
     end
-    
-end
-
-function FireMixin:ComputeDamageOverrideMixin(attacker, damage, damageType, time) 
-    
-    if self:GetIsOnFire() and damageType == kDamageType.Flame then
-        damage = damage + damage * self.numStacks * kFlameDamageStackWeight
-    end
-    
-    return damage
     
 end
 
@@ -335,10 +309,8 @@ function FireMixin:OnGameEffectMaskChanged(effect, state)
         if Server then
             self.onFireSound:Stop()
         end
-        
-        self.timeLastStackAdded         = 0
-        self.numStacks                  = 0
-        self.timeBurnInit               = 0 
+		
+        self.timeBurnInit  = 0 
         
         self.isOnFire = false
         

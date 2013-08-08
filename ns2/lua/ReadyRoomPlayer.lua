@@ -9,6 +9,8 @@
 Script.Load("lua/Player.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
+Script.Load("lua/Mixins/JumpMoveMixin.lua")
+Script.Load("lua/Mixins/CrouchMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 
 /**
@@ -25,12 +27,16 @@ local networkVars = { }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
+AddMixinNetworkVars(JumpMoveMixin, networkVars)
+AddMixinNetworkVars(CrouchMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 
 function ReadyRoomPlayer:OnCreate()
 
     InitMixin(self, BaseMoveMixin, { kGravity = Player.kGravity })
     InitMixin(self, GroundMoveMixin)
+    InitMixin(self, JumpMoveMixin)
+    InitMixin(self, CrouchMoveMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kDefaultFov })
     
     Player.OnCreate(self)

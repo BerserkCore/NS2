@@ -24,6 +24,7 @@ Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/ObstacleMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/ObjectiveInfo.lua")
+Script.Load("lua/SpawnBlockMixin.lua")
 
 class 'CommandStructure' (ScriptActor)
 CommandStructure.kMapName = "commandstructure"
@@ -72,7 +73,9 @@ function CommandStructure:OnCreate()
     InitMixin(self, RagdollMixin)
     InitMixin(self, ObstacleMixin)
     
-    if Client then
+    if Server then
+        InitMixin(self, SpawnBlockMixin)
+    elseif Client then
         InitMixin(self, CommanderGlowMixin)
     end
     

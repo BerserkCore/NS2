@@ -36,6 +36,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
 
 class 'Shell' (ScriptActor)
 
@@ -94,6 +95,7 @@ function Shell:OnCreate()
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, BiomassMixin)
     
     if Server then
         InitMixin(self, InfestationTrackerMixin)
@@ -132,6 +134,14 @@ function Shell:OnInitialized()
 
 end
 
+function Shell:GetIsSmallTarget()
+    return true
+end
+
+function Shell:GetBioMassLevel()
+    return kShellBiomass
+end
+
 function Shell:GetMaturityRate()
     return kShellMaturationTime
 end
@@ -155,14 +165,6 @@ end
 
 function Shell:GetCanSleep()
     return true
-end
-
-function Shell:GetTechButtons(techId)
-
-    if self:GetTechId() == kTechId.Shell then
-        return { kTechId.UpgradeCarapaceShell, kTechId.UpgradeRegenerationShell }
-    end    
-    
 end
 
 function Shell:GetIsWallWalkingAllowed()
@@ -202,25 +204,6 @@ if Server then
         ScriptActor.OnDestroy(self)
     
     end
-    
-    function Shell:OnResearchComplete(researchId)
-
-        local success = false
-
-        if researchId == kTechId.UpgradeRegenerationShell then            
-            success = self:UpgradeToTechId(kTechId.RegenerationShell)
-        elseif researchId == kTechId.UpgradeCarapaceShell then 
-            success = self:UpgradeToTechId(kTechId.CarapaceShell)
-        end   
-
-        if success then
-            local team = self:GetTeam()
-            if team then
-                team:OnUpgradeChamberConstructed(self)
-            end
-        end   
-        
-    end
 
 end
 
@@ -240,11 +223,3 @@ end
 
 
 Shared.LinkClassToMap("Shell", Shell.kMapName, networkVars)
-
-class 'RegenerationShell' (Shell)
-RegenerationShell.kMapName = "regenerationshell"
-Shared.LinkClassToMap("RegenerationShell", RegenerationShell.kMapName, { })
-
-class 'CarapaceShell' (Shell)
-CarapaceShell.kMapName = "carapaceshell"
-Shared.LinkClassToMap("CarapaceShell", CarapaceShell.kMapName, { })

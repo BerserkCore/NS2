@@ -23,6 +23,9 @@ Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/SleeperMixin.lua")
 Script.Load("lua/ObstacleMixin.lua")
 Script.Load("lua/CombatMixin.lua")
+Script.Load("lua/SpawnBlockMixin.lua")
+
+Script.Load("lua/ResearchMixin.lua")
 
 class 'ResourceTower' (ScriptActor)
 
@@ -43,6 +46,7 @@ AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(ObstacleMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(ResearchMixin, networkVars)
 
 if Server then
     Script.Load("lua/ResourceTower_Server.lua")
@@ -66,6 +70,11 @@ function ResourceTower:OnCreate()
     InitMixin(self, RagdollMixin)
     InitMixin(self, ObstacleMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, ResearchMixin)
+    
+    if Server then
+        InitMixin(self, SpawnBlockMixin)
+    end
     
     self:SetLagCompensated(true)
     self:SetPhysicsType(PhysicsType.Kinematic)
@@ -91,7 +100,7 @@ function ResourceTower:GetReceivesStructuralDamage()
 end
 
 function ResourceTower:GetCanSleep()
-    return true
+    return false
 end
 
 function ResourceTower:GetEngagementPointOverride()
@@ -101,7 +110,7 @@ end
 function ResourceTower:GetTechButtons()
 
     return {
-        kTechId.CollectResources, kTechId.None, kTechId.None, kTechId.None, 
+        kTechId.TransformResources, kTechId.CollectResources, kTechId.None, kTechId.None, kTechId.None,
         kTechId.None, kTechId.None, kTechId.None, kTechId.None,         
     }
 

@@ -11,6 +11,7 @@ NanoShieldMixin.type = "NanoShieldAble"
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/nanoshield.surface_shader")
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/nanoshield_view.surface_shader")
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/nanoshield_exoview.surface_shader")
 
 local kNanoLoopSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_loop")
 local kNanoDamageSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_damage")
@@ -220,7 +221,12 @@ if Client then
             material:SetMaterial("cinematics/vfx_materials/nanoshield.material")
 
             local viewMaterial = Client.CreateRenderMaterial()
-            viewMaterial:SetMaterial("cinematics/vfx_materials/nanoshield_view.material")
+            
+            if self:isa("Exo") then
+                viewMaterial:SetMaterial("cinematics/vfx_materials/nanoshield_exoview.material")
+            else
+                viewMaterial:SetMaterial("cinematics/vfx_materials/nanoshield_view.material")
+            end    
             
             self.nanoShieldEntities = {}
             self.nanoShieldMaterial = material

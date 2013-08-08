@@ -63,7 +63,8 @@ function Hive:OnUpdateRender()
     
     local model = self:GetRenderModel()
     if model then
-        model:SetMaterialParameter("glowIntensity", self.glowIntensity)        
+        model:SetMaterialParameter("glowIntensity", self.glowIntensity)
+        model:SetMaterialParameter("bioMassLevel", self.bioMassLevel)   
     end
     
 end

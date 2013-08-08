@@ -105,10 +105,11 @@ end
 function PlayerBot:_LazilyInitBrain()
 
     if self.brain == nil then
-
-        if self:GetPlayer():isa("Marine") then
+        local player = self:GetPlayer()
+        
+        if player:isa("Marine") then
             self.brain = MarineBrain()
-        elseif self:GetPlayer():isa("Skulk") then
+        elseif player:isa("Skulk") then
             self.brain = SkulkBrain()
         else
             // must be spectator - wait until we have joined a team

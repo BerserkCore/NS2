@@ -21,6 +21,12 @@ local kTimeEndFade = 7
 
 local kFontName = { marine = "fonts/AgencyFB_small.fnt", alien = "fonts/AgencyFB_small.fnt" }
 
+local function UpdateSizeOfUI(self, screenWidth, screenHeight)
+
+    self.inputItem:SetPosition((kOffset * GUIScale(1)) + (kInputOffset * GUIScale(1)))
+    
+end
+
 function GUIChat:Initialize()
 
     self.messages = { }
@@ -37,11 +43,12 @@ function GUIChat:Initialize()
     // Input text item.
     self.inputItem = GUIManager:CreateTextItem()
     self.inputItem:SetAnchor(GUIItem.Left, GUIItem.Bottom)
-    self.inputItem:SetPosition((kOffset * GUIScale(1)) + (kInputOffset * GUIScale(1)))
     self.inputItem:SetTextAlignmentX(GUIItem.Align_Min)
     self.inputItem:SetTextAlignmentY(GUIItem.Align_Center)
     self.inputItem:SetIsVisible(false)
     self.inputItem:SetLayer(kGUILayerChat)
+    
+    UpdateSizeOfUI(self, Client.GetScreenWidth(), Client.GetScreenHeight())
     
 end
 
@@ -63,6 +70,10 @@ function GUIChat:Uninitialize()
     end
     self.reuseMessages = nil
     
+end
+
+function GUIChat:OnResolutionChanged(oldX, oldY, newX, newY)
+    UpdateSizeOfUI(self, Client.GetScreenWidth(), Client.GetScreenHeight())
 end
 
 local function GetStyle()

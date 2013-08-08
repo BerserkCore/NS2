@@ -16,7 +16,7 @@ EnergizeMixin.kSegment1Cinematic = PrecacheAsset("cinematics/alien/crag/umbraTra
 EnergizeMixin.kSegment2Cinematic = PrecacheAsset("cinematics/alien/crag/umbraTrail2.cinematic")
 EnergizeMixin.kViewModelCinematic = PrecacheAsset("cinematics/alien/crag/umbra_1p.cinematic")
 
-local kMaxEnergizeLevel = 3
+local kMaxEnergizeLevel = 1
 
 EnergizeMixin.expectedMixins =
 {
@@ -79,17 +79,6 @@ local function SharedUpdate(self, deltaTime)
             self:AddEnergy(energy)
             self.timeLastEnergizeUpdate = Shared.GetTime()
         
-        end
-        
-    elseif Client then
-
-        if self:GetGameEffectMask(kGameEffect.Energize) and (not HasMixin(self, "Cloakable") or not self:GetIsCloaked() ) then
-        
-            if self:GetEnergy() < self:GetMaxEnergy() and (not self.timeLastEnergizeEffect or self.timeLastEnergizeEffect + 2 < Shared.GetTime()) then
-                //self:TriggerEffects("energize")
-                self.timeLastEnergizeEffect = Shared.GetTime() 
-            end
-            
         end
     
     end

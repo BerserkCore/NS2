@@ -67,7 +67,7 @@ function Armory:GetShouldResupplyPlayer(player)
     local inNeed = false
     
     // Don't resupply when already full
-    if (player:GetHealth() < player:GetMaxHealth()) or (player:GetArmor() < player:GetMaxArmor()) or GetIsParasited(player) then
+    if (player:GetHealth() < player:GetMaxHealth()) then
         inNeed = true
     else
 
@@ -111,22 +111,24 @@ function Armory:ResupplyPlayer(player)
     local resuppliedPlayer = false
     
     // Heal player first
-    if (player:GetHealth() < player:GetMaxHealth()) or (player:GetArmor() < player:GetMaxArmor()) or GetIsParasited(player) then
+    if (player:GetHealth() < player:GetMaxHealth()) then
 
-        player:AddHealth(Armory.kHealAmount)
+        // third param true = ignore armor
+        player:AddHealth(Armory.kHealAmount, false, true)
 
         self:TriggerEffects("armory_health", {effecthostcoords = Coords.GetTranslation(player:GetOrigin())})
         
-        TEST_EVENT("Armory resupplied health/armor")
+        TEST_EVENT("Armory resupplied health")
         
         resuppliedPlayer = true
-        
+        /*
         if HasMixin(player, "ParasiteAble") and player:GetIsParasited() then
         
             player:RemoveParasite()
             TEST_EVENT("Armory removed Parasite")
             
         end
+        */
         
         if player:isa("Marine") and player.poisoned then
         
@@ -210,8 +212,22 @@ end
 function Armory:OnResearchComplete(researchId)
 
     if researchId == kTechId.AdvancedArmoryUpgrade then
+    
         self:SetTechId(kTechId.AdvancedArmory)
-    end  
+        
+        local techTree = self:GetTeam():GetTechTree()
+        local researchNode = techTree:GetTechNode(kTechId.AdvancedWeaponry)
+        
+        if researchNode then     
+   
+            researchNode:SetResearchProgress(1.0)
+            techTree:SetTechNodeChanged(researchNode, string.format("researchProgress = %.2f", self.researchProgress))
+            researchNode:SetResearched(true)
+            techTree:QueueOnResearchComplete(kTechId.AdvancedWeaponry, self)
+            
+        end
+        
+    end
     
 end
 

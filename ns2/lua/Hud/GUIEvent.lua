@@ -50,11 +50,14 @@ local function GetUnlockIconParams(unlockId)
         kUnlockIconParams[kTechId.FlamethrowerTech] =       { description = "EVT_FLAMETHROWER_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.ShotgunTech] =            { description = "EVT_SHOTGUN_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.GrenadeLauncherTech] =    { description = "EVT_GRENADE_LAUNCHER_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
+        kUnlockIconParams[kTechId.AdvancedWeaponry] =       { description = "EVT_ADVANCED_WEAPONRY_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
+        kUnlockIconParams[kTechId.DetonationTimeTech] =     { description = "EVT_DETONATION_TIME_RESEARCHED" }
+        kUnlockIconParams[kTechId.FlamethrowerRangeTech] =  { description = "EVT_FLAMETHROWER_RANGE_RESEARCHED" }
         kUnlockIconParams[kTechId.JetpackTech] =            { description = "EVT_JETPACK_RESEARCHED", bottomText = "EVT_BUY_AT_PROTOTYPE_LAB" }
         kUnlockIconParams[kTechId.ExosuitTech] =            { description = "EVT_EXOSUIT_RESEARCHED", bottomText = "EVT_BUY_AT_PROTOTYPE_LAB" }
         kUnlockIconParams[kTechId.DualMinigunTech] =        { description = "EVT_DUALMINIGUN_RESEARCHED", bottomText = "EVT_BUY_AT_PROTOTYPE_LAB" }
         kUnlockIconParams[kTechId.ClawRailgunTech] =        { description = "EVT_CLAWRAILGUN_RESEARCHED", bottomText = "EVT_BUY_AT_PROTOTYPE_LAB" }
-        kUnlockIconParams[kTechId.DualRailgunTech] =        { description = "EVT_DUALMINIGUN_RESEARCHED", bottomText = "EVT_BUY_AT_PROTOTYPE_LAB" }
+        kUnlockIconParams[kTechId.DualRailgunTech] =        { description = "EVT_DUALRAILGUN_RESEARCHED", bottomText = "EVT_BUY_AT_PROTOTYPE_LAB" }
         kUnlockIconParams[kTechId.WelderTech] =             { description = "EVT_WELDER_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.MinesTech] =              { description = "EVT_MINES_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         
@@ -70,6 +73,7 @@ local function GetUnlockIconParams(unlockId)
         kUnlockIconParams[kTechId.BileBomb] = { description = "EVT_BILE_BOMB_RESEARCHED" }
         kUnlockIconParams[kTechId.Spores] = { description = "EVT_SPORES_RESEARCHED" }
         kUnlockIconParams[kTechId.Blink] = { description = "EVT_BLINK_RESEARCHED" }
+        kUnlockIconParams[kTechId.ShadowStep] = { description = "EVT_SHADOWSTEP_RESEARCHED" }
         kUnlockIconParams[kTechId.Stomp] = { description = "EVT_STOMP_RESEARCHED" }
         
         kUnlockIconParams[kTechId.Xenocide] = { description = "EVT_XENOCIDE_RESEARCHED" }

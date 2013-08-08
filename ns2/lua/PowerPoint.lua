@@ -226,6 +226,7 @@ function PowerPoint:OnInitialized()
         end
         
         InitMixin(self, StaticTargetMixin)
+        InitMixin(self, InfestationTrackerMixin)
         
     elseif Client then
     
@@ -568,8 +569,8 @@ if Server then
         
     end
     
-    function PowerPoint:OnTakeDamage(damage, attacker, doer, point)
-    
+    function PowerPoint:OnTakeDamage(damage, attacker, doer, direction, damageType, preventAlert)
+
         if self:GetIsPowering() then
         
             self:PlaySound(kTakeDamageSound)
@@ -591,7 +592,9 @@ if Server then
                 self:SetLightMode(kLightMode.Damaged)
             end
             
-            CheckSendDamageTeamMessage(self)
+            if not preventAlert then
+                CheckSendDamageTeamMessage(self)
+            end
             
         end
         

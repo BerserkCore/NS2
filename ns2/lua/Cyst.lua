@@ -29,6 +29,7 @@ Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/ConstructMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/SpawnBlockMixin.lua")
 
 Script.Load("lua/CommAbilities/Alien/EnzymeCloud.lua")
 Script.Load("lua/CommAbilities/Alien/Rupture.lua")
@@ -129,7 +130,7 @@ local function CreateBetween(trackStart, startNormal, trackEnd, endNormal, start
     trackStart = trackStart + pathDirection * startOffset
     trackEnd = trackEnd - pathDirection * endOffset
     
-    local points = { }
+    local points = PointArray()
     Pathing.GetPathPoints(trackEnd, trackStart, points)
     return points
     
@@ -170,7 +171,9 @@ function Cyst:OnCreate()
     InitMixin(self, MaturityMixin)
     InitMixin(self, DetectableMixin)
     
-    if Client then
+    if Server then
+        InitMixin(self, SpawnBlockMixin)
+    elseif Client then
         InitMixin(self, CommanderGlowMixin)    
     end
 
@@ -196,6 +199,10 @@ function Cyst:OnDestroy()
     
     ScriptActor.OnDestroy(self)
     
+end
+
+function Cyst:GetSpawnBlockDuration()
+    return 7
 end
 
 /**
@@ -225,6 +232,11 @@ local function DestroyNearbyCysts(self)
         
     end
     
+end
+
+function Cyst:GetCanAutoBuild()
+    local cystParent = self:GetCystParent()
+    return cystParent ~= nil and (not HasMixin(cystParent, "Construct") or cystParent:GetIsBuilt() )
 end
 
 function Cyst:OnInitialized()
@@ -316,13 +328,17 @@ end
 
 function Cyst:GetTechButtons(techId)
   
-    return  { kTechId.Rupture, kTechId.Infestation,  kTechId.None, kTechId.None,
+    return  { kTechId.Infestation,  kTechId.None, kTechId.None, kTechId.None,
               kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
 end
 
 function Cyst:GetInfestationRadius()
-    return Cyst.kInfestationRadius
+    return kInfestationRadius
+end
+
+function Cyst:GetInfestationMaxRadius()
+    return kInfestationRadius
 end
 
 function Cyst:GetCystParentRange()
@@ -538,12 +554,28 @@ function GetCystParentFromPoint(origin, normal, connectionMethodName, optionalIg
 end
 
 /**
- * Return true if a connected cyst parent is availble at the given origin normal. 
+ * Return true if a connected cyst parent is availble at the given origin normal, and no destroyed cysts present
  */
+function GetIsDeadCystNearby(origin) 
+
+    local deadCyst = false
+    for _, cyst in ipairs(GetEntitiesWithinRange("Cyst", origin, kInfestationRadius)) do
+        
+        if not cyst:GetIsAlive() then
+            deadCyst = true
+            break
+        end
+        
+    end
+    
+    return deadCyst
+
+end
+ 
 function GetCystParentAvailable(techId, origin, normal, commander)
 
     local parent, path = GetCystParentFromPoint(origin, normal, "GetIsConnectedAndAlive")
-    return parent ~= nil
+    return parent ~= nil // and not GetIsDeadCystNearby(origin)
     
 end
 

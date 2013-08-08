@@ -41,6 +41,7 @@ Script.Load("lua/TargettingMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
 
 local kSpinUpSoundName = PrecacheAsset("sound/NS2.fev/marine/structures/sentry_spin_up")
 local kSpinDownSoundName = PrecacheAsset("sound/NS2.fev/marine/structures/sentry_spin_down")
@@ -225,6 +226,7 @@ function Sentry:OnInitialized()
         
         // TargetSelectors require the TargetCacheMixin for cleanup.
         InitMixin(self, TargetCacheMixin)
+        InitMixin(self, SupplyUserMixin)
         
         // configure how targets are selected and validated
         self.targetSelector = TargetSelector():Init(
@@ -410,10 +412,7 @@ if Server then
                 local blockedByUmbra = trace.entity and GetBlockedByUmbra(trace.entity) or false
                 
                 if blockedByUmbra then
-                
                     surface = "umbra"
-                    damage = 0
-                    
                 end
                 
                 local direction = (trace.endPoint - startPoint):GetUnit()

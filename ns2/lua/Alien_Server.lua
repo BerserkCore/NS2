@@ -14,13 +14,18 @@ function Alien:SetPrimalScream(duration)
 end
 
 function Alien:TriggerEnzyme(duration)
-    self.timeWhenEnzymeExpires = duration + Shared.GetTime()
+
+    if not self:GetIsOnFire() then
+        self.timeWhenEnzymeExpires = duration + Shared.GetTime()
+    end
+    
 end
 
-function Alien:SetEMPBlasted()
+function Alien:CancelEnzyme()
 
-    TEST_EVENT("Alien Player EMP Blasted")
-    self.empBlasted = true
+    if self.timeWhenEnzymeExpires > Shared.GetTime() then        
+        self.timeWhenEnzymeExpires = Shared.GetTime()
+    end
     
 end
 
@@ -34,13 +39,6 @@ function Alien:Reset()
 end
 
 function Alien:OnProcessMove(input)
-
-    if self.empBlasted then
-    
-        self:DeductAbilityEnergy(kEMPBlastEnergyDamage)  
-        self.empBlasted = false  
-        
-    end
     
     if Server then    
         self.hasAdrenalineUpgrade = GetHasAdrenalineUpgrade(self)
@@ -59,9 +57,20 @@ function Alien:OnProcessMove(input)
         self.primalScreamBoost = self.timeWhenPrimalScreamExpires > Shared.GetTime()
         
         self:UpdateAutoHeal()
+        self:UpdateSilenceLevel()
         
     end
     
+end
+
+function Alien:UpdateSilenceLevel()
+
+    if GetHasSilenceUpgrade(self) then
+        self.silenceLevel = GetVeilLevel(self:GetTeamNumber())
+    else
+        self.silenceLevel = 0
+    end
+
 end
 
 function Alien:UpdateAutoHeal()
@@ -71,26 +80,25 @@ function Alien:UpdateAutoHeal()
     if self:GetIsHealable() and ( not self.timeLastAlienAutoHeal or self.timeLastAlienAutoHeal + kAlienRegenerationTime <= Shared.GetTime() ) then
 
         local healRate = 1
+        local hasRegenUpgrade = GetHasRegenerationUpgrade(self)
+        local shellLevel = GetShellLevel(self:GetTeamNumber())
+        local maxHealth = self:GetBaseHealth()
         
-        if GetHasRegenerationUpgrade(self) then            
-            healRate = Clamp(kAlienRegenerationPercentage * self:GetMaxHealth(), kAlienMinRegeneration, kAlienMaxRegeneration)            
+        if hasRegenUpgrade and shellLevel > 0 then            
+            healRate = Clamp(kAlienRegenerationPercentage * maxHealth, kAlienMinRegeneration, kAlienMaxRegeneration) * (shellLevel/3)
         else
-            healRate = Clamp(kAlienInnateRegenerationPercentage * self:GetMaxHealth(), kAlienMinInnateRegeneration, kAlienMaxInnateRegeneration) 
+            healRate = Clamp(kAlienInnateRegenerationPercentage * maxHealth, kAlienMinInnateRegeneration, kAlienMaxInnateRegeneration) 
         end
         
         if self:GetIsInCombat() then
             healRate = healRate * kAlienRegenerationCombatModifier
         end
 
-        self:AddHealth(healRate, false, false, not GetHasRegenerationUpgrade(self) or self:GetIsInCombat())  
+        self:AddHealth(healRate, false, false, not hasRegenUpgrade)  
         self.timeLastAlienAutoHeal = Shared.GetTime()
     
     end 
 
-end
-
-function Alien:OnTakeDamage(damage, attacker, doer, point)
-    self.timeCelerityInterrupted = Shared.GetTime()
 end
 
 function Alien:GetDamagedAlertId()
@@ -131,13 +139,13 @@ function Alien:ProcessBuyAction(techIds)
     end
     for _, newUpgradeId in ipairs(techIds) do
 
-        if newUpgradeId ~= kTechId.None and not upgradeManager:AddUpgrade(newUpgradeId) then
+        if newUpgradeId ~= kTechId.None and not upgradeManager:AddUpgrade(newUpgradeId, true) then
             upgradesAllowed = false 
             break
         end
         
     end
-    
+
     if upgradesAllowed then
     
         // Check for room

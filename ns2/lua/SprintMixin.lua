@@ -36,8 +36,8 @@ SprintMixin.expectedCallbacks =
 {
     GetVelocity = "",
     GetActiveWeapon = "",
-    GetOnGroundRecently = "",
     GetViewCoords = "",
+    GetIsOnGround = "",
 }
 
 SprintMixin.networkVars =
@@ -91,9 +91,9 @@ function SprintMixin:OnSprintQuickPress()
         self.sprintMode = false
     else
     
-        if self:GetSprintTime() > SprintMixin.kMinSprintTime then
+        //if self:GetSprintTime() > SprintMixin.kMinSprintTime then
             self.sprintMode = true
-        end
+        //end
         
     end
 end
@@ -140,15 +140,13 @@ function SprintMixin:UpdateSprintingState(input)
         attacking = weapon:GetTryingToFire(input)    
     end
     
-    local onGroundRecently = self:GetOnGroundRecently()
-
     local buttonDown = (bit.band(input.commands, Move.MovementModifier) ~= 0)
     if not weapon or (not weapon.GetIsReloading or not weapon:GetIsReloading()) then
         self:UpdateSprintMode(buttonDown)
     end
     
     // Allow small little falls to not break our sprint (stairs)    
-    self.desiredSprinting = (buttonDown or self.sprintMode) and sprintingAllowedByWeapon and speed > 1 and not self.crouching and onGroundRecently and not attacking and not self.requireNewSprintPress
+    self.desiredSprinting = (buttonDown or self.sprintMode) and sprintingAllowedByWeapon and speed > 1 and not self.crouching and self:GetIsOnGround() and not attacking and not self.requireNewSprintPress
     
     if input.move.z < kEpsilon then
         self.desiredSprinting = false
@@ -168,7 +166,7 @@ function SprintMixin:UpdateSprintingState(input)
     if self.desiredSprinting ~= self.sprinting then
     
         // Only allow sprinting to start if we have some minimum energy (so we don't start and stop constantly)
-        if not self.desiredSprinting or (self:GetSprintTime() >= SprintMixin.kMinSprintTime) then
+        //if not self.desiredSprinting or (self:GetSprintTime() >= SprintMixin.kMinSprintTime) then
     
             self.sprintTimeOnChange = self:GetSprintTime()
             self.timeSprintChange = Shared.GetTime()
@@ -188,12 +186,12 @@ function SprintMixin:UpdateSprintingState(input)
                 
             end
             
-        end
+        //end
         
     end
     
     // Some things break us out of sprint mode
-    if self.sprintMode and (attacking or speed <= 1 or not onGroundRecently or self.crouching) then
+    if self.sprintMode and (attacking or speed <= 1 or not self:GetIsOnGround() or self.crouching) then
         self.sprintMode = false
         self.requireNewSprintPress = attacking
     end
@@ -222,7 +220,7 @@ function SprintMixin:OnProcessMove(input)
         self:OnUpdateSprint(self.sprinting)
     end
     
-    if self.sprinting then
+    /*if self.sprinting then
         
         if self:GetSprintTime() == 0 then
         
@@ -246,12 +244,8 @@ function SprintMixin:OnProcessMove(input)
             end
             
         end
-
-    else
-    
-
         
-    end
+    end*/
     
 end
 

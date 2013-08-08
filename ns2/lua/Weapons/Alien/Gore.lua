@@ -19,8 +19,7 @@ Gore.kMapName = "gore"
 
 local kAnimationGraph = PrecacheAsset("models/alien/onos/onos_view.animation_graph")
 
-Gore.kAttackType = enum({ "GoreLeft", "GoreRight", "Smash", "None" })
-
+Gore.kAttackType = enum({ "Gore", "Smash", "None" })
 // when hitting marine his aim is interrupted
 Gore.kAimInterruptDuration = 0.7
 
@@ -32,62 +31,41 @@ local networkVars =
 
 AddMixinNetworkVars(StompMixin, networkVars)
 
-local kAttackRadius = 1.5
-local kAttackOriginDistance = 2
-local kAttackRange = 2.2
+local kAttackRange = 1.7
+local kFloorAttackRage = 0.9
+
 local kGoreSmashKnockbackForce = 590 // mass of a marine: 90
 local kGoreSmashMinimumUpwardsVelocity = 9
 
-// return false for left, true for right
-local function GetAttackDirection(player, attackOrigin, engagementPoint)
+local function PrioritizeEnemyPlayers(weapon, player, newTarget, oldTarget)
+    return not oldTarget or (GetAreEnemies(player, newTarget) and newTarget:isa("Player") and not oldTarget:isa("Player") )
+end
 
-    local directionToTarget = engagementPoint - attackOrigin
-    if directionToTarget:DotProduct(player:GetViewCoords().xAxis) < 0 then
-        return true
-    end 
-    return false
-    
+local function GetGoreAttackRange(viewCoords)
+    return kAttackRange + math.max(0, -viewCoords.zAxis.y) * kFloorAttackRage
 end
 
 // checks in front of the onos in a radius for potential targets and returns the attack mode (randomized if no targets found)
 local function GetAttackType(self, player)
 
     PROFILE("GetAttackType")
+    
+    local attackType = Gore.kAttackType.Gore
+    local range = GetGoreAttackRange(player:GetViewCoords())
+    local didHit, target, direction = CheckMeleeCapsule(self, player, 0, range, nil, nil, nil, PrioritizeEnemyPlayers)
 
-    local trace = Shared.TraceRay(player:GetEyePos(), player:GetEyePos() + player:GetViewCoords().zAxis * kAttackOriginDistance, CollisionRep.Damage, PhysicsMask.Melee, EntityFilterAll())
-    local attackOrigin = trace.endPoint
-    
-    local attackType = Gore.kAttackType.None
-    
-    local didHit, target, direction = CheckMeleeCapsule(self, player, 0, kAttackRange)
-    
     if didHit then
     
         if target and HasMixin(target, "Live") then
         
-            if ( target.GetReceivesStructuralDamage and target:GetReceivesStructuralDamage() or target:isa("Exo") ) and GetAreEnemies(player, target) then
+            if ( target.GetReceivesStructuralDamage and target:GetReceivesStructuralDamage() ) and GetAreEnemies(player, target) then
                 attackType = Gore.kAttackType.Smash         
-            elseif GetAttackDirection(player, attackOrigin, target:GetEngagementPoint()) then
-                attackType = Gore.kAttackType.GoreRight
-            else
-                attackType = Gore.kAttackType.GoreLeft
             end
             
         end
     
     end
-    
-    // randomize the attack if we hit nothing
-    if attackType == Gore.kAttackType.None then
-        local randomVar = math.random()
-        if randomVar < 0.5 then
-            attackType = Gore.kAttackType.GoreLeft
-        else
-            attackType = Gore.kAttackType.GoreRight
-        end
-    
-    end
-    
+
     if Server then
         self.lastAttackType = attackType
     end
@@ -95,58 +73,6 @@ local function GetAttackType(self, player)
     return attackType
 
 end
-
-local function GoreAttack(self, player, hitTarget, excludeTarget)
-
-    local trace = Shared.TraceRay(player:GetEyePos(), player:GetEyePos() + player:GetViewCoords().zAxis * kAttackOriginDistance, CollisionRep.Damage, PhysicsMask.Melee, EntityFilterAll())
-    local attackOrigin = trace.endPoint
-    local didHit = false
-    
-    local targets = GetEntitiesWithMixinForTeamWithinRange ("Live", GetEnemyTeamNumber(player:GetTeamNumber()), attackOrigin, kAttackRadius)
-    
-    if hitTarget and HasMixin(hitTarget, "Live") then
-        table.insertunique(targets, hitTarget)
-    end
-    
-    if excludeTarget then
-        table.removevalue(targets, excludeTarget)
-    end
-    
-    local tableparams = {}
-    tableparams[kEffectFilterSilenceUpgrade] = GetHasSilenceUpgrade(player)
-    
-    for index, target in ipairs(targets) do
-        
-        self:DoDamage(kGoreDamage, target, target:GetEngagementPoint(), direction)
-        didHit = true
-    
-    end
-    
-    // since gore is aoe we need to manually trigger possibly hit effects
-    if not didHit and trace.fraction ~= 1 then
-        TriggerHitEffects(self, nil, trace.endPoint, trace.surface, tableparams)
-    end
-    
-    return didHit, attackOrigin
-    
-end
-
-local function GetEnergyCostForAttackType(attackType)
-
-    return kGoreEnergyCost
-
-end
-
-// required here to deals different damage depending on if we are smashing or goring
-function Gore:GetDamageType()
-
-    if self:GetAttackType() == Gore.kAttackType.Smash then
-        return kSmashDamageType
-    else
-        return kGoreDamageType
-    end
-    
-end    
 
 function Gore:OnCreate()
 
@@ -165,16 +91,12 @@ function Gore:GetDeathIconIndex()
     return kDeathMessageIcon.Gore
 end
 
-function Gore:GetSecondaryTechId()
-    return kTechId.Stomp
-end
-
 function Gore:GetAnimationGraphName()
     return kAnimationGraph
 end
 
 function Gore:GetEnergyCost(player)
-    return GetEnergyCostForAttackType(self.attackType)
+    return kGoreEnergyCost
 end
 
 function Gore:GetHUDSlot()
@@ -194,6 +116,10 @@ function Gore:OnHolster(player)
 end
 
 function Gore:GetMeleeBase()
+    local parent = self:GetParent()
+    if parent and parent.GetIsEnzymed and parent:GetIsEnzymed() then
+        return 1.4, 1.7
+    end
     return 1, 1.4
 end
 
@@ -206,22 +132,12 @@ function Gore:Attack(player)
     
     if Server then
         attackType = self.lastAttackType
-    end    
-    
-    local filter = EntityFilterOneAndIsa(player, "Babbler")
-    
-    if attackType == Gore.kAttackType.Smash then
-        didHit, target, impactPoint = AttackMeleeCapsule(self, player, kSmashDamage, kAttackRange, nil, false, filter)
-    else
-    
-        didHit, target, impactPoint = AttackMeleeCapsule(self, player, 0, kAttackRange, nil, false, filter)
-        if didHit then
-            didHit, impactPoint = GoreAttack(self, player, target)
-        end
-        
     end
     
-    player:DeductAbilityEnergy(GetEnergyCostForAttackType(attackType))
+    local range = GetGoreAttackRange(player:GetViewCoords())
+    didHit, target, impactPoint = AttackMeleeCapsule(self, player, kGoreDamage, range)
+
+    player:DeductAbilityEnergy(self:GetEnergyCost(player))
     
     return didHit, impactPoint, target
     
@@ -255,7 +171,7 @@ function Gore:OnTag(tagName)
             self:OnAttackEnd()
         end
         
-        if player:GetEnergy() >= GetEnergyCostForAttackType(self.attackType) or not self.attackButtonPressed then
+        if player:GetEnergy() >= self:GetEnergyCost(player) or not self.attackButtonPressed then
             self:OnAttackEnd()
         end
         
@@ -272,7 +188,7 @@ function Gore:OnPrimaryAttack(player)
         nextAttackType = GetAttackType(self, player)
     end
 
-    if player:GetEnergy() >= GetEnergyCostForAttackType(nextAttackType) then
+    if player:GetEnergy() >= self:GetEnergyCost(player) then
         self.attackType = nextAttackType
         self.attackButtonPressed = true
     else
@@ -300,7 +216,7 @@ function Gore:OnUpdateAnimationInput(modelMixin)
     
     if self.attackButtonPressed then
     
-        if self.attackType == Gore.kAttackType.GoreLeft or self.attackType == Gore.kAttackType.GoreRight then
+        if self.attackType == Gore.kAttackType.Gore then
             activityString = "primary"
         elseif self.attackType == Gore.kAttackType.Smash then
             activityString = "smash"

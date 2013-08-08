@@ -21,7 +21,7 @@ local kChargeTime = 2
 local kChargeForceShootTime = 3
 local kRailgunRange = 400
 local kRailgunSpread = Math.Radians(0)
-local kBulletSize = 0.12
+local kBulletSize = 0.3
 
 local kChargeSound = PrecacheAsset("sound/NS2.fev/marine/heavy/railgun_charge")
 
@@ -169,6 +169,10 @@ local function TriggerSteamEffect(self, player)
         player:TriggerEffects("railgun_steam_right")
     end
     
+end
+
+function Railgun:GetIsAffectedByWeaponUpgrades()
+    return false
 end
 
 local function ExecuteShot(self, startPoint, endPoint, player)

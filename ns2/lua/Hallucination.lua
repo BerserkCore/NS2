@@ -24,6 +24,7 @@ Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/SleeperMixin.lua")
 Script.Load("lua/RepositioningMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
+Script.Load("lua/SoftTargetMixin.lua")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/hallucination.surface_shader")
 
@@ -107,12 +108,12 @@ local function GetHallucinationMenu(assignedTechId, menuTechId)
         gHallucinationMenu = {}
         
         local rootMenu = {}
-        rootMenu[kTechId.Gorge] = { kTechId.Attack, kTechId.Move, kTechId.Stop, kTechId.HallucinateHydra }
-        rootMenu[kTechId.Drifter] = { kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Skulk] = { kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Lerk] = { kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Fade] = { kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Onos] = { kTechId.Attack, kTechId.Move, kTechId.Stop }
+        rootMenu[kTechId.Gorge] = { kTechId.DestroyHallucination, kTechId.Attack, kTechId.Move, kTechId.Stop, kTechId.HallucinateHydra }
+        rootMenu[kTechId.Drifter] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
+        rootMenu[kTechId.Skulk] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
+        rootMenu[kTechId.Lerk] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
+        rootMenu[kTechId.Fade] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
+        rootMenu[kTechId.Onos] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
         
         gHallucinationMenu[kTechId.RootMenu] = rootMenu
         
@@ -217,7 +218,7 @@ local function GetMaxMovementSpeed(techId)
         gTechIdMaxMovementSpeed[kTechId.Fade] = 7
         gTechIdMaxMovementSpeed[kTechId.Onos] = 7
         
-        gTechIdMaxMovementSpeed[kTechId.Drifter] = 5
+        gTechIdMaxMovementSpeed[kTechId.Drifter] = 8
         gTechIdMaxMovementSpeed[kTechId.Whip] = 4
     
     end
@@ -288,6 +289,7 @@ function Hallucination:OnCreate()
     InitMixin(self, SelectableMixin)
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
+    InitMixin(self, SoftTargetMixin)
     
     if Server then
     
@@ -429,13 +431,26 @@ function Hallucination:OnOverrideDoorInteraction(inEntity)
     return true, 4
 end
 
+function Hallucination:PerformActivation(techId, position, normal, commander)
+
+    if techId == kTechId.DestroyHallucination then
+    
+        self:Kill()
+        return true, true
+        
+    end
+    
+    return false, true
+    
+end
+
 function Hallucination:GetIsMoving()
     return self.moving
 end
 
 function Hallucination:GetTechButtons(techId)
 
-    return GetHallucinationMenu(self.assignedTechId, techId)
+    return { kTechId.DestroyHallucination }
     
 end
 
@@ -457,7 +472,7 @@ function Hallucination:OnUpdateAnimationInput(modelMixin)
         moveState = GetMoveName(self.assignedTechId)
     end
 
-    modelMixin:SetAnimationInput("built", true)
+    modelMixin:SetAnimationInput("built", self.assignedTechId == kTechId.Drifter)
 
     modelMixin:SetAnimationInput("move", moveState) 
     OnUpdateAnimationInputCustom(self, self.assignedTechId, modelMixin, moveState)
@@ -692,6 +707,8 @@ if Client then
     
         local model = self:GetRenderModel()
         if model then
+
+            model:SetMaterialParameter("glowIntensity", 0)
 
             if showMaterial then
                 

@@ -15,12 +15,15 @@ local kMaxPlayerVelocityToStomp = 6
 local kDisruptRange = kStompRange
 local kStompVerticalRange = 1.5
 
+local kStompRadius = 5
+
 // GetHasSecondary and GetSecondaryEnergyCost should completely override any existing
 // same named function defined in the object.
 StompMixin.overrideFunctions =
 {
     "GetHasSecondary",
     "GetSecondaryEnergyCost",
+    "GetSecondaryTechId",
     "OnSecondaryAttack",
     "OnSecondaryAttackEnd",
     "PerformSecondaryAttack"
@@ -35,6 +38,10 @@ function StompMixin:GetIsStomping()
     return self.stomping
 end
 
+function StompMixin:GetSecondaryTechId()
+    return kTechId.Stomp
+end
+
 function StompMixin:GetHasSecondary(player)
     return player:GetHasThreeHives()
 end
@@ -45,18 +52,27 @@ end
 
 function StompMixin:PerformStomp(player)
 
-    if Server then
+    local enemyTeamNum = GetEnemyTeamNumber(self:GetTeamNumber())
+    local stompOrigin = player:GetOrigin()
 
-        local xZDirection = player:GetViewCoords().zAxis
-        xZDirection.y = 0
-        xZDirection:Normalize()
-        local origin = player:GetOrigin() + Vector(0, 0.4, 0) + player:GetViewCoords().zAxis * 0.9
-        
-        local shockWave = CreateEntity(Shockwave.kMapName, origin, player:GetTeamNumber())
-        local velocity = GetNormalizedVectorXZ(player:GetViewCoords().zAxis) * kShockwaveSpeed
-        shockWave:Setup(player, velocity, false, nil, player)
+    for index, ent in ipairs(GetEntitiesWithMixinForTeamWithinRange("Stun", enemyTeamNum, stompOrigin, kStompRadius)) do
+    
+        if math.abs(ent:GetOrigin().y - stompOrigin.y) < 1.2 then
+            ent:SetStun(kDisruptMarineTime)
+        end
         
     end
+    
+    // discrupt minigun exos in range as well
+    /*
+    for index, exo in ipairs(GetEntitiesForTeamWithinRange("Exo", enemyTeamNum, stompOrigin, kStompRadius)) do
+
+        if math.abs(exo:GetOrigin().y - stompOrigin.y) < 1.2 then
+            exo:Disrupt()
+        end
+        
+    end
+    */
     
 end
 

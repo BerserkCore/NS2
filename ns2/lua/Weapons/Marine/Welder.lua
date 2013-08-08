@@ -142,6 +142,10 @@ function Welder:OnTag(tagName)
 
 end
 
+function Welder:GetIsAffectedByWeaponUpgrades()
+    return false
+end
+
 // don't play 'welder_attack' and 'welder_attack_end' too often, would become annoying with the sound effects and also client fps
 function Welder:OnPrimaryAttack(player)
 
@@ -179,6 +183,15 @@ function Welder:OnPrimaryAttack(player)
         
     end
     
+end
+
+function Welder:GetSprintAllowed()
+    return true
+end
+
+// welder wont break sprinting
+function Welder:GetTryingToFire(input)
+    return false
 end
 
 function Welder:GetDeathIconIndex()
@@ -263,6 +276,9 @@ function Welder:PerformWeld(player)
                     local addAmount = (target:GetHealth() - prevHealth) + (target:GetArmor() - prevArmor)
                     player:AddContinuousScore("WeldHealth", addAmount, kAmountHealedForPoints, kHealScoreAdded)
                     
+                    // weld owner as well
+                    player:SetArmor(player:GetArmor() + kWelderFireDelay * kSelfWeldAmount)
+                    
                 end
                 
             end
@@ -293,7 +309,11 @@ function Welder:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("Welder:OnUpdateAnimationInput")
     
-    modelMixin:SetAnimationInput("activity", ConditionalValue(self.welding, "primary", "none"))
+    local parent = self:GetParent()
+    local sprinting = parent ~= nil and HasMixin(parent, "Sprint") and parent:GetIsSprinting()
+    local activity = (self.welding and not sprinting) and "primary" or "none"
+    
+    modelMixin:SetAnimationInput("activity", activity)
     modelMixin:SetAnimationInput("welder", true)
     
 end
@@ -350,19 +370,13 @@ function Welder:OnUpdateRender()
 end
 
 function Welder:ModifyDamageTaken(damageTable, attacker, doer, damageType)
-
     if damageType ~= kDamageType.Corrode then
         damageTable.damage = 0
     end
-    
 end
 
 function Welder:GetCanTakeDamageOverride()
     return self:GetParent() == nil
-end
-
-function Welder:GetIsWelding()
-    return self.welding
 end
 
 if Server then
@@ -375,6 +389,10 @@ if Server then
         return false
     end    
     
+end
+
+function Welder:GetIsWelding()
+    return self.welding
 end
 
 if Client then

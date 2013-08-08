@@ -153,6 +153,9 @@ local function UpdateAnimationInput(self, state, graph)
         PROFILE("BaseModelMixin:OnUpdateAnimationInput")
         self:OnUpdateAnimationInput(self)
         
+        //pairs is not yet traceable
+        TraceStopPoint()
+        
         for name, value in pairs(self.animationInputValues) do
             AnimationGraphState_SetInputValue(state, graph, name, value)    
         end
@@ -176,8 +179,8 @@ local function UpdateAnimationState(self, allowedOnClient, transition)
     // Ideally this would not be necessary. It would be best if animation tags were processed in all cases but the other
     // animation work would only happen under the other conditions listed here.
     // Predict only runs animation updates for the local players OnProcessMove so it will always trigger
-    local allowed = Predict
-        or Server
+    local allowed = Predict ~= nil
+        or Server ~= nil
         or
         (
             Client and
@@ -380,6 +383,8 @@ local function UpdateOpacity(self, debug)
         end
         
         self:InstanceMaterials()
+        //pairs is not yet traceable
+        TraceStopPoint()
         
         for identifier, value in pairs(self.opacityValues) do
         
@@ -936,7 +941,7 @@ function BaseModelMixin:GetAttachPointOrigin(attachPointName)
         
     end
     
-    return origin, success
+    return Vector(origin), success
     
 end
 

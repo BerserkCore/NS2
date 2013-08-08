@@ -189,7 +189,7 @@ function PathingMixin:CheckTarget(endPoint)
         self.targetPoint = endPoint
         // the list of points does not include our current origin. Simplify the remaining code
         // by adding our origin to the list of points
-        table.insert(self.points, 1, self:GetOrigin())
+        Pathing.InsertPoint( self.points, 1, self:GetOrigin() )
         
         self.cursor = PathCursor():Init(self.points)
         
@@ -243,9 +243,12 @@ function PathingMixin:MoveToTarget(physicsGroupMask, endPoint, movespeed, time)
     local origCursor = PathCursor():Clone(self.cursor)
     self.cursor:Advance(movespeed, time)
     
-    local maxSpeed = moveSpeed
+    local maxSpeed = movespeed
     
-    maxSpeed = self:SmoothTurn(time, self.cursor:GetDirection(), movespeed)
+    if not self.PreventTurning or not self:PreventTurning() then
+        maxSpeed = self:SmoothTurn(time, self.cursor:GetDirection(), movespeed)
+    end
+
     // Don't move during repositioning
     if HasMixin(self, "Repositioning") and self:GetIsRepositioning() then
     

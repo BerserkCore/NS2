@@ -98,6 +98,17 @@ function MarineCommander:TriggerNanoShield(position)
 
 end
 
+function MarineCommander:TriggerPowerSurge(position, entity, trace)
+
+    if trace and trace.entity and HasMixin(trace.entity, "PowerConsumer") then
+        trace.entity:SetPowerSurgeDuration(kPowerSurgeDuration)
+        return true
+    end
+    
+    return false
+
+end
+
 local function GetIsDroppack(techId)
     return techId == kTechId.MedPack or techId == kTechId.AmmoPack or techId == kTechId.CatPack
 end
@@ -116,6 +127,10 @@ function MarineCommander:ProcessTechTreeActionForEntity(techNode, position, norm
     elseif techId == kTechId.NanoShield then
         success = self:TriggerNanoShield(position)   
         keepProcessing = false
+        
+    elseif techId == kTechId.PowerSurge then
+        success = self:TriggerPowerSurge(position, entity, trace)   
+        keepProcessing = false 
      
     elseif GetIsDroppack(techId) then
     

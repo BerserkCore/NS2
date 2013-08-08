@@ -17,6 +17,8 @@ PrecacheAsset("cinematics/materials/umbra/ricochet.cinematic")
 
 class 'ClipWeapon' (Weapon)
 
+local kBulletSize = 0.018
+
 ClipWeapon.kMapName = "clipweapon"
 
 local networkVars =
@@ -273,11 +275,11 @@ function ClipWeapon:GetIsPrimaryAttackAllowed(player)
     attackAllowed = attackAllowed and (not self:GetIsReloading() or self:GetPrimaryCanInterruptReload())
     attackAllowed = attackAllowed and not self.blockingSecondary
     attackAllowed = attackAllowed and (not self:GetPrimaryIsBlocking() or not self.blockingPrimary)
-
+    
     if attackAllowed and self.GetPrimaryMaxRateOfFire then
         attackAllowed = (Shared.GetTime() - self.timeAttackStarted) > 1.0 / self:GetPrimaryMaxRateOfFire()
     end
-
+    
     return self:GetIsDeployed() and not sprintedRecently and attackAllowed
 
 end
@@ -415,10 +417,8 @@ local function FireBullets(self, player)
         local spreadDirection = CalculateSpread(shootCoords, self:GetSpread(bullet) * self:GetInaccuracyScalar(player), NetworkRandom)
         
         local endPoint = startPoint + spreadDirection * range
-        
-        local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
-        
-        local damage = 0
+        local targets, trace, hitPoints = GetBulletTargets(startPoint, endPoint, spreadDirection, kBulletSize, filter)        
+        local damage = self:GetBulletDamage()
 
         /*
         // Check prediction
@@ -427,34 +427,35 @@ local function FireBullets(self, player)
             Server.PlayPrivateSound(player, "sound/NS2.fev/marine/voiceovers/game_start", player, 1.0, Vector(0, 0, 0))
         end
         */
-            
-        // don't damage 'air'..
-        if trace.fraction < 1 or GetIsVortexed(player) then
+
+        local direction = (trace.endPoint - startPoint):GetUnit()
+        local hitOffset = direction * kHitEffectOffset
+        local impactPoint = trace.endPoint - hitOffset
+        local effectFrequency = self:GetTracerEffectFrequency()
+        local showTracer = math.random() < effectFrequency
+
+        local numTargets = #targets
         
-            local direction = (trace.endPoint - startPoint):GetUnit()
-            local impactPoint = trace.endPoint - direction * kHitEffectOffset
-            local surfaceName = trace.surface
-
-            local target = trace.entity
-                
-            if target then            
-                damage = self:GetBulletDamage(trace.entity, trace.endPoint)                
-            end
-            
-            local effectFrequency = self:GetTracerEffectFrequency()
-            local showTracer = math.random() < effectFrequency
-            
-            self:ApplyBulletGameplayEffects(player, trace.entity, impactPoint, direction, damage, trace.surface, showTracer)
-            
-            if Client and showTracer then
-                TriggerFirstPersonTracer(self, trace.endPoint)
-            end
-
+        if numTargets == 0 then
+            self:ApplyBulletGameplayEffects(player, nil, impactPoint, direction, 0, trace.surface, showTracer)
         end
         
-        local client = Server and player:GetClient() or Client
-        if not Shared.GetIsRunningPrediction() and client.hitRegEnabled then
-            RegisterHitEvent(player, bullet, startPoint, trace, damage)
+        if Client and showTracer then
+            TriggerFirstPersonTracer(self, impactPoint)
+        end
+        
+        for i = 1, numTargets do
+
+            local target = targets[i]
+            local hitPoint = hitPoints[i]
+
+            self:ApplyBulletGameplayEffects(player, target, hitPoint - hitOffset, direction, damage, "", showTracer and i == numTargets)
+            
+            local client = Server and player:GetClient() or Client
+            if not Shared.GetIsRunningPrediction() and client.hitRegEnabled then
+                RegisterHitEvent(player, bullet, startPoint, trace, damage)
+            end
+        
         end
         
     end
@@ -597,7 +598,7 @@ function ClipWeapon:OnUpdateAnimationInput(modelMixin)
     end
     
     modelMixin:SetAnimationInput("activity", activity)
-    modelMixin:SetAnimationInput("flinch_gore", interrupted)
+    modelMixin:SetAnimationInput("flinch_gore", interrupted and not self:GetIsReloading())
     modelMixin:SetAnimationInput("empty", (self.ammo + self.clip) == 0)
 
 end

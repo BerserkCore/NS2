@@ -12,7 +12,7 @@
 //----------------------------------------
 local function GetOptimalMoveDirection( from, to )
 
-    local pathPoints = {}
+    local pathPoints = PointArray()
     local reachable = Pathing.GetPathPoints(from, to, pathPoints)
 
     if reachable and #pathPoints > 0 then

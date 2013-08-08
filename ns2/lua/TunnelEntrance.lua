@@ -9,7 +9,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/Mixins/ClientModelMixin.lua")
+Script.Load("lua/Mixins/ModelMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
 Script.Load("lua/GameEffectsMixin.lua")
@@ -34,6 +34,8 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/ObstacleMixin.lua")
 Script.Load("lua/DigestMixin.lua")
+Script.Load("lua/InfestationMixin.lua")
+Script.Load("lua/TeleportMixin.lua")
 
 Script.Load("lua/Tunnel.lua")
 
@@ -42,7 +44,7 @@ class 'TunnelEntrance' (ScriptActor)
 TunnelEntrance.kMapName = "tunnelentrance"
 
 local kDigestDuration = 1.5
-
+local kTunnelInfestationRadius = 7
 
 TunnelEntrance.kModelName = PrecacheAsset("models/alien/tunnel/mouth.model") PrecacheAsset("models/props/generic/generic_crate_01.model")
 local kAnimationGraph = PrecacheAsset("models/alien/tunnel/mouth.animation_graph")
@@ -53,11 +55,12 @@ local networkVars = {
     timeLastExited = "time",
     ownerId = "entityid",
     allowDigest = "boolean",
-    destLocationId = "entityid"
+    destLocationId = "entityid",
+    otherSideInfested = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
-AddMixinNetworkVars(ClientModelMixin, networkVars)
+AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(GameEffectsMixin, networkVars)
 AddMixinNetworkVars(FlinchMixin, networkVars)
@@ -73,13 +76,58 @@ AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(InfestationMixin, networkVars)
+AddMixinNetworkVars(TeleportMixin, networkVars)
+
+local function UpdateInfestationStatus(self)
+
+    local wasOnInfestation = self.onNormalInfestation
+    self.onNormalInfestation = false
+    
+    local origin = self:GetOrigin()
+    // use hives and cysts as "normal" infestation
+    local infestationEnts = GetEntitiesForTeamWithinRange("Hive", self:GetTeamNumber(), origin, 25)
+    table.copy(GetEntitiesForTeamWithinRange("Cyst", self:GetTeamNumber(), origin, 25), infestationEnts, true)
+    
+    // update own infestation status
+    for i = 1, #infestationEnts do
+    
+        if infestationEnts[i]:GetIsPointOnInfestation(origin) then
+            self.onNormalInfestation = true
+            break
+        end
+    
+    end
+    
+    local otherSideInfested = false
+    local tunnel = self:GetTunnelEntity()
+    
+    if tunnel then
+    
+        local exitA = tunnel:GetExitA()
+        local exitB = tunnel:GetExitB()
+        local otherSide = (exitA and exitA ~= self) and exitA or exitB
+        otherSideInfested = (otherSide and otherSide.onNormalInfestation) and true or false
+        
+    end
+        
+    if otherSideInfested ~= self.otherSideInfested then
+    
+        self.otherSideInfested = otherSideInfested
+        self:SetDesiredInfestationRadius(self:GetInfestationMaxRadius())
+    
+    end
+
+    return true
+
+end
 
 function TunnelEntrance:OnCreate()
 
     ScriptActor.OnCreate(self)
     
     InitMixin(self, BaseModelMixin)
-    InitMixin(self, ClientModelMixin)
+    InitMixin(self, ModelMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, GameEffectsMixin)
     InitMixin(self, FlinchMixin)
@@ -98,6 +146,8 @@ function TunnelEntrance:OnCreate()
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
     InitMixin(self, DigestMixin)
+    InitMixin(self, InfestationMixin)
+    InitMixin(self, TeleportMixin)
     
     if Server then
         InitMixin(self, InfestationTrackerMixin)
@@ -113,6 +163,7 @@ function TunnelEntrance:OnCreate()
     self.timeLastInteraction = 0
     self.timeLastExited = 0
     self.destLocationId = Entity.invalidId
+    self.otherSideInfested = false
     
 end
 
@@ -131,6 +182,9 @@ function TunnelEntrance:OnInitialized()
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
         end
+        
+        self.onNormalInfestation = false
+        self:AddTimedCallback(UpdateInfestationStatus, 1)
         
     elseif Client then
     
@@ -152,6 +206,14 @@ function TunnelEntrance:OnDestroy()
         
     end
     
+end
+
+function TunnelEntrance:GetInfestationRadius()
+    return kTunnelInfestationRadius
+end
+
+function TunnelEntrance:GetInfestationMaxRadius()
+    return self.otherSideInfested and kTunnelInfestationRadius or 0
 end
 
 if not Server then
@@ -239,6 +301,17 @@ end
 
 if Server then
 
+    function TunnelEntrance:OnTeleportEnd()
+    
+        local tunnel = Shared.GetEntity(self.tunnelId)
+        if tunnel then
+            tunnel:UpdateExit(self)
+        end
+        
+        self:SetInfestationRadius(0)
+        
+    end
+
     local function ComputeDestinationLocationId(self)
     
         local destLocationId = Entity.invalidId
@@ -271,7 +344,7 @@ if Server then
         self.destLocationId = ComputeDestinationLocationId(self)
         
         // temp fix: push AI units away to prevent players getting stuck
-        if not self.timeLastAIPushUpdate or self.timeLastAIPushUpdate + 1.4 < Shared.GetTime() then
+        if self:GetIsAlive() and ( not self.timeLastAIPushUpdate or self.timeLastAIPushUpdate + 1.4 < Shared.GetTime() ) then
         
             local baseYaw = 0
             self.timeLastAIPushUpdate = Shared.GetTime()
@@ -293,6 +366,15 @@ if Server then
             
             end
         
+        end
+        
+        local destructionAllowedTable = { allowed = true }
+        if self.GetDestructionAllowed then
+            self:GetDestructionAllowed(destructionAllowedTable)
+        end
+        
+        if destructionAllowedTable.allowed then
+            DestroyEntity(self)
         end
 
     end
@@ -335,7 +417,12 @@ if Server then
 
         ScriptActor.OnKill(self, attacker, doer, point, direction)
         self:TriggerEffects("death")
-        DestroyEntity(self)
+        self:SetModel(nil)
+        
+        local team = self:GetTeam()
+        if team then
+            team:UpdateClientOwnedStructures(self:GetId())
+        end
     
     end  
 
@@ -397,7 +484,7 @@ end
 
 function TunnelEntrance:OnUpdateRender()
 
-    local showDecal = self:GetIsVisible() and not self:GetIsCloaked()
+    local showDecal = self:GetIsVisible() and not self:GetIsCloaked() and self:GetIsAlive()
 
     if not self.decal and showDecal then
         self.decal = CreateSimpleInfestationDecal(1.9, self:GetCoords())

@@ -195,7 +195,7 @@ local function InternalGeneratePath(src, dst, doSmooth, smoothDist, maxSplitPoin
     local climbOffset   = Vector(0, climbAmount, 0)
     local maxIterations = 10    // Maximum number of attempts to trace to the dst
     
-    local points = { }    
+    local points = PointArray()
     
     // Query the pathing system for the path to the dst
     // if fails then fallback to the old system

@@ -25,7 +25,7 @@ function Whip:UpdateOrders(deltaTime)
         
             if not self.rooted and self:GetIsUnblocked() then
             
-                local moveSpeed = ConditionalValue(self:GetGameEffectMask(kGameEffect.OnInfestation), Whip.kMoveSpeedOnInfestation, Whip.kMoveSpeed)
+                local moveSpeed = Whip.kMoveSpeed
                 local startOrigin = self:GetOrigin()
                 self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), moveSpeed, deltaTime)
                 self:UpdateControllerFromEntity()
@@ -40,6 +40,8 @@ function Whip:UpdateOrders(deltaTime)
                     
                 end
                 
+            elseif self.rooted and self:GetIsUnblocked() then
+                self:Unroot()
             end
             
         end
@@ -157,6 +159,12 @@ function Whip:UpdateRootState()
         self:Unroot()
     end
     
+    local currentOrder = self:GetCurrentOrder()
+    
+    if not self.rooted and self:GetGameEffectMask(kGameEffect.OnInfestation) and (not currentOrder or currentOrder:GetType() ~= kTechId.Move) then
+        self:Root()
+    end
+    
 end
 
 function Whip:Root()
@@ -164,7 +172,7 @@ function Whip:Root()
     StartSoundEffectOnEntity(kRootedSound, self)
     
     self.rooted = true
-    self:SetBlockTime(2.5)
+    self:SetBlockTime(0.5)
     
     return true
     
@@ -183,7 +191,7 @@ function Whip:Unroot()
     self:AttackerMoved()
     
     self.rooted = false
-    self:SetBlockTime(2.5)
+    self:SetBlockTime(0.5)
     
     return true
     
@@ -206,15 +214,10 @@ function Whip:UpdateAiAttacks()
     self.bombardAttack:SetIsEnabled(self:GetHasUpgrade(kTechId.WhipBombard))
 end
 
-function Whip:OnResearchComplete(researchId)
+function Whip:OnMaturityComplete()
 
-    // Transform into mature whip
-    if researchId == kTechId.EvolveBombard then
-    
-        self:GiveUpgrade(kTechId.WhipBombard)
-        self:UpdateAiAttacks()
-                  
-    end 
+    self:GiveUpgrade(kTechId.WhipBombard)
+    self:UpdateAiAttacks()
     
 end
 
@@ -272,11 +275,11 @@ function Whip:PerformAction(techNode, position)
 end
 
 function Whip:GetCanReposition()
-    return self:GetIsBuilt() and not self.rooted
+    return self:GetIsBuilt()
 end
 
 function Whip:OverrideRepositioningSpeed()
-    return ConditionalValue(self:GetGameEffectMask(kGameEffect.OnInfestation), Whip.kMoveSpeedOnInfestation, Whip.kMoveSpeed)
+    return Whip.kMoveSpeed
 end
 
 // Required by ControllerMixin.

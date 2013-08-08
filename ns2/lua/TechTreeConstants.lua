@@ -12,12 +12,13 @@ kTechId = enum({
     
     'VoteConcedeRound',
     
-    'SpawnMarine', 'SpawnAlien', 'CollectResources',
+    'SpawnMarine', 'SpawnAlien', 'CollectResources', 'TransformResources',
     
     // General orders and actions ("Default" is right-click)
-    'Default', 'Move', 'Attack', 'Build', 'Construct', 'Cancel', 'Recycle', 'Weld', 'AutoWeld', 'Stop', 'SetRally', 'SetTarget', 'Follow',
+    'Default', 'Move', 'Attack', 'Build', 'Construct', 'Grow', 'Cancel', 'Recycle', 'Weld', 'AutoWeld', 'Stop', 'SetRally', 'SetTarget', 'Follow', 'HoldPosition',
     // special mac order (follows the target, welds the target as priority and others in range)
     'FollowAndWeld',
+    
     // Alien specific orders
     'AlienMove', 'AlienAttack', 'AlienConstruct', 'Heal', 'AutoHeal',
     
@@ -57,12 +58,12 @@ kTechId = enum({
     'TwoCommandStations', 'ThreeCommandStations',
 
     // Marine tech 
-    'CommandStation', 'MAC', 'Armory', 'InfantryPortal', 'Extractor', 'Sentry', 'ARC',
-    'Scan', 'AmmoPack', 'MedPack', 'CatPack', 'CatPackTech', 'PowerPoint', 'AdvancedArmoryUpgrade', 'Observatory', 'Detector', 'DistressBeacon', 'PhaseGate', 'RoboticsFactory', 'ARCRoboticsFactory', 'ArmsLab',
+    'CommandStation', 'MAC', 'Armory', 'InfantryPortal', 'Extractor', 'ExtractorArmor', 'Sentry', 'ARC',
+    'PowerPoint', 'AdvancedArmoryUpgrade', 'Observatory', 'Detector', 'DistressBeacon', 'PhaseGate', 'RoboticsFactory', 'ARCRoboticsFactory', 'ArmsLab',
     'PowerPack', 'SentryBattery', 'PrototypeLab', 'AdvancedArmory',
     
     // Weapon tech
-    'RifleUpgradeTech', 'ShotgunTech', 'GrenadeLauncherTech', 'FlamethrowerTech', 'FlamethrowerAltTech', 'WelderTech', 'MinesTech',
+    'AdvancedWeaponry', 'RifleUpgradeTech', 'ShotgunTech', 'DetonationTimeTech', 'FlamethrowerRangeTech', 'GrenadeLauncherTech', 'FlamethrowerTech', 'FlamethrowerAltTech', 'WelderTech', 'MinesTech',
     'DropWelder', 'DropMines', 'DropShotgun', 'DropGrenadeLauncher', 'DropFlamethrower',
     
     // Marine buys
@@ -85,61 +86,72 @@ kTechId = enum({
     'Jetpack', 'JetpackFuelTech', 'JetpackArmorTech', 'Exosuit', 'ExosuitLockdownTech', 'ExosuitUpgradeTech',
     
     // Marine upgrades
-    'Weapons1', 'Weapons2', 'Weapons3', 'Armor1', 'Armor2', 'Armor3',
+    'Weapons1', 'Weapons2', 'Weapons3', 'CatPackTech',
+    'Armor1', 'Armor2', 'Armor3', 'NanoArmor',
     
     // Activations
     'ARCDeploy', 'ARCUndeploy',
     
-    // Commander abilities
-    'NanoShield',
+    // Marine Commander abilities
+    'NanoShieldTech', 'NanoShield', 'PowerSurge', 'Scan', 'AmmoPack', 'MedPack', 'CatPack',
     
     ////////////
     // Aliens //
     ////////////
+    
+    // bio mass levels
+    'Biomass', 'BioMassOne', 'BioMassTwo', 'BioMassThree', 'BioMassFour', 'BioMassFive', 'BioMassSix', 'BioMassSeven', 'BioMassEight', 'BioMassNine',
+    // those are available at the hive
+    'ResearchBioMassOne', 'ResearchBioMassTwo', 'ResearchBioMassThree', 'ResearchBioMassFour',
 
     // Alien lifeforms 
-    'Skulk', 'Gorge', 'Lerk', 'Fade', 'Onos', "AlienCommander", "AllAliens", "Hallucination",
+    'Skulk', 'Gorge', 'Lerk', 'Fade', 'Onos', "AlienCommander", "AllAliens", "Hallucination", "DestroyHallucination",
     
     // Special tech
     'TwoHives', 'ThreeHives', 'UpgradeToCragHive', 'UpgradeToShadeHive', 'UpgradeToShiftHive',
     
     // Alien abilities (not all are needed, only ones with damage types)
-    'Bite', 'LerkBite', 'Parasite',  'Spit', 'BuildAbility', 'Spray', 'Spores', 'HydraSpike', 'Swipe', 'StabBlink', 'Gore', 'Smash',
+    'Bite', 'LerkBite', 'Parasite',  'Spit', 'BuildAbility', 'Spray', 'Spores', 'HydraSpike', 'Swipe', 'StabBlink', 'ShadowStep', 'Gore', 'Smash',
     'Babbler', 'BabblerEgg',
 
     
     // upgradeable alien abilities (need to be unlocked)
     'LifeFormMenu',
-    'BileBomb', 'GorgeTunnelTech', 'WebTech', 'Leap', 'Blink', 'Stomp', 'BoneShield', 'Spikes', 'Umbra', 'PoisonDart', 'Xenocide', 'Vortex', 'PrimalScream', 'BabblerAbility',
+    'BileBomb', 'GorgeTunnelTech', 'WebTech', 'Leap', 'Blink', 'Stomp', 'BoneShield', 'Spikes', 'SpikesAccuracy', 'Umbra', 'PoisonDart', 'Xenocide', 'Vortex', 'PrimalScream', 'BabblerAbility',
 
     // Alien structures 
     'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'Drifter', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'GorgeTunnel', 'Web',
     'GorgeEgg', 'LerkEgg', 'FadeEgg', 'OnosEgg',
     
     // Infestation upgrades
-    'HealingBed', 'MucousMembrane', 'BacterialReceptors',
+    'MucousMembrane',
+    
+    // personal upgrade levels
+    'Shell', 'TwoShells', 'ThreeShells', 'SecondShell', 'ThirdShell', 'FullShell',
+    'Veil', 'TwoVeils', 'ThreeVeils', 'SecondVeil', 'ThirdVeil', 'FullVeil',
+    'Spur', 'TwoSpurs', 'ThreeSpurs', 'SecondSpur', 'ThirdSpur', 'FullSpur',
 
     // Upgrade buildings and abilities (structure, upgraded structure, passive, triggered, targeted)
-    'Shell', 'Crag', 'CragHeal',
+    'Crag', 'CragHeal',
     'Whip', 'EvolveBombard', 'WhipBombard', 'WhipBombardCancel', 'WhipBomb', 'GrenadeWhack',
-    'Spur', 'Shift', 'EvolveEcho', 'ShiftHatch', 'ShiftEcho', 'ShiftEnergize', 
-    'Veil', 'Shade', 'EvolveHallucinations', 'ShadeDisorient', 'ShadeCloak', 'ShadePhantomMenu', 'ShadePhantomStructuresMenu',
+    'Shift', 'SelectShift', 'EvolveEcho', 'ShiftHatch', 'ShiftEcho', 'ShiftEnergize', 
+    'Shade', 'EvolveHallucinations', 'ShadeDisorient', 'ShadeCloak', 'ShadePhantomMenu', 'ShadePhantomStructuresMenu',
     'UpgradeCeleritySpur', 'CeleritySpur', 'UpgradeAdrenalineSpur', 'AdrenalineSpur', 'UpgradeHyperMutationSpur', 'HyperMutationSpur',
     'UpgradeSilenceVeil', 'SilenceVeil', 'UpgradeCamouflageVeil', 'CamouflageVeil', 'UpgradeAuraVeil', 'AuraVeil', 'UpgradeFeintVeil', 'FeintVeil',
     'UpgradeRegenerationShell', 'RegenerationShell', 'UpgradeCarapaceShell', 'CarapaceShell',
-    'DrifterCamouflage',
+    'DrifterCamouflage', 'DrifterCelerity', 'DrifterRegeneration',
     
     // echo menu
-    'TeleportHydra', 'TeleportWhip', 'TeleportCrag', 'TeleportShade', 'TeleportShift', 'TeleportVeil', 'TeleportSpur', 'TeleportShell', 'TeleportHive', 'TeleportEgg',
+    'TeleportHydra', 'TeleportWhip', 'TeleportTunnel', 'TeleportCrag', 'TeleportShade', 'TeleportShift', 'TeleportVeil', 'TeleportSpur', 'TeleportShell', 'TeleportHive', 'TeleportEgg', 'TeleportHarvester',
     
     // Whip movement
     'WhipRoot', 'WhipUnroot',
     
     // Alien abilities and upgrades
-    'Carapace', 'Regeneration', 'Aura', 'Silence', 'Feint', 'Camouflage', 'Celerity', 'Adrenaline', 'HyperMutation',  
+    'Carapace', 'Regeneration', 'Aura', 'Silence', 'Feint', 'Camouflage', 'Phantom', 'Celerity', 'Adrenaline', 'HyperMutation',  
     
     // Alien alerts
-    'AlienAlertNeedMist', 'AlienAlertNeedEnzyme', 'AlienAlertNeedHealing', 'AlienAlertStructureUnderAttack', 'AlienAlertHiveUnderAttack', 'AlienAlertHiveDying', 'AlienAlertHarvesterUnderAttack',
+    'AlienAlertNeedHarvester', 'AlienAlertNeedMist', 'AlienAlertNeedEnzyme', 'AlienAlertNeedHealing', 'AlienAlertStructureUnderAttack', 'AlienAlertHiveUnderAttack', 'AlienAlertHiveDying', 'AlienAlertHarvesterUnderAttack',
     'AlienAlertLifeformUnderAttack', 'AlienAlertGorgeBuiltHarvester', 'AlienCommanderEjected',
     'AlienAlertOrderComplete',
     'AlienAlertNotEnoughResources', 'AlienAlertResearchComplete', 'AlienAlertManufactureComplete', 'AlienAlertUpgradeComplete', 'AlienAlertHiveComplete',
@@ -151,7 +163,7 @@ kTechId = enum({
     'Infestation',
     
     // Commander abilities
-    'BoneWall', 'NutrientMist', 'HealWave', 'CragUmbra', 'ShadeInk', 'EnzymeCloud', 'Rupture',
+    'BoneWall', 'NutrientMist', 'SelectDrifter', 'HealWave', 'CragUmbra', 'ShadeInk', 'EnzymeCloud', 'Rupture', 'Hallucinate', 'Storm',
     
     // Alien Commander hallucinations
     'HallucinateDrifter', 'HallucinateSkulk', 'HallucinateGorge', 'HallucinateLerk', 'HallucinateFade', 'HallucinateOnos',

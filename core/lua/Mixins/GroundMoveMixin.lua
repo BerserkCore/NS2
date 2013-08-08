@@ -2,7 +2,10 @@
 //    
 // lua\GroundMoveMixin.lua
 //    
-//    Created by:   Brian Cronin (brianc@unknownworlds.com)    
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)    
+//
+//    UpdateOnGround checks only when we leave ground state.
+//    ONWorldCollision considers actual impact with a surface and handles entering ground state.
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
@@ -11,6 +14,31 @@ Script.Load("lua/Mixins/BaseMoveMixin.lua")
 GroundMoveMixin = CreateMixin(GroundMoveMixin)
 GroundMoveMixin.type = "GroundMove"
 
+local kDownSlopeFactor = math.tan(math.rad(60))
+
+local kStepHeight = 0.5
+local kAirGroundTransistionTime = 0.2
+
+local kFallAccel = 0.34
+local kMaxAirAccel = 0.54
+
+local kStopFriction = 6
+local kStopSpeed = 4
+
+local kMaxAirVeer = 1.3
+
+// min ~13 FPS assumed, otherwise players will move slower
+local kMaxDeltaTime = 0.07
+
+local kForwardMove = Vector(0, 0, 1)
+
+GroundMoveMixin.networkVars =
+{
+    onGround = "compensated boolean",
+    timeGroundAllowed = "private time",
+    timeGroundTouched = "private time"
+}
+
 GroundMoveMixin.expectedMixins =
 {
     BaseMove = "Give basic method to handle player or entity movement"
@@ -18,69 +46,311 @@ GroundMoveMixin.expectedMixins =
 
 GroundMoveMixin.expectedCallbacks =
 {
-    ComputeForwardVelocity = "Should return a forward velocity.",
-    GetFrictionForce = "Should return the friction force based on the input and velocity passed in.",
-    GetGravityAllowed = "Should return true if gravity should take effect.",
-    ModifyVelocity = "Should modify the passed in velocity based on the input and whatever other conditions are needed.",
-    UpdatePosition = "Should update the position based on the velocity and time passed in. Should return a velocity."
+    GetPerformsVerticalMove = "Return true if vertical movement should get performed."
 }
 
 GroundMoveMixin.optionalCallbacks =
 {
     PreUpdateMove = "Allows children to update state before the update happens.",
     PostUpdateMove = "Allows children to update state after the update happens.",
-    OnClampSpeed = "The passed in velocity is clamped to min or max speeds based on the input passed in."
+    ModifyVelocity = "Should modify the passed in velocity based on the input and whatever other conditions are needed.",
+    OverrideGetIsOnGround = "Manipulate on ground.",
+    GetClampedMaxSpeed = "Absolute maximum which never can be exceeded."
 }
 
 function GroundMoveMixin:__initmixin()
+
+    self.onGround = true
+    self.onGroundClient = true
+    self.timeGroundAllowed = 0
+    self.timeGroundTouched = 0
+    
 end
 
-// round the new value to network precision, rounding towards the old value
-local function RoundToNetwork(v)
-    local qMul = 128 // need to get this from the server
-    return math.floor(qMul * v + 0.5) / qMul
+local function CosFalloff(distanceFraction)
+    local piFraction = Clamp(distanceFraction, 0, 1) * math.pi / 2
+    return math.cos(piFraction + math.pi) + 1 
 end
 
-local function RoundToNetworkVec(vec)
-    vec.x = RoundToNetwork(vec.x)
-    vec.y = RoundToNetwork(vec.y)
-    vec.z = RoundToNetwork(vec.z)
-    return vec
+local function GetOnGroundFraction(self)
+
+    local transistionTime = not self.GetGroundTransistionTime and kAirGroundTransistionTime or self:GetGroundTransistionTime()
+    local groundFraction = self.onGround and Clamp( (Shared.GetTime() - self.timeGroundTouched) / transistionTime, 0, 1) or 0
+    groundFraction = CosFalloff(groundFraction)
+    if self.ModifyGroundFraction then
+        groundFraction = self:ModifyGroundFraction(groundFraction)
+    end
+    return groundFraction
+
 end
 
-local kNetPrecision = 1/128 // should import from server
+function GroundMoveMixin:GetGroundFraction()
+    return GetOnGroundFraction(self)
+end
 
-// Update origin and velocity from input.
-function GroundMoveMixin:UpdateMove(input)
-    // use the full precision origin
-    if self.fullPrecisionOrigin then
-        local orig = self:GetOrigin()
-        local delta = orig:GetDistance(self.fullPrecisionOrigin)
-        if delta < kNetPrecision then
-            // Origin has lost some precision due to network rounding, use full precision
-            self:SetOrigin(self.fullPrecisionOrigin);
-        //else
-            // the change must be due to an external event, so don't use the fullPrecision            
-            //Log("%s: external origin change, %s -> %s (%s)", self, netPrec, orig, delta)
+local function DoesStopMove(self, move, velocity)
+
+    local wishDir = GetNormalizedVectorXZ(self:GetViewCoords().zAxis) * move.z    
+    return wishDir:DotProduct(GetNormalizedVectorXZ(velocity)) < -0.8
+
+end
+
+local function GetIsCloseToGround(self, distance)
+
+    local onGround = false
+    local normal = Vector()
+    local completedMove, hitEntities = nil
+    
+    if self.controller == nil then
+        onGround = true
+    
+    elseif self.timeGroundAllowed <= Shared.GetTime() then
+    
+        // Try to move the controller downward a small amount to determine if
+        // we're on the ground.
+        local offset = Vector(0, -distance, 0)
+        // need to do multiple slides here to not get traped in V shaped spaces
+        completedMove, hitEntities, normal = self:PerformMovement(offset, 3, nil, false)
+        
+        if normal and normal.y >= 0.5 then
+            onGround = true
         end
+    
+    end
+    
+    return onGround, normal
+    
+end
+
+local function GetWishDir(self, move, simpleAcceleration, velocity)
+
+    if simpleAcceleration == nil then
+        simpleAcceleration = true
+    end
+    
+    if not self.lastXDir then
+        self.lastXDir = 1
     end
 
-    local runningPrediction = Shared.GetIsRunningPrediction()
+    // don't punish people for using the forward key, help them
+    if not simpleAcceleration and not self.onGround and move.z ~= 0 and not DoesStopMove(self, move, velocity) then
+        
+        if move.x ~= 0 then
+            move.z = 0
+        elseif velocity then
+        
+            if not self.lastXMove then
+                self.lastXMove = 0
+            end
+            
+            local translateDirection = (-self:GetViewCoords().xAxis):DotProduct(GetNormalizedVectorXZ(velocity))
+            local xMove = translateDirection == 0 and 1 or translateDirection / math.abs(translateDirection)
+            local speedFraction = velocity:GetLengthXZ() / self:GetMaxSpeed()
+            move.z = 0
+            
+            // normalize translate direction            
+            // translate z move to x
+            if math.abs(translateDirection) * speedFraction > 0.2 then            
+                move.x = xMove
+            end
+            
+            self.lastXMove = move.x
+
+        end
     
-    if self.PreUpdateMove then
-        self:PreUpdateMove(input, runningPrediction)
+    end
+
+    local wishDir = self:GetViewCoords():TransformVector(GetNormalizedVector(move))
+  
+    if not self:GetPerformsVerticalMove() then
+    
+        wishDir.y = 0
+        wishDir:Normalize()
+
     end
     
-    local velocity = self:GetVelocity()
-    // Don't factor in forward velocity if stunned.
-    if not HasMixin(self, "Stun") or not self:GetIsStunned() then
-        // ComputeForwardVelocity is an expected callback.
-        velocity = velocity + self:ComputeForwardVelocity(input) * input.time
+    return wishDir
+
+end
+
+function GroundMoveMixin:DisableGroundMove(time)
+
+    self.timeGroundAllowed = Shared.GetTime() + time
+    self.onGround = false  
+    
+end
+
+function GroundMoveMixin:EnableGroundMove()
+    self.timeGroundAllowed = 0
+end
+
+function GroundMoveMixin:ModifyMaxSpeed(maxSpeedTable)
+
+    if maxSpeedTable.wishDir then
+        local backwardsDir = math.max(0, maxSpeedTable.wishDir:DotProduct(-self:GetViewCoords().zAxis))
+        local backwardsSpeedMod = 1 - Clamp(1 - self:GetMaxBackwardSpeedScalar(), 0, 1) * backwardsDir
+        maxSpeedTable.maxSpeed = maxSpeedTable.maxSpeed * backwardsSpeedMod
+    end
+
+end
+
+local function AccelerateSimpleXZ(self, input, velocity, maxSpeedXZ, acceleration, deltaTime)
+
+    maxSpeedXZ = math.max(velocity:GetLengthXZ(), maxSpeedXZ)
+    // do XZ acceleration
+    
+    local wishDir = self:GetViewCoords():TransformVector(input.move)
+    wishDir.y = 0
+    wishDir:Normalize()
+    
+    velocity:Add(wishDir * acceleration * deltaTime)
+    
+    if velocity:GetLengthXZ() > maxSpeedXZ then
+    
+        local yVel = velocity.y        
+        velocity.y = 0
+        velocity:Normalize()
+        velocity:Scale(maxSpeedXZ)
+        velocity.y = yVel
+        
+    end
+
+end
+
+local function ForwardControl(self, deltaTime, velocity)
+
+    local airControl = self:GetAirControl() * 2
+
+    if airControl > 0 then
+
+        local wishDir = self:GetViewCoords().zAxis
+        wishDir.y = 0
+        wishDir:Normalize()
+        
+        //local dot = math.max(0, GetNormalizedVectorXZ(velocity):DotProduct(wishDir))
+        local prevXZSpeed = velocity:GetLengthXZ()
+        local prevY = velocity.y
+
+        velocity:Add(wishDir * deltaTime * airControl)
+        velocity.y = 0
+        velocity:Normalize()
+        velocity:Scale(prevXZSpeed)
+        velocity.y = prevY
+    
+    end
+
+end
+
+local function Accelerate(self, input, velocity, deltaTime)
+
+    local wishDir = GetWishDir(self, input.move, false, velocity)
+    local prevXZSpeed = velocity:GetLengthXZ()
+    local currentDir = GetNormalizedVector(velocity)
+    
+    local maxSpeedTable = { maxSpeed = self:GetMaxSpeed(), wishDir = GetWishDir(self, input.move, true, velocity) }
+    self:ModifyMaxSpeed(maxSpeedTable)
+    
+    local groundFraction = self.onGround and GetOnGroundFraction(self) or 0
+    
+    local wishSpeed = self.onGround and maxSpeedTable.maxSpeed or kMaxAirVeer
+    local currentSpeed = velocity:DotProduct(wishDir)
+    local addSpeed = wishSpeed - currentSpeed
+    
+    local clampedAirSpeed = prevXZSpeed + deltaTime * kMaxAirAccel
+    local clampSpeedXZ = math.max(self.onGround and maxSpeedTable.maxSpeed or clampedAirSpeed, prevXZSpeed)
+    
+    if input.move.z == 1 then
+        ForwardControl(self, deltaTime, velocity)
     end
     
+    if addSpeed > 0 then
+         
+        local accel = self.onGround and groundFraction * self:GetAcceleration() or self:GetAirControl()
+        local accelSpeed = accel * deltaTime * wishSpeed
+        
+        accelSpeed = math.min(addSpeed, accelSpeed)    
+        velocity:Add(wishDir * accelSpeed)
+    
+    end
+    
+    if not self.onGround then
+    
+        if not self.GetHasFallAccel or self:GetHasFallAccel() then
+        
+            wishDir.y = 0
+            local fallAccel = math.max(-velocity.y, 0) * deltaTime * kFallAccel
+            velocity:Add(GetNormalizedVectorXZ(velocity) * fallAccel)
+            
+        end
+    
+        if velocity:GetLengthXZ() > clampSpeedXZ then
+        
+            local prevY = velocity.y
+            velocity.y = 0
+            velocity:Normalize()            
+            velocity:Scale(clampSpeedXZ)
+            velocity.y = prevY
+        
+        end
+    
+    end
+
+    if not self.onGround then
+    
+        local speedScalar = 1 - Clamp(velocity:GetLengthXZ() / maxSpeedTable.maxSpeed, 0, 1) ^ 2
+        AccelerateSimpleXZ(self, input, velocity, maxSpeedTable.maxSpeed, self:GetAirAcceleration() * speedScalar, deltaTime)
+
+    end
+    
+end
+
+local function ApplyGravity(self, input, velocity, deltaTime)
+
+    local gravityTable = { gravity = self:GetGravityForce(input) }
+    if self.ModifyGravityForce then
+        self:ModifyGravityForce(gravityTable)
+    end
+
+    velocity.y = velocity.y + gravityTable.gravity * deltaTime
+
+end
+
+function GroundMoveMixin:GetFriction(input, velocity)
+
+    local friction = GetNormalizedVector(-velocity)
+    local velocityLength = 0
+    local frictionScalar = 1
+    
+    if self:GetPerformsVerticalMove() or self:GetIsOnGround() then
+        velocityLength = velocity:GetLength()
+    else
+        velocityLength = velocity:GetLengthXZ()
+    end
+    
+    if not self:GetPerformsVerticalMove() and not self:GetIsOnGround() then
+        friction.y = 0
+    end
+
+    local groundFriction = self:GetGroundFriction()
+    local airFriction = self:GetAirFriction()
+    
+    local onGroundFraction = GetOnGroundFraction(self)
+    frictionScalar = velocityLength * (onGroundFraction * groundFriction + (1 - onGroundFraction) * airFriction)
+    
+    // use minimum friction when on ground
+    if input.move:GetLength() == 0 and self.onGround and velocity:GetLength() < kStopSpeed then
+        frictionScalar = math.max(kStopFriction, frictionScalar)
+    end
+    
+    return friction * frictionScalar
+    
+end
+
+local function ApplyFriction(self, input, velocity, deltaTime)
+
     // Add in the friction force.
     // GetFrictionForce is an expected callback.
-    local friction = self:GetFrictionForce(input, velocity) * input.time
+    local friction = self:GetFriction(input, velocity) * deltaTime
 
     // If the friction force will cancel out the velocity completely, then just
     // zero it out so that the velocity doesn't go "negative".
@@ -98,29 +368,287 @@ function GroundMoveMixin:UpdateMove(input)
         velocity.z = 0
     else
         velocity.z = friction.z + velocity.z
-    end    
-    
-    if self.gravityEnabled and self:GetGravityAllowed() then
-        // Update velocity with gravity after we update our position (it accounts for gravity and varying frame rates)
-        velocity.y = velocity.y + self:GetGravityForce(input) * input.time
+    end  
+
+end
+
+local kNetPrecision = 1/128 // should import from server
+function GroundMoveMixin:PreUpdateMove(input, runningPrediction)
+
+    // use the full precision origin
+    if self.fullPrecisionOrigin then
+        local orig = self:GetOrigin()
+        local delta = orig:GetDistance(self.fullPrecisionOrigin)
+        if delta < kNetPrecision then
+            // Origin has lost some precision due to network rounding, use full precision
+            self:SetOrigin(self.fullPrecisionOrigin);
+        end
     end
     
-    // Add additional velocity according to specials.
-    self:ModifyVelocity(input, velocity)
-    
-    // Clamp speed to max speed
-    if self.OnClampSpeed then
-        self:OnClampSpeed(input, velocity)
-    end
-    
-    velocity = self:UpdatePosition(velocity, input.time, input.move)
-        
-    self:SetVelocity(velocity)
-    
-    if self.PostUpdateMove then
-        self:PostUpdateMove(input, runningPrediction)
-    end
-    
-    self.fullPrecisionOrigin = Vector(self:GetOrigin())
+    self.prevOrigin = Vector(self:GetOrigin())
     
 end
+
+local function StepDown(self, horizontalOffset)
+
+    local oldOrigin = Vector(self:GetOrigin())
+    local stepAmount = 0
+    local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(Vector(0, -horizontalOffset * downSlopeFactor, 0), 1)
+    
+    if not averageSurfaceNormal then // or averageSurfaceNormal.y < 0.5 then
+        self:SetOrigin(oldOrigin)
+        return false
+    end
+
+    return true
+    
+end
+
+local function DoStepMove(self, input, velocity, deltaTime)
+    
+    local oldOrigin = Vector(self:GetOrigin())
+    local oldVelocity = Vector(velocity)
+    local success = false
+    local stepAmount = 0
+    local slowDownFraction = self.GetCollisionSlowdownFraction and self:GetCollisionSlowdownFraction() or 1
+    local deflectMove = self.GetDeflectMove and self:GetDeflectMove() or false
+    
+    // step up at first
+    self:PerformMovement(Vector(0, kStepHeight, 0), 1)
+    stepAmount = self:GetOrigin().y - oldOrigin.y
+    // do the normal move
+    local startOrigin = Vector(self:GetOrigin())
+    local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(velocity * deltaTime, 3, velocity, true, slowDownFraction, deflectMove)
+    local horizMoveAmount = (startOrigin - self:GetOrigin()):GetLengthXZ()
+    
+    if completedMove then
+        // step down again
+        local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(Vector(0, -stepAmount - horizMoveAmount * kDownSlopeFactor, 0), 1)
+        
+        local onGround, normal = GetIsCloseToGround(self, 0.15)
+        
+        if onGround then
+            success = true
+        end
+
+    end    
+        
+    // not succesful. fall back to normal move
+    if not success then
+    
+        self:SetOrigin(oldOrigin)
+        VectorCopy(oldVelocity, velocity)
+        self:PerformMovement(velocity * deltaTime, 3, velocity, true, slowDownFraction, deflectMove)
+        
+    end
+
+    return success
+
+end
+
+function GroundMoveMixin:GetCanStep()
+    return true
+end    
+
+local function FlushCollisionCallbacks(self, velocity)
+
+    if not self.onGround and self.storedNormal then
+
+        local onGround, normal = GetIsCloseToGround(self, 0.15)
+        
+        if self.OverrideUpdateOnGround then
+            onGround = self:OverrideUpdateOnGround(onGround)
+        end
+
+        if onGround then
+        
+            self.onGround = true
+            
+            // dont transistion for only short in air durations
+            if self.timeGroundTouched + kAirGroundTransistionTime <= Shared.GetTime() then
+                self.timeGroundTouched = Shared.GetTime()
+            end
+
+            if self.OnGroundChanged then
+                self:OnGroundChanged(self.onGround, self.storedImpactForce, normal, velocity)
+            end
+            
+        end
+    
+    end
+    
+    self.storedNormal = nil
+    self.storedImpactForce = nil
+
+end
+
+function GroundMoveMixin:UpdatePosition(input, velocity, deltaTime)
+
+    PROFILE("GroundMoveMixin:UpdatePosition")
+    
+    if self.controller then
+    
+        local oldVelocity = Vector(velocity)
+        
+        local stepAllowed = self.onGround and self:GetCanStep()
+        local didStep = false
+        local stepAmount = 0
+        local hitObstacle = false
+    
+        // check if we are allowed to step:
+        local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(velocity * deltaTime * 2.5, 3, nil, false)
+  
+        if stepAllowed and hitEntities then
+        
+            for i = 1, #hitEntities do
+                if not self:GetCanStepOver(hitEntities[i]) then
+                
+                    hitObstacle = true
+                    stepAllowed = false
+                    break
+                    
+                end
+            end
+        
+        end
+        
+        if not stepAllowed then
+        
+            if hitObstacle then
+
+                if self.onGround then
+                    velocity:Scale(0.22)    
+                else
+                    velocity:Scale(0.5)  
+                end
+    
+                velocity.y = oldVelocity.y
+                
+            end
+            
+            local slowDownFraction = self.GetCollisionSlowdownFraction and self:GetCollisionSlowdownFraction() or 1
+            local deflectMove = self.GetDeflectMove and self:GetDeflectMove() or false
+            
+            self:PerformMovement(velocity * deltaTime, 3, velocity, true, slowDownFraction, deflectMove)
+            
+        else        
+            didStep, stepAmount = DoStepMove(self, input, velocity, deltaTime)            
+        end
+        
+        FlushCollisionCallbacks(self, velocity)
+        
+        if self.OnPositionUpdated then
+            self:OnPositionUpdated(self:GetOrigin() - self.prevOrigin, stepAllowed, input, velocity)
+        end
+        
+    end
+    
+    SetSpeedDebugText("onGround %s", ToString(self.onGround))
+
+end
+
+local function GetSign(number)
+    return number >= 0 and 1 or -1    
+end
+/*
+function GroundMoveMixin:OnPositionUpdated(move, stepAllowed, input, velocity)
+
+    // unstuck, hacky but works
+    if input.move:GetLength() ~= 0 and bit.band(input.commands, Move.Jump) ~= 0 and move:GetLength() == 0 and self:GetVelocity():GetLength() ~= 0 and (not self.timeLastAutoUnstuck or self.timeLastAutoUnstuck + 0.5 < Shared.GetTime()) then
+        
+        local xDir = GetSign(math.random() - 0.5)
+        local yDir = GetSign(math.random() - 0.5)
+        local zDir = GetSign(math.random() - 0.5)
+    
+        self:PerformMovement(Vector(0.15 * xDir, 0.15 * yDir, 0.15 * zDir), 3, nil, true)
+        self.timeLastAutoUnstuck = Shared.GetTime()
+        //Print("auto unstuck %s", ToString(self.GetName and self:GetName() or self:GetClassName() ))
+        
+    end
+
+end
+*/
+
+function GroundMoveMixin:ModifyVelocity(input, velocity, deltaTime)
+end
+
+function GroundMoveMixin:GetIsOnGround()
+    return self.onGround
+end
+
+// for compatibility
+function GroundMoveMixin:GetIsOnSurface()
+    return self.onGround
+end
+
+local function UpdateOnGround(self, input, velocity)
+
+    local onGround, normal = GetIsCloseToGround(self, 0.15)
+
+    if self.OverrideUpdateOnGround then
+        onGround = self:OverrideUpdateOnGround(onGround)
+    end
+    
+    if not onGround and onGround ~= self.onGround then
+    
+        self.onGround = false
+        self.timeGroundTouched = Shared.GetTime()
+        
+        if self.OnGroundChanged then
+            self:OnGroundChanged(onGround, 0)
+        end
+    
+    end
+    
+end
+
+function GroundMoveMixin:GetTimeGroundTouched()
+    return self.timeGroundTouched
+end
+
+// Update origin and velocity from input.
+function GroundMoveMixin:UpdateMove(input, runningPrediction)
+
+    local deltaTime = input.time // math.min(kMaxDeltaTime, input.time)
+    local velocity = self:GetVelocity()
+    
+    UpdateOnGround(self, input, velocity)
+    self:ModifyVelocity(input, velocity, deltaTime)
+    ApplyFriction(self, input, velocity, deltaTime)
+    ApplyGravity(self, input, velocity, deltaTime)
+    Accelerate(self, input, velocity, deltaTime)
+
+    self:UpdatePosition(input, velocity, deltaTime)    
+    self:SetVelocity(velocity)
+    
+end
+
+function GroundMoveMixin:OnWorldCollision(normal, impactForce)
+
+    if normal then
+
+        if not self.storedNormal then
+            self.storedNormal = normal
+        else
+            self.storedNormal:Add(normal)
+            self.storedNormal:Normalize()
+        end
+    
+    end
+    
+    if impactForce then
+    
+        if not self.storedImpactForce then
+            self.storedImpactForce = impactForce
+        else
+            self.storedImpactForce = (self.storedImpactForce + impactForce) * 0.5
+        end
+        
+    end
+    
+end
+
+function GroundMoveMixin:PostUpdateMove(input, runningPrediction)
+    self.fullPrecisionOrigin = Vector(self:GetOrigin())
+end
+

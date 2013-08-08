@@ -35,6 +35,7 @@ Script.Load("lua/GhostStructureMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
 
 class 'InfantryPortal' (ScriptActor)
 
@@ -235,6 +236,7 @@ function InfantryPortal:OnInitialized()
         
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, InfestationTrackerMixin)
+        InitMixin(self, SupplyUserMixin)
         
     elseif Client then
         InitMixin(self, UnitStatusMixin)

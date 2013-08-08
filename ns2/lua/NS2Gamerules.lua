@@ -501,6 +501,7 @@ if Server then
                         // make up for not manually moving to CS and using it
                         commandStructure.occupied = true
                         player:SetOrigin(commandStructure:GetDefaultEntryOrigin())
+                        player:SetResources(kCommanderInitialIndivRes)
                         commandStructure:LoginPlayer(player)
                         break
                     end
@@ -718,14 +719,16 @@ if Server then
     end
     
     // Commander ejection functionality
-    function NS2Gamerules:CastVoteByPlayer( voteTechId, player )
+    function NS2Gamerules:CastVoteByPlayer(voteTechId, player)
     
         if voteTechId == kTechId.VoteConcedeRound then
         
             if self.timeSinceGameStateChanged > kMinTimeBeforeConcede and self:GetGameStarted() then
             
                 local team = player:GetTeam()
-                team:VoteToGiveUp(player)
+                if team.VoteToGiveUp then
+                    team:VoteToGiveUp(player)
+                end
                 
             end
         
@@ -1076,10 +1079,10 @@ if Server then
         return ConditionalValue(math.random() < .5, kTeam1Index, kTeam2Index)
         
     end
-    
+
     -- No enforced balanced teams on join as the auto team balance system balances teams.
     function NS2Gamerules:GetCanJoinTeamNumber(teamNumber)
-    
+
         local forceEvenTeams = Server.GetConfigSetting("force_even_teams_on_join")
         -- This option was added after shipping, so support older config files that don't include it.
         -- Fallback to forcing even teams if they don't have this entry in the config file.
@@ -1159,7 +1162,15 @@ if Server then
         end
         
         // Join new team
-        if player and player:GetTeamNumber() ~= newTeamNumber or force then
+        if player and player:GetTeamNumber() ~= newTeamNumber or force then        
+            
+            if player:isa("Commander") then
+                OnCommanderLogOut(player)
+            end        
+            
+            if not Shared.GetCheatsEnabled() and self:GetGameStarted() and newTeamNumber ~= kTeamReadyRoom then
+                player.spawnBlockTime = Shared.GetTime() + kSuicideDelay
+            end
         
             local team = self:GetTeam(newTeamNumber)
             local oldTeam = self:GetTeam(player:GetTeamNumber())
@@ -1215,7 +1226,7 @@ if Server then
                 newPlayer:SetResources(disconnectedPlayerRes)
                 self.disconnectedPlayerResources[clientUserId] = nil
                 
-            else
+            elseif not player:isa("Commander") then
             
                 // Give new players starting resources. Mark players as "having played" the game (so they don't get starting res if
                 // they join a team again, etc.)
@@ -1300,29 +1311,31 @@ if Server then
     end
     
     local function CheckAutoConcede(self)
-    
+
         // This is an optional end condition based on the teams being unbalanced.
         local endGameOnUnbalancedAmount = Server.GetConfigSetting("end_round_on_team_unbalance")
         if endGameOnUnbalancedAmount and endGameOnUnbalancedAmount > 0 then
-        
+
             local gameLength = Shared.GetTime() - self:GetGameStartTime()
             // Don't start checking for auto-concede until the game has started for some time.
             local checkAutoConcedeAfterTime = Server.GetConfigSetting("end_round_on_team_unbalance_check_after_time") or 300
             if gameLength > checkAutoConcedeAfterTime then
-            
+
                 local team1Players = self.team1:GetNumPlayers()
                 local team2Players = self.team2:GetNumPlayers()
                 local totalCount = team1Players + team2Players
-                
                 // Don't consider unbalanced game end until enough people are playing.
+
                 if totalCount > 6 then
                 
                     local team1ShouldLose = false
                     local team2ShouldLose = false
                     
                     if (1 - (team1Players / team2Players)) >= endGameOnUnbalancedAmount then
+
                         team1ShouldLose = true
                     elseif (1 - (team2Players / team1Players)) >= endGameOnUnbalancedAmount then
+
                         team2ShouldLose = true
                     end
                     

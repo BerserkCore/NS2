@@ -21,10 +21,13 @@ Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/NanoShieldMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
 class 'Exo' (Player)
+
+kExoThrusterMode = enum({'Vertical', 'Horizontal'})
 
 local networkVars =
 {
@@ -35,7 +38,8 @@ local networkVars =
     timeThrustersEnded = "private compensated time",
     timeThrustersStarted = "private compensated time",
     weaponUpgradeLevel = "integer (0 to 3)",
-    inventoryWeight = "float"
+    inventoryWeight = "float",
+    thrusterMode = "enum kExoThrusterMode"
 }
 
 Exo.kMapName = "exo"
@@ -69,16 +73,16 @@ local kHealthCritical = PrecacheAsset("sound/NS2.fev/marine/heavy/critical")
 local kHealthCriticalTrigger = 0.2
 
 local kWalkMaxSpeed = 3.7
-local kMaxSpeed = 5
+local kMaxSpeed = 6
 local kViewOffsetHeight = 2.3
-local kAcceleration = 40
+local kAcceleration = 20
 
 local kSmashEggRange = 1.5
 
 local kCrouchShrinkAmount = 0
 local kExtentsCrouchShrinkAmount = 0
 
-local kThrustersCooldownTime = 4
+local kThrustersCooldownTime = 2.5
 local kThrusterDuration = 1.5
 
 local kDeploy2DSound = PrecacheAsset("sound/NS2.fev/marine/heavy/deploy_2D")
@@ -98,7 +102,9 @@ local kExoViewHeavilyDamaged = PrecacheAsset("cinematics/marine/exo/hurt_severe_
 local kFlareCinematic = PrecacheAsset("cinematics/marine/exo/lens_flare.cinematic")
 
 local kThrusterUpwardsAcceleration = 2
-local kThrusterHorizontalAcceleration = 2
+local kThrusterHorizontalAcceleration = 23
+// added to max speed when using thrusters
+local kHorizontalThrusterAddSpeed = 2.5
 
 Exo.kXZExtents = 0.55
 Exo.kYExtents = 1.2
@@ -113,6 +119,7 @@ AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(NanoShieldMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
@@ -158,6 +165,7 @@ function Exo:OnCreate()
     self.timeThrustersEnded = 0
     self.timeThrustersStarted = 0
     self.inventoryWeight = 0
+    self.thrusterMode = kExoThrusterMode.Vertical
     
     if Server then
     
@@ -204,6 +212,7 @@ function Exo:OnInitialized()
         
             modelName = kDualModelName
             graphName = kDualAnimationGraph
+            self.hasDualGuns = true
             
         elseif self.layout == "ClawRailgun" then
         
@@ -214,6 +223,7 @@ function Exo:OnInitialized()
         
             modelName = kDualRailgunModelName
             graphName = kDualRailgunAnimationGraph
+            self.hasDualGuns = true
             
         end
         
@@ -224,6 +234,7 @@ function Exo:OnInitialized()
     end
     
     InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kPlayerMoveOrderCompleteDistance })
+    InitMixin(self, NanoShieldMixin)
     
     Player.OnInitialized(self)
     
@@ -285,11 +296,25 @@ local function ShowHUD(self, show)
     
 end
 
+function Exo:GetPlayerControllersGroup()
+    return PhysicsGroup.BigPlayerControllersGroup
+end
+
 function Exo:OnInitLocalClient()
 
     Player.OnInitLocalClient(self)
     
     ShowHUD(self, false)
+    
+end
+
+function Exo:ComputeDamageAttackerOverride(attacker, damage, damageType)
+
+    if self.hasDualGuns then
+        damage = damage * kExoDualGunModifier
+    end
+
+    return damage
     
 end
 
@@ -335,11 +360,11 @@ function Exo:InitWeapons()
 end
 
 function Exo:GetMaxBackwardSpeedScalar()
-    return 1
-end    
+    return 0.8
+end   
 
 function Exo:OnDestroy()
-
+        
     if self.flashlight ~= nil then
         Client.DestroyRenderLight(self.flashlight)
     end
@@ -378,15 +403,11 @@ function Exo:GetMaxViewOffsetHeight()
     return kViewOffsetHeight
 end
 
-function Exo:GetAcceleration()
-    return ConditionalValue(self:GetIsOnSurface(), kAcceleration, kThrusterHorizontalAcceleration) * self:GetInventorySpeedScalar()
-end
-
 function Exo:GetMaxSpeed(possible)
 
     if possible then
         return kWalkMaxSpeed
-    end    
+    end
     
     return kMaxSpeed * self:GetInventorySpeedScalar()
     
@@ -400,16 +421,20 @@ function Exo:GetHeadAttachpointName()
     return "Exosuit_HoodHinge"
 end
 
-function Exo:GetArmorAmount()
+function Exo:GetArmorAmount(armorLevels)
 
-    local armorLevels = 0
+    if not armorLevels then
     
-    if GetHasTech(self, kTechId.Armor3, true) then
-        armorLevels = 3
-    elseif GetHasTech(self, kTechId.Armor2, true) then
-        armorLevels = 2
-    elseif GetHasTech(self, kTechId.Armor1, true) then
-        armorLevels = 1
+        armorLevels = 0
+    
+        if GetHasTech(self, kTechId.Armor3, true) then
+            armorLevels = 3
+        elseif GetHasTech(self, kTechId.Armor2, true) then
+            armorLevels = 2
+        elseif GetHasTech(self, kTechId.Armor1, true) then
+            armorLevels = 1
+        end
+    
     end
     
     return kExosuitArmor + armorLevels * kExosuitArmorPerUpgradeLevel
@@ -609,7 +634,7 @@ if Server then
 end
 
 if Client then
-
+    
     // The Exo overrides the default trigger for footsteps.
     // They are triggered by the view model for the local player but
     // still uses the default behavior for other players viewing the Exo.
@@ -668,12 +693,12 @@ if Client then
         
             local armorDisplay = self.armorDisplay
             if not armorDisplay then
-            
+
                 armorDisplay = Client.CreateGUIView(256, 256)
                 armorDisplay:Load("lua/GUIExoArmorDisplay.lua")
                 armorDisplay:SetTargetTexture("*exo_armor")
                 self.armorDisplay = armorDisplay
-                
+
             end
             
             local armorAmount = self:GetIsAlive() and math.ceil(math.max(1, self:GetArmor())) or 0
@@ -745,13 +770,15 @@ function Exo:HandleButtons(input)
     
 end
 
-local function HandleThrusterStart(self)
+local function HandleThrusterStart(self, thrusterMode)
 
-    self.onGroundNeedsUpdate = true
-    self.onGround = false                
+    if thrusterMode == kExoThrusterMode.Vertical then
+        self:DisableGroundMove(0.5)       
+    end
+    
     self.thrustersActive = true 
-    self.jumping = true
     self.timeThrustersStarted = Shared.GetTime()
+    self.thrusterMode = thrusterMode
 
 end
 
@@ -760,23 +787,21 @@ local function HandleThrusterEnd(self)
     self.thrustersActive = false
     self.timeThrustersEnded = Shared.GetTime()
     
-    if self:GetIsOnGround() then
-        self.jumping = false
-    end 
-    
 end
 
 function Exo:UpdateThrusters(input)
 
     local lastThrustersActive = self.thrustersActive
-    local jumpPressed = (bit.band(input.commands, Move.Jump) ~= 0)
+    local jumpPressed = bit.band(input.commands, Move.Jump) ~= 0
+    local movementSpecialPressed = bit.band(input.commands, Move.MovementModifier) ~= 0
+    local thrusterDesired = jumpPressed or movementSpecialPressed
 
-    if jumpPressed ~= lastThrustersActive then
+    if thrusterDesired ~= lastThrustersActive then
     
-        if jumpPressed then
+        if thrusterDesired then
         
             if self.timeThrustersEnded + kThrustersCooldownTime < Shared.GetTime() then
-                HandleThrusterStart(self)
+                HandleThrusterStart(self, jumpPressed and kExoThrusterMode.Vertical or kExoThrusterMode.Horizontal)
             end
 
         else
@@ -791,71 +816,56 @@ function Exo:UpdateThrusters(input)
 
 end
 
-function Exo:GetIsOnSurface()
-    return Player.GetIsOnSurface(self) and not self.thrustersActive
-end
-
-function Exo:GetIsOnGround()
-    return Player.GetIsOnGround(self) and not self.thrustersActive
-end
-
-// for jetpack fuel display
-function Exo:GetFuel()
-
-    if self.thrustersActive then
-        self.fuelFraction = 1 - Clamp((Shared.GetTime() - self.timeThrustersStarted) / kThrusterDuration, 0, 1)
-    else
-        self.fuelFraction = Clamp((Shared.GetTime() - self.timeThrustersEnded) / kThrustersCooldownTime, 0, 1)
-    end
-    
-    return self.fuelFraction
-        
+function Exo:GetGroundFriction()
+    return self.thrustersActive and 2 or 8
 end
 
 local kUpVector = Vector(0, 1, 0)
+function Exo:ModifyVelocity(input, velocity, deltaTime)
 
-// required to not stick to the ground during jetpacking
-function Exo:ComputeForwardVelocity(input)
-
-    // Call the original function to get the base forward velocity.
-    local forwardVelocity = Player.ComputeForwardVelocity(self, input)
-    
     if self.thrustersActive then
-        forwardVelocity = forwardVelocity + kUpVector * kThrusterUpwardsAcceleration
+    
+        if self.thrusterMode == kExoThrusterMode.Vertical then   
+        
+            velocity:Add(kUpVector * kThrusterUpwardsAcceleration * deltaTime)
+            velocity.y = math.min(1.5, velocity.y)
+            
+        elseif self.thrusterMode == kExoThrusterMode.Horizontal then
+        
+            input.move:Scale(0)
+        
+            local maxSpeed = self:GetMaxSpeed() + kHorizontalThrusterAddSpeed
+            local wishDir = self:GetViewCoords().zAxis
+            wishDir.y = 0
+            wishDir:Normalize()
+            
+            local currentSpeed = wishDir:DotProduct(velocity)
+            local addSpeed = math.max(0, maxSpeed - currentSpeed)
+            
+            if addSpeed > 0 then
+                    
+                local accelSpeed = kThrusterHorizontalAcceleration * deltaTime               
+                accelSpeed = math.min(addSpeed, accelSpeed)
+                velocity:Add(wishDir * accelSpeed)
+            
+            end
+        
+        end
+        
     end
     
-    return forwardVelocity
-    
 end
 
-function Exo:AdjustGravityForce(input, gravity)
-    
-    if self.thrustersActive then
-        gravity = 0
+function Exo:ModifyGravityForce(gravityTable)
+
+    if self:GetIsOnGround() or ( self.thrustersActive and self.thrusterMode == kExoThrusterMode.Vertical ) then
+        gravityTable.gravity = 0
     end
-    
-    return gravity
-      
-end
 
-function Exo:ConstrainMoveVelocity(wishVelocity)
-
-end
-
-function Exo:PerformsVerticalMove()
-    return self.thrustersActive
-end
-
-function Exo:GetAirFrictionForce()
-    return 0.5
-end   
-
-function Exo:GetAirMoveScalar()
-    return 1
 end
 
 function Exo:GetArmorUseFractionOverride()
- return 1.0
+    return 1.0
 end
 
 if Client then
@@ -867,6 +877,44 @@ if Client then
 
     end
 
+end
+
+local kMinigunDisruptTimeout = 5
+
+function Exo:Disrupt()
+
+    if not self.timeLastExoDisrupt then
+        self.timeLastExoDisrupt = Shared.GetTime() - kMinigunDisruptTimeout
+    end
+    
+    if self.timeLastExoDisrupt + kMinigunDisruptTimeout <= Shared.GetTime() then
+
+        local weaponHolder = self:GetActiveWeapon()    
+        local leftWeapon = weaponHolder:GetLeftSlotWeapon()
+        local rightWeapon = weaponHolder:GetRightSlotWeapon()
+        
+        if leftWeapon:isa("Minigun") then
+        
+            leftWeapon.overheated = true
+            self:TriggerEffects("minigun_overheated_left")
+            leftWeapon:OnPrimaryAttackEnd(self)
+            
+        end
+        
+        if rightWeapon:isa("Minigun") then
+        
+            rightWeapon.overheated = true
+            self:TriggerEffects("minigun_overheated_left")
+            rightWeapon:OnPrimaryAttackEnd(self)
+        
+        end
+        
+        StartSoundEffectForPlayer("sound/NS2.fev/marine/heavy/overheated", self)
+        
+        self.timeLastExoDisrupt = Shared.GetTime()
+    
+    end
+    
 end
 
 if Server then
@@ -900,6 +948,10 @@ if Server then
 
 end
 
+function Exo:GetAirControl()
+    return 5
+end
+
 function Exo:GetAnimateDeathCamera()
     return false
 end
@@ -910,6 +962,46 @@ end
 
 function  Exo:GetShowDamageArrows()
     return true
+end
+
+// for jetpack fuel display
+function Exo:GetFuel()
+
+    if self.thrustersActive then
+        self.fuelFraction = 1 - Clamp((Shared.GetTime() - self.timeThrustersStarted) / kThrusterDuration, 0, 1)
+    else
+        self.fuelFraction = Clamp((Shared.GetTime() - self.timeThrustersEnded) / kThrustersCooldownTime, 0, 1)
+    end
+    
+    return self.fuelFraction
+        
+end
+
+function Exo:OnUpdateAnimationInput(modelMixin)
+
+    PROFILE("Exo:OnUpdateAnimationInput")
+    
+    Player.OnUpdateAnimationInput(self, modelMixin)
+    
+    if self.thrustersActive then    
+        modelMixin:SetAnimationInput("move", "jump")
+    end
+    
+end
+
+if Server then
+
+    local function OnCommandDisruptExo(client)
+
+        local player = client:GetControllingPlayer()
+        if player and player:isa("Exo") and Shared.GetCheatsEnabled() then
+            player:Disrupt()
+        end
+
+    end
+
+    Event.Hook("Console_disruptexo", OnCommandDisruptExo)
+
 end
 
 Shared.LinkClassToMap("Exo", Exo.kMapName, networkVars)

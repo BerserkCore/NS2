@@ -52,8 +52,22 @@ function SwipeBlink:GetPrimaryAttackRequiresPress()
     return false
 end
 
+if kUseGradualMeleeAttacks then
+
 function SwipeBlink:GetMeleeBase()
     return 1.5, 1.2
+end
+
+else
+
+function SwipeBlink:GetMeleeBase()
+    local parent = self:GetParent()
+    if parent and parent.GetIsEnzymed and parent:GetIsEnzymed() then
+        return 1, 1.2
+    end
+    return .7, 1
+end
+
 end
 
 function SwipeBlink:GetDeathIconIndex()
@@ -116,7 +130,13 @@ function SwipeBlink:PerformMeleeAttack()
 
     local player = self:GetParent()
     if player then
-        local didHit, hitObject, endPoint, surface = PerformGradualMeleeAttack(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
+    
+        if kUseGradualMeleeAttacks then
+            PerformGradualMeleeAttack(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
+        else
+            AttackMeleeCapsule(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
+        end    
+            
     end
     
 end

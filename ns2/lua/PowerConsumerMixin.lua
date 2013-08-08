@@ -28,11 +28,14 @@ PowerConsumerMixin.optionalCallbacks =
 
 PowerConsumerMixin.networkVars =
 {
-    powered = "boolean"
+    powered = "boolean",
+    powerSurge = "boolean"
 }
 
 function PowerConsumerMixin:__initmixin()
     self.powered = false
+    self.powerSurge = false
+    self.timePowerSurgeEnds = 0
 end
 
 if Server then
@@ -48,16 +51,13 @@ if Server then
     
 end
 
-function PowerConsumerMixin:GetIsPowered()
+function PowerConsumerMixin:SetPowerSurgeDuration(duration)
+    self.timePowerSurgeEnds = Shared.GetTime() + duration
+    self.powerSurge = true
+end
 
-    local isPowered = true
-    
-    if self.GetIsPoweredOverride then
-        isPowered = self:GetIsPoweredOverride()
-    end
-    
-    return self.powered and isPowered
-    
+function PowerConsumerMixin:GetIsPowered() 
+    return self.powered or self.powerSurge
 end
 
 function PowerConsumerMixin:GetCanBeUsed(player, useSuccessTable)
@@ -119,6 +119,10 @@ if Server then
         
     end
     
+    function PowerConsumerMixin:OnUpdate(deltaTime)
+        self.powerSurge = self.timePowerSurgeEnds > Shared.GetTime()
+    end
+    
     // no need to trigger power on and power off events
     function PowerConsumerMixin:OnEntityChange(oldId, newId)
     
@@ -152,7 +156,7 @@ if Server then
     
     function PowerConsumerMixin:SetPowerOn()
     
-        if not self:GetIsPowered() then
+        if not self.powered then
         
             self.powered = true
             
@@ -173,7 +177,7 @@ if Server then
     
     function PowerConsumerMixin:SetPowerOff()
     
-        if self:GetIsPowered() then
+        if self.powered then
         
             self.powered = false
             
@@ -197,4 +201,20 @@ function PowerConsumerMixin:OnUpdateAnimationInput(modelMixin)
     
     modelMixin:SetAnimationInput("powered", self:GetIsPowered())
     
+end
+
+function PowerConsumerMixin:OnUpdateRender()
+
+    if self.powerSurge then
+    
+        if not self.timeLastPowerSurgeEffect or self.timeLastPowerSurgeEffect + 1 < Shared.GetTime() then
+        
+            self:TriggerEffects("power_surge")
+            self.timeLastPowerSurgeEffect = Shared.GetTime()
+        
+        end
+    
+    end
+
+
 end

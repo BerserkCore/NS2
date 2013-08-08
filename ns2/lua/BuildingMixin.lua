@@ -108,7 +108,7 @@ function BuildingMixin:AttemptToBuild(techId, origin, normal, orientation, isCom
         
     elseif errorString then
 
-        DebugPrint("AttemptToBuild failed, errorString: %s. Stack: %s", errorString, Script.CallStack())
+        //DebugPrint("AttemptToBuild failed, errorString: %s. Stack: %s", errorString, Script.CallStack())
     
         local commander = self:isa("Commander") and self or self:GetOwner()
     

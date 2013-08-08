@@ -21,6 +21,11 @@ Shared.PrecacheSurfaceShader("materials/effects/mesh_effects/view_blood.surface_
 // Melee attacks must originate from the player's eye instead of the world model's eye to make sure you 
 // can't attack through walls.
 local kRange = 1.2
+if not kUseGradualMeleeAttacks then
+    kRange = 1.42
+end
+
+local kEnzymedRange = 1.55
 
 local kStructureHitEffect = PrecacheAsset("cinematics/alien/skulk/bite_view_structure.cinematic")
 local kMarineHitEffect = PrecacheAsset("cinematics/alien/skulk/bite_view_marine.cinematic")
@@ -95,9 +100,26 @@ function BiteLeap:OnPrimaryAttackEnd()
     
 end
 
+if kUseGradualMeleeAttacks then
+
 function BiteLeap:GetMeleeBase()
     // Width of box, height of box
     return 1.1, 1
+end
+
+else
+
+function BiteLeap:GetMeleeBase()
+    // Width of box, height of box
+    
+    local parent = self:GetParent()
+    if parent and parent.GetIsEnzymed and parent:GetIsEnzymed() then
+        return 0.8, 1.1
+    end
+    
+    return 0.7, 1
+end
+
 end
 
 function BiteLeap:GetMeleeOffset()
@@ -112,9 +134,16 @@ function BiteLeap:OnTag(tagName)
     
         local player = self:GetParent()
         
-        if player then  
+        if player then
         
-            local didHit, target, endPoint = PerformGradualMeleeAttack(self, player, kBiteDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
+            local range = (player.GetIsEnzymed and player:GetIsEnzymed()) and kEnzymedRange or kRange
+        
+            local didHit, target, endPoint
+            if kUseGradualMeleeAttacks then
+                didHit, target, endPoint = PerformGradualMeleeAttack(self, player, kBiteDamage, range, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
+            else
+                didHit, target, endPoint = AttackMeleeCapsule(self, player, kBiteDamage, range, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
+            end
             
             if Client and didHit then
                 self:TriggerFirstPersonHitEffects(player, target)  

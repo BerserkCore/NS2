@@ -101,7 +101,7 @@ local function SharedUpdate(self)
        
     elseif Client and not Shared.GetIsRunningPrediction() then
     
-        if self:GetIsParasited() and self:GetIsAlive() then
+        if self:GetIsParasited() and self:GetIsAlive() and self:isa("Player") then
             self:_CreateParasiteEffect()
         else
             self:_RemoveParasiteEffect() 

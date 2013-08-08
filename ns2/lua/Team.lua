@@ -319,7 +319,17 @@ function Team:PutPlayerInRespawnQueue(player)
         
     else
     
-        player:SetRespawnQueueEntryTime(Shared.GetTime())
+        local extraTime = 0
+        if player.spawnBlockTime then
+            extraTime = math.max(0, player.spawnBlockTime - Shared.GetTime())
+        end
+        
+        if player.spawnReductionTime then
+            extraTime = extraTime - player.spawnReductionTime
+            player.spawnReductionTime = nil
+        end
+    
+        player:SetRespawnQueueEntryTime(Shared.GetTime() + extraTime)
         table.insertunique(self.respawnQueue, player:GetId())
         
         if self.OnRespawnQueueChanged then
@@ -399,7 +409,9 @@ function Team:GetOldestQueuedPlayer()
         
     end
     
-    return playerToSpawn
+    if playerToSpawn and ( not playerToSpawn.spawnBlockTime or playerToSpawn.spawnBlockTime <= Shared.GetTime() ) then    
+        return playerToSpawn
+    end
     
 end
 

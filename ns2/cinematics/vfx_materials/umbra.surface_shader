@@ -22,7 +22,7 @@
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 		
-			const float3 tint = float3(1, 0.35, 0);
+			const float3 tint = float3(1, 0.35, 0) * 3;
 			const float speed = 0.7;
 
 			float3 noise = tex2D( noiseMap, (input.texCoord * 3 + float2(time *-0.8, time * 0.6) * speed) ).rgb * .8; 

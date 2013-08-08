@@ -16,6 +16,8 @@ class 'Shotgun' (ClipWeapon)
 
 Shotgun.kMapName = "shotgun"
 
+local kBulletSize = 0.016
+
 local networkVars =
 {
     emptyPoseParam = "private float (0 to 1 by 0.01)"
@@ -24,7 +26,7 @@ local networkVars =
 AddMixinNetworkVars(LiveMixin, networkVars)
 
 // higher numbers reduces the spread
-local kSpreadDistance = 10
+local kSpreadDistance = 9.5
 local kStartOffset = 0
 local kSpreadVectors =
 {
@@ -40,10 +42,10 @@ local kSpreadVectors =
     GetNormalizedVector(Vector(0, -1, kSpreadDistance)),
     GetNormalizedVector(Vector(0, 1, kSpreadDistance)),
     
-    GetNormalizedVector(Vector(-0.25, 0, kSpreadDistance)),
-    GetNormalizedVector(Vector(0.25, 0, kSpreadDistance)),
-    GetNormalizedVector(Vector(0, -0.25, kSpreadDistance)),
-    GetNormalizedVector(Vector(0, 0.25, kSpreadDistance)),
+    GetNormalizedVector(Vector(-0.35, 0, kSpreadDistance)),
+    GetNormalizedVector(Vector(0.35, 0, kSpreadDistance)),
+    GetNormalizedVector(Vector(0, -0.35, kSpreadDistance)),
+    GetNormalizedVector(Vector(0, 0.35, kSpreadDistance)),
     
     GetNormalizedVector(Vector(-0.8, -0.8, kSpreadDistance)),
     GetNormalizedVector(Vector(-0.8, 0.8, kSpreadDistance)),
@@ -124,7 +126,7 @@ function Shotgun:GetTracerEffectFrequency()
     return 0.5
 end
 
-function Shotgun:GetBulletDamage(target, endPoint)
+function Shotgun:GetBulletDamage()
     return kShotgunDamage    
 end
 
@@ -226,6 +228,10 @@ function Shotgun:FirePrimary(player)
         startPoint = player:GetEyePos() + shootCoords.xAxis * kSpreadVectors[bullet].x * kStartOffset + shootCoords.yAxis * kSpreadVectors[bullet].y * kStartOffset
         
         local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+        if not trace.entity then
+            local extents = GetDirectedExtentsForDiameter(spreadDirection, kBulletSize)
+            trace = Shared.TraceBox(extents, startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+        end 
         
         local damage = 0
 
@@ -297,7 +303,7 @@ if Client then
     function Shotgun:GetUIDisplaySettings()
         return { xSize = 256, ySize = 128, script = "lua/GUIShotgunDisplay.lua" }
     end
-    
+
 end
 
 function Shotgun:ModifyDamageTaken(damageTable, attacker, doer, damageType)

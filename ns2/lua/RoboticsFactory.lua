@@ -34,6 +34,7 @@ Script.Load("lua/GhostStructureMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
 
 class 'RoboticsFactory' (ScriptActor)
 
@@ -140,6 +141,7 @@ function RoboticsFactory:OnInitialized()
         
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, InfestationTrackerMixin)
+        InitMixin(self, SupplyUserMixin)
     
     elseif Client then
     
@@ -180,8 +182,6 @@ function RoboticsFactory:GetTechAllowed(techId, techNode, player)
     
     if techId == kTechId.ARC then
         allowed = allowed and self:GetTechId() == kTechId.ARCRoboticsFactory
-    elseif techId == kTechId.MAC then
-        allowed = allowed and GetIsWorkerConstructionAllowed(self:GetTeamNumber())
     elseif techId == kTechId.Cancel then
         allowed = self:GetResearchProgress() < 1
     end
@@ -193,7 +193,7 @@ end
 function RoboticsFactory:GetTechButtons(techId)
 
     local techButtons = {  kTechId.ARC, kTechId.MAC, kTechId.None, kTechId.None, 
-               kTechId.None, kTechId.MACSpeedTech, kTechId.MACEMPTech, kTechId.None }
+               kTechId.None, kTechId.None, kTechId.None, kTechId.None }
                
     if self:GetTechId() ~= kTechId.ARCRoboticsFactory then
         techButtons[5] = kTechId.UpgradeRoboticsFactory
@@ -310,8 +310,8 @@ if Server then
         return false
     end
     
-    function RoboticsFactory:OnConstructionComplete()
-        self:AddTimedCallback(RoboticsFactory.Deploy, 3)
+    function RoboticsFactory:OnConstructionComplete()    
+        self:AddTimedCallback(RoboticsFactory.Deploy, 3)        
     end
     
 end

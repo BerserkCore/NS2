@@ -225,13 +225,14 @@ function OrderSelfMixin:_UpdateOrderSelf()
     
         local friendlyStructuresNearby = GetEntitiesWithMixinForTeamWithinRange("Construct", self:GetTeamNumber(), self:GetOrigin(), kFindStructureRange)  
         local hasOrderNow = FindBuildOrder(self, friendlyStructuresNearby)
-        
+        /*
         if not hasOrderNow and not self:GetHasOrder() then
         
             local weldableNearby = GetEntitiesWithMixinForTeamWithinRange("Live", self:GetTeamNumber(), self:GetOrigin(), kFindStructureRange)  
             FindWeldOrder(self, weldableNearby)
             
         end
+        */
         
     end
     

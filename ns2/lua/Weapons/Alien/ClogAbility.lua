@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\Weapons\Alien\ClogAbility.lua
 //
-//    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
@@ -11,7 +11,7 @@ Script.Load("lua/Weapons/Alien/StructureAbility.lua")
 class 'ClogAbility' (StructureAbility)
 
 local kMinDistance = 0.5
-local kClogOffset = 0.15
+local kClogOffset = 0.3
 
 function ClogAbility:OverrideInfestationCheck(trace)
 

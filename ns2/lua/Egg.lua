@@ -168,6 +168,14 @@ function Egg:GetBaseArmor()
     return Egg.kArmor
 end
 
+function Egg:GetBaseHealth()
+    return Egg.kHealth  
+end
+
+function Egg:GetHealthPerBioMass()
+    return 0
+end    
+
 function Egg:GetArmorFullyUpgradedAmount()
     return 0
 end
@@ -175,12 +183,13 @@ end
 function Egg:GetTechButtons(techId)
 
     local techButtons = { kTechId.SpawnAlien, kTechId.None, kTechId.None, kTechId.None, 
-                          kTechId.None, kTechId.None, kTechId.None, kTechId.None }     
-    
+                          kTechId.None, kTechId.None, kTechId.None, kTechId.None }   
+    /*
     if self:GetTechId() == kTechId.Egg then   
         techButtons = { kTechId.SpawnAlien, kTechId.None, kTechId.None, kTechId.None, 
                         kTechId.GorgeEgg, kTechId.LerkEgg, kTechId.FadeEgg, kTechId.OnosEgg }      
     end
+    */
     
     return techButtons
     
@@ -202,7 +211,7 @@ end
 
 function Egg:OverrideHintString(hintString)
 
-    if self:GetIsResearching() then
+    if (not GetAreEnemies(self, forEntity)) and self:GetIsResearching() then
         return "COMM_SEL_UPGRADING"
     end
     
@@ -231,7 +240,11 @@ function Egg:GetHive()
 end
 
 function Egg:GetReceivesStructuralDamage()
-    return true
+    return false
+end
+
+function Egg:GetIsFlameAble()
+    return false
 end
 
 /** 
@@ -319,24 +332,8 @@ local function GestatePlayer(self, player, fromTechId)
     
     newPlayer:DropToFloor()
     
-    local techIds = { self:GetGestateTechId() } // player:GetUpgrades()    
-    //table.insert(techIds, self:GetGestateTechId())
-
+    local techIds = { self:GetGestateTechId() }
     newPlayer:SetGestationData(techIds, fromTechId, 1, 1)
-    
-    if self:GetIsResearching() then
-    
-        local progress = self:GetResearchProgress()
-        newPlayer.gestationTime = newPlayer.gestationTime - newPlayer.gestationTime * progress
-        
-        // rese tiers, otherwise the player could gain unresearched abilities
-        newPlayer.twoHives = false
-        newPlayer.threeHives = false
-    
-    // apply min gestation time
-    else
-        newPlayer.gestationTime = 2
-    end
 
 end
 
@@ -464,20 +461,7 @@ function Egg:InternalGetCanBeUsed(player)
     local canBeUsed = false
     // SA: No longer allow players to enter eggs that are evolving/researching
     if self:GetTechId() ~= kTechId.Egg and player:GetTeamNumber() == self:GetTeamNumber() then
-    
         canBeUsed = true
-    
-        /* this check is pointless since you can evolve to skulk at any time and use the egg anyway
-        
-        local currentPlayerValue = LookupTechData(player:GetTechId(), kTechDataCostKey,0)
-        local preEvolvedValue = LookupTechData(self:GetGestateTechId(), kTechDataCostKey, 0)
-    
-        if preEvolvedValue > currentPlayerValue then
-            canBeUsed = true
-            
-        end
-        */
-        
     end
     
     return canBeUsed
@@ -492,12 +476,7 @@ end
 if Server then
 
     function Egg:OnTeleportEnd(shift)
-    
-        if shift then
-            shift:RegisterEgg(self)
-            self:SetOrigin(self:GetOrigin() + Vector(0, 0.1, 0))
-        end 
-    
+        self:SetOrigin(self:GetOrigin() + Vector(0, 0.1, 0)) 
     end
 
     // delete the egg to avoid invalid ID's and reset the player to spawn queue if one is occupying it

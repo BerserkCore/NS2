@@ -44,7 +44,12 @@ local function UpdateWaveTime(self)
         return false
     end
     
-    self.timeWaveSpawnEnd = self:GetTeam():GetWaveSpawnEndTime(self)
+    if self.queuePosition <= self:GetTeam():GetEggCount() then
+        local entryTime = self:GetRespawnQueueEntryTime() or 0
+        self.timeWaveSpawnEnd = entryTime + kAlienSpawnTime
+    else
+        self.timeWaveSpawnEnd = 0
+    end
     
     Server.SendNetworkMessage(Server.GetOwner(self), "SetTimeWaveSpawnEnds", { time = self.timeWaveSpawnEnd }, true)
     

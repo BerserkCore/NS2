@@ -285,6 +285,15 @@ function GetIsBuildLegal(techId, position, angle, snapRadius, player, ignoreEnti
     
     BuildUtility_Print("GetBuildAttachRequirementsMet legal: %s", ToString(legalBuild))
     
+        
+    local spawnBlock = LookupTechData(techId, kTechDataSpawnBlock, false)
+    if spawnBlock and legalBuild then    
+        legalBuild = #GetEntitiesForTeamWithinRange("SpawnBlocker", player:GetTeamNumber(), position, kSpawnBlockRange) == 0
+        errorString = "COMMANDERERROR_MUST_WAIT"
+    end
+    
+    BuildUtility_Print("spawnBlock, legal: %s", ToString(legalBuild))
+    
     // Check collision and make sure there aren't too many entities nearby
     if legalBuild and player and not ignoreEntities then
         legalBuild, errorString = CheckBuildEntityRequirements(techId, legalPosition, player, ignoreEntity)

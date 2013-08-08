@@ -7,6 +7,7 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================   
 
 Script.Load("lua/Table.lua")
+Script.Load("lua/MixinDispatcherBuilder.lua")
 
 /**
  * This function is used to create a mixin table. To allow for hot loading of scripts, the
@@ -191,7 +192,12 @@ local function AddFunctionToCallerList(classInstance, classFunction, addFunction
         classInstance[functionName .. "__functions"] = functionsTable
         classInstance[functionName .. "__functionNames"] = nameTable
         classInstance[functionName .. "__functionTrace"] = traceTable
-        classInstance[functionName] = Mixin.RegisterFunction(functionsTable, nameTable, traceTable)
+        
+        if CreateMixinDispatcher then
+            classInstance[functionName] = CreateMixinDispatcher(classInstance, functionsTable, classFunction, functionName)
+        else
+            classInstance[functionName] = Mixin.RegisterFunction(functionsTable, nameTable, traceTable)
+        end
         
     end
     

@@ -22,6 +22,8 @@ MedPack.kHealthSound = PrecacheAsset("sound/NS2.fev/marine/common/health")
 
 MedPack.kHealth = 50
 
+local kPickupDelay = 0.53
+
 local networkVars =
 {
 }
@@ -40,16 +42,20 @@ end
 
 function MedPack:OnTouch(recipient)
 
-    recipient:AddHealth(MedPack.kHealth, false, true)
-
-    StartSoundEffectAtOrigin(MedPack.kHealthSound, self:GetOrigin())
+    if not recipient.timeLastMedpack or recipient.timeLastMedpack + kPickupDelay <= Shared.GetTime() then
     
-    TEST_EVENT("Commander MedPack picked up")
+        recipient:AddHealth(MedPack.kHealth, false, true)
+        recipient.timeLastMedpack = Shared.GetTime()
+        StartSoundEffectAtOrigin(MedPack.kHealthSound, self:GetOrigin())
+        
+        TEST_EVENT("Commander MedPack picked up")
+    
+    end
     
 end
 
 function MedPack:GetIsValidRecipient(recipient)
-    return not GetIsVortexed(recipient) and recipient:GetHealth() < recipient:GetMaxHealth()
+    return not GetIsVortexed(recipient) and recipient:GetHealth() < recipient:GetMaxHealth() and (not recipient.timeLastMedpack or recipient.timeLastMedpack + kPickupDelay <= Shared.GetTime())
 end
 
 

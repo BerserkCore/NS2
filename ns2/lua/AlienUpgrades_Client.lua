@@ -12,9 +12,9 @@ local kUpgradeIconRowSize = 6
 
 // The order of icons in Alien.kUpgradeIconsTexture
 local kIconIndexToUpgradeId = {
-    kTechId.AlienArmor1, kTechId.AlienArmor2, kTechId.AlienArmor3, kTechId.Melee1Tech, kTechId.Melee2Tech, kTechId.Melee3Tech, 
+    kTechId.None, kTechId.None, kTechId.None, kTechId.None, kTechId.None, kTechId.None, 
     kTechId.None, kTechId.None, kTechId.Carapace, kTechId.Regeneration,
-    kTechId.HydraAbility, kTechId.None, kTechId.Adrenaline, kTechId.Piercing, kTechId.Feint, kTechId.Sap, 
+    kTechId.None, kTechId.None, kTechId.Adrenaline, kTechId.None, kTechId.Feint, kTechId.None, 
     kTechId.Stomp, kTechId.BoneShield, kTechId.Leap, kTechId.None, kTechId.None, kTechId.None, 
 }
 

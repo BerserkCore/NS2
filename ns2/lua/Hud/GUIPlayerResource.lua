@@ -18,10 +18,10 @@ GUIPlayerResource.kPersonalResourceIcon.Height = 64
 GUIPlayerResource.kPersonalResourceIconSize = Vector(GUIPlayerResource.kPersonalResourceIcon.Width, GUIPlayerResource.kPersonalResourceIcon.Height, 0)
 GUIPlayerResource.kPersonalResourceIconSizeBig = Vector(GUIPlayerResource.kPersonalResourceIcon.Width, GUIPlayerResource.kPersonalResourceIcon.Height, 0) * 1.1
 
-GUIPlayerResource.kPersonalIconPos = Vector(40,-4,0)
+GUIPlayerResource.kPersonalIconPos = Vector(30,-4,0)
 GUIPlayerResource.kPersonalTextPos = Vector(100,4,0)
 GUIPlayerResource.kPresDescriptionPos = Vector(110,4,0)
-GUIPlayerResource.kResGainedTextPos = Vector(110,-12,0)
+GUIPlayerResource.kResGainedTextPos = Vector(90,-6,0)
 
 GUIPlayerResource.kRTCountSize = Vector(20, 40, 0)
 GUIPlayerResource.kPixelWidth = 16
@@ -53,6 +53,13 @@ local kPresIcons = { alien = PrecacheAsset("ui/alien_HUD_presicon.dds"), marine 
 
 GUIPlayerResource.kBackgroundSize = Vector(280, 58, 0)
 GUIPlayerResource.kBackgroundPos = Vector(-320, -100, 0)
+
+local kNoResTexture = "ui/no_res.dds"
+local kNoResSize = GUIScale(Vector(42, 42, 0))
+local kNoResPos = Vector(0, -kNoResSize.y, 0)
+
+local kNoResFontName = "fonts/AgencyFB_small.fnt"
+local kNoResTimerPos = GUIScale(Vector(16, 0, 0))
 
 function CreatePlayerResourceDisplay(scriptHandle, hudLayer, frame, style)
 
@@ -119,7 +126,7 @@ function GUIPlayerResource:Initialize(style)
     self.ResGainedText:SetFontIsBold(false)
     self.ResGainedText:SetBlendTechnique(GUIItem.Add)
     self.ResGainedText:SetFontName(GUIPlayerResource.kResGainedFontName)
-    self.ResGainedText:SetText("")
+    self.ResGainedText:SetText("+")
     self.background:AddChild(self.ResGainedText)
     
     // Team display.
@@ -133,6 +140,24 @@ function GUIPlayerResource:Initialize(style)
     self.teamText:SetFontName(GUIPlayerResource.kTresTextFontName)
     self.teamText:SetIsVisible(style.displayTeamRes)
     self.frame:AddChild(self.teamText)
+    
+    self.noResIcon = GetGUIManager():CreateGraphicItem()
+    self.noResIcon:SetTexture(kNoResTexture)
+    self.noResIcon:SetSize(kNoResSize)
+    self.noResIcon:SetPosition(kNoResPos)
+    self.noResIcon:SetIsVisible(true)
+    
+    self.noResTimer = GetGUIManager():CreateTextItem()
+    self.noResTimer:SetFontName(kNoResFontName)
+    self.noResTimer:SetAnchor(GUIItem.Right, GUIItem.Center)
+    self.noResTimer:SetScale(GUIScale(Vector(1,1,1)))
+    self.noResTimer:SetTextAlignmentX(GUIItem.Align_Min)
+    self.noResTimer:SetTextAlignmentY(GUIItem.Align_Center)
+    self.noResTimer:SetColor(Color(1, 0, 0, 1))
+    self.noResTimer:SetPosition(kNoResTimerPos)
+    
+    self.noResIcon:AddChild(self.noResTimer)   
+    self.background:AddChild(self.noResIcon)
     
 end
 
@@ -173,6 +198,8 @@ function GUIPlayerResource:Update(deltaTime, parameters)
     
     self.rtCount:SetIsVisible(numRTs > 0)
     
+    local resGainAllowed = PlayerUI_GetCanEarnResources()
+    
     // adjust rt count display
     local x1 = 0
     local x2 = numRTs * GUIPlayerResource.kPixelWidth
@@ -185,18 +212,17 @@ function GUIPlayerResource:Update(deltaTime, parameters)
     self.rtCount:SetSize(Vector(width, GUIPlayerResource.kRTCountSize.y * self.scale, 0))
     self.rtCount:SetPosition(Vector(-width/2, GUIPlayerResource.kRTCountYOffset * self.scale, 0))
     
-    self.personalText:SetText(ToString(math.floor(pRes)))
-    self.teamText:SetText(string.format(Locale.ResolveString("TEAM_RES"), tRes))
+    self.personalText:SetText(ToString(math.floor(pRes * 10) / 10))
+    self.teamText:SetText(string.format(Locale.ResolveString("TEAM_RES"), math.floor(tRes)))
     
     if pRes > self.lastPersonalResources then
-    
-        self.ResGainedText:SetText("+" .. ToString( math.floor((pRes - self.lastPersonalResources)*100)/100 ))
+
         self.ResGainedText:DestroyAnimations()
         self.ResGainedText:SetColor(self.style.textColor)
         self.ResGainedText:FadeOut(2)
         
         self.lastPersonalResources = pRes
-        self.pulseLeft = numRTs - 1
+        self.pulseLeft = 1
         
         self.personalText:SetFontSize(GUIPlayerResource.kFontSizePersonalBig)
         self.personalText:SetFontSize(GUIPlayerResource.kFontSizePersonal, GUIPlayerResource.kPulseTime, "RES_PULSATE")
@@ -208,8 +234,19 @@ function GUIPlayerResource:Update(deltaTime, parameters)
         self.personalIcon:SetSize(GUIPlayerResource.kPersonalResourceIconSize, GUIPlayerResource.kPulseTime,  nil, AnimateQuadratic)
         
     end
+
+    if not resGainAllowed then
     
+        local timeNoRes = PlayerUI_GetNoResourceGainTimer()
+        
+        self.noResTimer:SetText(ToString(math.ceil(timeNoRes)))
+        self.noResIcon:SetIsVisible(true)
+        self.ResGainedText:SetIsVisible(false)
     
+    else
+        self.noResIcon:SetIsVisible(false)
+        self.ResGainedText:SetIsVisible(true)
+    end
 
 end
 

@@ -159,18 +159,31 @@ local kRed = Color(1,0,0,1)
 function GUIResourceDisplay:Update(deltaTime)
 
     PROFILE("GUIResourceDisplay:Update")
+    
+    local currentTeamRes = PlayerUI_GetTeamResources()
+    if not self.displayedTeamRes then
+        self.displayedTeamRes = currentTeamRes
+    else
 
-    self.teamText:SetText(ToString(PlayerUI_GetTeamResources()))
+        if self.displayedTeamRes > currentTeamRes then
+            self.displayedTeamRes = currentTeamRes
+        else
+            self.displayedTeamRes = Slerp(self.displayedTeamRes, currentTeamRes, deltaTime * 40)
+        end    
+            
+    end
+
+    self.teamText:SetText(ToString(math.round(self.displayedTeamRes)))
     
     local numHarvesters = CommanderUI_GetTeamHarvesterCount()
     self.towerText:SetText(ToString(numHarvesters))
     
-    local numWorkers = CommanderUI_GetNumWorkers()
-    local numCommandStations = CommanderUI_GetNumCapturedTechpoint()
+    local supplyUsed = GetSupplyUsedByTeam(Client.GetLocalPlayer():GetTeamNumber())
+    local maxSupply = GetMaxSupplyForTeam(Client.GetLocalPlayer():GetTeamNumber())
     
-    local useColor = ConditionalValue( numWorkers < numCommandStations * kWorkersPerTechpoint, kWhite, kRed)
+    local useColor = ConditionalValue( supplyUsed < maxSupply, kWhite, kRed)
     
-    self.workerText:SetText(string.format("%d / %d", numWorkers, numCommandStations * kWorkersPerTechpoint))
+    self.workerText:SetText(string.format("%d / %d", supplyUsed, maxSupply))
     self.workerText:SetColor(useColor)
     self.workerIcon:SetColor(useColor)
     

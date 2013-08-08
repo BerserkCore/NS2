@@ -11,7 +11,6 @@ BaseMoveMixin.type = "BaseMove"
 
 BaseMoveMixin.optionalCallbacks =
 {
-    AdjustGravityForce = "Should return the current gravity force for the entity using this Mixin.",
     OnSetVelocityOverride = "Can be provided to modify the passed in velocity"
 }
 
@@ -38,8 +37,6 @@ BaseMoveMixin.networkVars =
     velocityYaw = "compensated interpolated angle ( 7 bits )", 
     // velocity pitch 
     velocityPitch = "compensated interpolated angle ( 7 bits)",
-
-    gravityEnabled = "compensated boolean",
 }
 
 function BaseMoveMixin:__initmixin()
@@ -49,8 +46,6 @@ function BaseMoveMixin:__initmixin()
     self.velocityLength = 0
     self.velocityYaw = 0
     self.velocityPitch = 0
-    
-    self.gravityEnabled = true
     
 end
 
@@ -117,32 +112,26 @@ function BaseMoveMixin:GetVelocityFromPolar()
     
 end
 
-function BaseMoveMixin:SetGravityEnabled(state)
-    self.gravityEnabled = state
-end
-
-function BaseMoveMixin:GetGravityEnabled()
-    return self.gravityEnabled
-end
-
 function BaseMoveMixin:GetGravityForce(input)
-
-    local gravity = self:GetMixinConstants().kGravity
-    
-    if self.AdjustGravityForce then
-        gravity = self:AdjustGravityForce(input, gravity)
-    end
-    
-    return gravity
-    
+    return self:GetMixinConstants().kGravity    
 end
 
 local kSmoothRate = 28
 function BaseMoveMixin:OnProcessMove(input)
 
-    self.smoothedVelocity.x = Slerp(self.smoothedVelocity.x, self.velocity.x, input.time * kSmoothRate)
-    self.smoothedVelocity.y = Slerp(self.smoothedVelocity.y, self.velocity.y, input.time * kSmoothRate)
-    self.smoothedVelocity.z = Slerp(self.smoothedVelocity.z, self.velocity.z, input.time * kSmoothRate)
+    local velocityGoal = self.velocity
+    /*
+    if self.OverrideVelocityGoal then
+        
+        velocityGoal = Vector(self.velocity)
+        self:OverrideVelocityGoal(velocityGoal)
+        
+    end
+    */
+
+    self.smoothedVelocity.x = Slerp(self.smoothedVelocity.x, velocityGoal.x, input.time * kSmoothRate)
+    self.smoothedVelocity.y = Slerp(self.smoothedVelocity.y, velocityGoal.y, input.time * kSmoothRate)
+    self.smoothedVelocity.z = Slerp(self.smoothedVelocity.z, velocityGoal.z, input.time * kSmoothRate)
     
     // update the low-resolution polar coordinates
     local v = self.smoothedVelocity

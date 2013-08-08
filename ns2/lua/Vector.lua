@@ -9,7 +9,7 @@
 /////////////////////
 // Class functions //
 /////////////////////
-Vector.kEpsilon = 0.0001
+//Vector.kEpsilon = 0.0001
 
 /*
 function Vector:GetLength()
@@ -129,13 +129,8 @@ end
 // Internal functions //
 ////////////////////////
 function InternalVectorLength(vec)
-
-    // Pull into local variables to avoid extra access costs
-    local x = vec.x
-    local y = vec.y
-    local z = vec.z 
     
-    local length = math.sqrt( x*x + y*y + z*z )
+    local length = math.sqrt( vec.x*vec.x + vec.y*vec.y + vec.z*vec.z )
     
     if(length < Vector.kEpsilon) then
         length = 0

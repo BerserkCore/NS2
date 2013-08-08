@@ -7,6 +7,8 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 Script.Load("lua/Utility.lua")
 
+kSuicideDelay = 6
+
 kDecalMaxLifetime = 60
 
 // All the layouts are based around this screen height.
@@ -83,7 +85,7 @@ kDefaultPlayerName = "NSPlayer"
 kDefaultWaypointGroup = "GroundWaypoints"
 kAirWaypointsGroup = "AirWaypoints"
 
-kMaxResources = 999
+kMaxResources = 9999
 
 // Max number of entities allowed in radius. Don't allow creating any more entities if this number is rearched.
 // Don't include players in count.

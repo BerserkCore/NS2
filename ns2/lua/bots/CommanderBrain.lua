@@ -185,6 +185,18 @@ end
 //----------------------------------------
 //  
 //----------------------------------------
+function CommanderBrain:Update( bot, move )
+
+    PlayerBrain.Update( self, bot, move )
+
+    // Move a little bit to avoid AFK kick
+    bot:GetMotion():SetDesiredMoveDirection( Vector( math.random(), math.random(), math.random() ) )
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
 Event.Hook("Console_bot_com",
     function()
         gDebug = not gDebug

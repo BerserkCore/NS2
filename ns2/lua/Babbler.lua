@@ -592,7 +592,7 @@ if Server then
                 local moveDir = GetNormalizedVector( attachPointOrigin - self:GetOrigin() )
   
                 local distance = (self:GetOrigin() - attachPointOrigin):GetLength()
-                local travelDistance = deltaTime * 7
+                local travelDistance = deltaTime * 15
   
                 if distance < travelDistance then  
               
@@ -678,14 +678,14 @@ if Server then
     
         elseif self.moveType == kBabblerMoveType.Move or self.moveType == kBabblerMoveType.Cling then
         
-            if self:GetIsOnGround() then
+            if self.moveType == kBabblerMoveType.Cling and self.targetPosition and (self:GetOrigin() - self.targetPosition):GetLength() < 7 then
             
-                if self.moveType == kBabblerMoveType.Cling and self.targetPosition and (self:GetOrigin() - self.targetPosition):GetLength() < 3 then
-                
-                    UpdateCling(self, deltaTime, distanceToTarget)
-                    success = true
+                UpdateCling(self, deltaTime, distanceToTarget)
+                success = true
+        
+            elseif self:GetIsOnGround() then
             
-                elseif self.timeLastJump + 0.5 < Shared.GetTime() then
+                if self.timeLastJump + 0.5 < Shared.GetTime() then
 
                     local targetPosition = self.targetPosition or ( self:GetTarget() and self:GetTarget():GetOrigin())                    
                     if targetPosition then

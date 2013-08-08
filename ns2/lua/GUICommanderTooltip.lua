@@ -25,6 +25,8 @@ GUICommanderTooltip.kBackgroundBottomHeight = GUICommanderTooltip.kBackgroundBot
 GUICommanderTooltip.kBackgroundExtraXOffset = GUIScale(26)
 GUICommanderTooltip.kBackgroundExtraYOffset = GUIScale(28)
 
+GUICommanderTooltip.WorkerIconCoords = {280, 363, 320, 411}
+
 GUICommanderTooltip.kTextFontSize = 16
 GUICommanderTooltip.kTextXOffset = 30
 GUICommanderTooltip.kTextYOffset = GUICommanderTooltip.kTextFontSize + 10
@@ -127,6 +129,46 @@ function GUICommanderTooltip:Initialize()
     self.cost:SetFontIsBold(true)
     self.cost:SetFontName(fontName)
     self.resourceIcon:AddChild(self.cost)
+    
+    self.supplyIcon = GUIManager:CreateGraphicItem()
+    self.supplyIcon:SetSize(Vector(GUICommanderTooltip.kResourceIconSize, GUICommanderTooltip.kResourceIconSize, 0))
+    self.supplyIcon:SetAnchor(GUIItem.Right, GUIItem.Top)
+    self.supplyIcon:SetPosition(Vector(-GUICommanderTooltip.kResourceIconSize * 3 + GUICommanderTooltip.kResourceIconXOffset, GUICommanderTooltip.kResourceIconYOffset, 0))
+    self.supplyIcon:SetTexture(self.textureName)
+    self.supplyIcon:SetTexturePixelCoordinates(unpack(GUICommanderTooltip.WorkerIconCoords))
+    self.supplyIcon:SetIsVisible(false)
+    self.background:AddChild(self.supplyIcon)
+    
+    self.supplyText = GUIManager:CreateTextItem()
+    self.supplyText:SetFontSize(GUICommanderTooltip.kCostFontSize)
+    self.supplyText:SetAnchor(GUIItem.Left, GUIItem.Top)
+    self.supplyText:SetTextAlignmentX(GUIItem.Align_Max)
+    self.supplyText:SetTextAlignmentY(GUIItem.Align_Center)
+    self.supplyText:SetPosition(Vector(GUICommanderTooltip.kCostXOffset, GUICommanderTooltip.kResourceIconSize / 2, 0))
+    self.supplyText:SetColor(Color(1, 1, 1, 1))
+    self.supplyText:SetFontIsBold(true)
+    self.supplyText:SetFontName(fontName)
+    self.supplyIcon:AddChild(self.supplyText)
+    
+    self.biomassIcon = GUIManager:CreateGraphicItem()
+    self.biomassIcon:SetSize(Vector(GUICommanderTooltip.kResourceIconSize, GUICommanderTooltip.kResourceIconSize, 0))
+    self.biomassIcon:SetAnchor(GUIItem.Right, GUIItem.Top)
+    self.biomassIcon:SetPosition(Vector(-GUICommanderTooltip.kResourceIconSize * 5 + GUICommanderTooltip.kResourceIconXOffset, GUICommanderTooltip.kResourceIconYOffset, 0))
+    self.biomassIcon:SetTexture("ui/buildmenu.dds")
+    self.biomassIcon:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(kTechId.Biomass)))
+    self.biomassIcon:SetIsVisible(false)
+    self.background:AddChild(self.biomassIcon)
+    
+    self.biomassText = GUIManager:CreateTextItem()
+    self.biomassText:SetFontSize(GUICommanderTooltip.kCostFontSize)
+    self.biomassText:SetAnchor(GUIItem.Left, GUIItem.Top)
+    self.biomassText:SetTextAlignmentX(GUIItem.Align_Max)
+    self.biomassText:SetTextAlignmentY(GUIItem.Align_Center)
+    self.biomassText:SetPosition(Vector(GUICommanderTooltip.kCostXOffset, GUICommanderTooltip.kResourceIconSize / 2, 0))
+    self.biomassText:SetColor(Color(1, 1, 1, 1))
+    self.biomassText:SetFontIsBold(true)
+    self.biomassText:SetFontName(fontName)
+    self.biomassIcon:AddChild(self.biomassText)
     
     self.requires = GUIManager:CreateTextItem()
     self.requires:SetFontSize(GUICommanderTooltip.kRequiresFontSize)
@@ -245,7 +287,7 @@ function GUICommanderTooltip:Uninitialize()
     
 end
 
-function GUICommanderTooltip:UpdateData(text, hotkey, costNumber, requires, enables, info, typeNumber)
+function GUICommanderTooltip:UpdateData(text, hotkey, costNumber, requires, enables, info, typeNumber, supplyRequired, biomass)
 
     local totalTextHeight = self:CalculateTotalTextHeight(text, requires, enables, info)
     self:UpdateSizeAndPosition(totalTextHeight)
@@ -303,6 +345,20 @@ function GUICommanderTooltip:UpdateData(text, hotkey, costNumber, requires, enab
         self.info:SetText(info)
     else
         self.info:SetIsVisible(false)
+    end
+    
+    if supplyRequired > 0 then
+        self.supplyText:SetText(ToString(supplyRequired))
+        self.supplyIcon:SetIsVisible(true)
+    else
+        self.supplyIcon:SetIsVisible(false)
+    end
+    
+    if biomass > 0 then
+        self.biomassText:SetText("+ " .. ToString(biomass))
+        self.biomassIcon:SetIsVisible(true)
+    else
+        self.biomassIcon:SetIsVisible(false)
     end
     
 end
@@ -371,7 +427,7 @@ function GUICommanderTooltip:Update(deltaTime)
 
     if tooltipData then
     
-        self:UpdateData(tooltipData.text, tooltipData.hotKey, tooltipData.costNumber, tooltipData.requires, tooltipData.enabled, tooltipData.info, tooltipData.resourceType)
+        self:UpdateData(tooltipData.text, tooltipData.hotKey, tooltipData.costNumber, tooltipData.requires, tooltipData.enabled, tooltipData.info, tooltipData.resourceType, tooltipData.supply, tooltipData.biomass)
         self.background:SetIsVisible(true)
     
     else

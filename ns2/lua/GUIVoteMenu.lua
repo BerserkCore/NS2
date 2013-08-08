@@ -8,13 +8,12 @@
 
 class 'GUIVoteMenu' (GUIScript)
 
-local kBackgroundColor = Color(0.0, 0.0, 0.0, 0.4)
-local kTitleColor = Color(0.7, 0.7, 0.7, 0.6)
+local kBackgroundColor = Color(0.0, 0.0, 0.0, 0.6)
+local kTitleBackgroundColor = Color(0.2, 0.2, 0.2, 0.2)
+local kVotedBackgroundColor = Color(0.2, 0.2, 0.2, 0.5)
 local kTitleTextColor = Color(1, 1, 1, 1)
-local kYesBackgroundColor = Color(0, 0.3, 0, 0.4)
-local kVotedYesColor = Color(0, 0.6, 0, 0.7)
-local kNoBackgroundColor = Color(0.3, 0, 0, 0.4)
-local kVotedNoColor = Color(0.6, 0, 0, 0.7)
+local kYesTextColor = Color(0, 0.6, 0, 1)
+local kNoTextColor = Color(0.6, 0, 0, 1)
 local kChoiceTextColor = Color(1, 1, 1, 1)
 local kFonts = { tiny = "fonts/AgencyFB_tiny.fnt", small = "fonts/AgencyFB_small.fnt", large = "fonts/AgencyFB_large.fnt" }
 
@@ -31,19 +30,16 @@ local function UpdateSizeOfUI(self, screenWidth, screenHeight)
     self.titleText:SetFontName(titleFontName)
     self.timeText:SetFontName(titleFontName)
     
-    self.titleText:SetPosition(Vector(0, -GetFontHeight(screenHeight) / 2, 0))
-    self.timeText:SetPosition(Vector(0, GetFontHeight(screenHeight) / 2, 0))
-    
-    local minWidth = self.titleText:GetTextWidth(self.titleText:GetText()) + 8
-    local size = Vector(math.max(screenWidth * 0.2, minWidth), screenHeight * 0.18, 0)
+    local minWidth = self.titleText:GetTextWidth(self.titleText:GetText()) + self.timeText:GetTextWidth(" ##") + 12
+    local size = Vector(math.max(screenWidth * 0.15, minWidth), screenHeight * 0.1, 0)
     self.background:SetSize(size)
     self.background:SetPosition(Vector(2, -size.y, 0))
     
-    local titleSize = Vector(size.x - 4, size.y * 0.5 - 4, 0)
+    local titleSize = Vector(size.x - 4, size.y * 0.36 - 4, 0)
     self.titleBackground:SetSize(titleSize)
     self.titleBackground:SetPosition(Vector(2, 2, 0))
     
-    local choiceSize = Vector(size.x - 4, size.y * 0.25 - 2, 0)
+    local choiceSize = Vector(size.x - 4, size.y * 0.32 - 2, 0)
     self.yesBackground:SetSize(choiceSize)
     local yesPos = Vector(2, titleSize.y + 4, 0)
     self.yesBackground:SetPosition(yesPos)
@@ -66,25 +62,27 @@ function GUIVoteMenu:Initialize()
     self.background:SetLayer(kGUILayerMainMenu)
     
     self.titleBackground = GUIManager:CreateGraphicItem()
-    self.titleBackground:SetColor(kTitleColor)
+    self.titleBackground:SetColor(kTitleBackgroundColor)
     self.background:AddChild(self.titleBackground)
     
     self.titleText = GUIManager:CreateTextItem()
     self.titleText:SetColor(kTitleTextColor)
-    self.titleText:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.titleText:SetTextAlignmentX(GUIItem.Align_Center)
+    self.titleText:SetAnchor(GUIItem.Left, GUIItem.Center)
+    self.titleText:SetTextAlignmentX(GUIItem.Align_Min)
     self.titleText:SetTextAlignmentY(GUIItem.Align_Center)
+    self.titleText:SetPosition(Vector(4, 0, 0))
     self.titleBackground:AddChild(self.titleText)
-    
+
     self.timeText = GUIManager:CreateTextItem()
     self.timeText:SetColor(kTitleTextColor)
-    self.timeText:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.timeText:SetTextAlignmentX(GUIItem.Align_Center)
+    self.timeText:SetAnchor(GUIItem.Right, GUIItem.Center)
+    self.timeText:SetTextAlignmentX(GUIItem.Align_Max)
     self.timeText:SetTextAlignmentY(GUIItem.Align_Center)
+    self.timeText:SetPosition(Vector(-8, 0, 0))
     self.titleBackground:AddChild(self.timeText)
-    
+        
     self.yesBackground = GUIManager:CreateGraphicItem()
-    self.yesBackground:SetColor(kYesBackgroundColor)
+    self.yesBackground:SetColor(kTitleBackgroundColor)
     self.background:AddChild(self.yesBackground)
     
     self.yesText = GUIManager:CreateTextItem()
@@ -93,20 +91,20 @@ function GUIVoteMenu:Initialize()
     self.yesText:SetTextAlignmentX(GUIItem.Align_Min)
     self.yesText:SetTextAlignmentY(GUIItem.Align_Center)
     self.yesText:SetText(StringReformat(Locale.ResolveString("VOTE_YES"), { key = GetPrettyInputName("VoteYes") }))
-    self.yesText:SetPosition(Vector(2, 0, 0))
+    self.yesText:SetPosition(Vector(4, 0, 0))
     self.yesBackground:AddChild(self.yesText)
     
     self.yesCount = GUIManager:CreateTextItem()
-    self.yesCount:SetColor(kChoiceTextColor)
+    self.yesCount:SetColor(kYesTextColor)
     self.yesCount:SetAnchor(GUIItem.Right, GUIItem.Center)
     self.yesCount:SetTextAlignmentX(GUIItem.Align_Max)
     self.yesCount:SetTextAlignmentY(GUIItem.Align_Center)
     self.yesCount:SetText("0")
-    self.yesCount:SetPosition(Vector(-2, 0, 0))
+    self.yesCount:SetPosition(Vector(-8, 0, 0))
     self.yesBackground:AddChild(self.yesCount)
     
     self.noBackground = GUIManager:CreateGraphicItem()
-    self.noBackground:SetColor(kNoBackgroundColor)
+    self.noBackground:SetColor(kTitleBackgroundColor)
     self.background:AddChild(self.noBackground)
     
     self.noText = GUIManager:CreateTextItem()
@@ -115,16 +113,16 @@ function GUIVoteMenu:Initialize()
     self.noText:SetTextAlignmentX(GUIItem.Align_Min)
     self.noText:SetTextAlignmentY(GUIItem.Align_Center)
     self.noText:SetText(StringReformat(Locale.ResolveString("VOTE_NO"), { key = GetPrettyInputName("VoteNo") }))
-    self.noText:SetPosition(Vector(2, 0, 0))
+    self.noText:SetPosition(Vector(4, 0, 0))
     self.noBackground:AddChild(self.noText)
     
     self.noCount = GUIManager:CreateTextItem()
-    self.noCount:SetColor(kChoiceTextColor)
+    self.noCount:SetColor(kNoTextColor)
     self.noCount:SetAnchor(GUIItem.Right, GUIItem.Center)
     self.noCount:SetTextAlignmentX(GUIItem.Align_Max)
     self.noCount:SetTextAlignmentY(GUIItem.Align_Center)
     self.noCount:SetText("0")
-    self.noCount:SetPosition(Vector(-2, 0, 0))
+    self.noCount:SetPosition(Vector(-8, 0, 0))
     self.noBackground:AddChild(self.noCount)
     
     self.votedYes = nil
@@ -152,10 +150,10 @@ function GUIVoteMenu:Uninitialize()
     
     GUI.DestroyItem(self.yesBackground)
     self.yesBackground = nil
-    
+
     GUI.DestroyItem(self.timeText)
     self.timeText = nil
-    
+        
     GUI.DestroyItem(self.titleText)
     self.titleText = nil
     
@@ -187,6 +185,8 @@ function GUIVoteMenu:Update(deltaTime)
         self.votedYes = nil
         self.titleText:SetText(currentVoteQuery)
         self.titleText:SetColor(kTitleTextColor)
+
+        UpdateSizeOfUI(self, Client.GetScreenWidth(), Client.GetScreenHeight())
         
     end
     
@@ -196,20 +196,20 @@ function GUIVoteMenu:Update(deltaTime)
         
             if self.votedYes then
             
-                self.yesBackground:SetColor(kVotedYesColor)
-                self.noBackground:SetColor(kNoBackgroundColor)
+                self.yesBackground:SetColor(kVotedBackgroundColor)
+                self.noBackground:SetColor(kTitleBackgroundColor)
                 
             else
             
-                self.noBackground:SetColor(kVotedNoColor)
-                self.yesBackground:SetColor(kYesBackgroundColor)
+                self.noBackground:SetColor(kVotedBackgroundColor)
+                self.yesBackground:SetColor(kTitleBackgroundColor)
                 
             end
             
         else
         
-            self.yesBackground:SetColor(kYesBackgroundColor)
-            self.noBackground:SetColor(kNoBackgroundColor)
+            self.yesBackground:SetColor(kTitleBackgroundColor)
+            self.noBackground:SetColor(kTitleBackgroundColor)
             
         end
         
@@ -221,9 +221,9 @@ function GUIVoteMenu:Update(deltaTime)
         if lastVoteResults ~= nil then
         
             self.titleText:SetText(((lastVoteResults and Locale.ResolveString("VOTE_PASSED")) or Locale.ResolveString("VOTE_FAILED")))
-            self.titleText:SetColor(lastVoteResults and kVotedYesColor or kVotedNoColor)
+            self.titleText:SetColor(lastVoteResults and kYesTextColor or kNoTextColor)
             
-            UpdateSizeOfUI(self, Client.GetScreenWidth(), Client.GetScreenHeight())
+            --UpdateSizeOfUI(self, Client.GetScreenWidth(), Client.GetScreenHeight())
             
         end
         
@@ -233,7 +233,7 @@ function GUIVoteMenu:Update(deltaTime)
     
     local voteTimeLeft = GetCurrentVoteTimeLeft()
     self.timeText:SetText(ToString(math.ceil(voteTimeLeft)))
-    
+
 end
 
 function GUIVoteMenu:SendKeyEvent(key, down)

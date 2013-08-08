@@ -19,7 +19,9 @@ function ARC:UpdateMoveOrder(deltaTime)
     
     self:SetMode(ARC.kMode.Moving)  
     
-    self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), ARC.kMoveSpeed, deltaTime)
+    local moveSpeed = ( self:GetIsInCombat() or self:GetGameEffectMask(kGameEffect.OnInfestation) ) and ARC.kCombatMoveSpeed or ARC.kMoveSpeed
+    
+    self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), moveSpeed, deltaTime)
     
     self:AdjustPitchAndRoll()
     
@@ -154,6 +156,18 @@ function ARC:ClearTargetDirection()
     self.targetDirection = nil
 end
 
+function ARC:ValidateTargetPosition(position)
+
+    // ink clouds will screw up with arcs
+    local inkClouds = GetEntitiesForTeamWithinRange("ShadeInk", GetEnemyTeamNumber(self:GetTeamNumber()), position, ShadeInk.kShadeInkDisorientRadius)
+    if #inkClouds > 0 then
+        return false
+    end
+
+    return true
+
+end
+
 function ARC:UpdateOrders(deltaTime)
 
     // If deployed, check for targets.
@@ -162,7 +176,13 @@ function ARC:UpdateOrders(deltaTime)
     if self:GetInAttackMode() then
     
         if self.targetPosition then
-            self:SetTargetDirection(self.targetPosition)
+        
+            if self:ValidateTargetPosition(self.targetPosition) then
+                self:SetTargetDirection(self.targetPosition)
+            else
+                self.targetPosition = nil
+            end
+            
         else
         
             // Check for new target every so often, but not every frame.
@@ -198,7 +218,7 @@ function ARC:AcquireTarget()
     
     finalTarget = self.targetSelector:AcquireTarget()
     
-    if finalTarget ~= nil then
+    if finalTarget ~= nil and self:ValidateTargetPosition(finalTarget:GetOrigin()) then
     
         self:SetMode(ARC.kMode.Targeting)
         self.targetPosition = finalTarget:GetOrigin()

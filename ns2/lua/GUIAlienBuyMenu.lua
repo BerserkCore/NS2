@@ -945,23 +945,63 @@ function GUIAlienBuyMenu:_UninitializeCorners()
 
 end
 
-local function GetSelectedUpgradesCost(self)
+local function GetUpgradeCostForLifeForm(player, alienType, upgradeId)
+
+    if player then
+    
+        local alienTechNode = GetAlienTechNode(alienType, true)
+        if alienTechNode then
+
+            if player:GetTechId() == alienTechNode:GetTechId() and player:GetHasUpgrade(upgradeId) then
+                return 0
+            end    
+        
+            return LookupTechData(alienTechNode:GetTechId(), kTechDataUpgradeCost, 0)
+            
+        end
+    
+    end
+    
+    return 0
+
+end
+
+local function GetSelectedUpgradesCost(self, alienType)
 
     local cost = 0
     for i, currentButton in ipairs(self.upgradeButtons) do
     
+        local upgradeCost = GetUpgradeCostForLifeForm(Client.GetLocalPlayer(), alienType, currentButton.TechId)
+    
         if currentButton.Selected then
-            cost = cost + currentButton.Cost
+            cost = cost + upgradeCost
         end
         
-    end
-    
-    if self:GetHasHyperMutationSelected() then
-        cost = cost * kHyperMutationCostScalar
-    end    
+    end   
     
     return cost
     
+end
+
+local function GetNumberOfNewlySelectedUpgrades(self)
+
+    local numSelected = 0
+    local player = Client.GetLocalPlayer()
+    
+    if player then
+    
+        for i, currentButton in ipairs(self.upgradeButtons) do
+        
+            if currentButton.Selected and not player:GetHasUpgrade(currentButton.TechId) then
+                numSelected = numSelected + 1
+            end
+            
+        end
+    
+    end
+    
+    return numSelected 
+
 end
 
 local function GetNumberOfSelectedUpgrades(self)
@@ -969,7 +1009,7 @@ local function GetNumberOfSelectedUpgrades(self)
     local numSelected = 0
     for i, currentButton in ipairs(self.upgradeButtons) do
     
-        if currentButton.Selected and not currentButton.Purchased then
+        if currentButton.Selected then
             numSelected = numSelected + 1
         end
         
@@ -981,18 +1021,14 @@ end
 
 local function GetCanAffordAlienTypeAndUpgrades(self, alienType)
 
-    local alienCost = AlienBuy_GetAlienCost(alienType, self:GetHasHyperMutationSelected())
-    local upgradesCost = GetSelectedUpgradesCost(self, alienType, hasHyperMutation)
+    local alienCost = AlienBuy_GetAlienCost(alienType, false)
+    local upgradesCost = GetSelectedUpgradesCost(self, alienType)
     // Cannot buy the current alien without upgrades.
     if alienType == AlienBuy_GetCurrentAlien() then
         alienCost = 0
     end
     
-    if self:GetHasHyperMutationSelected() then
-        alienCost = alienCost * kHyperMutationCostScalar
-    end
-    
-    return PlayerUI_GetPlayerResources() >= alienCost + upgradesCost - AlienBuy_GetHyperMutationCostReduction(self.selectedAlienType)
+    return PlayerUI_GetPlayerResources() >= alienCost + upgradesCost
     
 end
 
@@ -1000,14 +1036,14 @@ end
  * Returns true if the player has a different Alien or any upgrade selected.
  */
 local function GetAlienOrUpgradeSelected(self)
-    return self.selectedAlienType ~= AlienBuy_GetCurrentAlien() or GetNumberOfSelectedUpgrades(self) > 0
+    return self.selectedAlienType ~= AlienBuy_GetCurrentAlien() or GetNumberOfNewlySelectedUpgrades(self) > 0
 end
 
 local function UpdateEvolveButton(self)
 
     local researched, researchProgress, researching = self:_GetAlienTypeResearchInfo(GUIAlienBuyMenu.kAlienTypes[self.selectedAlienType].Index)
-    local selectedUpgradesCost = GetSelectedUpgradesCost(self)
-    local numberOfSelectedUpgrades = GetNumberOfSelectedUpgrades(self)
+    local selectedUpgradesCost = GetSelectedUpgradesCost(self, self.selectedAlienType)
+    local numberOfSelectedUpgrades = GetNumberOfNewlySelectedUpgrades(self)
     local evolveButtonTextureCoords = GUIAlienBuyMenu.kEvolveButtonTextureCoordinates
     local hasGameStarted = PlayerUI_GetHasGameStarted()
     local evolveText = Locale.ResolveString("ABM_GAME_NOT_STARTED")
@@ -1025,7 +1061,7 @@ local function UpdateEvolveButton(self)
             // If cannot afford selected alien type and/or upgrades, cannot evolve.
             evolveButtonTextureCoords = GUIAlienBuyMenu.kEvolveButtonNeedResourcesTextureCoordinates
             evolveText = Locale.ResolveString("ABM_NEED")
-            evolveCost = AlienBuy_GetAlienCost(self.selectedAlienType, self:GetHasHyperMutationSelected()) + selectedUpgradesCost - AlienBuy_GetHyperMutationCostReduction(self.selectedAlienType)
+            evolveCost = AlienBuy_GetAlienCost(self.selectedAlienType, false) + selectedUpgradesCost
             
         else
         
@@ -1034,11 +1070,11 @@ local function UpdateEvolveButton(self)
             
             // Cannot buy the current alien.
             if self.selectedAlienType ~= AlienBuy_GetCurrentAlien() then
-                totalCost = totalCost + AlienBuy_GetAlienCost(self.selectedAlienType, self:GetHasHyperMutationSelected())
+                totalCost = totalCost + AlienBuy_GetAlienCost(self.selectedAlienType, false)
             end
             
             evolveText = Locale.ResolveString("ABM_EVOLVE_FOR")
-            evolveCost = totalCost - AlienBuy_GetHyperMutationCostReduction(self.selectedAlienType) // shows also negative values
+            evolveCost = totalCost
             
         end
         
@@ -1143,13 +1179,13 @@ end
 
 function GUIAlienBuyMenu:_GetCanAffordAlienType(alienType)
 
-    local alienCost = AlienBuy_GetAlienCost(alienType, self:GetHasHyperMutationSelected())
+    local alienCost = AlienBuy_GetAlienCost(alienType, false)
     // Cannot buy the current alien without upgrades.
     if alienType == AlienBuy_GetCurrentAlien() then
         return false
     end
 
-    return PlayerUI_GetPlayerResources() >= alienCost - AlienBuy_GetHyperMutationCostReduction(alienType)
+    return PlayerUI_GetPlayerResources() >= alienCost
     
 end
 
@@ -1263,7 +1299,7 @@ function GUIAlienBuyMenu:_UpdateUpgrades(deltaTime)
             
         elseif not currentButton.Selected and not AlienBuy_GetIsUpgradeAllowed(currentButton.TechId, self.upgradeList) then
             useColor = kNotAllowedColor
-        end    
+        end
         
         currentButton.Icon:SetColor(useColor)
         
@@ -1281,7 +1317,7 @@ function GUIAlienBuyMenu:_UpdateUpgrades(deltaTime)
             //local health = LookupTechData(currentButton.TechId, kTechDataMaxHealth)
             //local armor = LookupTechData(currentButton.TechId, kTechDataMaxArmor)
 
-            self:_ShowMouseOverInfo(currentUpgradeInfoText, tooltipText, LookupTechData(currentButton.TechId, kTechDataCostKey, 0))
+            self:_ShowMouseOverInfo(currentUpgradeInfoText, tooltipText, GetUpgradeCostForLifeForm(Client.GetLocalPlayer(), self.selectedAlienType, currentButton.TechId))
            
         end
 
@@ -1363,7 +1399,9 @@ function GUIAlienBuyMenu:_HideMouseOverInfo()
 end
 
 function GUIAlienBuyMenu:GetNewLifeFormSelected()
+
     return self.selectedAlienType ~= AlienBuy_GetCurrentAlien()
+
 end
 
 function GUIAlienBuyMenu:SetPurchasedSelected()
@@ -1449,8 +1487,6 @@ function GUIAlienBuyMenu:SendKeyEvent(key, down)
                         
                         if self.selectedAlienType ~= AlienBuy_GetCurrentAlien() then 
                             self:_DeselectAllUpgrades()
-                        else
-                            self:SetPurchasedSelected()
                         end
                         
                         inputHandled = true
@@ -1506,18 +1542,12 @@ function GUIAlienBuyMenu:_DeselectAllUpgrades()
 
     for i, currentButton in ipairs(self.upgradeButtons) do
  
-        if currentButton.TechId ~= kTechId.HyperMutation then
-            currentButton.Selected = false
-            table.removevalue(self.upgradeList, currentButton.TechId)
-            self.numSelectedUpgrades = self.numSelectedUpgrades - 1
-        end
+        currentButton.Selected = false
+        table.removevalue(self.upgradeList, currentButton.TechId)
+        self.numSelectedUpgrades = self.numSelectedUpgrades - 1
   
     end
 
-end
-
-function GUIAlienBuyMenu:GetHasHyperMutationSelected()
-    return table.contains(self.upgradeList, kTechId.HyperMutation)
 end
 
 function GUIAlienBuyMenu:GetCanSelect(upgradeButton)
@@ -1533,12 +1563,17 @@ function GUIAlienBuyMenu:_HandleUpgradeClicked(mouseX, mouseY)
     for i, currentButton in ipairs(self.upgradeButtons) do
         // Can't select if it has been purchased already.
         
-        local allowedToUnselect = (currentButton.Selected and not currentButton.Purchased) or (currentButton.TechId ~= kTechId.HyperMutation and currentButton.Selected and (self:GetHasNewLifeFormSelected() or GetHasHyperMutationUpgrade(Client.GetLocalPlayer())))
+        local allowedToUnselect = currentButton.Selected or currentButton.Purchased
         local allowedToPuchase = not currentButton.Selected and self:GetCanSelect(currentButton)
                 
         if (allowedToUnselect or allowedToPuchase) and self:_GetIsMouseOver(currentButton.Icon) then
         
             currentButton.Selected = not currentButton.Selected
+            
+            if currentButton.Purchased then
+                currentButton.Purchased = false
+            end
+            
             inputHandled = true
             
             if currentButton.Selected then

@@ -177,7 +177,7 @@ end
 /**
  * Moves by the player by the specified offset, colliding and sliding with the world.
  */
-function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove)
+function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, slowDownFraction, deflectMove, slowDownFilterFunc)
 
     PROFILE("ControllerMixin:PerformMovement")
     
@@ -185,10 +185,20 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove)
         isMove = true
     end
     
+    if deflectMove == nil then
+        deflectMove = false
+    end
+    
+    if slowDownFraction == nil then
+        slowDownFraction = 1
+    end
+    
     local hitEntities = nil
     local completedMove = true
     local averageSurfaceNormal = nil
-    
+    local oldVelocity = velocity ~= nil and Vector(velocity) or nil
+    local prevXZSpeed = velocity ~= nil and velocity:GetLengthXZ()
+
     if self.controller then
     
         self:UpdateControllerFromEntity()
@@ -205,13 +215,13 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove)
                 offset = offset * (1 - trace.fraction)
                 
                 // Make the motion perpendicular to the surface we collided with so we slide.
-                offset = offset - offset:GetProjection(trace.normal) + trace.normal*0.001
+                offset = offset - offset:GetProjection(trace.normal) // + trace.normal*0.001
                 
                 // Redirect velocity if specified
                 if velocity ~= nil then
                 
                     // Scale it according to how much velocity we lost
-                    local newVelocity = velocity - velocity:GetProjection(trace.normal) + trace.normal*0.001
+                    local newVelocity = velocity - velocity:GetProjection(trace.normal) * slowDownFraction // + trace.normal*0.001
                     
                     // Copy it so it's changed for caller
                     VectorCopy(newVelocity, velocity)
@@ -266,6 +276,29 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove)
             self:OnCapsuleTraceHit(entity)
             
         end
+        
+    end
+
+    if velocity and oldVelocity and not deflectMove then
+        
+        // edge case when jumping down slopes. we never want that the controller can add speed
+        local newXZSpeed = velocity:GetLengthXZ()
+        if newXZSpeed > prevXZSpeed then
+            
+            local ySpeed = velocity.y
+            velocity.y = 0
+            velocity:Scale(prevXZSpeed / newXZSpeed)
+            velocity.y = ySpeed
+            
+        end
+        
+    end
+
+    // TODO: dont compare velocities, use some boolean
+    if oldVelocity ~= velocity and isMove and self.OnWorldCollision then
+    
+        local impactForce = math.max(0, (-averageSurfaceNormal):DotProduct(oldVelocity))    
+        self:OnWorldCollision(averageSurfaceNormal, impactForce, velocity)
         
     end
     

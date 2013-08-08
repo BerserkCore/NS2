@@ -28,7 +28,6 @@ function BulletsMixin:ApplyBulletGameplayEffects(player, target, endPoint, direc
     
     if blockedByUmbra then
         surface = "umbra"
-        damage = 0
     end
 
     // deals damage or plays surface hit effects   

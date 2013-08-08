@@ -20,10 +20,10 @@ CragUmbra.kType = CommanderAbility.kType.Repeat
 
 // duration of cinematic, increase cinematic duration and kCragUmbraDuration to 12 to match the old value from Crag.lua
 CragUmbra.kCragUmbraDuration = kUmbraDuration
-CragUmbra.kRadius = 4.0
+CragUmbra.kRadius = kUmbraRadius
 CragUmbra.kMaxRange = 17
 local kUpdateTime = 0.15
-CragUmbra.kTravelSpeed = 30 // meters per second
+CragUmbra.kTravelSpeed = 60 // meters per second
 
 local networkVars =
 {

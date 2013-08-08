@@ -35,8 +35,14 @@ UmbraMixin.networkVars =
 {
     // as an override for the gameeffect mask
     dragsUmbra = "boolean",
-    umbraBulletCount = string.format("integer (0 to %d)", kUmbraBlockRate)
 }
+
+local kUmbraModifier = {}
+kUmbraModifier["Shotgun"] = kUmbraShotgunModifier
+kUmbraModifier["Rifle"] = kUmbraBulletModifier
+kUmbraModifier["Pistol"] = kUmbraBulletModifier
+kUmbraModifier["Sentry"] = kUmbraBulletModifier
+kUmbraModifier["Minigun"] = kUmbraMinigunModifier
 
 function UmbraMixin:__initmixin()
 
@@ -92,10 +98,6 @@ local function SharedUpdate(self, deltaTime)
     if Server then
     
         self.dragsUmbra = self.timeUmbraExpires > Shared.GetTime()
-        
-        if not self.dragsUmbra then
-            self.umbraBulletCount = 0
-        end
 
     elseif Client then
 
@@ -143,19 +145,6 @@ function UmbraMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
 end
 
-function UmbraMixin:UpdateUmbraBulletCount()
-
-    self.umbraBulletCount = math.min( self.umbraBulletCount + 1, kUmbraBlockRate)
-    
-    if self.umbraBulletCount == kUmbraBlockRate then
-        self.umbraBulletCount = 0
-        return true
-    end
-    
-    return false
-    
-end
-
 function UmbraMixin:OnUpdateRender()
 
     local model = self:GetRenderModel()
@@ -181,3 +170,20 @@ function UmbraMixin:OnUpdateRender()
     end
 
 end
+
+function UmbraMixin:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+
+    if self:GetHasUmbra() then
+    
+        local modifier = 1
+        if doer then        
+            modifier = kUmbraModifier[doer:GetClassName()] or 1        
+        end
+    
+        damageTable.damage = damageTable.damage * modifier
+        
+    end
+    
+
+end
+

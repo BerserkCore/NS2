@@ -108,12 +108,6 @@ function ExoWeaponHolder:GetHasSecondary(player)
     return true
 end
 
-function ExoWeaponHolder:ConstrainMoveVelocity(moveVelocity)
-
-    // Pass along to weapons
-    
-end
-
 function ExoWeaponHolder:OnPrimaryAttack(player)
 
     Weapon.OnPrimaryAttack(self, player)
@@ -201,11 +195,11 @@ end
 function ExoWeaponHolder:OnUpdateRender()
 
     PROFILE("ExoWeaponHolder:OnUpdateRender")
-    
+
     if not Client.GetIsControllingPlayer() then
         SetViewModelParameter(self, "dissolveAmount", 1)
     else
-    
+	
         if self.screenDissolveStart then
         
             local dissolveAmount = math.min(1, (Shared.GetTime() - self.screenDissolveStart) / kScreenDissolveSpeed)
@@ -218,9 +212,9 @@ function ExoWeaponHolder:OnUpdateRender()
         else
             SetViewModelParameter(self, "dissolveAmount", 1)
         end
-        
+		
         if self.closeStart then
-        
+
             local closeAmount = math.min(1, (Shared.GetTime() - self.closeStart) / kCloseSpeed)
             SetViewModelParameter(self, "closeAmount", closeAmount)
             
@@ -231,7 +225,7 @@ function ExoWeaponHolder:OnUpdateRender()
         else
             SetViewModelParameter(self, "closeAmount", 1)
         end
-    
+		
     end
     
 end
@@ -258,12 +252,8 @@ function ExoWeaponHolder:OnTag(tagName)
 
     if tagName == "deploy_start" then
     
-        if Server then
-        
-            // Do not send this sound to this Exo player as they play it Client side above.
-            local function Relevant(soundEffect, player) return player ~= self:GetParent() end
+        if Server then        
             StartSoundEffectAtOrigin(kDeploy3DSoundEffect, self:GetOrigin())
-            
         end
         
     elseif tagName == "deploy_end" then
@@ -277,7 +267,7 @@ function ExoWeaponHolder:OnTag(tagName)
             local velocity = GetNormalizedVector(player:GetVelocity())
             local viewVec = player:GetViewAngles():GetCoords().zAxis
             local forward = velocity:DotProduct(viewVec) > -0.1
-            local crouch = player:GetCrouching()
+            local crouch = HasMixin(player, "CrouchMove") and player:GetCrouching()
             player:TriggerEffects("footstep", {surface = player:GetMaterialBelowPlayer(), left = false, sprinting = false, forward = forward, crouch = crouch, enemy = false})
             
         end

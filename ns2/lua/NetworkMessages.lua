@@ -701,9 +701,6 @@ local kTechNodeBaseMessage =
     // on structures of this type (ie, mature versions of a structure).
     addOnTechId         = string.format("integer (0 to %d)", kTechIdMax),
 
-    // Resource costs (team resources, individual resources or energy depending on type)
-    cost                = "integer (0 to 150)",
-
     // If tech node can be built/researched/used. Requires prereqs to be met and for 
     // research, means that it hasn't already been researched and that it's not
     // in progress. Computed when structures are built or killed or when
@@ -742,7 +739,7 @@ function ParseTechNodeBaseMessage(techNode, networkVars)
     techNode.prereq1                = networkVars.prereq1
     techNode.prereq2                = networkVars.prereq2
     techNode.addOnTechId            = networkVars.addOnTechId
-    techNode.cost                   = networkVars.cost
+    techNode.cost                   = LookupTechData(networkVars.techId, kTechDataCostKey, 0)
     techNode.available              = networkVars.available
     techNode.time                   = networkVars.time
     techNode.researchProgress       = networkVars.researchProgress
@@ -776,7 +773,6 @@ function BuildTechNodeBaseMessage(techNode)
     t.prereq1                   = techNode.prereq1
     t.prereq2                   = techNode.prereq2
     t.addOnTechId               = techNode.addOnTechId
-    t.cost                      = techNode.cost
     t.available                 = techNode.available
     t.time                      = techNode.time
     t.researchProgress          = techNode.researchProgress
@@ -807,7 +803,6 @@ local kSetNameMessage =
 }
 Shared.RegisterNetworkMessage("SetName", kSetNameMessage)
 
--- Adding 1 to kMaxChatLength here to account for the zero terminated string.
 local kChatClientMessage =
 {
     teamOnly = "boolean",
@@ -818,7 +813,6 @@ function BuildChatClientMessage(teamOnly, chatMessage)
     return { teamOnly = teamOnly, message = chatMessage }
 end
 
--- Adding 1 to kMaxChatLength here to account for the zero terminated string.
 local kChatMessage =
 {
     teamOnly = "boolean",

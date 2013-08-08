@@ -126,14 +126,8 @@ end
 
 function MainMenu_GetSelectedRequiresPassword()
 
-    if gSelectedServerNum then
-    
-        if gSelectedServerNum >= 0 then
-            return Client.GetServerRequiresPassword(gSelectedServerNum)
-        else
-            return GetStoredServers()[-gSelectedServerNum].requiresPassword
-        end
-        
+    if gSelectedServerNum and gSelectedServerData then
+        return gSelectedServerData.requiresPassword
     end
     
     return false

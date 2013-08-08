@@ -30,7 +30,7 @@ function CreateMaskIncludingGroups(...)
 
     local mask = 0x0
     local args = {...}
-    
+
     for i,v in ipairs(args) do
         mask = bit.bor( mask, bit.lshift(1,v-1) )
     end
@@ -49,6 +49,7 @@ PhysicsGroup = enum
     'SmallStructuresGroup',     // Small structures that don't affect movement (cysts, mines)
     'RagdollGroup',             // Ragdolls are in this group
     'PlayerControllersGroup',   // Bullets will not collide with this group.
+    'BigPlayerControllersGroup', // onos
     'PlayerGroup',
     'WeaponGroup',
     'ProjectileGroup',
@@ -76,53 +77,41 @@ PhysicsMask = enum
     All = 0xFFFFFFFF,
     
     // Filters anything that should not be collided with for player movement.
-    Movement = CreateMaskExcludingGroups(PhysicsGroup.SmallStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.BabblerGroup, 
-                                         PhysicsGroup.ProjectileGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.DroppedWeaponGroup, PhysicsGroup.CommanderBuildGroup,
-                                         PhysicsGroup.PathingGroup),
+    Movement = CreateMaskExcludingGroups(PhysicsGroup.SmallStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.BabblerGroup, PhysicsGroup.ProjectileGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.DroppedWeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
     
     // Filters anything that should not collide with onos movement.
-    OnosMovement = CreateMaskExcludingGroups(PhysicsGroup.WhipGroup, PhysicsGroup.SmallStructuresGroup, PhysicsGroup.MediumStructuresGroup, PhysicsGroup.RagdollGroup,  
-                                             PhysicsGroup.PlayerGroup, PhysicsGroup.BabblerGroup, PhysicsGroup.ProjectileGroup, PhysicsGroup.WeaponGroup, 
-                                             PhysicsGroup.DroppedWeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
+    OnosMovement = CreateMaskExcludingGroups(PhysicsGroup.WhipGroup, PhysicsGroup.SmallStructuresGroup, PhysicsGroup.MediumStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.PlayerControllersGroup, 
+                                             PhysicsGroup.BabblerGroup, PhysicsGroup.ProjectileGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.DroppedWeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
     
     // For Drifters, MACs
-    AIMovement = CreateMaskExcludingGroups(PhysicsGroup.MediumStructuresGroup, PhysicsGroup.SmallStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, 
-                                           PhysicsGroup.BabblerGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
+    AIMovement = CreateMaskExcludingGroups(PhysicsGroup.MediumStructuresGroup, PhysicsGroup.SmallStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.BabblerGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
 
     // Use these with trace functions to determine which entities we collide with. Use the filter to then
     // ignore specific entities. 
-    AllButPCs = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.PathingGroup),
+    AllButPCs = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.PathingGroup),
     
     // For things the commander can build on top of other things
-    CommanderStack = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.PathingGroup),
+    CommanderStack = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.PathingGroup),
 
     // Used for all types of prediction
-    AllButPCsAndRagdolls = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PathingGroup),
+    AllButPCsAndRagdolls = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PathingGroup),
     
     AllButTriggers = CreateMaskExcludingGroups(PhysicsGroup.TriggerGroup, PhysicsGroup.PathingGroup),
     
     // Shooting and hive sight
-    Bullets = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, 
-                                        PhysicsGroup.CommanderBuildGroup, PhysicsGroup.Projectile, PhysicsGroup.PathingGroup),
+    Bullets = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.Projectile, PhysicsGroup.PathingGroup),
 
     // Melee attacks
-    Melee = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, 
-                                      PhysicsGroup.CommanderBuildGroup, PhysicsGroup.Projectile, PhysicsGroup.PathingGroup),
+    Melee = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.Projectile, PhysicsGroup.PathingGroup),
 
     // Allows us to mark props as non interfering for commander selection (culls out any props with commAlpha < 1)
-    CommanderSelect = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CollisionGeometryGroup,
-                                                PhysicsGroup.PathingGroup),
+    CommanderSelect = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.PathingGroup),
 
     // The same as commander select mask, minus player entities and structures
-    CommanderBuild = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CommanderUnitGroup, 
-                                               PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.PathingGroup),
-    
-    // When Onos charges, players don't stop our movement
-    Charge = CreateMaskExcludingGroups(PhysicsGroup.SmallStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.PlayerControllersGroup, 
-                                       PhysicsGroup.WhipGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
+    CommanderBuild = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CommanderUnitGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.PathingGroup),
     
     // Dropped weapons don't collide with the player controller
-    DroppedWeaponFilter = CreateMaskIncludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.Pathing),
+    DroppedWeaponFilter = CreateMaskIncludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PathingGroup),
     
     BabblerMovement = CreateMaskIncludingGroups(PhysicsGroup.BabblerGroup),
     NoBabblers = CreateMaskIncludingGroups(PhysicsGroup.BabblerGroup, PhysicsGroup.ProjectileGroup),

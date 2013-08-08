@@ -9,7 +9,6 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/CorrodeMixin.lua")
-Script.Load("lua/ResearchMixin.lua")
 Script.Load("lua/RecycleMixin.lua")
 
 Script.Load("lua/ResourceTower.lua")
@@ -24,6 +23,9 @@ Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
+Script.Load("lua/HiveVisionMixin.lua")
+Script.Load("lua/UpgradableMixin.lua")
 
 class 'Extractor' (ResourceTower)
 
@@ -38,25 +40,29 @@ Shared.PrecacheModel(Extractor.kModelName)
 local networkVars = { }
 
 AddMixinNetworkVars(CorrodeMixin, networkVars)
-AddMixinNetworkVars(ResearchMixin, networkVars)
 AddMixinNetworkVars(RecycleMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
+AddMixinNetworkVars(HiveVisionMixin, networkVars)
+AddMixinNetworkVars(UpgradableMixin, networkVars)
 
 function Extractor:OnCreate()
 
     ResourceTower.OnCreate(self)
     
     InitMixin(self, CorrodeMixin)
-    InitMixin(self, ResearchMixin)
     InitMixin(self, RecycleMixin)
     InitMixin(self, DissolveMixin)
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
+    InitMixin(self, HiveVisionMixin)
+    InitMixin(self, UpgradableMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -108,5 +114,21 @@ local kExtractorHealthbarOffset = Vector(0, 2.0, 0)
 function Extractor:GetHealthbarOffset()
     return kExtractorHealthbarOffset
 end 
+
+function Extractor:GetUnitNameOverride()
+    
+    local description = GetDisplayName(self)
+
+    if self:GetHasUpgrade(kTechId.ExtractorArmor) then
+        description = "Armored " .. description 
+    end
+    
+    if HasMixin(self, "Construct") and not self:GetIsBuilt() then
+        description = "Unbuilt " .. description
+    end
+    
+    return description
+    
+end
 
 Shared.LinkClassToMap("Extractor", Extractor.kMapName, networkVars)

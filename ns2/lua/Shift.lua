@@ -44,6 +44,12 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
 
+Script.Load("lua/PathingMixin.lua")
+Script.Load("lua/RepositioningMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
+Script.Load("lua/OrdersMixin.lua")
+
 class 'Shift' (ScriptActor)
 
 Shift.kMapName = "shift"
@@ -71,6 +77,7 @@ local networkVars =
 {
     hydraInRange = "boolean",
     whipInRange = "boolean",
+    tunnelInRange = "boolean",
     cragInRange = "boolean",
     shadeInRange = "boolean",
     shiftInRange = "boolean",
@@ -79,7 +86,10 @@ local networkVars =
     shellInRange = "boolean",
     hiveInRange = "boolean",
     eggInRange = "boolean",
-    echoActive = "boolean"
+    harvesterInRange = "boolean",
+    echoActive = "boolean",
+    
+    moving = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -97,18 +107,19 @@ AddMixinNetworkVars(ResearchMixin, networkVars)
 AddMixinNetworkVars(ObstacleMixin, networkVars)
 AddMixinNetworkVars(CatalystMixin, networkVars)
 AddMixinNetworkVars(TeleportMixin, networkVars)
-AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(OrdersMixin, networkVars)
 
 local function GetIsTeleport(techId)
 
 return techId == kTechId.TeleportHydra or
        techId == kTechId.TeleportWhip or
+       techId == kTechId.TeleportTunnel or
        techId == kTechId.TeleportCrag or
        techId == kTechId.TeleportShade or
        techId == kTechId.TeleportShift or
@@ -116,7 +127,8 @@ return techId == kTechId.TeleportHydra or
        techId == kTechId.TeleportSpur or
        techId == kTechId.TeleportShell or
        techId == kTechId.TeleportHive or
-       techId == kTechId.TeleportEgg
+       techId == kTechId.TeleportEgg or
+       techId == kTechId.TeleportHarvester
 
 end
 
@@ -128,6 +140,7 @@ local function GetTeleportClassname(techId)
         gTeleportClassnames = {}
         gTeleportClassnames[kTechId.TeleportHydra] = "Hydra"
         gTeleportClassnames[kTechId.TeleportWhip] = "Whip"
+        gTeleportClassnames[kTechId.TeleportTunnel] = "TunnelEntrance"
         gTeleportClassnames[kTechId.TeleportCrag] = "Crag"
         gTeleportClassnames[kTechId.TeleportShade] = "Shade"
         gTeleportClassnames[kTechId.TeleportShift] = "Shift"
@@ -136,6 +149,7 @@ local function GetTeleportClassname(techId)
         gTeleportClassnames[kTechId.TeleportShell] = "Shell"
         gTeleportClassnames[kTechId.TeleportHive] = "Hive"
         gTeleportClassnames[kTechId.TeleportEgg] = "Egg"
+        gTeleportClassnames[kTechId.TeleportHarvester] = "Harvester"
     
     end
     
@@ -148,6 +162,7 @@ local function ResetShiftButtons(self)
 
     self.hydraInRange = false
     self.whipInRange = false
+    self.tunnelInRange = false
     self.cragInRange = false
     self.shadeInRange = false
     self.shiftInRange = false
@@ -156,6 +171,7 @@ local function ResetShiftButtons(self)
     self.shellInRange = false
     self.hiveInRange = false
     self.eggInRange = false
+    self.harvesterInRange = false
     
 end
 
@@ -170,6 +186,8 @@ local function UpdateShiftButtons(self)
             self.hydraInRange = true
         elseif teleportable:isa("Whip") then
             self.whipInRange = true
+        elseif teleportable:isa("TunnelEntrance") then
+            self.tunnelInRange = true
         elseif teleportable:isa("Crag") then
             self.cragInRange = true
         elseif teleportable:isa("Shade") then
@@ -186,6 +204,8 @@ local function UpdateShiftButtons(self)
             self.hiveInRange = true
         elseif teleportable:isa("Egg") then
             self.eggInRange = true
+        elseif teleportable:isa("Harvester") then
+            self.harvesterInRange = true
         end
     
     end
@@ -220,6 +240,9 @@ function Shift:OnCreate()
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
     InitMixin(self, DissolveMixin)
+    InitMixin(self, PathingMixin)
+    InitMixin(self, BiomassMixin)
+    InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     
     ResetShiftButtons(self)
     
@@ -251,6 +274,8 @@ function Shift:OnInitialized()
     if Server then
     
         InitMixin(self, StaticTargetMixin)
+        InitMixin(self, RepositioningMixin)
+        InitMixin(self, SupplyUserMixin)
     
         self:AddTimedCallback(Shift.EnergizeInRange, 0.5)
         self.shiftEggs = {}
@@ -269,9 +294,13 @@ function Shift:OnInitialized()
 
 end
 
+function Shift:GetBioMassLevel()
+    return kShiftBiomass
+end
+
 function Shift:EnergizeInRange()
 
-    if self:GetIsBuilt() then
+    if self:GetIsBuilt() and not self:GetIsOnFire() then
     
         local energizeAbles = GetEntitiesWithMixinForTeamWithinRange("Energize", self:GetTeamNumber(), self:GetOrigin(), kEnergizeRange)
         
@@ -309,15 +338,19 @@ function Shift:GetMatureMaxArmor()
     return kMatureShiftArmor
 end
 
-function Shift:GetShowOrderLine()
+function Shift:PreventTurning()
     return true
-end  
+end
+
+function Shift:OverrideRepositioningSpeed()
+    return kShiftMoveSpeed * 2.5
+end
 
 function Shift:GetTechAllowed(techId, techNode, player)
 
     local allowed, canAfford = ScriptActor.GetTechAllowed(self, techId, techNode, player) 
     
-    allowed = allowed and not self.echoActive
+    allowed = allowed and not self.echoActive and not self:GetIsOnFire()
     
     if allowed then
  
@@ -325,6 +358,8 @@ function Shift:GetTechAllowed(techId, techNode, player)
             allowed = self.hydraInRange
         elseif techId == kTechId.TeleportWhip then
             allowed = self.whipInRange
+        elseif techId == kTechId.TeleportTunnel then
+            allowed = self.tunnelInRange
         elseif techId == kTechId.TeleportCrag then
             allowed = self.cragInRange
         elseif techId == kTechId.TeleportShade then
@@ -341,6 +376,8 @@ function Shift:GetTechAllowed(techId, techNode, player)
             allowed = self.hiveInRange
         elseif techId == kTechId.TeleportEgg then
             allowed = self.eggInRange
+        elseif techId == kTechId.TeleportHarvester then
+            allowed = self.harvesterInRange
         end
     
     end
@@ -349,74 +386,67 @@ function Shift:GetTechAllowed(techId, techNode, player)
     
 end
 
-local function GetEchoButtons()
 
-    return {
-    
-        kTechId.TeleportCrag, kTechId.TeleportShade, kTechId.TeleportShift, kTechId.TeleportWhip,
-        kTechId.TeleportShell, kTechId.TeleportVeil, kTechId.TeleportSpur, kTechId.RootMenu
-    
-    }
-
+function Shift:GetCanReposition()
+    return true
 end
 
 function Shift:GetTechButtons(techId)
 
-    local techButtons = nil
-    
-    if techId == kTechId.RootMenu then 
-    
-        techButtons = { kTechId.ShiftHatch, kTechId.ShiftEnergize, kTechId.None, kTechId.None,
-                        kTechId.ShiftEcho, kTechId.None, kTechId.None, kTechId.None }
+    local techButtons
+                
+    if techId == kTechId.ShiftEcho then
 
-        if not self:GetHasUpgrade(kTechId.ShiftEcho) then
-            techButtons[5] = kTechId.EvolveEcho
+        techButtons = { kTechId.TeleportEgg, kTechId.TeleportWhip, kTechId.TeleportHarvester, kTechId.TeleportShift, 
+                        kTechId.TeleportCrag, kTechId.TeleportShade, kTechId.None, kTechId.RootMenu }
+                        
+
+        if self.veilInRange then
+            techButtons[7] = kTechId.TeleportVeil
+        elseif self.shellInRange then
+            techButtons[7] = kTechId.TeleportShell
+        elseif self.spurInRange then
+            techButtons[7] = kTechId.TeleportSpur
         end
 
-    elseif techId == kTechId.ShiftEcho then
-    
-        return GetEchoButtons()
-    
-    end
+    else
 
-    return techButtons
+        techButtons = { kTechId.ShiftEcho, kTechId.Move, kTechId.ShiftEnergize, kTechId.None, 
+                        kTechId.GorgeTunnelTech, kTechId.Leap, kTechId.Xenocide, kTechId.None }
+                        
+        if self.moving then
+            techButtons[2] = kTechId.Stop
+        end 
 
-end
+    end           
+                          
 
-function Shift:OnOverrideOrder(order)
 
-    // Convert default to set rally point.
-    if order:GetType() == kTechId.Default then
-        order:SetType(kTechId.SetTeleport)
-    end
+    return techButtons   
 
 end
 
-function Shift:OnOrderGiven(order)
+function Shift:OnUpdateAnimationInput(modelMixin)
 
-    local distance = GetPathDistance(self:GetOrigin(), order:GetLocation())
+    PROFILE("Shift:OnUpdateAnimationInput")
+    modelMixin:SetAnimationInput("moving", self.moving)
+    modelMixin:SetAnimationInput("echo", self.echoActive)
     
-    if not distance or distance >= Shift.kEchoMaxRange then
-        self:ClearOrders()
-    end  
-
 end
 
-if Server then
+function Shift:GetMaxSpeed()
+    return kShiftMoveSpeed
+end
 
-    function Shift:OnTeleportEnd()
-    
-        self.remainingFindEggSpotAttempts = 300
-        self.eggSpots = {}
-    
-    end
+function Shift:OnUpdate(deltaTime)
 
-    function Shift:OnUpdate(deltaTime)
-    
-        PROFILE("Shift:OnUpdate")
-    
-        ScriptActor.OnUpdate(self, deltaTime)
-    
+    PROFILE("Shift:OnUpdate")
+
+    ScriptActor.OnUpdate(self, deltaTime)
+    UpdateAlienStructureMove(self, deltaTime)        
+
+    if Server then
+
         if not self.timeLastButtonCheck or self.timeLastButtonCheck + 2 < Shared.GetTime() then
         
             self.timeLastButtonCheck = Shared.GetTime()
@@ -425,24 +455,15 @@ if Server then
         end
         
         self.echoActive = self.timeLastEcho + TeleportMixin.kDefaultDelay > Shared.GetTime()
+    
+    end
         
-        if self.remainingFindEggSpotAttempts > 0 and #self.eggSpots < kNumEggSpotsPerShift then
-        
-            local extents = LookupTechData(kTechId.Skulk, kTechDataMaxExtents, nil)
-            local capsuleHeight, capsuleRadius = GetTraceCapsuleFromExtents(extents)  
-            local spawnPoint = GetRandomSpawnForCapsule(capsuleHeight, capsuleRadius, self:GetOrigin() + Vector(0, 0.4, 0), 2, 13, EntityFilterAll())
-            
-            if spawnPoint ~= nil then
-            
-                spawnPoint = GetGroundAtPosition(spawnPoint, nil, PhysicsMask.AllButPCs, extents)
-                table.insert(self.eggSpots, spawnPoint)
-                
-            end
-            
-            self.remainingFindEggSpotAttempts = self.remainingFindEggSpotAttempts - 1
-        
-        end
-            
+end
+
+if Server then
+
+    function Shift:OnTeleportEnd()
+        self:ResetPathing()
     end
 
     function Shift:OnResearchComplete(researchId)
@@ -457,7 +478,7 @@ if Server then
     function Shift:TriggerEcho(techId, position)
     
         local teleportClassname = GetTeleportClassname(techId)
-        local teleportCost = LookupTechData(techId, kTechDataCostKey, kShiftEchoCost)
+        local teleportCost = LookupTechData(techId, kTechDataCostKey, 0)
         
         local success = false
         
@@ -489,80 +510,8 @@ if Server then
         
     end
 
-    function Shift:TriggerHatch()
-    
-        if not self:GetIsBuilt() then
-            return false
-        end    
-    
-        if #self.eggSpots == 0 then
-            return false
-        end 
-        
-        local position = nil
-        local egg = nil
-        
-        for j = 1, kEggsPerHatch do
-        
-            for i = 1, #self.eggSpots do
-                
-                position = self.eggSpots[i]
-
-                local validForEgg = GetIsPlacementForTechId(position, true, kTechId.Egg)
-                local validForSkulk = GetIsPlacementForTechId(position, true, kTechId.Skulk)
-                local notNearResourcePoint = #GetEntitiesWithinRange("ResourcePoint", position, 2) == 0
-                
-                if validForEgg and validForSkulk and notNearResourcePoint then
-                
-                    egg = CreateEntity(Egg.kMapName, position, self:GetTeamNumber())
-                    if egg then
-
-                        // Randomize starting angles
-                        local angles = self:GetAngles()
-                        angles.yaw = math.random() * math.pi * 2
-                        egg:SetAngles(angles)
-                        
-                        // To make sure physics model is updated without waiting a tick
-                        egg:UpdatePhysicsModel()
-                        
-                        // prioritizes as a spawn point
-                        self:RegisterEgg(egg)
-                        
-                        // completely breaks the whole code
-                        break
-                        
-                    end 
-                    
-                end 
-            
-            end
-            
-        end    
-
-        return egg ~= nil 
-            
-    end
-    
-    function Shift:RegisterEgg(egg)
-    
-        if egg and egg:isa("Egg") then
-            table.insertunique(self.shiftEggs, egg:GetId())
-        end
-    
-    end
-
     function Shift:GetNumEggs()
         return #self.shiftEggs
-    end
-    
-    // returns first egg from the list
-    function Shift:GetEgg()
-    
-        local eggId = self.shiftEggs[1]
-        if eggId then
-            return Shared.GetEntity(eggId)
-        end    
-        
     end
     
     function Shift:PerformActivation(techId, position, normal, commander)
@@ -576,10 +525,7 @@ if Server then
             if success then
                 UpdateShiftButtons(self)
             end
-
-        elseif techId == kTechId.ShiftHatch then
-            success = self:TriggerHatch()
-            continue = false
+            
         end
         
         return success, continue

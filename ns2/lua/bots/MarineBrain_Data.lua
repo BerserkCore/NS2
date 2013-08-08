@@ -592,6 +592,29 @@ kMarineBrainActions =
 
     function(bot, brain)
 
+        local name = "clearCyst"
+        local marine = bot:GetPlayer()
+        local sdb = brain:GetSenses()
+        local weight = 0.0
+
+        if sdb:Get("weaponReady") and sdb:Get("attackNearestCyst") then
+            weight = 0.5
+        else
+            weight = 0.0
+        end
+
+        return { name = name, weight = weight,
+            perform = function(move)
+                    local cyst = sdb:Get("nearestCyst")
+                    assert(cyst ~= nil)
+                    assert(cyst.entity ~= nil)
+                    PerformAttackEntity( marine:GetEyePos(), cyst.entity, cyst.entity:GetOrigin(), bot, brain, move )
+            end }
+
+    end,
+
+    function(bot, brain)
+
         local name = "buyWeapon"
         local marine = bot:GetPlayer()
         local sdb = brain:GetSenses()
@@ -892,6 +915,51 @@ function CreateMarineBrainSenses()
             if armory ~= nil then db.lastNearestArmoryId = armory:GetId() end
             return {armory = armory, distance = dist}
 
+            end)
+
+    s:Add("nearestPower", function(db)
+
+            local marine = db.bot:GetPlayer()
+            local marinePos = marine:GetOrigin()
+            local powers = GetEntitiesForTeam( "PowerPoint", kMarineTeamType )
+
+            local dist, power = GetMinTableEntry( powers,
+                function(power)
+                    if power:GetIsBuilt() then
+                        return marinePos:GetDistance( power:GetOrigin() )
+                    end
+                end)
+
+            return {entity = power, distance = dist}
+            end)
+
+    s:Add("nearestCyst", function(db)
+
+            local marine = db.bot:GetPlayer()
+            local marinePos = marine:GetOrigin()
+            local cysts = GetEntitiesWithinRange("Cyst", marinePos, 20)
+
+            local dist, cyst = GetMinTableEntry( cysts, function(cyst)
+                if cyst:GetIsSighted() then
+                    return marinePos:GetDistance( cyst:GetOrigin() )
+                end
+                return nil
+                end)
+
+            return {entity = cyst, distance = dist}
+            end)
+
+    s:Add("attackNearestCyst", function(db)
+            local cyst = db:Get("nearestCyst")
+            local power = db:Get("nearestPower")
+            if cyst.entity ~= nil and power.entity ~= nil then
+                local cystPos = cyst.entity:GetOrigin()
+                local powerPos = power.entity:GetOrigin()
+                //DebugLine( cystPos, powerPos, 0.0, 1,1,0,1,  true )
+                return cystPos:GetDistance(powerPos) < 15
+            else
+                return false
+            end
             end)
 
     s:Add("comPingElapsed", function(db)

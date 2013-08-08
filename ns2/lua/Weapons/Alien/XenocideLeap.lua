@@ -89,7 +89,7 @@ function XenocideLeap:OnPrimaryAttack(player)
             self.xenociding = true
         else
         
-            if self.xenocideTimeLeft and self.xenocideTimeLeft < kDetonateTime * 0.4 then        
+            if self.xenocideTimeLeft and self.xenocideTimeLeft < kDetonateTime * 0.8 then        
                 BiteLeap.OnPrimaryAttack(self, player)
             end
             
@@ -98,7 +98,7 @@ function XenocideLeap:OnPrimaryAttack(player)
     end
     
 end
-
+/*
 function XenocideLeap:OnHolster(player)
 
     if self.xenocideGui ~= nil then
@@ -111,7 +111,7 @@ function XenocideLeap:OnHolster(player)
     self.xenociding = false
 
 end
-
+*/
 function XenocideLeap:OnProcessMove(input)
 
     BiteLeap.OnProcessMove(self, input)
@@ -130,6 +130,7 @@ function XenocideLeap:OnProcessMove(input)
                 local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(player:GetTeamNumber()), player:GetOrigin(), kXenocideRange)
                 RadiusDamage(hitEntities, player:GetOrigin(), kXenocideRange, kXenocideDamage, self)
                 
+                player.spawnReductionTime = 12
                 player:Kill()
                 
             end

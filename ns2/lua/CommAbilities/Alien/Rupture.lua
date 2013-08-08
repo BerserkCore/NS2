@@ -15,56 +15,75 @@ class 'Rupture' (CommanderAbility)
 Rupture.kMapName = "rupture"
 
 Rupture.kRuptureEffect = PrecacheAsset("cinematics/alien/cyst/rupture.cinematic")
+Rupture.kBubbleEffect = PrecacheAsset("cinematics/alien/cyst/rupture_bubble.cinematic")
 Rupture.kRuptureViewEffect = PrecacheAsset("cinematics/alien/cyst/rupture_view.cinematic")
+Rupture.kBurstSound = PrecacheAsset("sound/NS2.fev/alien/structures/death_axe")
 
-Rupture.kType = CommanderAbility.kType.Instant
+Rupture.kType = CommanderAbility.kType.OverTime
 
-Rupture.kRadius = 10
-Rupture.kDuration = 4
+Rupture.kRadius = 8.7
+Rupture.kDuration = 3
 local networkVars = { }
 
-function Rupture:OnInitialized()
-    
-    CommanderAbility.OnInitialized(self)
-
-end
-
 function Rupture:GetStartCinematic()
-    return Rupture.kRuptureEffect
+    return Rupture.kBubbleEffect
 end
 
 function Rupture:GetType()
     return Rupture.kType
 end
 
-function Rupture:Perform()
+function Rupture:GetLifeSpan()
+    return Rupture.kDuration
+end
 
-    if Server then
+if Client then
+
+    local function GetViewClear(point1, point2)
     
-        local enemies = GetEntitiesForTeamWithinRange("Marine", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), Rupture.kRadius)
-        
-        TEST_EVENT("Rupture triggered")
-        
-        for _, entity in ipairs(enemies) do
-            entity:SetRuptured()
-        end
-        
-    elseif Client then
+        local trace = Shared.TraceRay(point1, point2, CollisionRep.LOS, PhysicsMask.All, EntityFilterAll())
+        return trace.fraction == 1
     
-        // apply rupture to all marines nearby
-        local player = Client.GetLocalPlayer()
-        
-        if player and player:isa("Marine") and (player:GetEyePos() - self:GetOrigin()):GetLengthSquared() < Rupture.kRadius * Rupture.kRadius then
-        
-            local viewCinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
-            viewCinematic:SetCinematic(Rupture.kRuptureViewEffect)
-            
-            TEST_EVENT("Rupture blocked vision")
-            
-        end
-        
     end
-    
+
+    function Rupture:OnDestroy()
+
+        // trigger first person obscurring effect, depending on players view
+        local localPlayer = Client.GetLocalPlayer()
+        if localPlayer and GetAreEnemies(self, localPlayer) and not localPlayer:isa("Commander") and not localPlayer:isa("Spectator") then
+
+            local eyePos = localPlayer:GetEyePos()
+            local origin = self:GetOrigin()
+            
+            if (eyePos - origin):GetLength() <= Rupture.kRadius and GetViewClear(eyePos, origin + Vector(0, 0.2, 0)) then
+            
+                local effect = Client.CreateCinematic(RenderScene.Zone_ViewModel)    
+                effect:SetCinematic(Rupture.kRuptureViewEffect) 
+            
+                // translate world to view
+                local viewInverse = localPlayer:GetViewCoords():GetInverse()                
+                local viewPoint = viewInverse:TransformPoint(origin)
+                // vertical always centered
+                viewPoint.y = 0     
+                // align zAxis towards rupture point
+                effect:SetCoords(Coords.GetLookIn(Vector(0,0,0), viewPoint))
+                
+            end    
+        
+        end
+
+        // trigger world effect
+        local effect = Client.CreateCinematic(RenderScene.Zone_Default)    
+        effect:SetCinematic(Rupture.kRuptureEffect)   
+        effect:SetCoords(self:GetCoords())
+        
+        Shared.PlayWorldSound(nil, Rupture.kBurstSound, nil, self:GetOrigin(), 1)
+
+    end
+
+end
+
+function Rupture:Perform()    
 end
 
 Shared.LinkClassToMap("Rupture", Rupture.kMapName, networkVars)

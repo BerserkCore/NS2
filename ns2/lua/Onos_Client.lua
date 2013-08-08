@@ -61,11 +61,14 @@ function Onos:PlayFootstepEffects(scalar)
     
 end
 
-function Onos:OnJumpLandNonLocalClient()
+function Onos:OnGroundChanged(onGround, impactForce, normal, velocity)
 
-    self:PlayFootstepEffects(3)
+    if onGround then
+        self:PlayFootstepEffects(3)    
+        self:CreateDirtEffect(self:GetOrigin())
+    end
     
-    self:CreateDirtEffect(self:GetOrigin())
+    Alien.OnGroundChanged(self, onGround, impactForce, normal, velocity)
     
 end
 

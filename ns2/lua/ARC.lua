@@ -37,6 +37,8 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/CombatMixin.lua")
 
 class 'ARC' (ScriptActor)
 
@@ -57,9 +59,10 @@ ARC.kStartDistance          = 4
 ARC.kAttackDamage           = kARCDamage
 ARC.kFireRange              = kARCRange         // From NS1
 ARC.kMinFireRange           = kARCMinRange
-ARC.kSplashRadius           = 10
+ARC.kSplashRadius           = 7
 ARC.kUpgradedSplashRadius   = 13
-ARC.kMoveSpeed              = 3.0
+ARC.kMoveSpeed              = 2.0
+ARC.kCombatMoveSpeed        = 0.8
 ARC.kFov                    = 360
 ARC.kBarrelMoveRate         = 100
 ARC.kMaxPitch               = 45
@@ -74,6 +77,7 @@ ARC.kDeployMode = enum( { 'Undeploying', 'Undeployed', 'Deploying', 'Deployed' }
 ARC.kTurnSpeed = math.pi / 2 // an ARC turns slowly
 ARC.kMaxSpeedLimitAngle = math.pi / 36 // 5 degrees
 ARC.kNoSpeedLimitAngle = math.pi / 4 // 24 degrees
+
 if Server then
     Script.Load("lua/ARC_Server.lua")
 end
@@ -109,6 +113,7 @@ AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(CombatMixin, networkVars)
 
 function ARC:OnCreate()
 
@@ -133,6 +138,7 @@ function ARC:OnCreate()
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
+    InitMixin(self, CombatMixin)
     
     if Server then
     
@@ -167,6 +173,7 @@ function ARC:OnInitialized()
         self.desiredRoll = angles.roll
     
         InitMixin(self, MobileTargetMixin)
+        InitMixin(self, SupplyUserMixin)
         
         // TargetSelectors require the TargetCacheMixin for cleanup.
         InitMixin(self, TargetCacheMixin)
@@ -195,6 +202,8 @@ function ARC:OnInitialized()
         end
     
         self.desiredForwardTrackPitchDegrees = 0
+        
+        InitMixin(self, InfestationTrackerMixin)
     
     elseif Client then
     
@@ -253,7 +262,7 @@ function ARC:PerformActivation(techId, position, normal, commander)
     
         self.deployMode = ARC.kDeployMode.Deploying
         self:TriggerEffects("arc_deploying")
-        
+
         return true, true
         
     elseif techId == kTechId.ARCUndeploy then
@@ -277,6 +286,18 @@ function ARC:PerformActivation(techId, position, normal, commander)
     
     return false, true
     
+end
+
+function ARC:GetTechAllowed(techId, techNode, player)
+
+    local allowed, canAfford = ScriptActor.GetTechAllowed(self, techId, techNode, player)
+    
+    if self.deployMode == ARC.kDeployMode.Deployed and techId == kTechId.ARCUndeploy then
+        allowed = true
+    end
+    
+    return allowed, canAfford
+
 end
 
 function ARC:GetActivationTechAllowed(techId)

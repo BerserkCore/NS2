@@ -34,6 +34,7 @@ Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/MinimapConnectionMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
 
 local kAnimationGraph = PrecacheAsset("models/marine/phase_gate/phase_gate.animation_graph")
 
@@ -204,6 +205,7 @@ function PhaseGate:OnInitialized()
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, InfestationTrackerMixin)
         InitMixin(self, MinimapConnectionMixin)
+        InitMixin(self, SupplyUserMixin)
     
     elseif Client then
     
@@ -352,9 +354,7 @@ if Server then
                     player:TriggerEffects("teleport")
                     
                     TransformPlayerCoordsForPhaseGate(player, self:GetCoords(), destinationPhaseGate:GetCoords())
-                    
-                    //PushPlayersInRange(destOrigin, kPushRange, kPushImpulseStrength, GetEnemyTeamNumber(self:GetTeamNumber()))
-                    
+
                     player:SetOrigin(destOrigin)
                     
                     destinationPhaseGate:TriggerEffects("phase_gate_player_exit")

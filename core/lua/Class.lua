@@ -119,6 +119,7 @@ end
 -- from inside the Player:GetJumpHeight() function.
 function ReplaceLocals(originalFunction, replacedLocals)
 
+    local numReplaced = 0
     for name, value in pairs(replacedLocals) do
     
         local index = 1
@@ -142,12 +143,12 @@ function ReplaceLocals(originalFunction, replacedLocals)
         if foundIndex then
         
             debug.setupvalue(originalFunction, foundIndex, value)
-            return true
+            numReplaced = numReplaced + 1
             
         end
         
     end
     
-    return false
+    return numReplaced
     
 end

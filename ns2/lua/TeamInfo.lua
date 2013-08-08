@@ -25,7 +25,7 @@ kMaxTotalPersonalResources = 100000
 
 local networkVars =
 {
-    teamResources =  "float (0 to " .. kMaxResources .. " by 0.1 [ 4 ])",
+    teamResources =  "float (0 to " .. kMaxTeamResources .. " by 0.1 [ 4 ])",
     totalTeamResources = "float (0 to " .. kMaxTotalTeamResources .. " by 1 [ 1 ])",
     personalResources = "float (0 to " .. kMaxTotalPersonalResources .. " by 0.1) [ 4 ]",
     numResourceTowers = "integer (0 to 99)",
@@ -37,7 +37,7 @@ local networkVars =
     techActiveMask = "integer",
     techOwnedMask = "integer",
     playerCount = "integer (0 to " .. kMaxPlayers - 1 .. ")",
-    workerCount = "integer (0 to 18)",
+    supplyUsed = "integer (0 to " .. 10 * kSupplyPerTechpoint .. ")",
     kills = "integer (0 to 9999)"
 }
 
@@ -53,8 +53,10 @@ TeamInfo.kRelevantTechIdsMarine =
     
     kTechId.AdvancedArmory,
     kTechId.AdvancedArmoryUpgrade,
-    kTechId.GrenadeLauncherTech,
-    kTechId.FlamethrowerTech,
+    kTechId.AdvancedWeaponry,
+    
+    kTechId.DetonationTimeTech,
+    kTechId.FlamethrowerRangeTech,
 
     kTechId.Weapons1,
     kTechId.Weapons2,
@@ -76,7 +78,9 @@ TeamInfo.kRelevantTechIdsMarine =
     kTechId.MACSpeedTech,
     
     kTechId.Observatory,
-    kTechId.PhaseTech
+    kTechId.PhaseTech,
+    
+    kTechId.TransformResources
     
 }
 
@@ -86,7 +90,7 @@ TeamInfo.kRelevantTechIdsAlien =
     kTechId.Leap,
     kTechId.BileBomb,
     kTechId.Spores,
-    kTechId.Blink,
+    kTechId.ShadowStep,
     
     kTechId.Xenocide,
     kTechId.WebTech,
@@ -99,23 +103,26 @@ TeamInfo.kRelevantTechIdsAlien =
     kTechId.CragHive,
     kTechId.UpgradeToCragHive,
     kTechId.UpgradeRegenerationShell,
-    kTechId.RegenerationShell,
-    kTechId.CarapaceShell,
-    kTechId.UpgradeCarapaceShell,
+    kTechId.Shell,
+    kTechId.TwoShells,
+    kTechId.ThreeShells,
     
     kTechId.ShadeHive,
     kTechId.UpgradeToShadeHive,
-    kTechId.SilenceVeil,
-    kTechId.UpgradeSilenceVeil,
-    kTechId.CamouflageVeil,
-    kTechId.UpgradeCamouflageVeil,
+    kTechId.Veil,
+    kTechId.TwoVeils,
+    kTechId.ThreeVeils,
     
     kTechId.ShiftHive,
     kTechId.UpgradeToShiftHive,
-    kTechId.CeleritySpur,
-    kTechId.UpgradeCeleritySpur,
-    kTechId.AdrenalineSpur,
-    kTechId.UpgradeAdrenalineSpur
+    kTechId.Spur,
+    kTechId.TwoSpurs,
+    kTechId.ThreeSpurs,
+    
+    kTechId.ResearchBioMassOne,
+    kTechId.ResearchBioMassTwo,
+    
+    kTechId.TransformResources
 
 }
 
@@ -169,13 +176,14 @@ function TeamInfo:OnCreate()
         self.researchDisplayTime = 0
         self.lastTechPriority = 0
         self.lastCommPingTime = 0
-        self.lastCommPingPosition = 0
+        self.lastCommPingPosition = Vector(0,0,0)
         self.totalTeamResources = 0
         self.techActiveMask = 0
         self.techOwnedMask = 0
         self.playerCount = 0
         self.workerCount = 0
         self.kills = 0
+        self.supplyUsed = 0
         
     end
     
@@ -194,13 +202,14 @@ if Server then
         self.researchDisplayTime = 0
         self.lastTechPriority = 0
         self.lastCommPingTime = 0
-        self.lastCommPingPosition = 0
+        self.lastCommPingPosition = Vector(0,0,0)
         self.totalTeamResources = 0
         self.techActiveMask = 0
         self.techOwnedMask = 0
         self.playerCount = 0
         self.workerCount = 0
         self.kills = 0
+        self.supplyUsed = 0
     
     end
 
@@ -271,9 +280,9 @@ local function UpdateInfo(self)
             self.numCapturedTechPoint = team:GetNumCapturedTechPoints()
             
             self.lastCommPingTime = team:GetCommanderPingTime()
-            self.lastCommPingPosition = team:GetCommanderPingPosition()
+            self.lastCommPingPosition = team:GetCommanderPingPosition() or Vector(0,0,0)
             
-            self.workerCount = #GetEntitiesForTeam(GetWorkerClassName(self), self:GetTeamNumber())
+            self.supplyUsed = team:GetSupplyUsed()
             
         end
         
@@ -287,6 +296,10 @@ function TeamInfo:GetRelevantTech()
     else
         return TeamInfo.kRelevantIdMaskAlien, TeamInfo.kRelevantTechIdsAlien
     end
+end
+
+function TeamInfo:GetSupplyUsed()
+    return self.supplyUsed
 end
 
 function TeamInfo:GetNumWorkers()
@@ -432,7 +445,7 @@ function TeamInfo:UpdateBitmasks(techId, techNode)
     end
     
     // Hide prerequisite techs when this tech has been researched
-    if techNode:GetResearched() then
+    if techNode:GetResearched() or (techNode:GetIsSpecial() and techNode:GetHasTech()) then
         local preq1 = techNode:GetPrereq1()
         local preq2 = techNode:GetPrereq2()
         if preq1 ~= nil then

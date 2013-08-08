@@ -14,7 +14,6 @@ Script.Load("lua/DoorMixin.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/CloakableMixin.lua")
 Script.Load("lua/RagdollMixin.lua")
-Script.Load("lua/AttackOrderMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/UpgradableMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
@@ -35,6 +34,14 @@ Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/SoftTargetMixin.lua")
+Script.Load("lua/StormCloudMixin.lua")
+
+Script.Load("lua/CommAbilities/Alien/EnzymeCloud.lua")
+Script.Load("lua/CommAbilities/Alien/HallucinationCloud.lua")
+Script.Load("lua/CommAbilities/Alien/MucousMembrane.lua")
+Script.Load("lua/CommAbilities/Alien/StormCloud.lua")
 
 class 'Drifter' (ScriptActor)
 
@@ -43,12 +50,17 @@ Drifter.kMapName = "drifter"
 Drifter.kModelName = PrecacheAsset("models/alien/drifter/drifter.model")
 Drifter.kAnimationGraph = PrecacheAsset("models/alien/drifter/drifter.animation_graph")
 
+Drifter.kEggModelName = PrecacheAsset("models/alien/drifter/drifter.model") // PrecacheAsset("models/alien/cocoon/cocoon.model") 
+Drifter.kEggAnimationGraph = PrecacheAsset("models/alien/drifter/drifter.animation_graph") // PrecacheAsset("models/alien/cocoon/cocoon.animation_graph")
+
 Drifter.kOrdered2DSoundName = PrecacheAsset("sound/NS2.fev/alien/drifter/ordered_2d")
 Drifter.kOrdered3DSoundName = PrecacheAsset("sound/NS2.fev/alien/drifter/ordered")
 
+local kDrifterConstructSound = PrecacheAsset("sound/NS2.fev/alien/drifter/drift")
 local kDrifterMorphing = PrecacheAsset("sound/NS2.fev/alien/commander/drop_structure")
 
-Drifter.kMoveSpeed = 7
+Drifter.kMoveSpeed = 8
+Drifter.kCelerityMoveSpeed = 10
 Drifter.kHealth = kDrifterHealth
 Drifter.kArmor = kDrifterArmor
             
@@ -59,9 +71,11 @@ Drifter.kHoverHeight = 1.2
 
 Drifter.kEnzymeRange = 22
 
+local kDrifterSelfOrderRange = 12
+
 Drifter.kFov = 360
 
-Drifter.kTurnSpeed = 8 * math.pi
+Drifter.kTurnSpeed = 4 * math.pi
 
 // Control detection of drifters from enemy team units.
 local kDetectInterval = 0.5
@@ -84,7 +98,12 @@ local networkVars =
     // 0-1 scalar used to set move_speed model parameter according to how fast we recently moved
     moveSpeed = "float",
     moveSpeedParam = "compensated float",
-    camouflaged = "boolean"
+    camouflaged = "boolean",
+    hasCamouflage = "boolean",
+    hasCelerity = "boolean",
+    hasRegeneration = "boolean",
+    canUseAbilities = "boolean",
+    constructing = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -97,12 +116,12 @@ AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(CloakableMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
-AddMixinNetworkVars(AttackOrderMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(StormCloudMixin, networkVars)
 
 function Drifter:OnCreate()
 
@@ -126,10 +145,11 @@ function Drifter:OnCreate()
     InitMixin(self, CloakableMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DamageMixin)
-    InitMixin(self, AttackOrderMixin)
     InitMixin(self, DetectableMixin)
     InitMixin(self, DissolveMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, SoftTargetMixin)
+    InitMixin(self, StormCloudMixin)
     
     self:SetUpdates(true)
     self:SetLagCompensated(true)
@@ -147,9 +167,7 @@ function Drifter:OnInitialized()
     self.moveSpeed = 0
     self.moveSpeedParam = 0
     self.moveYaw = 0
-    
-    self:SetModel(Drifter.kModelName, Drifter.kAnimationGraph)
-    
+
     ScriptActor.OnInitialized(self)
     
     if Server then
@@ -160,13 +178,21 @@ function Drifter:OnInitialized()
         InitMixin(self, RepositioningMixin)
         InitMixin(self, SleeperMixin)
         InitMixin(self, MobileTargetMixin)
+        InitMixin(self, SupplyUserMixin)
+        
+        self.canUseAbilities = true
+        self.timeAbilityUsed = 0
         
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
         end
         
+        self:SetModel(Drifter.kEggModelName, Drifter.kEggAnimationGraph)
+        
     elseif Client then
+    
+        InitMixin(self, CommanderGlowMixin) 
     
         self.trailCinematic = Client.CreateTrailCinematic(RenderScene.Zone_Default)
         self.trailCinematic:SetCinematicNames(kTrailCinematicNames)
@@ -198,7 +224,14 @@ function Drifter:OnDestroy()
     
         if self.trailCinematic then
             Client.DestroyTrailCinematic(self.trailCinematic)
-        end    
+        end 
+
+        if self.playingConstructSound then
+        
+            Shared.StopSound(self, kDrifterConstructSound)  
+            self.playingConstructSound = false 
+            
+        end
         
     end
     
@@ -239,23 +272,72 @@ local function PlayOrderedSounds(self)
     
 end
 
-function Drifter:OnOverrideOrder(order)
+local function IsBeingGrown(self, target)
+
+    if target.hasDrifterEnzyme then
+        return true
+    end
+
+    for _, drifter in ipairs(GetEntitiesForTeam("Drifter", target:GetTeamNumber())) do
     
+        if self ~= drifter then
+        
+            local order = drifter:GetCurrentOrder()
+            if order and order:GetType() == kTechId.Grow then
+            
+                local growTarget = Shared.GetEntity(order:GetParam())
+                if growTarget == target then
+                    return true
+                end
+            
+            end
+        
+        end
+    
+    end
+
+    return false
+
+end
+
+local function FindTask(self)
+
+    // find ungrown structures 
+    for _, structure in ipairs(GetEntitiesWithMixinForTeamWithinRange("Construct", self:GetTeamNumber(), self:GetOrigin(), kDrifterSelfOrderRange)) do
+    
+        if not structure:GetIsBuilt() and not IsBeingGrown(self, structure) and (not structure.GetCanAutoBuild or structure:GetCanAutoBuild()) then      
+  
+            self:GiveOrder(kTechId.Grow, structure:GetId(), structure:GetOrigin(), nil, false, false)
+            return  
+      
+        end
+    
+    end
+
+end
+
+function Drifter:OnOverrideOrder(order)
+
     local orderTarget = nil
     
     if order:GetParam() ~= nil then
         orderTarget = Shared.GetEntity(order:GetParam())
     end
     
-    // If target is enemy, attack it
-    if order:GetType() == kTechId.Default then
+    local orderType = order:GetType()
     
-        if orderTarget ~= nil and HasMixin(orderTarget, "Live") and GetAreEnemies(self, orderTarget) and orderTarget:GetIsAlive() and (not HasMixin(orderTarget, "LOS") or orderTarget:GetIsSighted()) then
-            order:SetType(kTechId.Attack)
+    if orderType == kTechId.Default or orderType == kTechId.Grow or orderType == kTechId.Move then
+
+        if orderTarget and HasMixin(orderTarget, "Construct") and not orderTarget:GetIsBuilt() and GetAreFriends(self, orderTarget) and not IsBeingGrown(self, orderTarget) then    
+            order:SetType(kTechId.Grow)
         else
             order:SetType(kTechId.Move)
         end
-        
+    
+    end
+    
+    if GetAreEnemies(self, orderTarget) then
+        order.orderParam = -1
     end
     
     PlayOrderedSounds(self)
@@ -309,20 +391,65 @@ function Drifter:GetEngagementPointOverride()
     return self:GetOrigin()
 end
 
+local function GetCommander(teamNum)
+    local commanders = GetEntitiesForTeam("Commander", teamNum)
+    return commanders[1]
+end
+
+function Drifter:ProcessGrowOrder(moveSpeed, deltaTime)
+
+    local currentOrder = self:GetCurrentOrder()
+    
+    if currentOrder ~= nil then
+    
+        local target = Shared.GetEntity(currentOrder:GetParam())
+        
+        if not target or target:GetIsBuilt() or not target:GetIsAlive() then        
+            self:CompletedCurrentOrder()
+        else
+        
+            local targetPos = target:GetOrigin()        
+            if (targetPos - self:GetOrigin()):GetLength() > 3 then
+                self:MoveToTarget(PhysicsMask.AIMovement, targetPos, moveSpeed, deltaTime)
+            else
+                target:RefreshDrifterConstruct()
+                self.constructing = true
+            end
+
+        end
+    
+    end
+
+end
+
 function Drifter:ProcessEnzymeOrder(moveSpeed, deltaTime)
 
     local currentOrder = self:GetCurrentOrder()
     
     if currentOrder ~= nil then
     
-        local targetPos = currentOrder:GetLocation()
+        local targetPos = currentOrder:GetLocation() + Vector(0, 0.1, 0)
         
         // check if we can reach the destinaiton
-        if self:GetIsInEnzymeRange(targetPos) then
-        
-            self:SpawnEnzymeAt(targetPos)
+        if self:GetIsInCloudRange(targetPos) then
+
+            local commander = GetCommander(self:GetTeamNumber())
+            local techId = currentOrder:GetType()
+            local cooldown = LookupTechData(techId, kTechDataCooldown, 0)
+            
+            if commander and cooldown ~= 0 then
+            
+                commander:SetTechCooldown(techId, cooldown, Shared.GetTime())
+                local msg = BuildAbilityResultMessage(techId, true, Shared.GetTime())
+                Server.SendNetworkMessage(commander, "AbilityResult", msg, false)   
+                
+            end 
+            
+            self:SpawnCloudAt(targetPos)
             self:CompletedCurrentOrder()
             self:TriggerUncloak()
+            self.canUseAbilities = false 
+            self.timeAbilityUsed = Shared.GetTime()     
             
         else
         
@@ -337,6 +464,11 @@ function Drifter:ProcessEnzymeOrder(moveSpeed, deltaTime)
     
 end
 
+
+function Drifter:GetIsSmallTarget()
+    return true
+end
+
 local function UpdateTasks(self, deltaTime)
 
     if not self:GetIsAlive() then
@@ -344,18 +476,20 @@ local function UpdateTasks(self, deltaTime)
     end
     
     local currentOrder = self:GetCurrentOrder()
-    if currentOrder ~= nil  then
+    if currentOrder ~= nil then
     
-        local drifterMoveSpeed = GetDevScalar(Drifter.kMoveSpeed, 8)
-        
+        local maxSpeedTable = { maxSpeed = Drifter.kMoveSpeed }
+        self:ModifyMaxSpeed(maxSpeedTable)
+        local drifterMoveSpeed = maxSpeedTable.maxSpeed
+
         local currentOrigin = Vector(self:GetOrigin())
         
         if currentOrder:GetType() == kTechId.Move then
             self:ProcessMoveOrder(drifterMoveSpeed, deltaTime)
-        elseif currentOrder:GetType() == kTechId.EnzymeCloud then
-            self:ProcessEnzymeOrder(drifterMoveSpeed, deltaTime)    
-        elseif currentOrder:GetType() == kTechId.Attack then
-            self:ProcessAttackOrder(5, drifterMoveSpeed, deltaTime)
+        elseif currentOrder:GetType() == kTechId.EnzymeCloud or currentOrder:GetType() == kTechId.Hallucinate or currentOrder:GetType() == kTechId.MucousMembrane or currentOrder:GetType() == kTechId.Storm then
+            self:ProcessEnzymeOrder(drifterMoveSpeed, deltaTime)
+        elseif currentOrder:GetType() == kTechId.Grow then
+            self:ProcessGrowOrder(drifterMoveSpeed, deltaTime)
         end
         
         // Check difference in location to set moveSpeed
@@ -363,6 +497,15 @@ local function UpdateTasks(self, deltaTime)
         
         self.moveSpeed = (distanceMoved / drifterMoveSpeed) / deltaTime
         
+    else
+    
+        if not self.timeLastTaskCheck or self.timeLastTaskCheck + 2 < Shared.GetTime() then
+        
+            FindTask(self)
+            self.timeLastTaskCheck = Shared.GetTime()
+        
+        end
+    
     end
     
 end
@@ -402,7 +545,7 @@ function Drifter:GetFov()
 end
 
 function Drifter:GetIsCamouflaged()
-    return self.camouflaged
+    return false // self.camouflaged // and self.hasCamouflage
 end
 
 function Drifter:OnCapsuleTraceHit(entity)
@@ -439,6 +582,15 @@ local function ScanForNearbyEnemy(self)
     
 end
 
+function Drifter:PerformAction(techNode)
+    
+    if techNode:GetTechId() == kTechId.HoldPosition then
+        self:GiveOrder(kTechId.HoldPosition, self:GetId(), self:GetOrigin(), nil, true, true)
+        return true
+    end
+
+end
+
 function Drifter:OnUpdate(deltaTime)
 
     ScriptActor.OnUpdate(self, deltaTime)
@@ -449,14 +601,46 @@ function Drifter:OnUpdate(deltaTime)
     
     if Server then
     
+        self.constructing = false
         UpdateTasks(self, deltaTime)
         
         ScanForNearbyEnemy(self)
         
-        self.camouflaged = not self:GetHasOrder() and not self:GetIsInCombat()
+        self.camouflaged = (not self:GetHasOrder() or self:GetCurrentOrder():GetType() == kTechId.HoldPosition ) and not self:GetIsInCombat()
+/*
+        self.hasCamouflage = GetHasTech(self, kTechId.ShadeHive) == true
+        self.hasCelerity = GetHasTech(self, kTechId.ShiftHive) == true
+        self.hasRegeneration = GetHasTech(self, kTechId.CragHive) == true
+*/        
+        if self.hasRegeneration then
+        
+            if self:GetIsHealable() and ( not self.timeLastAlienAutoHeal or self.timeLastAlienAutoHeal + kAlienRegenerationTime <= Shared.GetTime() ) then
+            
+                self:AddHealth(0.06 * self:GetMaxHealth())  
+                self.timeLastAlienAutoHeal = Shared.GetTime()
+                
+            end    
+        
+        end
+        
+        self.canUseAbilities = self.timeAbilityUsed + kDrifterAbilityCooldown < Shared.GetTime()
         
     elseif Client then
+    
         self.trailCinematic:SetIsVisible(self:GetIsMoving() and self:GetIsVisible())
+        
+        if self.constructing and not self.playingConstructSound then
+        
+            Shared.PlaySound(self, kDrifterConstructSound)
+            self.playingConstructSound = true
+            
+        elseif not self.constructing and self.playingConstructSound then
+        
+            Shared.StopSound(self, kDrifterConstructSound)
+            self.playingConstructSound = false
+            
+        end
+        
     end
     
 end
@@ -490,29 +674,42 @@ end
 
 function Drifter:GetTechButtons(techId)
 
-    if techId == kTechId.RootMenu then
-        return { kTechId.Attack, kTechId.Stop, kTechId.DrifterCamouflage, kTechId.None,
-                 kTechId.EnzymeCloud }
+    local techButtons = { kTechId.EnzymeCloud, kTechId.Storm, kTechId.MucousMembrane, kTechId.Hallucinate,
+                          kTechId.Grow, kTechId.HoldPosition, kTechId.None, kTechId.None }
+/*
+    if self.hasCelerity then
+        techButtons[6] = kTechId.DrifterCelerity
     end
     
-    return nil
+    if self.hasRegeneration then
+        techButtons[7] = kTechId.DrifterRegeneration
+    end
+    
+    if self.hasCamouflage then
+        techButtons[8] = kTechId.DrifterCamouflage
+    end
+*/    
+    return techButtons
     
 end
 
-function Drifter:GetActivationTechAllowed(techId)
-    return true
-end
-
-function Drifter:SpawnEnzymeAt(position)
+function Drifter:SpawnCloudAt(position)
 
     local team = self:GetTeam()
-    local cost = GetCostForTech(kTechId.EnzymeCloud)
+    local techId = self:GetCurrentOrder():GetType()
+    local cost = GetCostForTech(techId)
     
     if cost <= team:GetTeamResources() then
 
         self:TriggerEffects("drifter_shoot_enzyme", {effecthostcoords = Coords.GetLookIn(self:GetOrigin(), GetNormalizedVectorXZ( position - self:GetOrigin())) } )
-        local enzymeCloud = CreateEntity(EnzymeCloud.kMapName, position, self:GetTeamNumber())
-        team:AddTeamResources(-cost)
+        
+        local mapName = LookupTechData(techId, kTechDataMapName)
+        if mapName then
+        
+            local cloudEntity = CreateEntity(mapName, position, self:GetTeamNumber())
+            team:AddTeamResources(-cost)
+            
+        end
     
     end
 
@@ -522,7 +719,7 @@ function Drifter:GetDamagedAlertId()
     return kTechId.AlienAlertLifeformUnderAttack
 end
 
-function Drifter:GetIsInEnzymeRange(targetPos)
+function Drifter:GetIsInCloudRange(targetPos)
 
     PROFILE("Drifter:GetIsInEnzymeRange")
     
@@ -548,10 +745,10 @@ function Drifter:PerformActivation(techId, position, normal, commander)
     local success = false
     local keepProcessing = true
     
-    if techId == kTechId.EnzymeCloud then
+    if techId == kTechId.EnzymeCloud or techId == kTechId.Hallucinate or techId == kTechId.MucousMembrane or techId == kTechId.Storm then
     
         local team = self:GetTeam()
-        local cost = GetCostForTech(kTechId.EnzymeCloud)
+        local cost = GetCostForTech(techId)
         if cost <= team:GetTeamResources() then
         
             self:GiveOrder(techId, nil, position + Vector(0, 0.2, 0), nil, true, true)
@@ -562,25 +759,13 @@ function Drifter:PerformActivation(techId, position, normal, commander)
         
         // return false, team res will be drained once we reached the destination and created the enzyme entity
         success = false
-        
+
     else
         return ScriptActor.PerformActivation(self, techId, position, normal, commander)
     end
     
     return success, keepProcessing
     
-end
-
-function Drifter:GetMeleeAttackDamage()
-    return kDrifterAttackDamage
-end
-
-function Drifter:GetMeleeAttackInterval()
-    return kDrifterAttackFireDelay
-end
-
-function Drifter:GetMeleeAttackOrigin()
-    return self:GetOrigin()
 end
 
 function Drifter:OnOverrideDoorInteraction(inEntity)
@@ -591,21 +776,6 @@ function Drifter:UpdateIncludeRelevancyMask()
     SetAlwaysRelevantToCommander(self, true)
 end
 
-function Drifter:OnDestroyCurrentOrder(order)
-
-    
-    
-end
-
-local function GetOrderMovesDrifter(orderType)
-
-    return orderType == kTechId.Move or
-           orderType == kTechId.Attack or
-           orderType == kTechId.Construct or
-           orderType == kTechId.Weld
-
-end
-
 function Drifter:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("Drifter:OnUpdateAnimationInput")
@@ -613,20 +783,25 @@ function Drifter:OnUpdateAnimationInput(modelMixin)
     local move = "idle"
     local currentOrder = self:GetCurrentOrder()
     if currentOrder then
-    
-        if GetOrderMovesDrifter(currentOrder:GetType()) then
-            move = "run"
-        end
-        
+        move = "run"
     end
     modelMixin:SetAnimationInput("move",  move)
-    
+
     local activity = "none"
-    if Shared.GetTime() - self:GetTimeOfLastAttackOrder() < 0.5 then
-        activity = "primary"
+    if self.constructing then
+        activity = "parasite"
     end
+
     modelMixin:SetAnimationInput("activity", activity)
     
+end
+
+function Drifter:OnTag(tagName)
+
+    if self.constructing and tagName == "attack_end" then
+        self:TriggerEffects("drifter_construct")
+    end
+
 end
 
 if Server then
@@ -636,8 +811,8 @@ if Server then
     end
     
     function Drifter:OverrideRepositioningSpeed()
-        return Drifter.kMoveSpeed * 0.3
-    end    
+        return 3
+    end
     
     function Drifter:OverrideRepositioningDistance()
         return 0.8

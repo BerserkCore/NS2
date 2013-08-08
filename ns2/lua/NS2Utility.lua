@@ -11,11 +11,6 @@
 Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
-/**
- * Return an extents vector for tracing a bullet with the given caliber (diameter) along direction. 
- *
- * As the trace box is world-axis aligned, it must be shrunk when tracing a diagonal.
- */
 function GetDirectedExtentsForDiameter(direction, diameter)
     
     // normalize and scale the vector, then extract the extents from it
@@ -30,6 +25,58 @@ function GetDirectedExtentsForDiameter(direction, diameter)
     // Log("extents for %s/%s -> %s", direction, v, result)
     return result
     
+end
+
+function GetSupplyUsedByTeam(teamNumber)
+
+    assert(teamNumber)
+
+    local supplyUsed = 0
+    
+    if Server then
+        local team = GetGamerules():GetTeam(teamNumber)
+        if team and team.GetSupplyUsed then
+            supplyUsed = team:GetSupplyUsed() 
+        end    
+    else
+        
+        local teamInfoEnt = GetTeamInfoEntity(teamNumber)
+        if teamInfoEnt and teamInfoEnt.GetSupplyUsed then
+            supplyUsed = teamInfoEnt:GetSupplyUsed()
+        end
+    
+    end    
+
+    return supplyUsed
+
+end
+
+function GetMaxSupplyForTeam(teamNumber)
+
+    return kMaxSupply
+
+    /*
+    local maxSupply = 0
+
+    if Server then
+    
+        local team = GetGamerules():GetTeam(teamNumber)
+        if team and team.GetNumCapturedTechPoints then
+            maxSupply = team:GetNumCapturedTechPoints() * kSupplyPerTechpoint
+        end
+        
+    else    
+        
+        local teamInfoEnt = GetTeamInfoEntity(teamNumber)
+        if teamInfoEnt and teamInfoEnt.GetNumCapturedTechPoints then
+            maxSupply = teamInfoEnt:GetNumCapturedTechPoints() * kSupplyPerTechpoint
+        end
+
+    end   
+
+    return maxSupply 
+    */
+
 end
 
 if Client then
@@ -151,8 +198,6 @@ function HandleHitEffect(position, doer, surface, target, showtracer, altMode, d
     // Don't play the hit cinematic, those are made for third person.
     if target ~= Client.GetLocalPlayer() then
         GetEffectManager():TriggerEffects("damage", tableParams)
-    else
-        GetEffectManager():TriggerEffects("damage_sound_target_local", tableParams)
     end
     
     // Always play sound effect.
@@ -171,6 +216,7 @@ function HandleHitEffect(position, doer, surface, target, showtracer, altMode, d
         target:OnTakeDamageClient(damage, doer, position)
     end
 
+    
     HandleImpactDecal(position, doer, surface, target, showtracer, altMode, damage, direction, tableParams)
 
 end
@@ -254,17 +300,6 @@ function GetTeamInfoEntity(teamNumber)
         return teamInfo[1]
     end
     
-end
-
-function GetIsWorkerConstructionAllowed(teamNumber)
-
-    local teamInfo = GetTeamInfoEntity(teamNumber)
-    if teamInfo then
-        return teamInfo:GetNumWorkers() < teamInfo:GetNumCapturedTechPoints() * kWorkersPerTechpoint
-    end
-    
-    return false
-
 end
 
 function GetIsTargetDetected(target)
@@ -725,17 +760,7 @@ function GetTriggerEntity(position, teamNumber)
 end
 
 function GetBlockedByUmbra(entity)
-
-    if entity ~= nil and HasMixin(entity, "Umbra") then
-    
-        if entity:GetHasUmbra() then
-            return entity:UpdateUmbraBulletCount()
-        end
-        
-    end
-    
-    return false
-    
+    return entity ~= nil and HasMixin(entity, "Umbra") and entity:GetHasUmbra()
 end
 
 // TODO: use what is defined in the material file
@@ -1412,8 +1437,18 @@ function SetPlayerPoseParameters(player, viewModel, headAngles)
     local x = Math.DotProduct(headCoords.xAxis, velocity)
     local z = Math.DotProduct(headCoords.zAxis, velocity)
     
-    local moveYaw = Math.Wrap(Math.Degrees( math.atan2(z,x) ), -180, 180)
+    local moveYaw
+    
+    if player.OverrideGetMoveYaw then
+        moveYaw = player:OverrideGetMoveYaw()
+    end
+    
+    if not moveYaw then
+        moveYaw = Math.Wrap(Math.Degrees( math.atan2(z,x) ), -180, 180)
+    end
+    
     local speedScalar = velocity:GetLength() / player:GetMaxSpeed(true)
+    local crouchAmount = HasMixin(player, "CrouchMove") and player:GetCrouchAmount() or 0
     
     player:SetPoseParam("move_yaw", moveYaw)
     player:SetPoseParam("move_speed", speedScalar)
@@ -1434,7 +1469,7 @@ function SetPlayerPoseParameters(player, viewModel, headAngles)
 
     //Print("body yaw = %f, move_yaw = %f", bodyYaw, moveYaw);
     
-    player:SetPoseParam("crouch", player:GetCrouchAmount())
+    player:SetPoseParam("crouch", crouchAmount)
     player:SetPoseParam("land_intensity", landIntensity)
     
     if viewModel then
@@ -1442,7 +1477,7 @@ function SetPlayerPoseParameters(player, viewModel, headAngles)
         viewModel:SetPoseParam("body_pitch", pitch)
         viewModel:SetPoseParam("move_yaw", moveYaw)
         viewModel:SetPoseParam("move_speed", speedScalar)
-        viewModel:SetPoseParam("crouch", player:GetCrouchAmount())
+        viewModel:SetPoseParam("crouch", crouchAmount)
         viewModel:SetPoseParam("body_yaw", bodyYaw)
         viewModel:SetPoseParam("body_yaw_run", bodyYawRun)
         viewModel:SetPoseParam("land_intensity", landIntensity)
@@ -1603,7 +1638,7 @@ function GetIsPointOnInfestation(point)
     local infestationEntities = GetEntitiesWithMixinWithinRange("Infestation", point, kInfestationSearchRange)
     for infestationIndex = 1, #infestationEntities do
         
-        local infestation = infestationEntities[infestationIndex]        
+        local infestation = infestationEntities[infestationIndex]
         if infestation:GetIsPointOnInfestation(point) then
         
             onInfestation = true
@@ -1954,13 +1989,18 @@ function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceR
     local width, height = weapon:GetMeleeBase()
     width = scale * width
     height = scale * height
-        
+    
+    /*
+    if Client then
+        Client.DebugCapsule(eyePoint, eyePoint + axis * range, width, 0, 3)
+    end
+    */
+    
     // extents defines a world-axis aligned box, so x and z must be the same. 
     local extents = Vector(width / 6, height / 6, width / 6)
     if not filter then
         filter = EntityFilterOne(player)
     end
-        
     local middleTrace,middleStart
     local target,endPoint,surface,startPoint
     
@@ -2002,6 +2042,7 @@ function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceR
 end
 
 local kNumMeleeZones = 3
+local kRangeMult = 0 // 0.15
 function PerformGradualMeleeAttack(weapon, player, damage, range, optionalCoords, altMode, filter)
 
     local didHit, target, endPoint, direction, surface
@@ -2011,6 +2052,7 @@ function PerformGradualMeleeAttack(weapon, player, damage, range, optionalCoords
     
     for i = 1, kNumMeleeZones do
     
+        local attackRange = range * (1 - (i-1) * kRangeMult)
         didHitNow, target, endPoint, direction, surface = CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, true, i * stepSize, nil, filter)
         didHit = didHit or didHitNow
         if target and didHitNow then
@@ -2018,9 +2060,7 @@ function PerformGradualMeleeAttack(weapon, player, damage, range, optionalCoords
             if target:isa("Player") then
                 damageMult = 1 - (i - 1) * stepSize
             end
-    
-            //damageMult = math.cos(damageMult * (math.pi / 2) + math.pi) + 1
-            //Print(ToString(damageMult))
+
             break
             
         end
@@ -2040,14 +2080,38 @@ end
  */
 function AttackMeleeCapsule(weapon, player, damage, range, optionalCoords, altMode, filter)
 
-    // Enable tracing on this capsule check, last argument.
-    local didHit, target, endPoint, direction, surface = CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, true, 1, nil, filter)
+    local targets = {}
+    local didHit, target, endPoint, direction, surface
     
-    if didHit then
-        weapon:DoDamage(damage, target, endPoint, direction, surface, altMode)
+    if not filter then
+        filter = EntityFilterTwo(player, weapon)
+    end
+
+    for i = 1, 20 do
+    
+        local traceFilter = function(test)
+            return EntityFilterList(targets)(test) or filter(test)
+        end
+    
+        // Enable tracing on this capsule check, last argument.
+        didHit, target, endPoint, direction, surface = CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, true, 1, nil, traceFilter)
+        local alreadyHitTarget = target ~= nil and table.contains(targets, target)
+
+        if didHit and not alreadyHitTarget then
+            weapon:DoDamage(damage, target, endPoint, direction, surface, altMode)
+        end
+        
+        if target and not alreadyHitTarget then
+            table.insert(targets, target)
+        end
+        
+        if not target or not HasMixin(target, "SoftTarget") then
+            break
+        end
+    
     end
     
-    return didHit, target, endPoint, surface
+    return didHit, targets[#targets], endPoint, surface
     
 end
 
@@ -2419,6 +2483,7 @@ function GetTexCoordsForTechId(techId)
         
         gTechIdPosition[kTechId.Swipe] = kDeathMessageIcon.Swipe
         gTechIdPosition[kTechId.Blink] = kDeathMessageIcon.Blink
+        gTechIdPosition[kTechId.ShadowStep] = kDeathMessageIcon.ShadowStep
         gTechIdPosition[kTechId.Vortex] = kDeathMessageIcon.Vortex
         
         gTechIdPosition[kTechId.Gore] = kDeathMessageIcon.Gore
@@ -2453,6 +2518,51 @@ end
 
 function AddMoveCommand( commands, moveMask )
     return bit.bor(commands, moveMask)
+end
+
+function GetShellLevel(teamNumber)
+
+    if teamNumber then
+
+        local teamInfo = GetTeamInfoEntity(teamNumber)  
+        if teamInfo then
+            return teamInfo.shellLevel or 0
+        end
+        
+    end
+    
+    return 0
+
+end
+
+function GetSpurLevel(teamNumber)
+
+    if teamNumber then
+
+        local teamInfo = GetTeamInfoEntity(teamNumber)  
+        if teamInfo then
+            return teamInfo.spurLevel or 0
+        end
+        
+    end
+    
+    return 0
+
+end
+
+function GetVeilLevel(teamNumber)
+
+    if teamNumber then
+
+        local teamInfo = GetTeamInfoEntity(teamNumber)  
+        if teamInfo then
+            return teamInfo.veilLevel or 0
+        end  
+        
+    end
+    
+    return 0
+
 end
 
 function GetSelectablesOnScreen(commander, className, minPos, maxPos)
@@ -2517,4 +2627,150 @@ function GetInstalledMapList()
     
     return mapNames, mapFiles
     
+end
+
+// TODO: move to Utility.lua
+
+function EntityFilterList(list)
+    return function(test) return table.contains(list, test) end
+end
+
+function GetBulletTargets(startPoint, endPoint, spreadDirection, bulletSize, filter)
+
+    local targets = {}
+    local hitPoints = {}
+    local trace
+    
+    for i = 1, 20 do
+    
+        local traceFilter = nil 
+        if filter then
+
+            traceFilter = function(test)
+                return EntityFilterList(targets)(test) or filter(test)
+            end
+        
+        else        
+            traceFilter = EntityFilterList(targets)        
+        end
+    
+        trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, traceFilter)
+        if not trace.entity then
+            local extents = GetDirectedExtentsForDiameter(spreadDirection, bulletSize)
+            trace = Shared.TraceBox(extents, startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, traceFilter)
+        end
+        
+        if trace.entity and not table.contains(targets, trace.entity) then
+        
+            table.insert(targets, trace.entity)
+            table.insert(hitPoints, trace.endPoint)
+            
+        end
+        
+        if (not trace.entity or not HasMixin(trace.entity, "SoftTarget")) or trace.fraction == 1 then
+            break
+        end
+    
+    end
+    
+    return targets, trace, hitPoints
+
+end
+
+local kAlienStructureMoveSound = PrecacheAsset("sound/NS2.fev/alien/infestation/build")
+function UpdateAlienStructureMove(self, deltaTime)
+
+    if Server then
+
+        local currentOrder = self:GetCurrentOrder()
+        if GetIsUnitActive(self) and currentOrder and currentOrder:GetType() == kTechId.Move then
+        
+            /*
+            if not self.timeLastShiftCheck or self.timeLastShiftCheck + 0.5 < Shared.GetTime() then
+                
+                self.shiftBoost = self:isa("Shift") or #GetEntitiesForTeamWithinRange("Shift", self:GetTeamNumber(), self:GetOrigin(), 8) > 0
+                self.timeLastShiftCheck = Shared.GetTime()
+            
+            end
+            */
+
+            local speed = self:GetMaxSpeed()
+            if self.shiftBoost then
+                speed = speed * kShiftStructurespeedScalar
+            end
+        
+            self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), speed, deltaTime)
+            
+            if self:IsTargetReached(currentOrder:GetLocation(), kAIMoveOrderCompleteDistance) then
+                self:CompletedCurrentOrder()
+                self.moving = false
+            else
+                self.moving = true            
+            end
+            
+        else
+            self.moving = false
+        end   
+
+    elseif Client then
+    
+        if self.clientMoving ~= self.moving then
+        
+            if self.moving then
+                Shared.PlaySound(self, kAlienStructureMoveSound, 1)
+            else
+                Shared.StopSound(self, kAlienStructureMoveSound)
+            end
+            
+            self.clientMoving = self.moving
+        
+        end
+        
+        if self.moving and (not self.timeLastDecalCreated or self.timeLastDecalCreated + 1.1 < Shared.GetTime() ) then
+        
+            self:TriggerEffects("structure_move")
+            self.timeLastDecalCreated = Shared.GetTime()
+        
+        end
+    
+    end
+
+end
+
+function GetCommanderLogoutAllowed()
+
+    return true
+    
+    /*
+
+    local gameState = kGameState.PreGame
+    local gameStateDuration = 0
+
+    if Server then   
+
+        local gamerules = GetGamerules()
+        if gamerules then
+        
+            gameState = gamerules:GetGameState()
+            gameStateDuration = gamerules:GetGameTimeChanged()
+        
+        end
+
+    else  
+    
+        local gameInfo = GetGameInfoEntity()
+        
+        if gameInfo then
+        
+            gameState = gameInfo:GetState()
+            gameStateDuration = math.max(0, Shared.GetTime() - gameInfo:GetStartTime())
+            
+        end
+
+    end
+
+    return ( gameState ~= kGameState.Countdown and gameState ~= kGameState.Started ) or gameStateDuration >= kCommanderMinTime
+    
+    */
+
 end

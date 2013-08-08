@@ -63,8 +63,9 @@ local function FormatTime(seconds)
 
     local minutes = math.floor(seconds / 60)
     local hours = math.floor(minutes / 60)
-    return string.format("%d:%d:%d", hours, minutes, seconds % 60)
-
+    minutes = minutes - (hours * 60)
+    return string.format("%d:%.2d:%.2d", hours, minutes, seconds % 60)
+    
 end
 
 function PlayerEntry:SetPlayerData(playerData)

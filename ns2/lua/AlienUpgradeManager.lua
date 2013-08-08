@@ -108,15 +108,27 @@ local function GetCostRecuperationFor(self, upgradeId)
 
 end
 
+local function GetCostForUpgrade(self, upgradeId)
+
+    if table.contains(self.initialUpgrades, upgradeId) and self.initialLifeFormTechId == self.lifeFormTechId then
+        cost = 0
+    else
+        cost = LookupTechData(self.lifeFormTechId, kTechDataUpgradeCost, 0)
+    end    
+
+    return cost
+    
+end
+
 function AlienUpgradeManager:GetCanAffordUpgrade(upgradeId)
 
     local availableResources = self.availableResources + GetCostRecuperationFor(self, upgradeId)   
-    local cost = ConditionalValue(table.contains(self.initialUpgrades, upgradeId), 0, GetCostForTech(upgradeId))  
+    local cost = GetCostForUpgrade(self, upgradeId)
     return cost <= availableResources
 
 end
 
-function AlienUpgradeManager:GetIsUpgradeAllowed(upgradeId)
+function AlienUpgradeManager:GetIsUpgradeAllowed(upgradeId, override)
 
     if not self.upgrades then
         self.upgrades = {}
@@ -131,7 +143,7 @@ function AlienUpgradeManager:GetIsUpgradeAllowed(upgradeId)
         if categoryId then
         
             if self.lifeFormTechId == self.initialLifeFormTechId then
-                allowed = allowed and (table.contains(self.initialUpgrades, upgradeId) or not GetHasCategory(self.initialUpgrades, categoryId))
+                allowed = allowed and (override or table.contains(self.initialUpgrades, upgradeId) or not GetHasCategory(self.initialUpgrades, categoryId))
             end
             
         end
@@ -244,10 +256,12 @@ function AlienUpgradeManager:AddUpgrade(upgradeId, override)
         
     end
     
-    local allowed = self:GetIsUpgradeAllowed(upgradeId)
+    local allowed = self:GetIsUpgradeAllowed(upgradeId, override)
     local canAfford = self:GetCanAffordUpgrade(upgradeId)
     
     if allowed and canAfford then
+    
+        local cost = 0
     
         if LookupTechData(upgradeId, kTechDataGestateName) then
 
@@ -261,12 +275,15 @@ function AlienUpgradeManager:AddUpgrade(upgradeId, override)
             end
             
             self.lifeFormTechId = upgradeId
+            cost = GetCostForTech(upgradeId)
             
+        else        
+            cost = GetCostForUpgrade(self, upgradeId)        
         end
     
         table.insert(self.upgrades, upgradeId)
         if not table.contains(self.initialUpgrades, upgradeId) then
-            self.availableResources = self.availableResources - GetCostForTech(upgradeId)
+            self.availableResources = self.availableResources - cost
         end
         return true
         

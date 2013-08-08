@@ -193,6 +193,10 @@ function Hydra:OnDestroy()
     
 end
 
+function Hydra:GetIsFlameAble()
+    return true
+end
+
 function Hydra:GetCanDie(byDeathTrigger)
     return not byDeathTrigger
 end

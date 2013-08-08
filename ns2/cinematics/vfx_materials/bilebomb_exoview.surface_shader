@@ -41,9 +41,12 @@
 			float3 noise2 = tex2D( albedoMap, (input.texCoord * 12 + float2(0, time * .2))).rgb;  
 			
 			float3 mask = tex2D( shaderMask, input.texCoord * textureScale).rgb;
-			if (input.osPosition.z < 0.5 && input.osPosition.y < 0)
+			
+			if (input.osPosition.z > 0.8)
+				mask *= 1;
+			else if (input.osPosition.y < 0.5)
 			{
-				mask *= clamp(1 + input.osPosition.y * 10, 0, 1);
+				mask *= clamp(input.osPosition.y * 5, 0, 1);
 			}
 			
 			material.emissive = bubbles * fresnel *noise2 *tint2 * mask;

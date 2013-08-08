@@ -34,6 +34,45 @@ function PlayerUI_GetNumHives()
 
 end
 
+function AlienUI_GetHasMovementSpecial()
+
+    local hasMovementSpecial = false
+    
+    local player = Client.GetLocalPlayer()
+    if player and player.GetHasMovementSpecial then
+        hasMovementSpecial = player:GetHasMovementSpecial()
+    end
+     
+    return hasMovementSpecial
+
+end
+
+function AlienUI_GetMovementSpecialTechId()
+
+    local techId = false
+    
+    local player = Client.GetLocalPlayer()
+    if player and player.GetMovementSpecialTechId then
+        techId = player:GetMovementSpecialTechId()
+    end
+     
+    return techId
+
+end
+
+function AlienUI_GetMovementSpecialEnergyCost()
+
+    local cost = 0
+    
+    local player = Client.GetLocalPlayer()
+    if player and player.GetMovementSpecialEnergyCost then
+        cost = player:GetMovementSpecialEnergyCost()
+    end
+     
+    return cost
+
+end
+
 // array of totalPower, minPower, xoff, yoff, visibility (boolean), hud slot
 function GetActiveAbilityData(secondary)
 
@@ -65,7 +104,7 @@ function AlienUI_GetHasAdrenaline()
     local hasAdrenaline = false
     
     if player then
-        hasAdrenaline = GetHasAdrenalineUpgrade(player)
+        hasAdrenaline = player.hasAdrenalineUpgrade
     end
     
     return hasAdrenaline == true
@@ -234,11 +273,22 @@ end
 function PlayerUI_GetPlayerMaxEnergy()
 
     local player = Client.GetLocalPlayer()
-    if player and player.GetEnergy then
+    if player and player.GetMaxEnergy then
         return player:GetMaxEnergy()
     end
     return kAbilityMaxEnergy
     
+end
+
+function PlayerUI_GetAdrenalineMaxEnergy()
+
+    local player = Client.GetLocalPlayer()
+    if player and player.GetAdrenalineMaxEnergy then
+        return player:GetAdrenalineMaxEnergy()
+    end
+    
+    return kAbilityMaxEnergy
+
 end
 
 function Alien:OnKillClient()
@@ -373,7 +423,7 @@ end
 
 function Alien:UpdateRegenerationEffect()
 
-    if not self:GetIsInCombat() and GetHasRegenerationUpgrade(self) and not ClientUI.GetScript("GUIRegenerationFeedback"):GetIsAnimating() then
+    if GetHasRegenerationUpgrade(self) and not ClientUI.GetScript("GUIRegenerationFeedback"):GetIsAnimating() then
     
         if self.lastHealth then
         
@@ -491,10 +541,6 @@ function Alien:OnCountDownEnd()
         script:SetIsVisible(true)
     end
     
-end
-
-function Alien:GetPlayFootsteps()
-    return Player.GetPlayFootsteps(self) and not GetHasSilenceUpgrade(self) and not self:GetIsCloaked()
 end
 
 function Alien:GetFirstPersonHitEffectName()

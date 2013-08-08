@@ -272,6 +272,17 @@ if Server then
         end
         
     end
+    
+    function Tunnel:UpdateExit(exit)
+    
+        local exitId = exit:GetId()
+        if self.exitAId == exitId then        
+            self.exitAEntityPosition = exit:GetOrigin()        
+        elseif self.exitBId == exit:GetId() then
+            self.exitBEntityPosition = exit:GetOrigin()    
+        end
+    
+    end
  
     function Tunnel:AddExit(exit)
     

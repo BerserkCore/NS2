@@ -26,6 +26,7 @@ Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/AlienActionFinderMixin.lua")
 Script.Load("lua/DetectableMixin.lua")
 Script.Load("lua/RagdollMixin.lua")
+Script.Load("lua/StormCloudMixin.lua")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/alien_blood.surface_shader")
 
@@ -50,8 +51,6 @@ Alien.kNotEnoughResourcesSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/m
 Alien.kChatSound = PrecacheAsset("sound/NS2.fev/alien/common/chat")
 Alien.kSpendResourcesSoundName = PrecacheAsset("sound/NS2.fev/alien/commander/spend_nanites")
 
-local kCelerityLoopingSound = PrecacheAsset("sound/NS2.fev/alien/common/celerity_loop")
-
 // Representative portrait of selected units in the middle of the build button cluster
 Alien.kPortraitIconsTexture = "ui/alien_portraiticons.dds"
 
@@ -63,13 +62,13 @@ Alien.kUpgradeIconsTexture = "ui/alien_upgradeicons.dds"
 
 Alien.kAnimOverlayAttack = "attack"
 
-Alien.kWalkBackwardSpeedScalar = 0.75
+Alien.kWalkBackwardSpeedScalar = 1
 
 Alien.kEnergyRecuperationRate = 10.0
 
 // How long our "need healing" text gets displayed under our blip
 Alien.kCustomBlipDuration = 10
-Alien.kEnergyAdrenalineRecuperationRate = 10
+Alien.kEnergyAdrenalineRecuperationRate = 13
 
 local kDefaultAttackSpeed = 1
 
@@ -93,10 +92,10 @@ local networkVars =
     infestationSpeedScalar = "private float",
     infestationSpeedUpgrade = "private boolean",
     
-    celeritySpeedScalar = "private float",
-    //celerityEffectsOn = "private boolean",
     storedHyperMutationTime = "private float",
     storedHyperMutationCost = "private float",
+    
+    silenceLevel = "integer (0 to 3)"
 
 }
 
@@ -110,6 +109,7 @@ AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
+AddMixinNetworkVars(StormCloudMixin, networkVars)
 
 function Alien:OnCreate()
 
@@ -126,6 +126,7 @@ function Alien:OnCreate()
     InitMixin(self, AlienActionFinderMixin)
     InitMixin(self, DetectableMixin)
     InitMixin(self, RagdollMixin)
+    InitMixin(self, StormCloudMixin)
         
     InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
     
@@ -141,16 +142,12 @@ function Alien:OnCreate()
     self.darkVisionTime = 0
     self.darkVisionEndTime = 0
     
-    self.timeCelerityInterrupted = 0
-    
     self.twoHives = false
     self.threeHives = false
     self.enzymed = false
     self.primalScreamBoost = false
     
     self.infestationSpeedScalar = 0
-    self.celeritySpeedScalar = 0
-    //self.celerityEffectsOn = false
     self.infestationSpeedUpgrade = false
     
     if Server then
@@ -158,10 +155,7 @@ function Alien:OnCreate()
         self.timeWhenEnzymeExpires = 0
         self.timeLastCombatAction = 0
         self.timeWhenPrimalScreamExpires = 0
-        
-        //self.loopingCeleritySound = Server.CreateEntity(SoundEffect.kMapName)
-        //self.loopingCeleritySound:SetAsset(kCelerityLoopingSound)
-        //self.loopingCeleritySound:SetParent(self)
+        self.silenceLevel = 0
         
     elseif Client then
         InitMixin(self, TeamMessageMixin, { kGUIScriptName = "GUIAlienTeamMessage" })
@@ -181,13 +175,6 @@ function Alien:DestroyGUI()
             
         end
         
-        if self.celerityViewCinematic then
-        
-            Client.DestroyCinematic(self.celerityViewCinematic)
-            self.celerityViewCinematic = nil
-            
-        end
-        
     end
     
 end
@@ -195,9 +182,6 @@ end
 function Alien:OnDestroy()
 
     Player.OnDestroy(self)
-    
-    self.loopingCeleritySound = nil
-    
     self:DestroyGUI()
     
 end
@@ -248,6 +232,36 @@ function Alien:GetArmorAmount()
 
     return self:GetBaseArmor()
    
+end
+
+function Alien:UpdateArmorAmount(carapaceLevel)
+
+    local level = GetHasCarapaceUpgrade(self) and carapaceLevel or 0
+    local newMaxArmor = (level / 3) * (self:GetArmorFullyUpgradedAmount() - self:GetBaseArmor()) + self:GetBaseArmor()
+
+    if newMaxArmor ~= self.maxArmor then
+
+        local armorPercent = self.maxArmor > 0 and self.armor/self.maxArmor or 0
+        self.maxArmor = newMaxArmor
+        self:SetArmor(self.maxArmor * armorPercent)
+    
+    end
+
+end
+
+function Alien:UpdateHealAmount(bioMassLevel, maxLevel)
+
+    local level = math.max(0, bioMassLevel - kHiveBiomass - kHarvesterBiomass)    
+    local newMaxHealth = self:GetBaseHealth() + level * self:GetHealthPerBioMass()
+
+    if newMaxHealth ~= self.maxHealth then
+
+        local healthPercent = self.maxHealth > 0 and self.health/self.maxHealth or 0
+        self.maxHealth = newMaxHealth
+        self:SetHealth(self.maxHealth * healthPercent)
+    
+    end
+
 end
 
 function Alien:GetCanCatalystOverride()
@@ -342,17 +356,17 @@ end
 
 function Alien:GetRecuperationRate()
 
-    if self:GetIsFeinting() then
-        return 0
-    end    
-
     local scalar = ConditionalValue(self:GetGameEffectMask(kGameEffect.OnFire), kOnFireEnergyRecuperationScalar, 1)
+    local rate = 0
 
-    if GetHasAdrenalineUpgrade(self) then
-        return scalar * Alien.kEnergyAdrenalineRecuperationRate
+    if self.hasAdrenalineUpgrade then
+        rate = (( Alien.kEnergyAdrenalineRecuperationRate - Alien.kEnergyRecuperationRate) * (GetSpurLevel(self:GetTeamNumber()) / 3) + Alien.kEnergyRecuperationRate)
     else
-        return scalar * Alien.kEnergyRecuperationRate
+        rate = Alien.kEnergyRecuperationRate
     end
+    
+    rate = rate * scalar
+    return rate
     
 end
 
@@ -367,84 +381,21 @@ function Alien:OnGiveUpgrade(techId)
 end
 
 function Alien:GetMaxEnergy()
-    return ConditionalValue(self.hasAdrenalineUpgrade, kAdrenalineAbilityMaxEnergy, kAbilityMaxEnergy)
+    return ConditionalValue(self.hasAdrenalineUpgrade, (kAdrenalineAbilityMaxEnergy - kAbilityMaxEnergy) * (GetSpurLevel(self:GetTeamNumber()) / 3) + kAbilityMaxEnergy, kAbilityMaxEnergy)
+end
+
+function Alien:GetAdrenalineMaxEnergy()
+    
+    if self.hasAdrenalineUpgrade then
+        return (kAdrenalineAbilityMaxEnergy - kAbilityMaxEnergy) * (GetSpurLevel(self:GetTeamNumber()) / 3)
+    end
+    
+    return 0
+    
 end
 
 function Alien:GetMaxBackwardSpeedScalar()
     return Alien.kWalkBackwardSpeedScalar
-end
-
-function Alien:GetCelerityAllowed()
-    return true
-end
-
-local function UpdateCelerity(self, input)
-
-    if GetHasCelerityUpgrade(self) then
-    
-        local isMoving = input.move:GetLength() > 0 or self:GetSpeedScalar() > 0.5
-        
-        if self.timeCelerityInterrupted + kCelerityStart < Shared.GetTime() and isMoving and self:GetCelerityAllowed() then
-        
-            self.celeritySpeedScalar = Clamp(self.celeritySpeedScalar + input.time / kCelerityBuildUpDuration, 0, 1)
-            
-            /*if not self.celerityEffectsOn then
-            
-                self:TriggerEffects("celerity_start")
-                self.timeLastCelerityStartEffect = Shared.GetTime()
-                
-                //if Server and not self.loopingCeleritySound:GetIsPlaying() then
-                //    self.loopingCeleritySound:Start()
-                //end
-                
-                self.celerityEffectsOn = true
-                
-            end
-            */
-            
-        else
-        
-            self.celeritySpeedScalar = Clamp(self.celeritySpeedScalar - input.time / kCelerityRampDownDuration, 0, 1)
-            
-            if not isMoving then
-                self.timeCelerityInterrupted = Shared.GetTime()
-            end
-            
-            /*if self.celerityEffectsOn then
-            
-                self:TriggerEffects("celerity_end")
-                
-                //if Server and self.loopingCeleritySound:GetIsPlaying() then
-                //    self.loopingCeleritySound:Stop()
-                //end
-                
-                self.celerityEffectsOn = false
-                
-            end*/
-            
-        end
-        
-    else
-        self.celeritySpeedScalar = 0
-    end
-    
-end
-
-function Alien:UpdateSpeedModifiers(input)
-
-    if Server then
-        self.infestationSpeedUpgrade = GetHasMucousMembraneUpgrade(self:GetTeamNumber())
-    end
-    
-    local rate = -0.5
-    if self:GetGameEffectMask(kGameEffect.OnInfestation) and self.infestationSpeedUpgrade then
-        rate = 0.5
-    end
-    
-    self.infestationSpeedScalar = Clamp(self.infestationSpeedScalar + input.time * rate, 0, 1)
-    
-    UpdateCelerity(self, input)
-    
 end
 
 function Alien:SetDarkVision(state)
@@ -467,14 +418,6 @@ function Alien:SetDarkVision(state)
     
     self.darkVisionOn = state
 
-end
-
-function Alien:UpdateSharedMisc(input)
-
-    self:UpdateSpeedModifiers(input)
-    
-    Player.UpdateSharedMisc(self, input)
-    
 end
 
 function Alien:HandleButtons(input)
@@ -532,6 +475,14 @@ end
  * Must override.
  */
 function Alien:GetBaseArmor()
+    assert(false)
+end
+
+function Alien:GetBaseHealth()
+    assert(false)
+end
+
+function Alien:GetHealthPerBioMass()
     assert(false)
 end
 
@@ -618,59 +569,52 @@ function Alien:ComputeDamageOverride(attacker, damage, damageType, time)
 
 end
 
-
-function Alien:GetAcceleration()
-    return Player.kAcceleration * self:GetMovementSpeedModifier()
-end
-
-function Alien:GetCeleritySpeedModifier()
-    return kCeleritySpeedModifier
-end
-
-function Alien:GetCelerityScalar()
-
-    if GetHasCelerityUpgrade(self) then    
-        return 1 + self.celeritySpeedScalar * self:GetCeleritySpeedModifier()        
-    end
-    
-    return 1
-
-end
-
-function Alien:GetInfestationBonus()
-    return kAlienDefaultInfestationSpeedBonus
-end
-
-function Alien:GetMovementSpeedModifier()
-    return self:GetCelerityScalar() * self:GetSlowSpeedModifier() + (self.infestationSpeedScalar * self:GetInfestationBonus())
-end
-
 function Alien:GetEffectParams(tableParams)
-    tableParams[kEffectFilterSilenceUpgrade] = GetHasSilenceUpgrade(self)
+
+    tableParams[kEffectFilterSilenceUpgrade] = self.silenceLevel == 3
+    tableParams[kEffectParamVolume] = 1 - Clamp(self.silenceLevel / 3, 0, 1)
+
 end
 
 function Alien:GetIsEnzymed()
     return self.enzymed
 end
 
-function Alien:OnPrimaryAttack()
-    self.timeCelerityInterrupted = Shared.GetTime()
-end
-
-function Alien:OnDamageDone(doer, target)
-
-    if not doer or doer == self or doer:GetParent() == self then
-        self.timeCelerityInterrupted = Shared.GetTime()
-    end
-    
-end
-
 function Alien:OnUpdateAnimationInput(modelMixin)
 
     Player.OnUpdateAnimationInput(self, modelMixin)
     
-    modelMixin:SetAnimationInput("attack_speed", self:GetIsEnzymed() and kEnzymeAttackSpeed or kDefaultAttackSpeed)
+    local attackSpeed = self:GetIsEnzymed() and kEnzymeAttackSpeed or kDefaultAttackSpeed
+    if self.ModifyAttackSpeed then
+    
+        local attackSpeedTable = { attackSpeed = attackSpeed }
+        self:ModifyAttackSpeed(attackSpeedTable)
+        attackSpeed = attackSpeedTable.attackSpeed
+        
+    end
+    
+    modelMixin:SetAnimationInput("attack_speed", attackSpeed)
     
 end
+
+function Alien:GetHasMovementSpecial()
+    return false
+end   
+
+function Alien:ModifyHeal(healTable)
+
+    if GetHasRegenerationUpgrade(self) then
+    
+        local level = GetShellLevel(self:GetTeamNumber())
+        healTable.health = healTable.health * (1 + level * 0.01)
+        
+    elseif GetHasCarapaceUpgrade(self) then
+    
+        local level = GetShellLevel(self:GetTeamNumber())
+        healTable.health = healTable.health * (1 - level * 0.05)
+
+    end
+    
+end 
 
 Shared.LinkClassToMap("Alien", Alien.kMapName, networkVars)

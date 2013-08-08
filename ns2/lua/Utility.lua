@@ -901,27 +901,32 @@ function ToString(t)
         return table.tostring(t)
     elseif type(t) == "function" then
         return tostring(t)
+        
+    elseif type(t) == "cdata" then
+        if t.isa then
+            if t:isa("Vector") then
+                return tostring(t)
+            elseif t:isa("Trace") then
+                return string.format("trace fraction: %.2f entity: %s", t.fraction, SafeClassName(t.entity))
+            elseif t:isa("Color") then            
+                return string.format("color rgba: %.2f, %.2f, %.2f, %.2f", t.r, t.g, t.b, t.a)
+            elseif t:isa("Angles") then
+                return string.format("angles yaw/pitch/roll: %.2f, %.2f, %.2f", t.yaw, t.pitch, t.roll)
+            elseif t:isa("Coords") then
+                return CoordsToString(t)
+            end
+        end
+        
+        // defer to __tostring
+        return tostring(t)
+        
     elseif type(t) == "userdata" then
-        if not t.isa then
-            return "non-isa userdata"
-        elseif t:isa("Vector") then
-            return tostring(t)
-        elseif t:isa("Trace") then
-            return string.format("trace fraction: %.2f entity: %s", t.fraction, SafeClassName(t.entity))
-        elseif t:isa("Color") then            
-            return string.format("color rgba: %.2f, %.2f, %.2f, %.2f", t.r, t.g, t.b, t.a)
-        elseif t:isa("Angles") then
-            return string.format("angles yaw/pitch/roll: %.2f, %.2f, %.2f", t.yaw, t.pitch, t.roll)
-        elseif t:isa("Coords") then
-            return CoordsToString(t)
-        elseif t:isa("Entity") then
+        if t:isa("Entity") then
             return t:GetClassName() .. "-" .. t:GetId()
         elseif t.GetClassName then
             return t:GetClassName()
         elseif t.GetTagName then
             return string.format("tag: %s CSS class: %s", t:GetTagName(), SafeCSSClassName(t))
-        else    
-            return "unknown userdata"
         end
     elseif type(t) == "boolean" then
         return tostring(t)
@@ -951,7 +956,6 @@ function ToString(t)
         end
         
         return s .. suffix
-        
     end
     
     Print("ToString() on type \"%s\" failed.", type(t))
@@ -968,17 +972,22 @@ function Copy(t)
         local newTable = {}
         table.copy(t, newTable)
         return newTable
-    elseif type(t) == "Coords" then
-        return Coords(t)
-    elseif type(t) == "userdata" then
+    elseif type(t) == "cdata" then
         if t:isa("Vector") then
             return Vector(t)
+        elseif t:isa("Angles") then
+            return Angles(t)
+        elseif t:isa("Coords") then
+            return Coords(t)
         elseif (Trace ~= nil) and t:isa("Trace") then
             return Trace(t)
         else
             //Print("Copy(%s): Not implemented.", t:GetClassName())
             return t
         end
+    elseif type(t) == "userdata" then
+        //Print("Copy(%s): Not implemented.", t:GetClassName())
+        return t
     elseif type(t) == "number" or type(t) == "boolean" then
         return t
     elseif type(t) == "function" then
@@ -1411,16 +1420,11 @@ function IsValidValue(value)
 
 end
 
+local math_min, math_max = math.min, math.max
+
 function Clamp(value, min, max)
-    if value < min then
-        return min
-    elseif value > max then
-        return max
-    else
-        return value
-    end
-    // This is old impl. May be slow due to math derefs
-    // return math.min(math.max(value, min), max)
+    // fsfod says this is faster in LuaJIT
+    return (math_min(math_max(value, min), max))
 end
 
 function ClampVector(vector, min, max)

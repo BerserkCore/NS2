@@ -31,13 +31,14 @@ Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/RepositioningMixin.lua")
 Script.Load("lua/NanoShieldMixin.lua")
 Script.Load("lua/DamageMixin.lua")
-Script.Load("lua/AttackOrderMixin.lua")
 Script.Load("lua/SleeperMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/SoftTargetMixin.lua")
 
 class 'MAC' (ScriptActor)
 
@@ -57,9 +58,6 @@ MAC.kPassbyDrifterSoundName = PrecacheAsset("sound/NS2.fev/marine/structures/mac
 
 MAC.kUsedSoundName = PrecacheAsset("sound/NS2.fev/marine/structures/mac/use")
 
-// Animations
-MAC.kAnimAttack = "attack"
-
 local kJetsCinematic = PrecacheAsset("cinematics/marine/mac/jet.cinematic")
 local kJetsSound = PrecacheAsset("sound/NS2.fev/marine/structures/mac/thrusters")
 
@@ -75,7 +73,7 @@ local kOrderScanRadius = 10
 MAC.kRepairHealthPerSecond = 50
 MAC.kHealth = kMACHealth
 MAC.kArmor = kMACArmor
-MAC.kMoveSpeed = 4.5
+MAC.kMoveSpeed = 6
 MAC.kHoverHeight = .5
 MAC.kStartDistance = 3
 MAC.kWeldDistance = 2
@@ -109,11 +107,42 @@ AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
-AddMixinNetworkVars(AttackOrderMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+
+local function GetIsWeldedByOtherMAC(self, target)
+
+    if target then
+        
+        for _, mac in ipairs(GetEntitiesForTeam("MAC", self:GetTeamNumber())) do
+
+            if self ~= mac then
+            
+                if mac.secondaryTargetId ~= nil and Shared.GetEntity(mac.secondaryTargetId) == target then
+                    return true
+                end
+            
+                local currentOrder = mac:GetCurrentOrder()
+                local orderTarget = nil
+                if currentOrder and currentOrder:GetParam() ~= nil then
+                    orderTarget = Shared.GetEntity(currentOrder:GetParam())
+                end 
+                
+                if currentOrder and orderTarget == target and (currentOrder:GetType() == kTechId.FollowAndWeld or currentOrder:GetType() == kTechId.Weld or currentOrder:GetType() == kTechId.AutoWeld) then
+                    return true
+                end
+            
+            end
+        
+        end
+        
+    end
+    
+    return false
+
+end
 
 function MAC:OnCreate()
 
@@ -136,10 +165,10 @@ function MAC:OnCreate()
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DamageMixin)
-    InitMixin(self, AttackOrderMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, CombatMixin)
     InitMixin(self, CorrodeMixin)
+    InitMixin(self, SoftTargetMixin)
     
     if Server then
     
@@ -174,6 +203,8 @@ function MAC:OnInitialized()
         
         InitMixin(self, SleeperMixin)
         InitMixin(self, MobileTargetMixin)
+        InitMixin(self, SupplyUserMixin)
+        InitMixin(self, InfestationTrackerMixin)
         
         self.jetsSound = Server.CreateEntity(SoundEffect.kMapName)
         self.jetsSound:SetAsset(kJetsSound)
@@ -229,10 +260,10 @@ local function GetAutomaticOrder(self)
             primaryTarget = Shared.GetEntity(currentOrder:GetParam())
         end
 
-        if primaryTarget and (HasMixin(primaryTarget, "Weldable") and primaryTarget:GetWeldPercentage() < 0.95) then
+        if primaryTarget and (HasMixin(primaryTarget, "Weldable") and primaryTarget:GetWeldPercentage() < 0.95) and not primaryTarget:isa("MAC") then
             
             target = primaryTarget
-            orderType = kTechId.Weld
+            orderType = kTechId.AutoWeld
                     
         else
 
@@ -260,10 +291,10 @@ local function GetAutomaticOrder(self)
                     local weldable = weldables[w]
                     // There are cases where the weldable's weld percentage is very close to
                     // 100% but not exactly 100%. This second check prevents the MAC from being so pedantic.
-                    if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 0.95 then
+                    if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 0.95 and not GetIsWeldedByOtherMAC(self, weldable) and not weldable:isa("MAC") then
                     
                         target = weldable
-                        orderType = kTechId.Weld
+                        orderType = kTechId.AutoWeld
                         break
 
                     end
@@ -299,7 +330,7 @@ function MAC:GetExtentsOverride()
 end
 
 function MAC:GetFov()
-    return 120
+    return 360
 end
 
 function MAC:GetIsFlying()
@@ -346,20 +377,19 @@ function MAC:OnOverrideOrder(order)
     
         order:SetType(kTechId.Construct)
 
-    elseif order:GetType() == kTechId.Default and GetOrderTargetIsWeldTarget(order, self:GetTeamNumber()) and not isSelfOrder then
+    elseif order:GetType() == kTechId.Default and GetOrderTargetIsWeldTarget(order, self:GetTeamNumber()) and not isSelfOrder and not GetIsWeldedByOtherMAC(self, orderTarget) then
     
         order:SetType(kTechId.FollowAndWeld)
-        
-    // If target is enemy, attack it
-    elseif (order:GetType() == kTechId.Default) and orderTarget ~= nil and HasMixin(orderTarget, "Live") and GetEnemyTeamNumber(self:GetTeamNumber()) == orderTarget:GetTeamNumber() and orderTarget:GetIsAlive() and (not HasMixin(orderTarget, "LOS") or orderTarget:GetIsSighted()) then
-    
-        order:SetType(kTechId.Attack)
 
-    elseif (order:GetType() == kTechId.Default or order:GetType() == kTechId.Move) and (order:GetParam() ~= nil) then
+    elseif (order:GetType() == kTechId.Default or order:GetType() == kTechId.Move) then
         
         // Convert default order (right-click) to move order
         order:SetType(kTechId.Move)
         
+    end
+    
+    if GetAreEnemies(self, orderTarget) then
+        order.orderParam = -1
     end
     
 end
@@ -414,7 +444,7 @@ function MAC:OnOrderChanged()
                 Server.PlayPrivateSound(owner, MAC.kStartConstruction2DSoundName, owner, 1.0, Vector(0, 0, 0))
             end
             
-        elseif order:GetType() == kTechId.Weld then 
+        elseif order:GetType() == kTechId.Weld or order:GetType() == kTechId.AutoWeld then 
        
             self:PlayChatSound(MAC.kStartWeldSound) 
 
@@ -436,19 +466,6 @@ function MAC:OnOrderChanged()
 
 end
 
-function MAC:OnDestroyCurrentOrder(currentOrder)
-    
-    local orderTarget = nil
-    if currentOrder:GetParam() ~= nil then
-        orderTarget = Shared.GetEntity(currentOrder:GetParam())
-    end
-    
-    if currentOrder:GetType() == kTechId.Weld and GetOrderTargetIsWeldTarget(currentOrder, self:GetTeamNumber()) and orderTarget.OnWeldCanceled then
-        orderTarget:OnWeldCanceled(self)
-    end
-
-end
-
 function MAC:GetMoveSpeed()
 
     local moveSpeed = GetDevScalar(MAC.kMoveSpeed, 8)
@@ -462,7 +479,7 @@ function MAC:GetMoveSpeed()
     
 end
 
-function MAC:ProcessWeldOrder(deltaTime, orderTarget, orderLocation)
+function MAC:ProcessWeldOrder(deltaTime, orderTarget, orderLocation, autoWeld)
 
     local time = Shared.GetTime()
     local canBeWeldedNow = false
@@ -493,7 +510,9 @@ function MAC:ProcessWeldOrder(deltaTime, orderTarget, orderLocation)
                 obstacleSize = orderTarget:GetExtents():GetLengthXZ()
             end
             
-            if not canBeWeldedNow then
+            if autoWeld and distanceToTarget > 15 then
+                orderStatus = kOrderStatus.Cancelled
+            elseif not canBeWeldedNow then
                 orderStatus = kOrderStatus.Completed
             else
             
@@ -535,8 +554,10 @@ function MAC:ProcessMove(deltaTime, target, targetPosition)
 
     local hoverAdjustedLocation = GetHoverAt(self, targetPosition)
     local orderStatus = kOrderStatus.None
+    local distance = (targetPosition - self:GetOrigin()):GetLength()
+    local doneMoving = target ~= nil and distance < 2.5
 
-    if self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime) then
+    if not doneMoving and self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime) then
 
         orderStatus = kOrderStatus.Completed
         self.moving = false
@@ -695,7 +716,7 @@ function MAC:ProcessFollowAndWeldOrder(deltaTime, orderTarget, targetPosition)
         end
         
         target = target ~= nil and target or ( self.secondaryTargetId ~= nil and Shared.GetEntity(self.secondaryTargetId) )
-        orderType = orderType ~= nil and orderType or self. secondaryOrderType
+        orderType = orderType ~= nil and orderType or self.secondaryOrderType
         
         local triggerMoveDistance = (self.welding or self.constructing or orderType) and 15 or 6
         
@@ -703,7 +724,7 @@ function MAC:ProcessFollowAndWeldOrder(deltaTime, orderTarget, targetPosition)
         
             if self:ProcessMove(deltaTime, target, targetPosition) == kOrderStatus.InProgress and (self:GetOrigin() - targetPosition):GetLengthXZ() > 3 then
                 self.moveToPrimary = true
-                self.secondaryTarget = nil
+                self.secondaryTargetId = nil
                 self.secondaryOrderType = nil
             else
                 self.moveToPrimary = false
@@ -720,15 +741,15 @@ function MAC:ProcessFollowAndWeldOrder(deltaTime, orderTarget, targetPosition)
             
                 local secondaryOrderStatus = nil
             
-                if orderType == kTechId.Weld then            
-                    secondaryOrderStatus = self:ProcessWeldOrder(deltaTime, target, target:GetOrigin())        
+                if orderType == kTechId.AutoWeld then            
+                    secondaryOrderStatus = self:ProcessWeldOrder(deltaTime, target, target:GetOrigin(), true)        
                 elseif orderType == kTechId.Construct then
                     secondaryOrderStatus = self:ProcessConstruct(deltaTime, target, target:GetOrigin())
                 end
                 
                 if secondaryOrderStatus == kOrderStatus.Completed or secondaryOrderStatus == kOrderStatus.Cancelled then
                 
-                    self.secondaryTarget = nil
+                    self.secondaryTargetId = nil
                     self.secondaryOrderType = nil
                     
                 end
@@ -761,11 +782,9 @@ local function UpdateOrders(self, deltaTime)
         
             orderStatus = self:ProcessMove(deltaTime, orderTarget, orderLocation)
             self:UpdateGreetings()
-            
-        elseif currentOrder:GetType() == kTechId.Attack then
-            orderStatus = self:ProcessAttackOrder(1, GetDevScalar(MAC.kMoveSpeed, 8), deltaTime, orderTarget, orderLocation)
-        elseif currentOrder:GetType() == kTechId.Weld then
-            orderStatus = self:ProcessWeldOrder(deltaTime, orderTarget, orderLocation)
+
+        elseif currentOrder:GetType() == kTechId.Weld or currentOrder:GetType() == kTechId.AutoWeld then
+            orderStatus = self:ProcessWeldOrder(deltaTime, orderTarget, orderLocation, currentOrder:GetType() == kTechId.AutoWeld)
         elseif currentOrder:GetType() == kTechId.Build or currentOrder:GetType() == kTechId.Construct then
             orderStatus = self:ProcessConstruct(deltaTime, orderTarget, orderLocation)
         end
@@ -864,25 +883,10 @@ function MAC:PerformActivation(techId, position, normal, commander)
     
 end
 
-function MAC:GetMeleeAttackOrigin()
-    return self:GetAttachPointOrigin("fxnode_welder")
-end
-
-function MAC:GetMeleeAttackDamage()
-    return kMACAttackDamage
-end
-
-function MAC:GetMeleeAttackInterval()
-    return kMACAttackFireDelay 
-end
-
 function MAC:GetTechButtons(techId)
 
-    if(techId == kTechId.RootMenu) then return 
-            {   kTechId.Attack, kTechId.Stop, kTechId.Welding, kTechId.None,
-                kTechId.MACEMP, kTechId.None, kTechId.None, kTechId.None }
-
-    else return nil end
+    return { kTechId.Move, kTechId.Stop, kTechId.Welding, kTechId.None,
+             kTechId.None, kTechId.None, kTechId.None, kTechId.None }
     
 end
 
@@ -917,7 +921,7 @@ if Server then
 	end	
 	
 	function MAC:OverrideRepositioningDistance()
-	    return 0.8
+	    return 0.4
 	end	
 
     function MAC:OverrideGetRepositioningTime()
@@ -929,7 +933,6 @@ end
 local function GetOrderMovesMAC(orderType)
 
     return orderType == kTechId.Move or
-           orderType == kTechId.Attack or
            orderType == kTechId.Build or
            orderType == kTechId.Construct or
            orderType == kTechId.Weld
@@ -953,9 +956,7 @@ function MAC:OnUpdateAnimationInput(modelMixin)
     
     local currentTime = Shared.GetTime()
     local activity = "none"
-    if currentTime - self:GetTimeOfLastAttackOrder() < 0.5 then
-        activity = "primary"
-    elseif self.constructing or self.welding then
+    if self.constructing or self.welding then
         activity = "build"
     end
     modelMixin:SetAnimationInput("activity", activity)

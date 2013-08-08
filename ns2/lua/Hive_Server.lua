@@ -25,7 +25,14 @@ function Hive:OnResearchComplete(researchId)
     
     local newTechId = kTechId.Hive
     
-    if researchId == kTechId.UpgradeToCragHive then
+    if researchId == kTechId.ResearchBioMassOne or researchId == kTechId.ResearchBioMassTwo or 
+       researchId == kTechId.ResearchBioMassThree or researchId == kTechId.ResearchBioMassFour then
+    
+        self.bioMassLevel = math.min(6, self.bioMassLevel + 1)
+        self:GetTeam():GetTechTree():SetTechChanged()
+        success = true
+    
+    elseif researchId == kTechId.UpgradeToCragHive then
     
         success = self:UpgradeToTechId(kTechId.CragHive)
         newTechId = kTechId.CragHive
@@ -45,14 +52,10 @@ function Hive:OnResearchComplete(researchId)
         
     end
     
-    if success then
-    
-        if hiveTypeChosen then
-        
-            // Let gamerules know for stat tracking.
-            GetGamerules():SetHiveTechIdChosen(self, newTechId)
-            
-        end
+    if success and hiveTypeChosen then
+
+        // Let gamerules know for stat tracking.
+        GetGamerules():SetHiveTechIdChosen(self, newTechId)
         
     end   
     
@@ -102,7 +105,7 @@ end
 
 local function UpdateHealing(self)
 
-    if self:GetIsBuilt() and self:GetIsAlive() then
+    if GetIsUnitActive(self) and not self:GetGameEffectMask(kGameEffect.OnFire) then
     
         if self.timeOfLastHeal == nil or Shared.GetTime() > (self.timeOfLastHeal + Hive.kHealthUpdateTime) then
             
@@ -132,7 +135,7 @@ local function GetNumEggs(self)
     
     for index, egg in ipairs(eggs) do
     
-        if egg:GetLocationName() == self:GetLocationName() and egg:GetIsAlive() and egg:GetIsFree() then
+        if egg:GetLocationName() == self:GetLocationName() and egg:GetIsAlive() and egg:GetIsFree() and not egg.manuallySpawned then
             numEggs = numEggs + 1
         end
         
@@ -142,37 +145,7 @@ local function GetNumEggs(self)
     
 end
 
-local function GetEggSpawnTime(self)
-
-    if Shared.GetDevMode() then
-        return 3
-    end
-    
-    local numPlayers = Clamp(self:GetTeam():GetNumPlayers(), 1, kMaxPlayers)
-    local numDeadPlayers = self:GetTeam():GetNumDeadPlayers()
-    
-    local eggSpawnTime = CalcEggSpawnTime(numPlayers, GetNumEggs(self) + 1, numDeadPlayers)    
-    return eggSpawnTime
-    
-end
-
-local function GetCanSpawnEgg(self)
-
-    local canSpawnEgg = false
-    
-    if self:GetIsBuilt() and self:GetIsAlive() then
-    
-        if Shared.GetTime() > (self.timeOfLastEgg + GetEggSpawnTime(self)) then    
-            canSpawnEgg = true
-        end
-        
-    end
-    
-    return canSpawnEgg
-    
-end
-
-local function SpawnEgg(self)
+local function SpawnEgg(self, eggCount)
 
     if self.eggSpawnPoints == nil or #self.eggSpawnPoints == 0 then
     
@@ -180,42 +153,138 @@ local function SpawnEgg(self)
         return nil
         
     end
-    
-    local position = table.random(self.eggSpawnPoints)
-    
-    // Need to check if this spawn is valid for an Egg and for a Skulk because
-    // the Skulk spawns from the Egg.
-    local validForEgg = GetIsPlacementForTechId(position, true, kTechId.Egg)
-    local validForSkulk = GetIsPlacementForTechId(position, true, kTechId.Skulk)
-    
-    // Prevent an Egg from spawning on top of a Resource Point.
-    local notNearResourcePoint = #GetEntitiesWithinRange("ResourcePoint", position, 2) == 0
-    
-    if validForEgg and validForSkulk and notNearResourcePoint then
-    
-        local egg = CreateEntity(Egg.kMapName, position, self:GetTeamNumber())
-        egg:SetHive(self)
+
+    if not eggCount then
+        eggCount = 0
+    end
+
+    for i = 1, #self.eggSpawnPoints do
+
+        local position = eggCount == 0 and table.random(self.eggSpawnPoints) or self.eggSpawnPoints[i]  
+
+        // Need to check if this spawn is valid for an Egg and for a Skulk because
+        // the Skulk spawns from the Egg.
+        local validForEgg = GetIsPlacementForTechId(position, true, kTechId.Egg)
+        local validForSkulk = GetIsPlacementForTechId(position, true, kTechId.Skulk)
+
+        // Prevent an Egg from spawning on top of a Resource Point.
+        local notNearResourcePoint = #GetEntitiesWithinRange("ResourcePoint", position, 2) == 0
         
-        if egg ~= nil then
+        if validForEgg and validForSkulk and notNearResourcePoint then
         
-            // Randomize starting angles
-            local angles = self:GetAngles()
-            angles.yaw = math.random() * math.pi * 2
-            egg:SetAngles(angles)
+            local egg = CreateEntity(Egg.kMapName, position, self:GetTeamNumber())
+            egg:SetHive(self)
             
-            // To make sure physics model is updated without waiting a tick
-            egg:UpdatePhysicsModel()
+
+            if egg ~= nil then
             
-            self.timeOfLastEgg = Shared.GetTime()
-            
-            return egg
+                // Randomize starting angles
+                local angles = self:GetAngles()
+                angles.yaw = math.random() * math.pi * 2
+                egg:SetAngles(angles)
+                
+                // To make sure physics model is updated without waiting a tick
+                egg:UpdatePhysicsModel()
+                
+                self.timeOfLastEgg = Shared.GetTime()
+                
+                return egg
+                
+            end
             
         end
-        
+
+    
     end
     
     return nil
     
+end
+
+local function CreateDrifter(self, commander)
+
+    local drifter = CreateEntity(Drifter.kMapName, self:GetOrigin(), self:GetTeamNumber())
+    drifter:SetOwner(commander)
+    drifter:ProcessRallyOrder(self)
+    
+    local function RandomPoint()
+        local angle = math.random() * math.pi*2
+        local startPoint = drifter:GetOrigin() + Vector( math.cos(angle)*Drifter.kStartDistance , Drifter.kHoverHeight, math.sin(angle)*Drifter.kStartDistance )
+        return startPoint
+    end
+    
+    local direction = Vector(drifter:GetAngles():GetCoords().zAxis)
+
+    local finalPoint = Pathing.GetClosestPoint(RandomPoint())
+    
+    local points = {}    
+    local isBlocked = Pathing.IsBlocked(self:GetModelOrigin(), finalPoint)
+    
+    local maxTries = 100
+    local numTries = 0
+    
+    while (isBlocked and numTries < maxTries) do        
+        finalPoint = Pathing.GetClosestPoint(RandomPoint())
+        isBlocked = Pathing.IsBlocked(self:GetModelOrigin(), finalPoint)
+        numTries = numTries + 1
+    end
+
+    drifter:SetOrigin(finalPoint)
+    local angles = Angles()
+    angles.yaw = math.random() * math.pi * 2
+    drifter:SetAngles(angles) 
+    
+    return drifter
+
+end
+
+function Hive:PerformActivation(techId, position, normal, commander)
+
+    local success = false
+    local continue = true
+    
+
+    if techId == kTechId.ShiftHatch then
+    
+        local egg = nil
+    
+        for j = 1, kEggsPerHatch do    
+            egg = SpawnEgg(self, eggCount)        
+        end
+        
+        success = egg ~= nil
+        continue = not success
+        
+        if egg then
+            egg.manuallySpawned = true
+        end
+        
+    elseif techId == kTechId.Drifter then
+    
+        success = CreateDrifter(self, commander) ~= nil
+        continue = not success
+    
+    end
+    
+    return success, continue
+
+end
+
+function Hive:UpdateSpawnEgg()
+
+    local success = false
+    local egg = nil
+
+    local eggCount = GetNumEggs(self)
+    if eggCount < ScaleWithPlayerCount(kAlienEggsPerHive, #GetEntitiesForTeam("Player", self:GetTeamNumber()), true) then  
+  
+        egg = SpawnEgg(self, eggCount)
+        success = egg ~= nil
+        
+    end
+    
+    return success, egg
+
 end
 
 // Spawn a new egg around the hive if needed. Returns true if it did.
@@ -306,8 +375,6 @@ function Hive:OnUpdate(deltaTime)
     
     CommandStructure.OnUpdate(self, deltaTime)
     
-    UpdateEggs(self)
-    
     UpdateHealing(self)
     
     FireImpulses(self)
@@ -322,6 +389,7 @@ function Hive:OnKill(attacker, doer, point, direction)
     
     // Notify the teams that this Hive was destroyed.
     SendGlobalMessage(kTeamMessageTypes.HiveKilled, self:GetLocationId())
+    self.bioMassLevel = 0
     
 end
 
@@ -495,6 +563,8 @@ function Hive:SetAttached(structure)
 end
 
 function Hive:OnConstructionComplete()
+
+    self.bioMassLevel = 1
 
     // Play special tech point animation at same time so it appears that we bash through it.
     local attachedTechPoint = self:GetAttached()

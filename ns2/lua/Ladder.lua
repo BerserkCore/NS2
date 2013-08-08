@@ -21,15 +21,15 @@ function Ladder:OnInitialized()
 end
 
 function Ladder:OnTriggerEntered(enterEnt, triggerEnt)
-    
-    if enterEnt.SetIsOnLadder and (enterEnt.GetCanClimb and enterEnt:GetCanClimb()) then
+
+    if enterEnt.SetIsOnLadder then
         enterEnt:SetIsOnLadder(true, self)
     end
     
 end
 
 function Ladder:OnTriggerExited(exitEnt, triggerEnt)
-    
+
     if exitEnt.SetIsOnLadder then
         exitEnt:SetIsOnLadder(false, nil)
     end

@@ -17,11 +17,11 @@ function Lerk:InitWeapons()
 end
 
 function Lerk:GetTierTwoTechId()
-    return kTechId.Spores
+    return kTechId.Umbra
 end
 
 function Lerk:GetTierThreeTechId()
-    return kTechId.Umbra
+    return kTechId.Spores
 end
 
 

@@ -239,6 +239,12 @@ function GUIMarineHUD:Initialize()
     self.weaponLevel:SetAnchor(GUIItem.Right, GUIItem.Center)
     self.background:AddChild(self.weaponLevel)
     
+    self.weaponUpgradeTech = GetGUIManager():CreateGraphicItem()
+    self.weaponUpgradeTech:SetTexture(GUIMarineHUD.kUpgradesTexture)
+    self.weaponUpgradeTech:SetAnchor(GUIItem.Right, GUIItem.Center)
+    self.weaponUpgradeTech:SetColor(kIconColors[kMarineTeamType])
+    self.background:AddChild(self.weaponUpgradeTech)
+    
     self.statusDisplay = CreateStatusDisplay(self, kGUILayerPlayerHUDForeground1, self.background)
     self.eventDisplay = CreateEventDisplay(self, kGUILayerPlayerHUDForeground1, self.background, true)
     
@@ -445,12 +451,15 @@ function GUIMarineHUD:Reset()
     
     self.armorLevel:SetPosition(GUIMarineHUD.kUpgradePos * self.scale)
     self.armorLevel:SetSize(GUIMarineHUD.kUpgradeSize * self.scale)
-    self.armorLevel:SetIsVisible(false)    
-    
+    self.armorLevel:SetIsVisible(false)   
     
     self.weaponLevel:SetPosition(Vector(GUIMarineHUD.kUpgradePos.x, GUIMarineHUD.kUpgradePos.y + GUIMarineHUD.kUpgradeSize.y + 8, 0) * self.scale)
     self.weaponLevel:SetSize(GUIMarineHUD.kUpgradeSize * self.scale)
     self.weaponLevel:SetIsVisible(false)
+    
+    self.weaponUpgradeTech:SetPosition(Vector(GUIMarineHUD.kUpgradePos.x, GUIMarineHUD.kUpgradePos.y + 2 * GUIMarineHUD.kUpgradeSize.y + 8, 0) * self.scale)
+    self.weaponUpgradeTech:SetSize(GUIMarineHUD.kUpgradeSize * self.scale)
+    self.weaponUpgradeTech:SetIsVisible(false)
     
     if self.minimapEnabled then    
         self:ResetMinimap()       
@@ -651,9 +660,13 @@ function GUIMarineHUD:Update(deltaTime)
     // Update passive upgrades
     local armorLevel = 0
     local weaponLevel = 0
+    local weaponIsAffected = MarineUI_GetIsWeaponAffectedByUpgrades()
+    local hasArmsLab = MarineUI_GetHasArmsLab()
+    local upgradeTechId = MarineUI_GetWeaponUpgradeTechId()
+    
 
-    armorLevel = PlayerUI_GetArmorLevel()
-    weaponLevel = PlayerUI_GetWeaponLevel()
+    armorLevel = PlayerUI_GetArmorLevel(not hasArmsLab)
+    weaponLevel = PlayerUI_GetWeaponLevel(not hasArmsLab)
 
     self.armorLevel:SetIsVisible(armorLevel ~= 0)
     self.weaponLevel:SetIsVisible(weaponLevel ~= 0)
@@ -671,12 +684,32 @@ function GUIMarineHUD:Update(deltaTime)
         self.lastWeaponLevel = weaponLevel
         
     end
-
+    
+    if upgradeTechId ~= kTechId.None then
+    
+        local hasSpecialTech = GetHasTech(Client.GetLocalPlayer(), upgradeTechId)
+        if hasSpecialTech then
+            self.weaponUpgradeTech:SetIsVisible(true)
+            self.weaponUpgradeTech:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(upgradeTechId)))
+        else
+            self.weaponUpgradeTech:SetIsVisible(false)
+        end
+        
+    else
+        self.weaponUpgradeTech:SetIsVisible(false)
+    end   
+    
     local useColor = kIconColors[kMarineTeamType]
-    if not MarineUI_GetHasArmsLab() then
+    if not hasArmsLab then
         useColor = Color(1, 0, 0, 1)
     end
-    self.weaponLevel:SetColor(useColor)
+    
+    local weaponColor = useColor  
+    if not weaponIsAffected then
+        weaponColor = Color(0.3, 0.3, 0.3, 1)
+    end
+    
+    self.weaponLevel:SetColor(weaponColor)
     self.armorLevel:SetColor(useColor)
     
     // Updates animations

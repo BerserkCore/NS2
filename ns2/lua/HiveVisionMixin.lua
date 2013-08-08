@@ -13,47 +13,46 @@ HiveVisionMixin.expectedMixins =
 {
     Team = "For making friendly players visible",
     Model = "For copying bonecoords and drawing model in view model render zone.",
-    Live = "For taking damage (has LiveMixin).",
 }
-
-local Shared_GetTime = Shared.GetTime
-local kHiveSightDuration = 8
 
 function HiveVisionMixin:__initmixin()
 
     if Client then
         self.hiveSightVisible = false
-        self.hiveSightTime = 0
     end
 
 end
 
 if Client then
 
-    function HiveVisionMixin:OnTakeDamageClient()
-        self.hiveSightTime = Shared_GetTime()
+    function HiveVisionMixin:OnDestroy()
+
+        if self.hiveSightVisible then
+            local model = self:GetRenderModel()
+            if model ~= nil then
+                HiveVision_RemoveModel( model )
+            end
+        end
+        
     end
 
     function HiveVisionMixin:OnUpdate(deltaTime)   
-            
-        local time = Shared_GetTime()
-        
-        // As long as we have a parasite we should be visible.
-        if HasMixin(self, "ParasiteAble") and self:GetIsParasited() then
-            self.hiveSightTime = time
-        end
 
         // Determine if the entity should be visible on hive sight
-        local visible = false
+        local visible = HasMixin(self, "ParasiteAble") and self:GetIsParasited()
+        local player = Client.GetLocalPlayer()
 
-        if (time - self.hiveSightTime) < kHiveSightDuration then
-            visible = true        
-        elseif self:isa("Player") then
-            // Make friendly players always show up.
-            local player = Client.GetLocalPlayer()
-            if player ~= self and GetAreFriends(self, player) then
-                visible = true
+        if self:isa("Player") then
+        
+            // Make friendly players always show up.            
+            if player ~= self then
+            
+                if GetAreFriends(self, player) then
+                    visible = true
+                end
+            
             end
+            
         end
         
         // Update the visibility status.

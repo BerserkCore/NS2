@@ -217,11 +217,19 @@ function TechTree:AddTargetedActivation(techId, prereq1, prereq2)
     
 end
 
-function TechTree:AddMenu(techId)
+function TechTree:AddMenu(techId, prereq1, prereq2)
 
     local techNode = TechNode()
     
-    techNode:Initialize(techId, kTechType.Menu, kTechId.None, kTechId.None)
+    if not prereq1 then
+        prereq1 = kTechId.None
+    end
+    
+    if not prereq2 then
+        prereq2 = kTechId.None
+    end
+    
+    techNode:Initialize(techId, kTechType.Menu, prereq1, prereq1)
     
     self:AddNode(techNode)  
 
@@ -253,11 +261,11 @@ function TechTree:AddPlasmaManufactureNode(techId, prereq1, prereq2)
     
 end
 
-function TechTree:AddSpecial(techId, requiresTarget)
+function TechTree:AddSpecial(techId, prereq1, prereq2, requiresTarget)
 
     local techNode = TechNode()
     
-    techNode:Initialize(techId, kTechType.Special, kTechId.None, kTechId.None)
+    techNode:Initialize(techId, kTechType.Special, prereq1, prereq2)
     techNode.requiresTarget = ConditionalValue(requiresTarget, true, false)
     
     self:AddNode(techNode)  
@@ -431,20 +439,71 @@ function TechTree:ComputeHasTech(structureTechIdList, techIdCount)
 end
 
 function TechTree:GetTechSpecial(techId)
-    return (techId == kTechId.TwoCommandStations) or (techId == kTechId.ThreeCommandStations) or (techId == kTechId.TwoHives) or (techId == kTechId.ThreeHives)
+
+    local techNode = self:GetTechNode(techId)
+    return techNode ~= nil and techNode:GetIsSpecial()
+    
 end
 
+local kBioMassTech = { kTechId.BioMassOne, kTechId.BioMassTwo, kTechId.BioMassThree, kTechId.BioMassFour, 
+                       kTechId.BioMassFive, kTechId.BioMassSix, kTechId.BioMassSeven, kTechId.BioMassEight, kTechId.BioMassNine }
+                       
+function BioMassTechToLevel(techId)
+
+    for i = 1, #kBioMassTech do
+        if kBioMassTech[i] == techId then
+            return i
+        end
+    end
+    
+    return -1
+
+end
+              
 function TechTree:GetSpecialTechSupported(techId, structureTechIdList, techIdCount)
 
     local supportingIds = nil
     
-    if techId == kTechId.TwoCommandStations or techId == kTechId.ThreeCommandStations then    
+    if techId == kTechId.TwoShells or techId == kTechId.ThreeShells then
+        supportingIds = { kTechId.Shell }
+        
+    elseif techId == kTechId.TwoSpurs or techId == kTechId.ThreeSpurs then
+        supportingIds = { kTechId.Spur }
+        
+    elseif techId == kTechId.TwoVeils or techId == kTechId.ThreeVeils then
+        supportingIds = { kTechId.Veil }
+    
+    elseif techId == kTechId.TwoCommandStations or techId == kTechId.ThreeCommandStations then    
         supportingIds = { kTechId.CommandStation }
         
     elseif techId == kTechId.TwoHives or techId == kTechId.ThreeHives then
         supportingIds = { kTechId.Hive, kTechId.ShadeHive, kTechId.ShiftHive, kTechId.CragHive }
         
+    else
+    
+        local bioMassLevel = BioMassTechToLevel(techId)
+        if bioMassLevel > 0 then
+    
+            // check if alien team reached the bio mass level, mark the tech as available if level is equal or above
+            local alienTeam = GetGamerules():GetTeam(kTeam2Index)
+            if alienTeam and alienTeam.GetBioMassLevel and alienTeam.GetMaxBioMassLevel then
+            
+                local effectiveBioMassLevel = math.min(alienTeam:GetBioMassLevel(), alienTeam:GetMaxBioMassLevel())
+            
+                if effectiveBioMassLevel >= bioMassLevel then
+                    return true
+                else
+                    return false
+                end
+            end
+        
+        end
+    
     end
+    
+    if not supportingIds then
+        return false
+    end    
     
     local numBuiltSpecials = 0
     
@@ -456,11 +515,24 @@ function TechTree:GetSpecialTechSupported(techId, structureTechIdList, techIdCou
     
     end
     
-    //Print("TechTree:GetSpecialTechSupported(%s), numBuiltSpecials: %s", EnumToString(kTechId, techId), ToString(numBuiltSpecials))
+    /*
+    local structureTechIdListText = ""
+    for _, structureTechId in ipairs(structureTechIdList) do
+        structureTechIdListText = structureTechIdListText .. ", " .. EnumToString(kTechId, structureTechId) .. "(" .. ToString(techIdCount[structureTechId]) .. ")"
+    end
     
-    if techId == kTechId.TwoCommandStations or techId == kTechId.TwoHives then
+    Print(structureTechIdListText)
+    Print("TechTree:GetSpecialTechSupported(%s), numBuiltSpecials: %s", EnumToString(kTechId, techId), ToString(numBuiltSpecials))
+    */
+    
+    if techId == kTechId.TwoCommandStations or 
+       techId == kTechId.TwoHives or 
+       techId == kTechId.TwoShells or 
+       techId == kTechId.TwoSpurs or 
+       techId == kTechId.TwoVeils then
+       
         return numBuiltSpecials >= 2
-    else    
+    else
         return numBuiltSpecials >= 3
     end
     

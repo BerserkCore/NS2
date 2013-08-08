@@ -95,8 +95,7 @@ kPlayerEffectData =
         jumpSoundEffects =
         {
             {sound = "", silenceupgrade = true, done = true},        
-            // Use private_sounds (ie, don't send network message) because this is generated on the client 
-            // when animation plays and conserves bandwidth
+
             {player_sound = "sound/NS2.fev/alien/skulk/jump", classname = "Skulk", done = true},
             {player_sound = "sound/NS2.fev/alien/gorge/jump", classname = "Gorge", done = true},
             {player_sound = "sound/NS2.fev/alien/fade/jump", classname = "Fade", done = true},
@@ -262,22 +261,22 @@ kPlayerEffectData =
         {
             {sound = "", silenceupgrade = true, done = true},  
         
-            {sound = "sound/NS2.fev/alien/skulk/land", classname = "Skulk", done = true},
-            {sound = "sound/NS2.fev/alien/lerk/land", classname = "Lerk", done = true},
-            {sound = "sound/NS2.fev/alien/gorge/land", classname = "Gorge", done = true},
-            {sound = "sound/NS2.fev/alien/fade/land", classname = "Fade", done = true},
-            {sound = "sound/NS2.fev/alien/onos/land", classname = "Onos", done = true},
-            {sound = "sound/NS2.fev/marine/heavy/land", classname = "Exo", done = true},
+            {player_sound = "sound/NS2.fev/alien/skulk/land", classname = "Skulk", done = true},
+            {player_sound = "sound/NS2.fev/alien/lerk/land", classname = "Lerk", done = true},
+            {player_sound = "sound/NS2.fev/alien/gorge/land", classname = "Gorge", done = true},
+            {player_sound = "sound/NS2.fev/alien/fade/land", classname = "Fade", done = true},
+            {player_sound = "sound/NS2.fev/alien/onos/land", classname = "Onos", done = true},
+            {player_sound = "sound/NS2.fev/marine/heavy/land", classname = "Exo", done = true},
 
-            {sound = "sound/NS2.fev/materials/organic/fall", surface = "organic", classname = "Marine", done = true},
-            {sound = "sound/NS2.fev/materials/thin_metal/fall", surface = "thin_metal", classname = "Marine", done = true},
-            {sound = "sound/NS2.fev/materials/rock/fall", surface = "rock", classname = "Marine", done = true},
-            {sound = "sound/NS2.fev/materials/metal/fall", classname = "Marine", done = true},            
+            {player_sound = "sound/NS2.fev/materials/organic/fall", surface = "organic", classname = "Marine", done = true},
+            {player_sound = "sound/NS2.fev/materials/thin_metal/fall", surface = "thin_metal", classname = "Marine", done = true},
+            {player_sound = "sound/NS2.fev/materials/rock/fall", surface = "rock", classname = "Marine", done = true},
+            {player_sound = "sound/NS2.fev/materials/metal/fall", classname = "Marine", done = true},            
             
-            {sound = "sound/NS2.fev/materials/organic/fall", surface = "organic", classname = "ReadyRoomPlayer", done = true},
-            {sound = "sound/NS2.fev/materials/thin_metal/fall", surface = "thin_metal", classname = "ReadyRoomPlayer", done = true},
-            {sound = "sound/NS2.fev/materials/rock/fall", surface = "rock", classname = "ReadyRoomPlayer", done = true},
-            {sound = "sound/NS2.fev/materials/metal/fall", classname = "ReadyRoomPlayer", done = true},   
+            {player_sound = "sound/NS2.fev/materials/organic/fall", surface = "organic", classname = "ReadyRoomPlayer", done = true},
+            {player_sound = "sound/NS2.fev/materials/thin_metal/fall", surface = "thin_metal", classname = "ReadyRoomPlayer", done = true},
+            {player_sound = "sound/NS2.fev/materials/rock/fall", surface = "rock", classname = "ReadyRoomPlayer", done = true},
+            {player_sound = "sound/NS2.fev/materials/metal/fall", classname = "ReadyRoomPlayer", done = true},   
             
         },
         

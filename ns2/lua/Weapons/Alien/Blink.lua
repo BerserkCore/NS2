@@ -18,7 +18,10 @@ class 'Blink' (Ability)
 Blink.kMapName = "blink"
 
 // initial force added when starting blink
-local kEtherealForce = 10
+local kEtherealForce = 13.5
+// always add a little above top speed
+local kBlinkAddForce = 0.3
+local kEtherealVerticalForce = 2
 
 local networkVars =
 {
@@ -42,7 +45,7 @@ function Blink:OnHolster(player)
 end
 
 function Blink:GetHasSecondary(player)
-    return player:GetHasTwoHives()
+    return true // player:GetHasTwoHives()
 end
 
 function Blink:GetSecondaryAttackRequiresPress()
@@ -136,7 +139,7 @@ end
 
 function Blink:SetEthereal(player, state)
 
-    // Enter or leave invulnerable invisible fast-moving mode.
+    // Enter or leave ethereal mode.
     if player.ethereal ~= state then
     
         if state then
@@ -145,8 +148,23 @@ function Blink:SetEthereal(player, state)
             TriggerBlinkOutEffects(self, player)
             player:AddHealth(kHealthOnBlink)
             
-            local newVelocity = player:GetViewCoords().zAxis * kEtherealForce * player:GetMovementSpeedModifier() + player:GetVelocity()
+            local currentVelocity = player:GetViewCoords().zAxis:DotProduct(player:GetVelocity())
+            
+            local celerityLevel = GetHasCelerityUpgrade(player) and GetSpurLevel(player:GetTeamNumber()) or 0
+            local maxSpeed = kEtherealForce + celerityLevel * 1
+            
+            // need to handle celerity different for the fade. blink is a big part of the basic movement, celerity wont be significant enough if not considered here
+            local celerityMultiplier = 1 + celerityLevel * 0.7
+
+            local addSpeed = Clamp(maxSpeed - currentVelocity, 0, maxSpeed) + kBlinkAddForce * celerityMultiplier
+            local newVelocity = player:GetViewCoords().zAxis * addSpeed + player:GetVelocity()
+            if player:GetIsOnGround() then
+                newVelocity.y = math.max(newVelocity.y, kEtherealVerticalForce)
+            end
+            
             player:SetVelocity(newVelocity)
+            player.onGround = false
+            player.jumping = true
             
         else
         
@@ -155,9 +173,7 @@ function Blink:SetEthereal(player, state)
             
         end
         
-        player.ethereal = state
-        player:SetGravityEnabled(not player.ethereal)
-        
+        player.ethereal = state        
         player:SetEthereal(state)
         
         // Give player initial velocity in direction we're pressing, or forward if not pressing anything.

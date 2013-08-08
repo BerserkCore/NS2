@@ -32,6 +32,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
 
 class 'Armory' (ScriptActor)
 
@@ -172,14 +173,14 @@ function Armory:OnInitialized()
     
     InitMixin(self, WeldableMixin)
     InitMixin(self, NanoShieldMixin)
-    
+
     if Server then    
     
         self.loggedInArray = { false, false, false, false }
         
         // Use entityId as index, store time last resupplied
         self.resuppliedPlayers = { }
-        
+
         self:AddTimedCallback(LoginAndResupply, kLoginAndResupplyTime)
         
         // This Mixin must be inited inside this OnInitialized() function.
@@ -189,6 +190,7 @@ function Armory:OnInitialized()
         
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, InfestationTrackerMixin)
+        InitMixin(self, SupplyUserMixin)
         
     elseif Client then
     
@@ -237,8 +239,8 @@ function Armory:GetTechButtons(techId)
 
     local techButtons = nil
 
-    techButtons = { kTechId.ShotgunTech, kTechId.WelderTech, kTechId.MinesTech, kTechId.None,
-                        kTechId.None, kTechId.GrenadeLauncherTech, kTechId.FlamethrowerTech, kTechId.None }
+    techButtons = { kTechId.ShotgunTech, kTechId.MinesTech, kTechId.None, kTechId.None,
+                    kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
     // Show button to upgraded to advanced armory
     if self:GetTechId() == kTechId.Armory and self:GetResearchingId() ~= kTechId.AdvancedArmoryUpgrade then
@@ -252,8 +254,8 @@ end
 function Armory:GetTechAllowed(techId, techNode, player)
 
     local allowed, canAfford = ScriptActor.GetTechAllowed(self, techId, techNode, player)
-
-    if techId == kTechId.GrenadeLauncherTech or techId == kTechId.FlamethrowerTech then
+    
+    if techId == kTechId.DetonationTimeTech or techId == kTechId.FlamethrowerRangeTech then
         allowed = allowed and self:GetTechId() == kTechId.AdvancedArmory
     end
     

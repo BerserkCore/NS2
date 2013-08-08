@@ -63,7 +63,7 @@ function CatalystMixin:GetIsCatalysted()
 end
 
 function CatalystMixin:GetCanCatalyst()
-    return (not HasMixin(self, "Construct") or self:GetIsBuilt()) and (( HasMixin(self, "Maturity") and not self:GetIsMature() ) or self:isa("Embryo"))
+    return ( HasMixin(self, "Maturity") and not self:GetIsMature() ) or self:isa("Embryo")
 end
 
 if Client then

@@ -8,10 +8,11 @@
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/build.surface_shader")
 
-ConstructMixin = CreateMixin(ConstructMixin)
+ConstructMixin = CreateMixin( ConstructMixin )
 ConstructMixin.type = "Construct"
 
 local kBuildEffectsInterval = 1
+local kDrifterBuildRate = 1
 
 ConstructMixin.networkVars =
 {
@@ -41,7 +42,8 @@ ConstructMixin.optionalCallbacks =
 {
     OnConstruct = "Called whenever construction progress changes.",
     OnConstructionComplete = "Called whenever construction is completes.",
-    GetCanBeUsedConstructed = "Return true when this entity has a use function when constructed."
+    GetCanBeUsedConstructed = "Return true when this entity has a use function when constructed.",
+    GetAddConstructHealth = "Return false to prevent adding health when constructing."
     
 }
 
@@ -108,9 +110,24 @@ local function SharedUpdate(self, deltaTime)
         if not self:GetIsBuilt() and GetIsAlienUnit(self) then
 
             if not self.GetCanAutoBuild or self:GetCanAutoBuild() then
-                self:Construct(deltaTime)
+            
+                local multiplier = self.hasDrifterEnzyme and kDrifterBuildRate or kAutoBuildRate
+                multiplier = multiplier * ( (HasMixin(self, "Catalyst") and self:GetIsCatalysted()) and kNutrientMistAutobuildMultiplier or 1 )
+                self:Construct(deltaTime * multiplier)
+                
             end
         
+        end
+        
+        if self.timeDrifterConstructEnds then
+            
+            if self.timeDrifterConstructEnds <= Shared.GetTime() then
+            
+                self.hasDrifterEnzyme = false
+                self.timeDrifterConstructEnds = nil
+                
+            end
+            
         end
         
     elseif Client then
@@ -152,8 +169,10 @@ function ConstructMixin:OnUpdateAnimationInput(modelMixin)
 end
 
 function ConstructMixin:OnUpdatePoseParameters()
+
     self:SetPoseParam("grow", self.buildFraction)
-end  
+    
+end    
 
 /**
  * Add health to structure as it builds.
@@ -203,9 +222,10 @@ function ConstructMixin:Construct(elapsedTime, builder)
         
         if Server then
 
+            local modifier = (self:GetTeamType() == kMarineTeamType and GetIsPointOnInfestation(self:GetOrigin())) and kInfestationBuildModifier or 1
             local startBuildFraction = self.buildFraction
-            local newBuildTime = self.buildTime + elapsedTime
-            local timeToComplete = self:GetTotalConstructionTime()
+            local newBuildTime = self.buildTime + elapsedTime * modifier
+            local timeToComplete = self:GetTotalConstructionTime()           
             
             if newBuildTime >= timeToComplete then
             
@@ -228,9 +248,13 @@ function ConstructMixin:Construct(elapsedTime, builder)
                 self.buildTime = newBuildTime
                 self.buildFraction = math.max(math.min((self.buildTime / timeToComplete), 1), 0)
                 
-                local scalar = self.buildFraction - startBuildFraction
-                AddBuildHealth(self, scalar)
-                AddBuildArmor(self, scalar)
+                if not self.GetAddConstructHealth or self:GetAddConstructHealth() then
+                
+                    local scalar = self.buildFraction - startBuildFraction
+                    AddBuildHealth(self, scalar)
+                    AddBuildArmor(self, scalar)
+                
+                end
                 
                 if self.oldBuildFraction ~= self.buildFraction then
                 
@@ -333,6 +357,13 @@ function ConstructMixin:OnUse(player, elapsedTime, useSuccessTable)
     
     useSuccessTable.useSuccess = useSuccessTable.useSuccess or used
     
+end
+
+function ConstructMixin:RefreshDrifterConstruct()
+
+    self.timeDrifterConstructEnds = Shared.GetTime() + 0.3
+    self.hasDrifterEnzyme = true
+
 end
 
 function ConstructMixin:OnHealSpray(gorge)

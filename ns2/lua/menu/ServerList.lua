@@ -122,15 +122,15 @@ function SortByMode(a, b)
 end
 
 function FilterServerMode(mode)
-    return function(entry) return string.find(entry.mode, mode) ~= nil end
+    return function(entry) return string.find(string.upper(entry.mode), string.upper(mode)) ~= nil end
 end
 
 function FilterServerName(name)
-    return function(entry) return string.find(entry.name, name) ~= nil end
+    return function(entry) return string.find(string.upper(entry.name), string.upper(name)) ~= nil end
 end
 
 function FilterMapName(map)
-    return function(entry) return string.find(entry.map, map) ~= nil end
+    return function(entry) return string.find(string.upper(entry.map), string.upper(map)) ~= nil end
 end
 
 function FilterMinRate(minrate)

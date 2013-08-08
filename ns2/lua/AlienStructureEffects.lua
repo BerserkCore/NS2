@@ -7,6 +7,32 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 kAlienStructureEffects = 
 {
+
+    construction_complete =
+    {
+        effects =
+        {
+            {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Drifter", done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Drifter", done = true},
+        }    
+    },
+
+    structure_move =
+    {    
+        effects =
+        {
+            {decal = "cinematics/vfx_materials/decals/gorge_slime.material", scale = 0.8, done = true},
+        }    
+    },
+
+    drifter_construct =
+    {    
+        effects = 
+        {
+            {cinematic = "cinematics/alien/drifter/construct.cinematic", done = true}      
+        }
+    },    
+
     shift_echo =
     {
         shiftEchoEffects =

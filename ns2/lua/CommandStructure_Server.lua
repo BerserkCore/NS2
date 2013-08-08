@@ -253,6 +253,8 @@ function CommandStructure:Logout()
         local parasiteState = commander.parasited
         local parasiteTime = commander.timeParasited
         
+        OnCommanderLogOut(commander)
+        
         local returnPlayer = commander:Replace(commander.previousMapName, commander:GetTeamNumber(), true, previousOrigin)    
         
         if returnPlayer.OnCommanderStructureLogout then
@@ -292,7 +294,7 @@ function CommandStructure:Logout()
         
         // TODO: trigger client side in OnTag
         self:TriggerEffects(self:isa("Hive") and "hive_logout" or "commandstation_logout")
-        
+
     end
     
     return returnPlayer

@@ -119,16 +119,16 @@ function GetHasCarapaceUpgrade(callingEntity)
     return HasUpgrade(callingEntity, kTechId.Carapace)
 end
 
-function GetHasAuraUpgrade(callingEntity)
-    return HasUpgrade(callingEntity, kTechId.Aura)
-end
-
 function GetHasCamouflageUpgrade(callingEntity)
-    return HasUpgrade(callingEntity, kTechId.Camouflage)
+    return HasUpgrade(callingEntity, kTechId.Phantom)
 end
 
 function GetHasSilenceUpgrade(callingEntity)
-    return HasUpgrade(callingEntity, kTechId.Silence)
+    return HasUpgrade(callingEntity, kTechId.Phantom)
+end
+
+function GetHasAuraUpgrade(callingEntity)
+    return HasUpgrade(callingEntity, kTechId.Aura)
 end
 
 function GetHiveTypeForUpgrade(upgradeId)

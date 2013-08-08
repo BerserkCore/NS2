@@ -63,20 +63,14 @@ function NS2Gamerules_GetUpgradedDamage(attacker, doer, damage, damageType)
     if attacker ~= nil then
     
         // Damage upgrades only affect weapons, not ARCs, Sentries, MACs, Mines, etc.
-        if doer:isa("Weapon") or doer:isa("Grenade") then
+        if doer.GetIsAffectedByWeaponUpgrades and doer:GetIsAffectedByWeaponUpgrades() then
         
-            if(GetHasTech(attacker, kTechId.Weapons3, true)) then
-            
-                damageScalar = kWeapons3DamageScalar
-                
-            elseif(GetHasTech(attacker, kTechId.Weapons2, true)) then
-            
-                damageScalar = kWeapons2DamageScalar
-                
-            elseif(GetHasTech(attacker, kTechId.Weapons1, true)) then
-            
-                damageScalar = kWeapons1DamageScalar
-                
+            if GetHasTech(attacker, kTechId.Weapons3, true) then            
+                damageScalar = kWeapons3DamageScalar                
+            elseif GetHasTech(attacker, kTechId.Weapons2, true) then            
+                damageScalar = kWeapons2DamageScalar                
+            elseif GetHasTech(attacker, kTechId.Weapons1, true) then            
+                damageScalar = kWeapons1DamageScalar                
             end
             
         end
@@ -98,7 +92,7 @@ function Gamerules_GetDamageMultiplier()
 end
 
 kDamageType = enum( {'Normal', 'Light', 'Heavy', 'Puncture', 'Structural', 'Splash', 'Gas',
-           'StructuresOnly', 'Falling', 'Door', 'Flame', 'Infestation', 'Corrode', 'ArmorOnly', 'Biological', 'StructuresOnlyLight', 'Electric' } )
+           'StructuresOnly', 'Falling', 'Door', 'Flame', 'Infestation', 'Corrode', 'ArmorOnly', 'Biological', 'StructuresOnlyLight', 'Spreading' } )
 
 // Describe damage types for tooltips
 kDamageTypeDesc = {
@@ -115,20 +109,22 @@ kDamageTypeDesc = {
     "Armor damage: Will never reduce health",
     "StructuresOnlyLight: Damages structures only, light damage.",
     "Splash: same as structures only but always affects ARCs (friendly fire).",
-    "Electric: does normal damage and an additional 20% during on units which are shock able."
+    "Spreading: Does less damage against small targets."
 }
+
+kSpreadingDamageScalar = 0.75
 
 kBaseArmorUseFraction = 0.7
 kExosuitArmorUseFraction = 1 // exos have no health
 kStructuralDamageScalar = 2
-kPuncturePlayerDamageScalar = 1.25
+kPuncturePlayerDamageScalar = 1.5
 
 kLightHealthPerArmor = 4
 kHealthPointsPerArmor = 2
 kHeavyHealthPerArmor = 1
 
-kFlameableMultiplier = 7
-kCorrodeDamagePlayerArmorScalar = 0.13
+kFlameableMultiplier = 3
+kCorrodeDamagePlayerArmorScalar = 0.28
 kCorrodeDamageExoArmorScalar = 0.23
 
 // deal only 60% of damage to friendlies
@@ -245,6 +241,15 @@ end
 
 local function MultiplyForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
     return ConditionalValue(target:isa("Player"), damage * kPuncturePlayerDamageScalar, damage), armorFractionUsed, healthPerArmor
+end
+
+local function ReducedDamageAgainstSmall(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+
+    if target.GetIsSmallTarget and target:GetIsSmallTarget() then
+        damage = damage * kSpreadingDamageScalar
+    end
+
+    return damage, armorFractionUsed, healthPerArmor
 end
 
 local function IgnoreHealthForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
@@ -368,6 +373,12 @@ local function BuildDamageTypeRules()
     table.insert(kDamageTypeRules[kDamageType.Puncture], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Puncture], MultiplyForPlayers)
     // ------------------------------
+    
+    // Spreading damage rules
+    kDamageTypeRules[kDamageType.Spreading] = {}
+    table.insert(kDamageTypeRules[kDamageType.Spreading], IgnoreDoors)
+    table.insert(kDamageTypeRules[kDamageType.Spreading], ReducedDamageAgainstSmall)
+    // ------------------------------
 
     // structural rules
     kDamageTypeRules[kDamageType.Structural] = {}
@@ -409,8 +420,8 @@ local function BuildDamageTypeRules()
     // Flame damage rules
     kDamageTypeRules[kDamageType.Flame] = {}
     table.insert(kDamageTypeRules[kDamageType.Flame], IgnoreDoors)
-    //table.insert(kDamageTypeRules[kDamageType.Flame], HalfHealthPerArmor)
     table.insert(kDamageTypeRules[kDamageType.Flame], MultiplyFlameAble)
+    table.insert(kDamageTypeRules[kDamageType.Flame], MultiplyForStructures)
     // ------------------------------
     
     // Corrode damage rules
@@ -430,6 +441,7 @@ local function BuildDamageTypeRules()
     // ArmorOnly damage rules
     kDamageTypeRules[kDamageType.ArmorOnly] = {}
     table.insert(kDamageTypeRules[kDamageType.ArmorOnly], IgnoreDoors)
+    table.insert(kDamageTypeRules[kDamageType.ArmorOnly], ReduceGreatlyForPlayers)
     table.insert(kDamageTypeRules[kDamageType.ArmorOnly], IgnoreHealth)    
     // ------------------------------
     
@@ -439,10 +451,6 @@ local function BuildDamageTypeRules()
     table.insert(kDamageTypeRules[kDamageType.Biological], DamageBiologicalOnly)
     // ------------------------------
     
-    // Biological damage rules
-    kDamageTypeRules[kDamageType.Electric] = {}
-    table.insert(kDamageTypeRules[kDamageType.Electric], IgnoreDoors)
-    // ------------------------------
 
 
 end
@@ -485,7 +493,7 @@ function GetDamageByType(target, attacker, doer, damage, damageType)
         
         // Anything left over comes off of health
         healthUsed = damage - healthPointsBlocked
-    
+
     end
     
     return damage, armorUsed, healthUsed

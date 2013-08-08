@@ -28,7 +28,7 @@ class 'GUIFlamethrowerDisplay' (GUIScript)
 function GUIFlamethrowerDisplay:Initialize()
 
     self.weaponClip     = 0
-    self.maxClip = 30
+    self.maxClip = 50
     
     self.flashInDelay = 1.2
 

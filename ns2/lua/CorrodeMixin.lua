@@ -20,12 +20,43 @@ CorrodeMixin.networkVars =
 
 local kCorrodeShaderDuration = 4
 
+local function CorrodeOnInfestation(self)
+
+    if self:GetMaxArmor() == 0 then
+        return false
+    end
+
+    if self.updateInitialInfestationCorrodeState and GetIsPointOnInfestation(self:GetOrigin()) then
+    
+        self:SetGameEffectMask(kGameEffect.OnInfestation, true)
+        self.updateInitialInfestationCorrodeState = false
+        
+    end
+
+    if self:GetGameEffectMask(kGameEffect.OnInfestation) and self:GetCanTakeDamage() then
+    
+        self:DeductHealth(kInfestationCorrodeDamagePerSecond, nil, nil, false, true, true)
+        self:SetCorroded()
+        
+    end
+
+    return true
+
+end
+
 function CorrodeMixin:__initmixin()
 
     if Server then
         
         self.isCorroded = false
         self.timeCorrodeStarted = 0
+        
+        if not self:isa("Player") and not self:isa("MAC") and kCorrodeMarineStructureArmorOnInfestation then
+        
+            self:AddTimedCallback(CorrodeOnInfestation, 1)
+            self.updateInitialInfestationCorrodeState = true
+            
+        end
         
     end
     

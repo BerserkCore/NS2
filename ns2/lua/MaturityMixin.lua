@@ -52,7 +52,7 @@ function MaturityMixin:__initmixin()
         self.matureFraction = 0
         self.timeMaturityLastUpdate = 0
         self.isMature = false
-        self.updateMaturity = not HasMixin(self, "Construct") or self:GetIsBuilt()
+        self.updateMaturity = true
 
         if self.startsMature then
             self:SetMature()
@@ -118,11 +118,12 @@ local function SharedUpdate(self, deltaTime)
         if self.updateMaturity then
         
             local updateRate = GetMaturityRate(self)
-            local devMultiplier = ConditionalValue(Shared.GetDevMode(), 100, 1)
-            local mistMultiplier = ConditionalValue(HasMixin(self, "Catalyst") and self:GetIsCatalysted(), kNutrientMistMaturitySpeedup, 1)
+            local mistMultiplier = ConditionalValue(HasMixin(self, "Catalyst") and self:GetIsCatalysted(), kNutrientMistMaturitySpeedup, 0)
+            
+            local rate = ( (not HasMixin(self, "Construct") or self:GetIsBuilt()) and 1 or 0 ) + mistMultiplier
             
             local prevmatureFraction = self.matureFraction
-            self.matureFraction = math.min(self.matureFraction + deltaTime * (1 / updateRate) * devMultiplier * mistMultiplier, 1)
+            self.matureFraction = math.min(self.matureFraction + deltaTime * (1 / updateRate) * rate, 1)
             
             if prevmatureFraction ~= self.matureFraction and self.matureFraction == 1.0 then
             

@@ -10,12 +10,17 @@
 
 Script.Load("lua/Commander.lua")
 
+Script.Load("lua/CommAbilities/Alien/Rupture.lua")
+
 class 'AlienCommander' (Commander)
 
 AlienCommander.kMapName = "alien_commander"
 
 local networkVars =
 {
+    shellCount = "private integer (0 to 3)",
+    spurCount = "private integer (0 to 3)",
+    veilCount = "private integer (0 to 3)",
 }
 
 AlienCommander.kOrderClickedEffect = PrecacheAsset("cinematics/alien/order.cinematic")
@@ -29,6 +34,7 @@ AlienCommander.kObjectiveCompletedSoundName = PrecacheAsset("sound/NS2.fev/alien
 AlienCommander.kStructureUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/structure_under_attack")
 AlienCommander.kSoldierNeedsMistSoundName = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_healing")
 AlienCommander.kSoldierNeedsEnzymeSoundName = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_healing")
+AlienCommander.kSoldierNeedsHarvesterSoundName = PrecacheAsset("sound/NS2.fev/alien/voiceovers/more")
 AlienCommander.kCragUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/structures/crag/wound")
 AlienCommander.kHydraUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/structures/hydra/wound")
 AlienCommander.kShadeUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/structures/shade/wound")
@@ -43,10 +49,20 @@ AlienCommander.kHealTarget = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_
 
 AlienCommander.kSpendResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_nanites")
 AlienCommander.kSpendTeamResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_metal")
-
 AlienCommander.kBoneWallSpawnSound = PrecacheAsset("sound/NS2.fev/alien/common/infestation_spikes")
+AlienCommander.kHealWaveSound = PrecacheAsset("sound/NS2.fev/alien/common/frenzy")
+AlienCommander.kShadeInkSound = PrecacheAsset("sound/NS2.fev/alien/structures/shift/echo")
 
 local kHoverSound = PrecacheAsset("sound/NS2.fev/alien/commander/hover")
+
+local function GetNearest(self, className)
+
+    local ents = GetEntitiesForTeam(className, self:GetTeamNumber())
+    Shared.SortEntitiesByDistance(self:GetOrigin(), ents)
+    
+    return ents[1]
+
+end
 
 if Client then
 
@@ -123,9 +139,55 @@ function AlienCommander:OnProcessMove(input)
     Commander.OnProcessMove(self, input)
     
     if Server then
+    
         UpdateAbilityAvailability(self, self.tierTwoTechId, self.tierThreeTechId)
+        
+        self.shellCount = Clamp( #GetEntitiesForTeam("Shell", self:GetTeamNumber()), 0, 3)
+        self.spurCount = Clamp( #GetEntitiesForTeam("Spur", self:GetTeamNumber()), 0, 3)
+        self.veilCount = Clamp( #GetEntitiesForTeam("Veil", self:GetTeamNumber()), 0, 3) 
+        
     end
     
+end
+
+local function SelectNearest(self, className)
+
+    local nearestEnt = nil
+    local lowestDistance = 0
+
+    for _, entity in ipairs(GetEntitiesForTeam(className, self:GetTeamNumber())) do
+    
+        local distance = (entity:GetOrigin() - self:GetOrigin()):GetLengthXZ()
+        if not nearestEnt or distance < lowestDistance then
+            nearestEnt = entity
+            lowestDistance = distance
+        end
+    
+    end
+    
+    if nearestEnt then
+
+        if Client then
+        
+            DeselectAllUnits(self:GetTeamNumber())
+            nearestEnt:SetSelected(self:GetTeamNumber(), true, false)
+            
+            return true
+        
+        elseif Server then
+        
+            DeselectAllUnits(self:GetTeamNumber())
+            nearestEnt:SetSelected(self:GetTeamNumber(), true, false)
+            Server.SendNetworkMessage(self, "SelectAndGoto", BuildSelectAndGotoMessage(nearestEnt:GetId()), true)
+            
+            return true
+            
+        end
+    
+    end
+    
+    return false
+
 end
 
 function AlienCommander:OnUpdateRender()
@@ -151,19 +213,32 @@ if Server then
     end
     
     // check if a notification should be send for successful actions
-    function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, isCommanderPicked, orientation, entity, trace, targetId, isBot)
+    function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace, targetId, isBot)
     
         local techId = techNode:GetTechId()
         local success = false
         local keepProcessing = false
+        local processForEntity = true
         
-        if GetIsPheromone(techId) then
+        if not entity and ( techId == kTechId.ShadeInk or techId == kTechId.HealWave ) then
+        
+            local className = techId == kTechId.HealWave and "Crag" or "Shade"
+            entity = GetNearest(self, className)
+            processForEntity = entity ~= nil
+            
+        end
+        
+        if techId == kTechId.SelectDrifter then
+        
+            SelectNearest(self, "Drifter")
+        
+        elseif GetIsPheromone(techId) then
         
             success = CreatePheromone(techId, position, self:GetTeamNumber()) ~= nil
             keepProcessing = false
         
-        else
-            success, keepProcessing = Commander.ProcessTechTreeActionForEntity(self, techNode, position, normal, isCommanderPicked, orientation, entity, trace, targetId, isBot)
+        elseif processForEntity then
+            success, keepProcessing = Commander.ProcessTechTreeActionForEntity(self, techNode, position, normal, pickVec, orientation, entity, trace, targetId, isBot)
         end
         
         if success then
@@ -172,10 +247,20 @@ if Server then
             local locationName = location and location:GetName() or ""
             self:TriggerNotification(Shared.GetStringIndex(locationName), techId)
             
-            if techId == kTechId.BoneWall then
-                Shared.PlayPrivateSound(self, AlienCommander.kBoneWallSpawnSound, nil, 1.0, self:GetOrigin())
-            end
+            local soundToPlay = nil
             
+            if techId == kTechId.BoneWall then
+                soundToPlay = AlienCommander.kBoneWallSpawnSound
+            elseif techId == kTechId.HealWave then
+                soundToPlay = AlienCommander.kHealWaveSound
+            elseif techId == kTechId.ShadeInk then
+                soundToPlay = AlienCommander.kShadeInkSound
+            end      
+            
+            if soundToPlay then
+                Shared.PlayPrivateSound(self, soundToPlay, nil, 1.0, self:GetOrigin())
+            end
+        
         end
         
         return success, keepProcessing
@@ -184,6 +269,47 @@ if Server then
     
 end
 
+function AlienCommander:GetTechAllowed(techId, techNode, self)
+
+    local allowed, canAfford = Commander.GetTechAllowed(self, techId, techNode, self)
+    
+    if techId == kTechId.SelectDrifter then
+    
+        allowed = GetNearest(self, "Drifter") ~= nil
+        canAfford = true
+        
+    elseif techId == kTechId.SelectShift then
+    
+        allowed = GetNearest(self, "Shift") ~= nil
+        canAfford = true
+    
+    elseif techId == kTechId.HealWave then
+    
+        allowed = GetNearest(self, "Crag") ~= nil
+    
+    elseif techId == kTechId.ShadeInk then
+    
+        allowed = GetNearest(self, "Shade") ~= nil
+    /*
+    elseif techId == kTechId.Shell then
+    
+        allowed = self.shellCount < 3
+        
+    elseif techId == kTechId.Spur then
+
+        allowed = self.spurCount < 3    
+        
+    elseif techId == kTechId.Veil then
+
+        allowed = self.veilCount < 3
+        */
+
+    end    
+    
+    return allowed, canAfford
+    
+end    
+
 function AlienCommander:GetIsInQuickMenu(techId)
     return Commander.GetIsInQuickMenu(self, techId) or techId == kTechId.MarkersMenu
 end
@@ -191,13 +317,13 @@ end
 local gAlienMenuButtons =
 {
     [kTechId.BuildMenu] = { kTechId.Cyst, kTechId.Harvester, kTechId.Whip, kTechId.Hive,
-                            kTechId.None, kTechId.None, kTechId.None, kTechId.None },
+                            kTechId.ThreatMarker, kTechId.NeedHealingMarker, kTechId.ExpandingMarker, kTechId.None },
                             
     [kTechId.AdvancedMenu] = { kTechId.Crag, kTechId.Shade, kTechId.Shift, kTechId.None,
                                kTechId.Shell, kTechId.Veil, kTechId.Spur, kTechId.None },
 
-    [kTechId.AssistMenu] = { kTechId.ThreatMarker, kTechId.NeedHealingMarker, kTechId.ExpandingMarker, kTechId.None,
-                             kTechId.NutrientMist, kTechId.BoneWall, kTechId.None, kTechId.None } 
+    [kTechId.AssistMenu] = { kTechId.HealWave, kTechId.ShadeInk, kTechId.SelectShift, kTechId.SelectDrifter,
+                             kTechId.NutrientMist, kTechId.Rupture, kTechId.BoneWall, kTechId.None }
 }
 
 function AlienCommander:GetButtonTable()
@@ -223,6 +349,25 @@ function AlienCommander:GetQuickMenuTechButtons(techId)
     // Return buttons and true/false if we are in a quick-access menu.
     return alienTechButtons
     
+end
+
+function AlienCommander:SetCurrentTech(techId)
+
+    if techId == kTechId.SelectDrifter then
+    
+        SelectNearest(self, "Drifter")
+        return
+        
+    elseif techId == kTechId.SelectShift then
+    
+        SelectNearest(self, "Shift")
+        self:SetCurrentTech(kTechId.ShiftEcho)
+        return
+        
+    end
+    
+    Commander.SetCurrentTech(self, techId)
+
 end
 
 Shared.LinkClassToMap("AlienCommander", AlienCommander.kMapName, networkVars)

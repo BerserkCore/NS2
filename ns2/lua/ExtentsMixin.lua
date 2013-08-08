@@ -75,5 +75,5 @@ function ExtentsMixin:GetExtents()
 end
 
 function ExtentsMixin:GetMaxExtents()
-    return Vector(InternalGetMaxExtents(self))
+    return (Vector(InternalGetMaxExtents(self)))
 end

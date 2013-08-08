@@ -25,8 +25,6 @@ local kUpdateTime = 2
 
 ShadeInk.kType = CommanderAbility.kType.Repeat
 
-// duration of cinematic
-local kShadeInkDuration = 11
 ShadeInk.kShadeInkDisorientRadius = 16
 
 local networkVars =
@@ -256,6 +254,26 @@ end
 
 function ShadeInk:GetUpdateTime()
     return kUpdateTime
+end
+
+if Server then
+
+    local function OnCommandInkAll(client, distance)
+
+        if Shared.GetCheatsEnabled() then
+        
+            for _, shade in ientitylist(Shared.GetEntitiesWithClassname("Shade")) do
+                
+                shade:TriggerInk()
+                
+            end
+            
+        end
+        
+    end
+
+    Event.Hook("Console_inkall", OnCommandInkAll)
+    
 end
 
 Shared.LinkClassToMap("ShadeInk", ShadeInk.kMapName, networkVars)

@@ -18,6 +18,7 @@ InfestationMixin.expectedCallbacks =
 }
 
 local gInfestationMultiplier = 1
+local gInfestationRecedeMultiplier = 2
 
 InfestationMixin.networkVars =
 {
@@ -193,7 +194,13 @@ end
 
 function InfestationMixin:GetCurrentInfestationRadius()
 
-    local gowth = (Shared.GetTime() - self.infestationChangeTime) * self.growthRate
+    if self.infestationRadius == self.desiredInfestationRadius then
+        return self.desiredInfestationRadius
+    end
+
+    local growthRateMultiplier = self.desiredInfestationRadius < self.infestationRadius and gInfestationRecedeMultiplier or 1
+
+    local gowth = (Shared.GetTime() - self.infestationChangeTime) * self.growthRate * growthRateMultiplier
     local radius = Slerp(self.infestationRadius, self.desiredInfestationRadius, gowth)
     return radius
 
@@ -234,7 +241,7 @@ function InfestationMixin:UpdateInfestation(deltaTime)
     end
     
     if not self:GetIsAlive() and self:GetCurrentInfestationRadius() == 0 then        
-        self.allowDestruction = true        
+        self.allowDestruction = true
     end
 
 end
@@ -242,7 +249,6 @@ end
 function InfestationMixin:GetDestructionAllowed(destructionAllowedTable)
     destructionAllowedTable.allowed = destructionAllowedTable.allowed and self.allowDestruction
 end
-
 
 if Server then
 

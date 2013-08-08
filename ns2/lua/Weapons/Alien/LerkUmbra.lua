@@ -67,7 +67,7 @@ function LerkUmbra:GetEnergyCost(player)
 end
 
 function LerkUmbra:GetHUDSlot()
-    return 3
+    return 2
 end
 
 function LerkUmbra:GetRange()

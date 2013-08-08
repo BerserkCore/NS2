@@ -49,18 +49,28 @@ end
 
 function GUIEggDisplay:Initialize()
 
+    self.background = GetGUIManager():CreateGraphicItem()
+    self.background:SetColor(Color(0,0,0,0))
     self.activeVisions = { }
     self:Update(0)
     
 end
 
 function GUIEggDisplay:Uninitialize()
+
+    if self.background then
     
-    for i, blip in ipairs(self.activeVisions) do
-        GUI.DestroyItem(blip)
+        GUI.DestroyItem(self.background)
+        self.background = nil
+        
     end
+
     self.activeVisions = { }
     
+end
+
+function GUIEggDisplay:SetIsVisible(isVisible)
+    self.background:SetIsVisible(isVisible)
 end
 
 function GUIEggDisplay:Update(deltaTime)
@@ -75,7 +85,11 @@ function GUIEggDisplay:Update(deltaTime)
     if numCurrentVisions > numActiveVisions then
     
         for i = 1, numCurrentVisions - numActiveVisions do
-            table.insert(self.activeVisions, CreateVisionElement(self))
+        
+            local newElement = CreateVisionElement(self)
+            self.background:AddChild(newElement)        
+            table.insert(self.activeVisions, newElement)
+            
         end
     
     elseif numActiveVisions > numCurrentVisions then

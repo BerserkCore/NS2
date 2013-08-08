@@ -336,7 +336,7 @@ end
 /**
  * Returns true if the damage has killed the entity.
  */
-function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType)
+function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType, preventAlert)
 
     // Use AddHealth to give health.
     assert(damage >= 0)
@@ -354,7 +354,7 @@ function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUse
         self.health = math.max(0, self:GetHealth() - healthUsed)
         
         if self.OnTakeDamage and (oldArmor ~= self.armor or oldHealth ~= self.health) then
-            self:OnTakeDamage(damage, attacker, doer, point, direction, damageType)
+            self:OnTakeDamage(damage, attacker, doer, point, direction, damageType, preventAlert)
         end
         
         // Remember time we were last hurt to track combat
@@ -407,7 +407,7 @@ function LiveMixin:AmountDamaged()
 end
 
 // used for situtations where we don't have an attacker. Always normal damage and normal armor use rate
-function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly, armorOnly)
+function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly, armorOnly, preventAlert)
 
     local armorUsed = 0
     local healthUsed = damage
@@ -425,7 +425,7 @@ function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly, armorOnly)
     end
 
     local engagePoint = HasMixin(self, "Target") and self:GetEngagementPoint() or self:GetOrigin()
-    self:TakeDamage(damage, attacker, doer, engagePoint, nil, armorUsed, healthUsed, kDamageType.Normal)
+    self:TakeDamage(damage, attacker, doer, engagePoint, nil, armorUsed, healthUsed, kDamageType.Normal, preventAlert)
     
 end
 
@@ -449,8 +449,17 @@ function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
     
     if self.GetCanBeHealed and not self:GetCanBeHealed() then
         return 0
-    end    
+    end
+    /*
+    if self.ModifyHeal then
     
+        local healTable = { health = health }
+        self:ModifyHeal(healTable)
+        
+        health = healTable.health
+        
+    end
+    */
     if self:AmountDamaged() > 0 then
     
         // Add health first, then armor if we're full

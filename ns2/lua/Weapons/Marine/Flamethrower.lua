@@ -31,13 +31,14 @@ local kFlameSmokeCinematic = PrecacheAsset("cinematics/marine/flamethrower/flame
 
 local kFireLoopingSound = PrecacheAsset("sound/NS2.fev/marine/flamethrower/attack_loop")
 
-local kRange = 8
+local kRange = kFlamethrowerRange
+local kUpgradedRange = kFlamethrowerUpgradedRange
 
 local kParticleEffectRate = .05
 local kSmokeEffectRate = 1.5
 local kImpactEffectRate = 0.3
 local kPilotEffectRate = 0.3
-local kTrailLength = kRange
+local kTrailLength = 9.5
 local kConeWidth = 0.2
 
 local kFirstPersonTrailCinematics =
@@ -45,7 +46,7 @@ local kFirstPersonTrailCinematics =
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part1.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part2.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part3.cinematic"),
+    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part2.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part3.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part3.cinematic"),
 }
@@ -75,7 +76,8 @@ local networkVars =
     createParticleEffects = "boolean",
     createImpactEffects = "boolean",
     animationDoneTime = "float",
-    loopingSoundEntId = "entityid"
+    loopingSoundEntId = "entityid",
+    range = "integer (0 to 11)"
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -166,7 +168,7 @@ function Flamethrower:CreatePrimaryAttackEffect(player)
 end
 
 function Flamethrower:GetRange()
-    return kRange
+    return self.range
 end
 
 function Flamethrower:GetWarmupTime()
@@ -194,15 +196,25 @@ local function BurnSporesAndUmbra(self, startPoint, endPoint)
     
         local checkAtPoint = startPoint + toTarget * i * stepLength
         local spores = GetEntitiesWithinRange("SporeCloud", checkAtPoint, kSporesDustCloudRadius)
-        local umbras = GetEntitiesWithinRange("CragUmbra", checkAtPoint, CragUmbra.kRadius)
         
-        // TODO: "hit detection" needs some more work
+        local umbras = GetEntitiesWithinRange("CragUmbra", checkAtPoint, CragUmbra.kRadius)
+        table.copy(GetEntitiesWithinRange("StormCloud", checkAtPoint, StormCloud.kRadius), umbras, true)
+        table.copy(GetEntitiesWithinRange("MucousMembrane", checkAtPoint, MucousMembrane.kRadius), umbras, true)
+        table.copy(GetEntitiesWithinRange("EnzymeCloud", checkAtPoint, EnzymeCloud.kRadius), umbras, true)
+        
+        local bombs = GetEntitiesWithinRange("Bomb", checkAtPoint, 1.6)
+        table.copy(GetEntitiesWithinRange("WhipBomb", checkAtPoint, 1.6), bombs, true)
+        
+        for index, bomb in ipairs(bombs) do
+            bomb:TriggerEffects("burn_bomb", { effecthostcoords = Coords.GetTranslation(bomb:GetOrigin()) } )
+            DestroyEntity(bomb)
+        end
+        
         for index, spore in ipairs(spores) do
             self:TriggerEffects("burn_spore", { effecthostcoords = Coords.GetTranslation(spore:GetOrigin()) } )
             DestroyEntity(spore)
         end
         
-        // TODO: effect looks poor currently
         for index, umbra in ipairs(umbras) do
             self:TriggerEffects("burn_umbra", { effecthostcoords = Coords.GetTranslation(umbra:GetOrigin()) } )
             DestroyEntity(umbra)
@@ -243,18 +255,23 @@ local function ApplyConeDamage(self, player)
     local barrelPoint = self:GetBarrelPoint() - Vector(0, 0.4, 0)
     local ents = {}
     
-    local fireDirection = GetNormalizedVector((player:GetEyePos() - Vector(0, 0.3, 0) + player:GetViewCoords().zAxis * kRange) - barrelPoint)
-    local extents = Vector(kConeWidth, kConeWidth, kConeWidth)
-    local remainingRange = kRange
-    local startPoint = barrelPoint
+    local range = self:GetRange()
     
-    for i = 1, 4 do
+    local fireDirection = GetNormalizedVector((player:GetEyePos() - Vector(0, 0.3, 0) + player:GetViewCoords().zAxis * range) - barrelPoint)
+    local extents = Vector(kConeWidth, kConeWidth, kConeWidth)
+    local remainingRange = range
+    local startPoint = barrelPoint
+    local filterEnts = {}
+    
+    for i = 1, 20 do
     
         if remainingRange <= 0 then
             break
         end
         
-        local trace = TraceMeleeBox(self, startPoint, fireDirection, extents, remainingRange, PhysicsMask.Melee, EntityFilterOne(player))
+        local trace = TraceMeleeBox(self, startPoint, fireDirection, extents, remainingRange, PhysicsMask.Bullets, EntityFilterList(filterEnts))
+        
+        //DebugLine(startPoint, trace.endPoint, 0.3, 1, 0, 0, 1)        
         
         // Check for spores in the way.
         if Server and i == 1 then
@@ -268,6 +285,8 @@ local function ApplyConeDamage(self, player)
                 if HasMixin(trace.entity, "Live") then
                     table.insertunique(ents, trace.entity)
                 end
+                
+                table.insertunique(filterEnts, trace.entity)
                 
             else
             
@@ -285,10 +304,10 @@ local function ApplyConeDamage(self, player)
                     
                 end
                 
+                remainingRange = remainingRange - (trace.endPoint - startPoint):GetLength()
+                startPoint = trace.endPoint // + fireDirection * kConeWidth * 2
+                
             end
-            
-            remainingRange = remainingRange - (trace.endPoint - startPoint):GetLength() - kConeWidth * 2
-            startPoint = trace.endPoint + fireDirection * kConeWidth * 2
         
         else
             break
@@ -310,6 +329,10 @@ local function ApplyConeDamage(self, player)
                 ent:SetOnFire(player, self)
             end
             
+            if Server and ent:isa("Alien") then
+                ent:CancelEnzyme()
+            end
+            
         end
     
     end
@@ -322,7 +345,7 @@ local function ShootFlame(self, player)
     local viewCoords = viewAngles:GetCoords()
     
     viewCoords.origin = self:GetBarrelPoint(player) + viewCoords.zAxis * (-0.4) + viewCoords.xAxis * (-0.2)
-    local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * kRange
+    local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * self:GetRange()
     
     local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAll())
     
@@ -363,45 +386,49 @@ function Flamethrower:GetHUDSlot()
     return kPrimaryWeaponSlot
 end
 
+function Flamethrower:GetIsAffectedByWeaponUpgrades()
+    return false
+end
+
 function Flamethrower:OnPrimaryAttack(player)
 
     if not self:GetIsReloading() then
     
         ClipWeapon.OnPrimaryAttack(self, player)
         
-        if Server then
-
-            if self:GetIsDeployed() and self:GetClip() > 0 and self:GetPrimaryAttacking() then
-            
-                self.createParticleEffects = true
-                self.createImpactEffects = true
-                
-                if not self.loopingFireSound:GetIsPlaying() then
-                    self.loopingFireSound:Start()
-                end
-                
-            end
-            
-            if self.createParticleEffects and self:GetClip() == 0 then
-            
-                self.createParticleEffects = false
-                self.createImpactEffects = false
-                
-                self.loopingFireSound:Stop()
-                
-            end
-            
-        elseif Client and self.createParticleEffects then
+        if self:GetIsDeployed() and self:GetClip() > 0 and self:GetPrimaryAttacking() then
         
-            // Fire the cool flame effect periodically
-			// Don't crank the period too low - too many effects slows down the game a lot.
-            if self.lastAttackEffectTime+0.5 < Shared.GetTime() then
-                
-                self:TriggerEffects("flamethrower_attack")
-                self.lastAttackEffectTime = Shared.GetTime()
-
+            if not self.createParticleEffects then
+                self:TriggerEffects("flamethrower_attack_start")
+            end
+        
+            self.createParticleEffects = true
+            self.createImpactEffects = true
+            
+            if Server and not self.loopingFireSound:GetIsPlaying() then
+                self.loopingFireSound:Start()
             end
             
+        end
+        
+        if self.createParticleEffects and self:GetClip() == 0 then
+        
+            self.createParticleEffects = false
+            self.createImpactEffects = false
+            
+            if Server then
+                self.loopingFireSound:Stop()
+            end
+            
+        end
+    
+        // Fire the cool flame effect periodically
+        // Don't crank the period too low - too many effects slows down the game a lot.
+        if Client and self.createParticleEffects and self.lastAttackEffectTime + 0.5 < Shared.GetTime() then
+            
+            self:TriggerEffects("flamethrower_attack")
+            self.lastAttackEffectTime = Shared.GetTime()
+
         end
         
     end
@@ -411,13 +438,12 @@ end
 function Flamethrower:OnPrimaryAttackEnd(player)
 
     ClipWeapon.OnPrimaryAttackEnd(self, player)
-    
-    if Server then
-    
-        self.createParticleEffects = false
-        self.createImpactEffects = false
-        self.loopingFireSound:Stop()
+
+    self.createParticleEffects = false
+    self.createImpactEffects = false
         
+    if Server then    
+        self.loopingFireSound:Stop()        
     end
     
 end
@@ -441,8 +467,16 @@ function Flamethrower:OnReload(player)
     
 end
 
+function Flamethrower:GetUpgradeTechId()
+    return kTechId.FlamethrowerRangeTech
+end
+
 function Flamethrower:GetHasSecondary(player)
     return false
+end
+
+function Flamethrower:GetSwingSensitivity()
+    return .8
 end
 
 function Flamethrower:Dropped(prevOwner)
@@ -623,7 +657,7 @@ if Client then
             local viewCoords = viewAngles:GetCoords()
     
             viewCoords.origin = self:GetBarrelPoint(player) + viewCoords.zAxis * (-0.4) + viewCoords.xAxis * (-0.2)
-            local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * kRange
+            local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * self:GetRange()
 
             local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
     
@@ -688,6 +722,20 @@ if Server then
     function Flamethrower:GetSendDeathMessageOverride()
         return false
     end 
+    
+    function Flamethrower:OnProcessMove(input)
+        
+        ClipWeapon.OnProcessMove(self, input)
+        
+        local hasRangeTech = false
+        local parent = self:GetParent()
+        if parent then
+            hasRangeTech = GetHasTech(parent, kTechId.FlamethrowerRangeTech)
+        end
+        
+        self.range = hasRangeTech and kUpgradedRange or kRange
+
+    end
     
 end
 

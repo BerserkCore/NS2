@@ -109,6 +109,7 @@ local function SharedUpdate(self, deltaTime)
     
         // check for enemies in range and destroy the structure, return resources to team
         local enemies = GetEntitiesForTeamWithinRange("Player", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin() + Vector(0, 0.3, 0), GhostStructureMixin.kGhostStructureCancelRange)
+        table.copy(GetEntitiesForTeamWithinRange("Drifter", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin() + Vector(0, 0.3, 0), GhostStructureMixin.kGhostStructureCancelRange), enemies, true)
         
         for _, enemy in ipairs (enemies) do
         

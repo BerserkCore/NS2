@@ -520,7 +520,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         local deaths = playerRecord.Deaths
         local isCommander = playerRecord.IsCommander
         local isRookie = playerRecord.IsRookie
-        local resourcesStr = ConditionalValue(isVisibleTeam, tostring(playerRecord.Resources), "-")
+        local resourcesStr = ConditionalValue(isVisibleTeam, tostring(math.floor(playerRecord.Resources * 10) / 10), "-")
         local ping = playerRecord.Ping
         local pingStr = tostring(ping)
         local currentPosition = Vector(player["Background"]:GetPosition())

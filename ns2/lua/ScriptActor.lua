@@ -166,8 +166,14 @@ function ScriptActor:GetTechAllowed(techId, techNode, player)
 
     local allowed =  GetIsUnitActive(self)
     local canAfford = true
+    local requiredSupply = LookupTechData(techId, kTechDataSupply, 0)
     
     if not player:GetGameStarted() or techNode == nil or ( LookupTechData(techId, kTechDataRequiresMature, false) and (not HasMixin(self, "Maturity") or not self:GetIsMature()) ) then
+    
+        allowed = false
+        canAfford = false
+        
+    elseif requiredSupply > 0 and GetSupplyUsedByTeam(self:GetTeamNumber()) + requiredSupply > GetMaxSupplyForTeam(self:GetTeamNumber()) then
     
         allowed = false
         canAfford = false

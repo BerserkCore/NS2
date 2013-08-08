@@ -34,6 +34,7 @@ Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
 
 class 'Veil' (ScriptActor)
 
@@ -90,6 +91,7 @@ function Veil:OnCreate()
     InitMixin(self, UmbraMixin)
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, BiomassMixin)
     
     if Server then
         InitMixin(self, InfestationTrackerMixin)
@@ -128,6 +130,10 @@ function Veil:OnInitialized()
 
 end
 
+function Veil:GetBioMassLevel()
+    return kVeilBiomass
+end
+
 function Veil:GetReceivesStructuralDamage()
     return true
 end
@@ -156,12 +162,8 @@ function Veil:GetCanSleep()
     return true
 end
 
-function Veil:GetTechButtons(techId)
-
-    if self:GetTechId() == kTechId.Veil then
-        return { kTechId.UpgradeSilenceVeil, kTechId.UpgradeCamouflageVeil } //, kTechId.UpgradeFeintVeil }
-    end    
-
+function Veil:GetIsSmallTarget()
+    return true
 end
 
 if Server then
@@ -192,28 +194,7 @@ if Server then
         
         ScriptActor.OnDestroy(self)
     
-    end
-    
-    function Veil:OnResearchComplete(researchId)
-
-        local success = false
-
-        if researchId == kTechId.UpgradeFeintVeil then            
-            success = self:UpgradeToTechId(kTechId.FeintVeil)
-        elseif researchId == kTechId.UpgradeSilenceVeil then 
-            success = self:UpgradeToTechId(kTechId.SilenceVeil)
-        elseif researchId == kTechId.UpgradeCamouflageVeil then            
-            success = self:UpgradeToTechId(kTechId.CamouflageVeil)
-        end    
-    
-        if success then
-            local team = self:GetTeam()
-            if team then
-                team:OnUpgradeChamberConstructed(self)
-            end
-        end
-        
-    end    
+    end   
 
 end
 
@@ -237,19 +218,3 @@ function Veil:OverrideHintString(hintString)
 end
 
 Shared.LinkClassToMap("Veil", Veil.kMapName, networkVars)
-
-class 'AuraVeil' (Veil)
-AuraVeil.kMapName = "auraveil"
-Shared.LinkClassToMap("AuraVeil", AuraVeil.kMapName, { })
-
-class 'SilenceVeil' (Veil)
-SilenceVeil.kMapName = "silenceveil"
-Shared.LinkClassToMap("SilenceVeil", SilenceVeil.kMapName, { })
-
-class 'FeintVeil' (Veil)
-FeintVeil.kMapName = "feintveil"
-Shared.LinkClassToMap("FeintVeil", FeintVeil.kMapName, { })
-
-class 'CamouflageVeil' (Veil)
-CamouflageVeil.kMapName = "camouflageveil"
-Shared.LinkClassToMap("CamouflageVeil", CamouflageVeil.kMapName, { })

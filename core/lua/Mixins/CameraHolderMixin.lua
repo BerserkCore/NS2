@@ -134,7 +134,7 @@ end
 
 function CameraHolderMixin:SetCameraOffsetSmoothrate(smoothRate)
     self.offsetSmoothRate = smoothRate
-end
+end  
 
 function CameraHolderMixin:GetEyePos()
     return self:GetOrigin() + self:GetViewOffset() + Vector(0, self.cameraYOffset, 0)
@@ -247,7 +247,7 @@ function CameraHolderMixin:GetFov()
 end
 
 function CameraHolderMixin:GetViewAngles()
-    return Angles(self.viewPitch, self.viewYaw, self.viewRoll)
+    return (Angles(self.viewPitch, self.viewYaw, self.viewRoll))
 end
 
 /**
@@ -285,6 +285,7 @@ function CameraHolderMixin:SetOffsetAngles(offsetAngles)
 
     if Server then
         self.resetMouse = (self.resetMouse + 1) % 16
+
     elseif Client and self == Client.GetLocalPlayer() then
         Client.SetPitch(0)
         Client.SetYaw(0)
@@ -458,6 +459,11 @@ function CameraHolderMixin:UpdateCamera(timePassed)
 
     if self.OnUpdateCamera then
         self:OnUpdateCamera(timePassed)
+    end
+    
+    // some mixins hook into OnUpdateCamera, use OnPostUpdateCamera when the class should override
+    if self.OnPostUpdateCamera then
+        self:OnPostUpdateCamera(timePassed)
     end
     
 end

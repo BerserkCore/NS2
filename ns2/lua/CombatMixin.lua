@@ -173,14 +173,14 @@ end
 
 if Server then
 
-    function CombatMixin:OnTakeDamage(damage, attacker, doer, point, direction, damageType)
+    function CombatMixin:OnTakeDamage(damage, attacker, doer, point, direction, damageType, preventAlert)
 
         local notifiyTarget = not doer or not doer.GetNotifiyTarget or doer:GetNotifiyTarget(self)
 
         if damage > 0 and notifiyTarget then
         
             local team = self:GetTeam()
-            if team and team.TriggerAlert then
+            if team and team.TriggerAlert and not preventAlert then
             
                 local alert = GetDamageAlert(self)
                 if alert then

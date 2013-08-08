@@ -20,6 +20,8 @@ Script.Load("lua/GhostStructureMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
+Script.Load("lua/HiveVisionMixin.lua")
 
 class 'CommandStation' (CommandStructure)
 
@@ -51,6 +53,8 @@ AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
+AddMixinNetworkVars(HiveVisionMixin, networkVars)
 
 function CommandStation:OnCreate()
 
@@ -58,6 +62,7 @@ function CommandStation:OnCreate()
     
     InitMixin(self, CorrodeMixin)
     InitMixin(self, GhostStructureMixin)
+    InitMixin(self, ParasiteMixin)
 
 end
 
@@ -70,6 +75,7 @@ function CommandStation:OnInitialized()
     InitMixin(self, DissolveMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, RecycleMixin)
+    InitMixin(self, HiveVisionMixin)
     
     self:SetModel(CommandStation.kModelName, kAnimationGraph)
     
@@ -117,6 +123,10 @@ function CommandStation:GetUsablePoints()
     local loginPoint = self:GetAttachPointOrigin(kLoginAttachPoint)
     return { loginPoint }
     
+end
+
+function CommandStation:GetTechButtons()
+    return { kTechId.NanoShieldTech }
 end
 
 function CommandStation:GetCanBeUsed(player, useSuccessTable)

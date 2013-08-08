@@ -59,6 +59,8 @@ function PlayingTeam:Initialize(teamName, teamNumber)
         teamInfoMapName = self:GetTeamInfoMapName()
     end
     
+    self.supplyUsed = 0
+    
     local teamInfoEntity = Server.CreateEntity(teamInfoMapName)
     
     self.teamInfoEntityId = teamInfoEntity:GetId()
@@ -71,7 +73,6 @@ function PlayingTeam:Initialize(teamName, teamNumber)
     self.techIdCount = {}
 
     self.eventListeners = {}
-
 
 end
 
@@ -153,6 +154,8 @@ function PlayingTeam:OnInitialized()
     
     self.lastCommPingTime = 0
     self.lastCommPingPosition = Vector(0,0,0)
+    
+    self.supplyUsed = 0
 
 end
 
@@ -163,6 +166,10 @@ function PlayingTeam:ResetTeam()
     local tower, commandStructure = self:SpawnInitialStructures(initialTechPoint)
     
     self.conceded = false
+    
+    if commandStructure:isa("Hive") then
+        commandStructure:SetHotGroupNumber(1)
+    end 
     
     local players = GetEntitiesForTeam("Player", self:GetTeamNumber())
     for p = 1, #players do
@@ -237,6 +244,7 @@ function PlayingTeam:InitTechTree()
     self.techTree:AddOrder(kTechId.Attack)
     self.techTree:AddOrder(kTechId.Build)
     self.techTree:AddOrder(kTechId.Construct)
+    self.techTree:AddAction(kTechId.HoldPosition)
     
     self.techTree:AddAction(kTechId.Cancel)
     
@@ -246,6 +254,8 @@ function PlayingTeam:InitTechTree()
     
     self.techTree:AddOrder(kTechId.SetRally)
     self.techTree:AddOrder(kTechId.SetTarget)
+    
+    self.techTree:AddUpgradeNode(kTechId.TransformResources)
     
 end
 
@@ -262,6 +272,7 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds = {}
         relevantResearchIds[kTechId.ShotgunTech] = 2
         relevantResearchIds[kTechId.GrenadeLauncherTech] = 2
+        relevantResearchIds[kTechId.AdvancedWeaponry] = 2
         relevantResearchIds[kTechId.RifleUpgradeTech] = 2
         relevantResearchIds[kTechId.FlamethrowerTech] = 2
         relevantResearchIds[kTechId.WelderTech] = 2
@@ -272,6 +283,9 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.DualMinigunTech] = 3
         relevantResearchIds[kTechId.ClawRailgunTech] = 3
         relevantResearchIds[kTechId.DualRailgunTech] = 3
+        
+        relevantResearchIds[kTechId.DetonationTimeTech] = 2
+        relevantResearchIds[kTechId.FlamethrowerRangeTech] = 2
         
         relevantResearchIds[kTechId.Armor1] = 1
         relevantResearchIds[kTechId.Armor2] = 1
@@ -287,6 +301,7 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.BileBomb] = 1
         relevantResearchIds[kTechId.Spores] = 1
         relevantResearchIds[kTechId.Blink] = 1
+        relevantResearchIds[kTechId.ShadowStep] = 1
         relevantResearchIds[kTechId.Stomp] = 1
         
         relevantResearchIds[kTechId.Xenocide] = 1
@@ -375,6 +390,18 @@ end
 // Returns sound name of last alert and time last alert played (for testing)
 function PlayingTeam:GetLastAlert()
     return self.lastPlayedTeamAlertName, self.timeOfLastPlayedTeamAlert
+end
+
+function PlayingTeam:GetSupplyUsed()
+    return Clamp(self.supplyUsed, 0, kMaxSupply)
+end
+
+function PlayingTeam:AddSupplyUsed(supplyUsed)
+    self.supplyUsed = self.supplyUsed + supplyUsed
+end
+
+function PlayingTeam:RemoveSupplyUsed(supplyUsed)
+    self.supplyUsed = self.supplyUsed - supplyUsed
 end
 
 // Play audio alert for all players, but don't trigger them too often. 
@@ -768,15 +795,14 @@ function PlayingTeam:Update(timePassed)
     
     self:UpdateVotes()
     
+    self:UpdateMinResTick()
+
     if GetGamerules():GetGameStarted() then
 
-        self:UpdateResourceTowers()
+        self:UpdateMinResTick()
 
         if #gServerBots > 0 then
-
-
             self.brain:Update(timePassed)
-
         end
 
     else
@@ -787,8 +813,31 @@ function PlayingTeam:Update(timePassed)
         end
 
     end
-        
     
+end
+
+function PlayingTeam:UpdateMinResTick()
+
+    if not self.timeLastMinResUpdate or self.timeLastMinResUpdate + kResourceTowerResourceInterval * 2 <= Shared.GetTime() then
+    
+        local rtActiveCount = 0
+        local rts = GetEntitiesForTeam("ResourceTower", self:GetTeamNumber())
+        for index, rt in ipairs(rts) do
+        
+            if rt:GetIsAlive() and rt:GetIsCollecting() then
+                rtActiveCount = rtActiveCount + 1
+            end
+            
+        end
+        
+        if rtActiveCount == 0 then
+            self:AddTeamResources(kTeamResourcePerTick)
+        end
+    
+        self.timeLastMinResUpdate = Shared.GetTime()
+    
+    end
+
 end
 
 function PlayingTeam:PrintWorldTextForTeamInRange(messageType, data, position, range)
@@ -802,47 +851,6 @@ function PlayingTeam:PrintWorldTextForTeamInRange(messageType, data, position, r
 
 end
 
-function PlayingTeam:UpdateResourceTowers()
-
-    if self.timeSinceLastRTUpdate + kResourceTowerResourceInterval < Shared.GetTime() then
-    
-        self.timeSinceLastRTUpdate = Shared.GetTime()
-        
-        local numRTs = 0
-        local numSupportedHarvesters = kMinSupportedRTs + self:GetNumCapturedTechPoints() * kRTsPerTechpoint
-        
-        // update resource towers        
-        for index, resourceTower in ipairs(GetEntitiesForTeam("ResourceTower", self:GetTeamNumber())) do
-        
-            /*
-            if numRTs >= numSupportedHarvesters then
-                break
-            end
-            */
-        
-            if resourceTower:GetIsCollecting() then
-            
-                resourceTower:CollectResources()
-                
-                numRTs = numRTs + 1
-                
-            end
-            
-        end
-        
-        // update resources
-        local pResGained = numRTs * kPlayerResPerInterval * self:GetPresRecipientCount()
-        local tResGained = numRTs * kTeamResourcePerTick
-        
-        self:SplitPres(pResGained)
-        self:AddTeamResources(tResGained, true)
-        
-        self.totalTeamResFromTowers = self.totalTeamResFromTowers + tResGained
-    
-    end
-
-end
-
 function PlayingTeam:GetTechTree()
     return self.techTree
 end
@@ -852,7 +860,7 @@ function PlayingTeam:UpdateTechTree()
     PROFILE("PlayingTeam:UpdateTechTree")
     
     // Compute tech tree availability only so often because it's very slooow
-    if self.techTree ~= nil and (self.timeOfLastTechTreeUpdate == nil or Shared.GetTime() > self.timeOfLastTechTreeUpdate + PlayingTeam.kTechTreeUpdateTime) then
+    if self.techTree and (self.timeOfLastTechTreeUpdate == nil or Shared.GetTime() > self.timeOfLastTechTreeUpdate + PlayingTeam.kTechTreeUpdateTime) then
 
         self.techTree:Update(self.entityTechIds, self.techIdCount)
         
@@ -936,29 +944,33 @@ end
 
 function PlayingTeam:VoteToEjectCommander(votingPlayer, targetCommander)
 
-    local votingPlayerSteamId = tonumber(Server.GetOwner(votingPlayer):GetUserId())
-    local targetSteamId = tonumber(Server.GetOwner(targetCommander):GetUserId())
-    
-    if self.ejectCommVoteManager:PlayerVotesFor(votingPlayerSteamId, targetSteamId, Shared.GetTime()) then
-        PrintToLog("%s cast vote to eject commander %s", votingPlayer:GetName(), targetCommander:GetName())
+    if GetCommanderLogoutAllowed() then
 
-        // notify all players on this team
-        if Server then
+        local votingPlayerSteamId = tonumber(Server.GetOwner(votingPlayer):GetUserId())
+        local targetSteamId = tonumber(Server.GetOwner(targetCommander):GetUserId())
+        
+        if self.ejectCommVoteManager:PlayerVotesFor(votingPlayerSteamId, targetSteamId, Shared.GetTime()) then
+            PrintToLog("%s cast vote to eject commander %s", votingPlayer:GetName(), targetCommander:GetName())
 
-            local vote = self.ejectCommVoteManager    
+            // notify all players on this team
+            if Server then
 
-            local netmsg = {
-                voterName = votingPlayer:GetName(),
-                votesMoreNeeded = vote:GetNumVotesNeeded()-vote:GetNumVotesCast()
-            }
+                local vote = self.ejectCommVoteManager    
 
-            local players = GetEntitiesForTeam("Player", self:GetTeamNumber())
+                local netmsg = {
+                    voterName = votingPlayer:GetName(),
+                    votesMoreNeeded = vote:GetNumVotesNeeded()-vote:GetNumVotesCast()
+                }
 
-            for index, player in ipairs(players) do
-                Server.SendNetworkMessage(player, "VoteEjectCast", netmsg, false)
+                local players = GetEntitiesForTeam("Player", self:GetTeamNumber())
+
+                for index, player in ipairs(players) do
+                    Server.SendNetworkMessage(player, "VoteEjectCast", netmsg, false)
+                end
+
             end
-
         end
+    
     end
     
 end
@@ -970,10 +982,10 @@ function PlayingTeam:UpdateVotes()
     // Update with latest team size
     self.ejectCommVoteManager:SetNumPlayers(self:GetNumPlayers())
     self.concedeVoteManager:SetNumPlayers(self:GetNumPlayers())
-    
+
     // Eject commander if enough votes cast
     if self.ejectCommVoteManager:GetVotePassed() then
-    
+
         local targetCommander = GetPlayerFromUserId(self.ejectCommVoteManager:GetTarget())
         
         if targetCommander and targetCommander.Eject then
@@ -991,18 +1003,18 @@ function PlayingTeam:UpdateVotes()
     
         self.concedeVoteManager:Reset()
         self.conceded = true
-        
         Server.SendNetworkMessage("TeamConceded", { teamNumber = self:GetTeamNumber() })
         
     elseif self.concedeVoteManager:GetVoteElapsed(Shared.GetTime()) then
         self.concedeVoteManager:Reset()
     end
+
     
 end
 
 function PlayingTeam:GetHasConceded()
     return self.conceded
-end
+end    
 
 function PlayingTeam:GetPresRecipientCount()
 
@@ -1097,7 +1109,7 @@ end
 function PlayingTeam:OnEntityChange(oldId, newId)
 
     Team.OnEntityChange( self, oldId, newId )
-
+    
     if self.brain then
         self.brain:OnEntityChange( oldId, newId )
     end

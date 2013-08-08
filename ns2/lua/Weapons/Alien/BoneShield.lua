@@ -4,6 +4,8 @@
 //
 //    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
+//    Puts the onos in a defensive, slow moving position where it uses energy to absorb damage.
+//
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/Weapons/Alien/Ability.lua")
@@ -17,6 +19,7 @@ local kAnimationGraph = PrecacheAsset("models/alien/onos/onos_view.animation_gra
 
 local networkVars =
 {
+    timeLastBoneShield = "time"
 }
 
 AddMixinNetworkVars(StompMixin, networkVars)
@@ -26,6 +29,8 @@ function BoneShield:OnCreate()
     Ability.OnCreate(self)
     
     InitMixin(self, StompMixin)
+    
+    self.timeLastBoneShield = 0
 
 end
 
@@ -41,9 +46,13 @@ function BoneShield:GetHUDSlot()
     return 2
 end
 
+function BoneShield:GetCanUseBoneShield()
+    return self.timeLastBoneShield + 2 < Shared.GetTime()
+end
+
 function BoneShield:OnPrimaryAttack(player)
 
-    if self:GetEnergyCost() < player:GetEnergy() then
+    if self:GetEnergyCost() < player:GetEnergy() and player:GetIsOnGround() and self:GetCanUseBoneShield() then
         self.primaryAttacking = true
     end
 
@@ -56,7 +65,7 @@ end
 function BoneShield:OnUpdateAnimationInput(modelMixin)
 
     local activityString = "none"
-    local abilityString = "boneshield"
+    local abilityString = "gore"
     
     if self.primaryAttacking then
         activityString = "none" // TODO: set anim input
@@ -87,6 +96,7 @@ function BoneShield:OnProcessMove(input)
             
             if player:GetEnergy() == 0 then
                 self.primaryAttacking = false
+                self.timeLastBoneShield = Shared.GetTime()
             end
         end
         

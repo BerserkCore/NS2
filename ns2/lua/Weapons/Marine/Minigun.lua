@@ -42,7 +42,10 @@ local kShellsAttachPoints = { [ExoWeaponHolder.kSlotNames.Left] = "Exosuit_LElbo
                               [ExoWeaponHolder.kSlotNames.Right] = "Exosuit_RElbow" }
 
 local kMinigunRange = 400
-local kMinigunSpread = Math.Radians(8)
+local kMinigunSpread = Math.Radians(5)
+
+
+local kBulletSize = 0.03
 
 local kHeatUpRate = 0.2
 local kCoolDownRate = 0.4
@@ -239,6 +242,10 @@ function Minigun:GetTracerEffectFrequency()
     return 1
 end
 
+function Minigun:GetIsAffectedByWeaponUpgrades()
+    return true
+end 
+
 function Minigun:GetDeathIconIndex()
     return kDeathMessageIcon.Minigun
 end
@@ -277,6 +284,10 @@ local function Shoot(self, leftSide)
         local endPoint = startPoint + spreadDirection * range
         
         local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+        if not trace.entity then
+            local extents = GetDirectedExtentsForDiameter(spreadDirection, kBulletSize)
+            trace = Shared.TraceBox(extents, startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+        end
         
         if trace.fraction < 1 or GetIsVortexed(player) then
         
@@ -353,7 +364,7 @@ end
 function Minigun:OnUpdateRender()
 
     PROFILE("Minigun:OnUpdateRender")
-    
+
     local parent = self:GetParent()
     if parent and parent:GetIsLocalPlayer() then
     

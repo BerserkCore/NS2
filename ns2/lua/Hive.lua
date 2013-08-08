@@ -22,6 +22,7 @@ Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/TeleportMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
 
 Script.Load("lua/CommAbilities/Alien/NutrientMist.lua")
 Script.Load("lua/CommAbilities/Alien/BoneWall.lua")
@@ -30,7 +31,8 @@ class 'Hive' (CommandStructure)
 
 local networkVars =
 {
-    extendAmount = "float (0 to 1 by 0.01)"
+    extendAmount = "float (0 to 1 by 0.01)",
+    bioMassLevel = "integer (0 to 6)"
 }
 
 AddMixinNetworkVars(CloakableMixin, networkVars)
@@ -98,6 +100,7 @@ function Hive:OnCreate()
     InitMixin(self, MaturityMixin)
     InitMixin(self, TeleportMixin)
     InitMixin(self, DetectableMixin)
+    InitMixin(self, BiomassMixin)
     
     self.extendAmount = 0
     
@@ -109,6 +112,9 @@ function Hive:OnCreate()
         
         self.timeOfLastEgg = Shared.GetTime()
         
+        // when constructed first level is added automatically
+        self.bioMassLevel = 0
+        
     end
     
 end
@@ -118,7 +124,7 @@ function Hive:OnInitialized()
     InitMixin(self, InfestationMixin)
     
     CommandStructure.OnInitialized(self)
-    
+
     // Pre-compute list of egg spawn points.
     if Server then
         
@@ -202,7 +208,7 @@ function Hive:OnCollision(entity)
 end
 
 function GetIsHiveTypeResearch(techId)
-    return techId == kTechId.UpgradeToCragHive or techId == kTechId.UpgradedToShadeHive or techId == kTechId.UpgradeToShiftHive
+    return techId == kTechId.UpgradeToCragHive or techId == kTechId.UpgradeToShadeHive or techId == kTechId.UpgradeToShiftHive
 end
 
 function GetHiveTypeResearchAllowed(self, techId)
@@ -222,19 +228,43 @@ end
 
 function Hive:GetMainMenuButtons()
 
-    local techButtons = { kTechId.Drifter, kTechId.HiveHeal, kTechId.Infestation, kTechId.None,
-                          kTechId.LifeFormMenu, kTechId.None, kTechId.None, kTechId.None }
+    local techButtons = { kTechId.ShiftHatch, kTechId.Drifter, kTechId.None, kTechId.None,
+                          kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
     if self:GetTechId() == kTechId.Hive then
     
-        techButtons[6] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToCragHive), kTechId.UpgradeToCragHive, kTechId.None)
-        techButtons[7] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShadeHive), kTechId.UpgradeToShadeHive, kTechId.None)
-        techButtons[8] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShiftHive), kTechId.UpgradeToShiftHive, kTechId.None)
+        techButtons[5] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToCragHive), kTechId.UpgradeToCragHive, kTechId.None)
+        techButtons[6] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShadeHive), kTechId.UpgradeToShadeHive, kTechId.None)
+        techButtons[7] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShiftHive), kTechId.UpgradeToShiftHive, kTechId.None)
     
+    end
+    
+    if self.bioMassLevel <= 1 then
+        techButtons[3] = kTechId.ResearchBioMassOne
+    end
+    
+    if self.bioMassLevel <= 2 then
+        techButtons[4] = kTechId.ResearchBioMassTwo 
     end
     
     return techButtons
 
+end
+
+function Hive:GetTechAllowed(techId, techNode, player)
+
+    local allowed, canAfford = CommandStructure.GetTechAllowed(self, techId, techNode, player)
+
+    if techId == kTechId.ResearchBioMassTwo then
+        allowed = allowed and self.bioMassLevel == 2
+    end
+    
+    return allowed, canAfford
+    
+end
+
+function Hive:GetBioMassLevel()
+    return self.bioMassLevel * kHiveBiomass
 end
 
 function Hive:GetCanResearchOverride(techId)
@@ -253,8 +283,8 @@ local function GetLifeFormButtons(self)
 
     local upgrades =
     {
-        kTechId.Leap, kTechId.BileBomb, kTechId.GorgeTunnelTech, kTechId.Spores,
-        kTechId.Blink, kTechId.Stomp, kTechId.None, kTechId.RootMenu,
+        kTechId.Leap, kTechId.GorgeTunnelTech, kTechId.Umbra, kTechId.None,
+        kTechId.ShadowStep, kTechId.Stomp, kTechId.None, kTechId.RootMenu,
     }
     
     local teamNum = self:GetTeamNumber()
@@ -264,16 +294,19 @@ local function GetLifeFormButtons(self)
         if GetIsTechResearched(teamNum, kTechId.Leap) then
             upgrades[1] = kTechId.Xenocide
         end  
-        /*
-        if GetIsTechResearched(teamNum, kTechId.BileBomb) then
-            upgrades[2] = kTechId.WebTech
+        if GetIsTechResearched(teamNum, kTechId.GorgeTunnelTech) then
+            upgrades[2] = kTechId.BileBomb
         end
-       */
-        if GetIsTechResearched(teamNum, kTechId.Spores) then
-            upgrades[4] = kTechId.Umbra
+  
+        if GetIsTechResearched(teamNum, kTechId.Umbra) then
+            upgrades[3] = kTechId.Spores
         end   
- 
-        if GetIsTechResearched(teamNum, kTechId.Blink) then
+        /*
+        if GetIsTechResearched(teamNum, kTechId.BoneShield) then
+            upgrades[6] = kTechId.Stomp
+        end 
+        */         
+        if GetIsTechResearched(teamNum, kTechId.ShadowStep) then
             upgrades[5] = kTechId.Vortex
         end  
 
@@ -295,51 +328,13 @@ function Hive:GetTechButtons(techId)
 
     local techButtons = nil
     
-    if(techId == kTechId.RootMenu) then
+    if techId == kTechId.RootMenu then
         techButtons = self:GetMainMenuButtons()
-        
     elseif techId == kTechId.LifeFormMenu then
         techButtons = GetLifeFormButtons(self)
-        
     end
     
     return techButtons
-    
-end
-
-function Hive:OnManufactured(createdEntity)
-
-    if createdEntity:isa("Drifter") then
-    
-        local function RandomPoint()
-            local angle = math.random() * math.pi*2
-            local startPoint = createdEntity:GetOrigin() + Vector( math.cos(angle)*Drifter.kStartDistance , Drifter.kHoverHeight, math.sin(angle)*Drifter.kStartDistance )
-            return startPoint
-        end
-        
-        local direction = Vector(createdEntity:GetAngles():GetCoords().zAxis)
-
-        local finalPoint = Pathing.GetClosestPoint(RandomPoint())
-        
-        local points = {}    
-        local isBlocked = Pathing.IsBlocked(self:GetModelOrigin(), finalPoint)
-        
-        local maxTries = 100
-        local numTries = 0
-        
-        while (isBlocked and numTries < maxTries) do        
-            finalPoint = Pathing.GetClosestPoint(RandomPoint())
-            isBlocked = Pathing.IsBlocked(self:GetModelOrigin(), finalPoint)
-            numTries = numTries + 1
-        end
-                                  
-        finalPoint = GetHoverAt(createdEntity, finalPoint)
-        
-        local coords = Coords.GetLookIn( finalPoint, direction )
-        
-        createdEntity:SetCoords(coords)
-    
-    end
     
 end
 
@@ -368,18 +363,6 @@ function Hive:OnCloak()
     if attached then
         attached.showObjective = false
     end
-    
-end
-
-function Hive:GetTechAllowed(techId, techNode, player)
-
-    local allowed, canAfford = CommandStructure.GetTechAllowed(self, techId, techNode, player)
-
-    if techId == kTechId.Drifter then
-        allowed = allowed and GetIsWorkerConstructionAllowed(self:GetTeamNumber())
-    end
-    
-    return allowed, canAfford
     
 end
 

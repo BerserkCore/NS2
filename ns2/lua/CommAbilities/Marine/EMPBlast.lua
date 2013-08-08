@@ -14,32 +14,38 @@ class 'EMPBlast' (CommanderAbility)
 
 EMPBlast.kMapName = "empblast"
 
-EMPBlast.kSplashEffect = PrecacheAsset("cinematics/marine/mac/empblast.cinematic")
-
-EMPBlast.kType = CommanderAbility.kType.Instant
-EMPBlast.kRadius = 6
+local kSplashEffect = PrecacheAsset("cinematics/marine/mac/empblast.cinematic")
+local kRadius = 6
+local kType = CommanderAbility.kType.Instant
+local kEMPBlastMinEnergy = 10
 
 local networkVars =
 {
 }
 
 function EMPBlast:GetStartCinematic()
-    return EMPBlast.kSplashEffect
+    return kSplashEffect
 end   
 
 function EMPBlast:GetType()
-    return EMPBlast.kType
+    return kType
 end
 
 if Server then
 
     function EMPBlast:Perform()
         
-        for _, alien in ipairs(GetEntitiesForTeamWithinRange("Alien", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), EMPBlast.kRadius)) do
+        for _, alien in ipairs(GetEntitiesForTeamWithinRange("Alien", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kRadius)) do
         
-            // queues deduction of ability energy for next tick (fade ability energy is lag compensated)
-            alien:SetEMPBlasted()
-            alien:TriggerEffects("emp_blasted")
+            local energy = alien:GetEnergy()
+            if energy > kEMPBlastMinEnergy then
+            
+                local newEnergy = math.max(kEMPBlastMinEnergy, alien:GetEnergy() - kEMPBlastEnergyDamage)
+                alien:SetEnergy(newEnergy)
+                alien:TriggerEffects("emp_blasted")
+                TEST_EVENT("Alien Player EMP Blasted")
+                
+            end
             
         end
 

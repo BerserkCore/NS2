@@ -53,6 +53,10 @@ function VortexAbleMixin:GetIsVortexed()
     return self.vortexed
 end
 
+function VortexAbleMixin:GetCanBeVortexed()
+    return not self.timeLastVortexed or self.timeLastVortexed + 4 < Shared.GetTime()
+end
+
 function VortexAbleMixin:FreeVortexed()
     
     if self:GetIsVortexed() and self.OnVortexEnd then
@@ -75,6 +79,7 @@ function VortexAbleMixin:SetVortexDuration(duration)
     
     self.remainingVortexDuration = duration
     self.vortexed = true
+    self.timeLastVortexed = Shared.GetTime()
     
 end
 

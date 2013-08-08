@@ -50,8 +50,7 @@ if Server then
         end
         
         local enemyTeam = GetGamerules():GetTeam(GetEnemyTeamNumber(self:GetTeamNumber()))
-        local deathMessageTable = enemyTeam:GetDeathMessage(attacker, index, self)
-        enemyTeam:ForEachPlayer(function(player) if player:GetClient() then Server.SendNetworkMessage(player:GetClient(), "DeathMessage", deathMessageTable, true) end end)
+        enemyTeam:SendCommand(enemyTeam:GetDeathMessage(attacker, index, self))
         CreateRagdoll(self)
         
         if HasMixin(self, "GameEffects") then
@@ -122,7 +121,7 @@ function FeintMixin:OnClampSpeed(input, velocity)
 
     PROFILE("FeintMixin:OnClampSpeed")
     
-    if self:GetIsFeinting() and (self.GetIsOnSurface and self:GetIsOnSurface()) then
+    if self:GetIsFeinting() and (self.GetIsOnGround and self:GetIsOnGround()) then
     
         local moveSpeed = velocity:GetLength()
         if moveSpeed > kFeintMaxSpeed then        

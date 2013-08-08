@@ -36,6 +36,10 @@ function TunnelUserMixin:__initmixin()
         self:AddHelpWidget("GUITunnelEntranceHelp", 1)
     end
     
+    if Server then
+        self.timeSinkInStarted = nil
+    end
+    
 end
 
 local function GetNearbyTunnelEntrance(self)
@@ -55,37 +59,34 @@ end
 local function UpdateSinkIn(self, deltaTime)
 
     local tunnelEntrance = GetNearbyTunnelEntrance(self)        
-    if tunnelEntrance then
+    if tunnelEntrance and tunnelEntrance:GetIsBuilt() then
+    
+        if not self.timeSinkInStarted then
+            self.timeSinkInStarted = Shared.GetTime()
+        end
     
         local desiredPosition = tunnelEntrance:GetOrigin()
-        if (self:GetOrigin() - desiredPosition):GetLength() > 0.01 then
+
+        local move = desiredPosition - self:GetOrigin()
+        local moveLength = move:GetLength()
+        if moveLength < 0.3 then
+            move:Normalize()
+            move:Scale(0.3)
+        end
         
-            local move = desiredPosition - self:GetOrigin()
-            local moveLength = move:GetLength()
-            if moveLength < 0.3 then
-                move:Normalize()
-                move:Scale(0.3)
-            end
-            
-            local origin = self:GetOrigin()
-            local newOrigin = origin + deltaTime * move * kTunnelSinkSpeed
-            
-            newOrigin.x = Limit(newOrigin.x, origin.x, desiredPosition.x)
-            newOrigin.y = Limit(newOrigin.y, origin.y, desiredPosition.y)
-            newOrigin.z = Limit(newOrigin.z, origin.z, desiredPosition.z)
-            
-            self:SetOrigin(newOrigin)
-            
-            tunnelEntrance:Interact(self)
+        local origin = self:GetOrigin()
+        local newOrigin = origin + deltaTime * move * kTunnelSinkSpeed
+        
+        newOrigin.x = Limit(newOrigin.x, origin.x, desiredPosition.x)
+        newOrigin.y = Limit(newOrigin.y, origin.y, desiredPosition.y)
+        newOrigin.z = Limit(newOrigin.z, origin.z, desiredPosition.z)
+        
+        self:SetOrigin(newOrigin)
+        tunnelEntrance:Interact(self)
         
         // enter the tunnel when below the threshold distance
-        elseif Server then
-
-            local tunnelEntrance = GetNearbyTunnelEntrance(self)
-            if tunnelEntrance then
-                tunnelEntrance:SuckinEntity(self)
-            end
-            
+        if Server and self.timeSinkInStarted and self.timeSinkInStarted + 0.4 < Shared.GetTime() then
+            tunnelEntrance:SuckinEntity(self)            
         end
         
     end
@@ -140,6 +141,7 @@ local function SharedUpdate(self, deltaTime)
             UpdateSinkIn(self, deltaTime)
         elseif Server then
             
+            self.timeSinkInStarted = nil
             local tunnel = GetIsPointInGorgeTunnel(self:GetOrigin())
             if tunnel then
                 UpdateExitTunnel(self, deltaTime, tunnel)

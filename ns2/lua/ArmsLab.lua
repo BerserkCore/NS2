@@ -42,19 +42,6 @@ local kAnimationGraph = PrecacheAsset("models/marine/arms_lab/arms_lab.animation
 local kHaloCinematic = PrecacheAsset("cinematics/marine/arms_lab/arms_lab_holo.cinematic")
 local kHaloAttachPoint = "ArmsLab_hologram"
 
-local function SendArmorUpdateNotification(self)
-
-    if Server then
-
-        local team = self:GetTeam()
-        if team then
-            team:OnArmsLabChanged()
-        end
-        
-    end    
-
-end
-
 local networkVars =
 {
 }
@@ -153,32 +140,10 @@ end
 
 function ArmsLab:GetTechButtons(techId)
 
-    return { kTechId.Weapons1, kTechId.Weapons2, kTechId.Weapons3, kTechId.None, //kTechId.CatPackTech,
+    return { kTechId.Weapons1, kTechId.Weapons2, kTechId.Weapons3, kTechId.None,
              kTechId.Armor1, kTechId.Armor2, kTechId.Armor3, kTechId.None }
     
 end
-
-function ArmsLab:OnConstructionComplete()
-    SendArmorUpdateNotification(self)
-end
-
-if Server then
-
-    function ArmsLab:OnResearchComplete(researchId)
-    
-        if researchId == kTechId.Armor1 or researchId == kTechId.Armor2 or researchId == kTechId.Armor3 then
-            SendArmorUpdateNotification(self)
-        end
-        
-    end
-    
-    function ArmsLab:UpdateTechAvailability()
-        SendArmorUpdateNotification(self) 
-    end
-    
-end
-
-
 
 if Client then
 
@@ -214,7 +179,6 @@ end
 function ArmsLab:OnDestroy()
 
     ScriptActor.OnDestroy(self)
-    SendArmorUpdateNotification(self)
     
     if Client and self.haloCinematic then
     

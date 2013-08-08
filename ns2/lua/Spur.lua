@@ -34,6 +34,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
 
 class 'Spur' (ScriptActor)
 
@@ -90,6 +91,7 @@ function Spur:OnCreate()
     InitMixin(self, UmbraMixin)
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, BiomassMixin)
     
     if Server then
         InitMixin(self, InfestationTrackerMixin)
@@ -128,6 +130,10 @@ function Spur:OnInitialized()
 
 end
 
+function Spur:GetBioMassLevel()
+    return kSpurBiomass
+end
+
 local kSpurHealthbarOffset = Vector(0, 0.6, 0)
 function Spur:GetHealthbarOffset()
     return kSpurHealthbarOffset
@@ -153,16 +159,12 @@ function Spur:GetReceivesStructuralDamage()
     return true
 end
 
-function Spur:GetCanSleep()
+function Spur:GetIsSmallTarget()
     return true
 end
 
-function Spur:GetTechButtons(techId)
-
-    if self:GetTechId() == kTechId.Spur then
-        return {kTechId.UpgradeCeleritySpur, kTechId.UpgradeAdrenalineSpur } // , kTechId.UpgradeHyperMutationSpur}
-    end
-
+function Spur:GetCanSleep()
+    return true
 end
 
 function Spur:GetIsWallWalkingAllowed()
@@ -198,27 +200,6 @@ if Server then
         ScriptActor.OnDestroy(self)
     
     end
-    
-    function Spur:OnResearchComplete(researchId)
-
-        local success = false
-
-        if researchId == kTechId.UpgradeCeleritySpur then            
-            success = self:UpgradeToTechId(kTechId.CeleritySpur)
-        elseif researchId == kTechId.UpgradeHyperMutationSpur then 
-            success = self:UpgradeToTechId(kTechId.HyperMutationSpur)
-        elseif researchId == kTechId.UpgradeAdrenalineSpur then 
-            success = self:UpgradeToTechId(kTechId.AdrenalineSpur)
-        end    
-        
-        if success then
-            local team = self:GetTeam()
-            if team then
-                team:OnUpgradeChamberConstructed(self)
-            end
-        end
-        
-    end
 
 end
 
@@ -237,15 +218,3 @@ function Spur:OverrideHintString(hintString)
 end
 
 Shared.LinkClassToMap("Spur", Spur.kMapName, networkVars)
-
-class 'CeleritySpur' (Spur)
-CeleritySpur.kMapName = "celerityspur"
-Shared.LinkClassToMap("CeleritySpur", CeleritySpur.kMapName, { })
-
-class 'HyperMutationSpur' (Spur)
-HyperMutationSpur.kMapName = "hypermutationspur"
-Shared.LinkClassToMap("HyperMutationSpur", HyperMutationSpur.kMapName, { })
-
-class 'AdrenalineSpur' (Spur)
-AdrenalineSpur.kMapName = "adrenalinespur"
-Shared.LinkClassToMap("AdrenalineSpur", AdrenalineSpur.kMapName, { })

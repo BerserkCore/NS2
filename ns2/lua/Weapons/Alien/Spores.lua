@@ -13,8 +13,6 @@ Script.Load("lua/Weapons/Alien/SpikesMixin.lua")
 Script.Load("lua/Weapons/Alien/SporeCloud.lua")
 Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 
-kSporesHUDSlot = 2
-
 local function CreateSporeCloud(self, origin, player)
 
     local spores = CreateEntity(SporeCloud.kMapName, origin, player:GetTeamNumber())
@@ -111,7 +109,7 @@ function Spores:GetEnergyCost(player)
 end
 
 function Spores:GetHUDSlot()
-    return kSporesHUDSlot
+    return 3
 end
 
 function Spores:GetRange()

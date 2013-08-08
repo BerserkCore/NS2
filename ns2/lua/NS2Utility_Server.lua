@@ -10,6 +10,17 @@
 Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
+function OnCommanderLogOut(commander)
+
+    local client = Server.GetOwner(commander)
+    
+    local addTime = math.max(0, 60 - GetGamerules():GetGameTimeChanged())
+    
+    client.timeUntilResourceBlock = Shared.GetTime() + addTime + kCommanderResourceBlockTime
+    client.blockPersonalResources = true
+
+end
+
 function SetAlwaysRelevantToCommander(unit, relevant)
     
     local includeMask = 0
@@ -292,7 +303,7 @@ local function FindPlaceForTechId(filterEntity, origin, techId, minRange, maxRan
     
         if checkPath then
         
-            local pathPoints = { }
+            local pathPoints = PointArray()
             local hasPathToPoint = Pathing.GetPathPoints(origin, pointToUse, pathPoints)
             
             // This path is invalid if no path was found or the last path point was not the
@@ -413,6 +424,24 @@ local function LockAbility(forAlien, techId)
     
 end
 
+local function CheckHasPrereq(teamNumber, techId)
+
+    local hasPrereq = false
+
+    local techTree = GetTechTree(teamNumber)
+    if techTree then
+        
+        local techNode = techTree:GetTechNode(techId)
+        if techNode then
+            hasPrereq = techTree:GetHasTech(techNode:GetPrereq1())
+        end
+    
+    end
+
+    return hasPrereq
+
+end
+
 function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
 
     local time = Shared.GetTime()
@@ -421,7 +450,7 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
         local team = forAlien:GetTeam()
         if team and team.GetTechTree then
         
-            local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetHasTech(forAlien, tierTwoTechId, true))
+            local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetHasTech(forAlien, tierTwoTechId))
             local hadTwoHives = forAlien.twoHives
             // Don't lose abilities unless you die.
             forAlien.twoHives = forAlien.twoHives or hasTwoHivesNow
@@ -432,7 +461,7 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
                 LockAbility(forAlien, tierTwoTechId)
             end
             
-            local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetHasTech(forAlien, tierThreeTechId, true))
+            local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetHasTech(forAlien, tierThreeTechId))
             local hadThreeHives = forAlien.threeHives
             // Don't lose abilities unless you die.
             forAlien.threeHives = forAlien.threeHives or hasThreeHivesNow
@@ -450,3 +479,19 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
     end
 
 end
+
+function ScaleWithPlayerCount(value, numPlayers, scaleUp)
+
+    // 6 is supposed to be ideal, in this case the value wont be modified
+    local factor = 1
+    
+    if scaleUp then
+        factor = math.max(6, numPlayers) / 6
+    else
+        factor = 6 / math.max(6, numPlayers)
+    end
+
+    return value * factor
+
+end
+

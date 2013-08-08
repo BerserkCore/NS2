@@ -34,6 +34,18 @@ ResearchMixin.optionalCallbacks =
     OnManufactured = "Called after successful creation" 
 }
 
+local function RemoveResearchSupply(self, researchId)
+
+    local team = self:GetTeam()    
+    if self.addedResearchSupply and team and team.RemoveSupplyUsed then
+        
+        self.addedResearchSupply = false
+        team:RemoveSupplyUsed(LookupTechData(researchId, kTechDataSupply, 0))
+    
+    end
+
+end
+
 function ResearchMixin:__initmixin()
 
     self.researchingId = kTechId.None
@@ -117,15 +129,8 @@ end
 
 function ResearchMixin:GetResearchTechAllowed(techNode)
 
-    // Return true unless it's it's specified that it can only be triggered for specific tech id (ie, an upgraded version of a structure)
-    local addOnRequirementMet = true
-    local addOnTechId = techNode:GetAddOnTechId()
-    if addOnTechId ~= kTechId.None then        
-        addOnRequirementMet = (self:GetTechId() == addOnTechId)
-    end
-
     // Return false if we're researching, or if tech is being researched
-    return not (self.researchingId ~= kTechId.None or techNode.researched or techNode.researching or not addOnRequirementMet)
+    return not (self.researchingId ~= kTechId.None or techNode.researched or techNode.researching)
     
 end
 
@@ -171,6 +176,7 @@ end
 
 function ResearchMixin:ClearResearch()
 
+    RemoveResearchSupply(self, self.researchingId)
     self.researchingId = kTechId.None
     self.researchingPlayerId = Entity.invalidId
     self.researchTime = 0
@@ -234,6 +240,16 @@ function ResearchMixin:SetResearching(techNode, player)
         self:OnResearch(self.researchingId)
     end
     
+end
+
+function ResearchMixin:OnResearch(researchId)
+
+    local team = self:GetTeam()
+    if team and team.AddSupplyUsed then
+        self.addedResearchSupply = true
+        team:AddSupplyUsed(LookupTechData(researchId, kTechDataSupply, 0))
+    end
+
 end
 
 function ResearchMixin:OnUpdateAnimationInput(modelMixin)
@@ -312,7 +328,7 @@ function ResearchMixin:CreateManufactureEntity(techId)
         end
         
     end    
-    
+
     if entity and self.OnManufactured then
         self:OnManufactured(entity)
     end
@@ -325,6 +341,8 @@ function ResearchMixin:TechResearched(structure, researchId)
 
     if structure and structure:GetId() == self:GetId() then
     
+        RemoveResearchSupply(self, researchId)
+        
         local researchNode = self:GetTeam():GetTechTree():GetTechNode(researchId)
         if researchNode and (researchNode:GetIsEnergyManufacture() or researchNode:GetIsManufacture() or researchNode:GetIsPlasmaManufacture()) then
         

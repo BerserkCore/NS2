@@ -46,10 +46,15 @@ function GUISpeedDebug:Initialize()
     self.debugText:SetFontSize(18)
     self.debugText:SetPosition(Vector(80, -gFractionBarHeight, 0))
     
+    self.airAccel = GetGUIManager():CreateTextItem()
+    self.airAccel:SetFontSize(18)
+    self.airAccel:SetPosition(Vector(gMomentumBarWidth + 80, -20, 0))
+    
     self.momentumBackGround:AddChild(self.momentumFraction)
     self.momentumBackGround:AddChild(self.xzSpeed)
     self.momentumBackGround:AddChild(self.currentFractionBg)
     self.momentumBackGround:AddChild(self.debugText)
+    self.momentumBackGround:AddChild(self.airAccel)
     
     Print("enabled speed meter")
 
@@ -80,9 +85,14 @@ function GUISpeedDebug:Update(deltaTime)
         local speed = velocity:GetLengthXZ()
         local bonusSpeedFraction = speed / player:GetMaxSpeed(true)
         local currentFraction = 0 
-
-        if player.GetSpeedDebugSpecial then
-            currentFraction = player:GetSpeedDebugSpecial()
+        /*
+        if player.GetGroundFraction then
+            currentFraction = player:GetGroundFraction()
+        end
+        */
+        
+        if player.GetCrouchAmount then
+            currentFraction = player:GetCrouchAmount()
         end
         
         self.momentumFraction:SetSize(Vector(gMomentumBarWidth * bonusSpeedFraction, 30, 0))
@@ -91,6 +101,9 @@ function GUISpeedDebug:Update(deltaTime)
         if currentFraction then
             self.currentFraction:SetSize(Vector(15, -gFractionBarHeight * currentFraction, 0))
         end
+        
+        local airAccelText = "air control value: " .. ToString(player:GetAirControl())
+        self.airAccel:SetText(airAccelText)
     
     end
 

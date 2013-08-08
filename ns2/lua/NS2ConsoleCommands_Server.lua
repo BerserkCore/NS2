@@ -504,7 +504,7 @@ end
 local function OnCommandLogout(client)
 
     local player = client:GetControllingPlayer()
-    if(player:GetIsCommander()) then
+    if player:GetIsCommander() and GetCommanderLogoutAllowed() then
     
         player:Logout()
     

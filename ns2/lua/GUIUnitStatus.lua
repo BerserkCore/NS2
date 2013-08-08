@@ -54,6 +54,12 @@ GUIUnitStatus.kProgressingIconOffset = GUIScale(Vector(0, 128, 0))
 GUIUnitStatus.kRotationDuration = 8
 GUIUnitStatus.kResearchRotationDuration = 2
 
+local kWelderTexCoords = GetTextureCoordinatesForIcon(kTechId.Welder)
+local kWelderTexture = "ui/buildmenu.dds"
+
+local kWelderIconSize = GUIScale(Vector(48, 48, 0))
+local kWelderIconPos = GUIScale(Vector(0, -24, 0))
+
 local kBorderCoords = { 256, 256, 256 + 512, 256 + 128 }
 local kBorderMaskPixelCoords = { 256, 384, 256 + 512, 384 + 512 }
 local kBorderMaskCircleRadius = GUIScale(130)
@@ -328,6 +334,19 @@ local function CreateBlipItem(self)
     
 end
 
+local function AddWelderIcon(blipItem)
+
+    blipItem.welderIcon = GetGUIManager():CreateGraphicItem()
+    blipItem.welderIcon:SetTexture(kWelderTexture)
+    blipItem.welderIcon:SetTexturePixelCoordinates(unpack(kWelderTexCoords))
+    blipItem.welderIcon:SetSize(kWelderIconSize)
+    blipItem.welderIcon:SetPosition(kWelderIconPos)
+    blipItem.welderIcon:SetAnchor(GUIItem.Right, GUIItem.Center)    
+    
+    blipItem.statusBg:AddChild(blipItem.welderIcon)
+
+end
+
 local function UpdateUnitStatusList(self, activeBlips, deltaTime)
 
     PROFILE("GUIUnitStatus:UpdateUnitStatusList")
@@ -466,6 +485,17 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
 
         updateBlip.Badge:SetTexture(blipData.BadgeTexture)
         updateBlip.Badge:SetIsVisible(string.len(blipData.BadgeTexture) > 0)
+        
+        if blipData.HasWelder and blipData.IsCrossHairTarget and not updateBlip.welderIcon then
+        
+            AddWelderIcon(updateBlip)
+        
+        elseif (not blipData.HasWelder or not blipData.IsCrossHairTarget) and updateBlip.welderIcon then
+        
+            GUI.DestroyItem(updateBlip.welderIcon)
+            updateBlip.welderIcon = nil
+            
+        end
          
     end
 

@@ -162,7 +162,8 @@ function PrototypeLab:OnInitialized()
 end
 
 function PrototypeLab:GetTechButtons(techId)
-    return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.ClawRailgunTech }
+    return { kTechId.JetpackTech, kTechId.None, kTechId.None, kTechId.None, 
+             kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.None, kTechId.None } // kTechId.DualRailgunTech
 end
 
 function PrototypeLab:GetRequiresPower()
@@ -239,7 +240,7 @@ function PrototypeLab:OnUpdate(deltaTime)
 end
 
 function PrototypeLab:GetItemList()
-    return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.ClawRailgunExosuit }
+    return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.ClawRailgunExosuit } // kTechId.DualRailgunExosuit
 end
 
 // { { TechName, UpgradeList, Max number of upgrades, upgrades mutual exlusive } }

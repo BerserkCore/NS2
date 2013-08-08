@@ -248,6 +248,7 @@ local function BuyExo(self, techId)
             elseif techId == kTechId.ClawRailgunExosuit then
                 self:GiveClawRailgunExo(spawnPoint)
             elseif techId == kTechId.DualRailgunExosuit then
+                Print("give DualRailgunExosuit")
                 self:GiveDualRailgunExo(spawnPoint)
             end
             
@@ -268,7 +269,7 @@ function Marine:AttemptToBuy(techIds)
     local techId = techIds[1]
     
     local hostStructure = GetHostStructureFor(self, techId)
-    
+
     if hostStructure then
     
         local mapName = LookupTechData(techId, kTechDataMapName)

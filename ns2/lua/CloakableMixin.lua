@@ -18,6 +18,8 @@ CloakableMixin.kUncloakRate = 12
 CloakableMixin.kTriggerCloakDuration = .6
 CloakableMixin.kTriggerUncloakDuration = 2.5
 
+local kPlayerMaxCloak = 0.88
+
 local kEnemyUncloakDistanceSquared = 1.5 ^ 2
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/cloaked.surface_shader")
@@ -45,7 +47,8 @@ CloakableMixin.networkVars =
     // set server side to true when cloaked fraction is 1
     fullyCloaked = "boolean",
     // so client knows in which direction to update the cloakFraction
-    cloakingDesired = "boolean"
+    cloakingDesired = "boolean",
+    cloakRate = "integer (0 to 3)"
 }
 
 function CloakableMixin:__initmixin()
@@ -106,11 +109,22 @@ local function UpdateDesiredCloakFraction(self, deltaTime)
         if Shared.GetTime() > self.timeUncloaked and (not HasMixin(self, "Detectable") or not self:GetIsDetected()) then
             
             // Uncloaking takes precedence over cloaking
-            if Shared.GetTime() < self.timeCloaked or (self.GetIsCamouflaged and self:GetIsCamouflaged()) then        
+            if Shared.GetTime() < self.timeCloaked then        
                 self.cloakingDesired = true
+                self.cloakRate = 3
+            elseif self.GetIsCamouflaged and self:GetIsCamouflaged() then
+                
+                self.cloakingDesired = true
+                
+                if self:isa("Player") then
+                    self.cloakRate = GetVeilLevel(self:GetTeamNumber())                
+                else
+                    self.cloakRate = 3
+                end
+                
             end
             
-        end    
+        end
     
     end
     
@@ -122,7 +136,7 @@ local function UpdateDesiredCloakFraction(self, deltaTime)
     end
     
     if newDesiredCloakFraction ~= nil then
-        self.desiredCloakFraction = math.min(1, math.max(0, newDesiredCloakFraction))
+        self.desiredCloakFraction = Clamp(newDesiredCloakFraction, 0, (self:isa("Player") or self:isa("Drifter")) and kPlayerMaxCloak or 1)
     end
     
 end
@@ -133,7 +147,7 @@ local function UpdateCloakState(self, deltaTime)
     UpdateDesiredCloakFraction(self, deltaTime)
     
     // Animate towards desired/internal cloak fraction (so we never "snap")
-    local rate = (self.desiredCloakFraction > self.cloakFraction) and CloakableMixin.kCloakRate or CloakableMixin.kUncloakRate
+    local rate = (self.desiredCloakFraction > self.cloakFraction) and CloakableMixin.kCloakRate * (self.cloakRate / 3) or CloakableMixin.kUncloakRate
 
     local newCloak = Clamp(Slerp(self.cloakFraction, self.desiredCloakFraction, deltaTime * rate), 0, 1)
     
@@ -150,7 +164,7 @@ local function UpdateCloakState(self, deltaTime)
 
     if Server then
     
-        self.fullyCloaked = self:GetCloakFraction() == 1
+        self.fullyCloaked = self:GetCloakFraction() >= kPlayerMaxCloak
         
         if self.lastTouchedEntityId then
         
@@ -365,7 +379,7 @@ function CloakableMixin:OnCapsuleTraceHit(entity)
     end
     
 end
-
+/*
 function CloakableMixin:OnJump()
 
     if self.fullyCloaked then
@@ -375,3 +389,4 @@ function CloakableMixin:OnJump()
     self:TriggerUncloak()
     
 end
+*/

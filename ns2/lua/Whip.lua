@@ -46,6 +46,8 @@ Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
 
 class 'Whip' (ScriptActor)
 
@@ -58,11 +60,10 @@ Whip.kScanThinkInterval = .1
 Whip.kROF = 2.0
 Whip.kFov = 360
 Whip.kTargetCheckTime = .3
-Whip.kRange = 6
+Whip.kRange = 8
 Whip.kAreaEffectRadius = 3
 Whip.kDamage = 50
-Whip.kMoveSpeed = 2.5
-Whip.kMoveSpeedOnInfestation = 4
+Whip.kMoveSpeed = 3.5
 Whip.kMaxMoveSpeedParam = 10
 
 Whip.kWhipBallParam = "ball"
@@ -163,6 +164,7 @@ function Whip:OnCreate()
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, BiomassMixin)
     
     self.attackYaw = 0
     
@@ -210,9 +212,6 @@ function Whip:OnInitialized()
         self.slapAttack = AiSlapAttackType():Init(self)
         self:AddAiAttackType(self.slapAttack)
         
-        self.whackAttack = AiGrenadeWhackAttackType():Init(self)
-        self:AddAiAttackType(self.whackAttack)
-        
         self.bombardAttack = AiBombardAttackType():Init(self)
         self.bombardAttack.enabled = false // enable when evolved
         self:AddAiAttackType(self.bombardAttack)
@@ -222,6 +221,7 @@ function Whip:OnInitialized()
         InitMixin(self, RepositioningMixin)
         InitMixin(self, SleeperMixin)
         InitMixin(self, ControllerMixin)
+        InitMixin(self, SupplyUserMixin)
         
         self:CreateController(PhysicsGroup.WhipGroup)
         
@@ -237,6 +237,10 @@ function Whip:OnInitialized()
         
     end
     
+end
+
+function Whip:GetBioMassLevel()
+    return kWhipBiomass
 end
 
 function Whip:OnDestroy()
@@ -296,13 +300,6 @@ function Whip:GetTechButtons(techId)
 
     techButtons = { kTechId.Attack, kTechId.Stop, kTechId.None, kTechId.None,  
                     kTechId.None,  kTechId.None,  kTechId.None,  kTechId.None, }
-
-    local rootUnroot = self.rooted and kTechId.WhipUnroot or kTechId.WhipRoot
-    techButtons[6] = rootUnroot
-    
-    if not self:GetHasUpgrade(kTechId.WhipBombard) then
-        techButtons[5] = kTechId.EvolveBombard
-    end
     
     if self.rooted then
         techButtons[3] = kTechId.GrenadeWhack
@@ -332,6 +329,10 @@ function Whip:GetActivationTechAllowed(techId)
 
     return true
         
+end
+
+function Whip:OverrideVisionRadius()
+    return kPlayerLOSDistance
 end
 
 function Whip:GetReceivesStructuralDamage()
@@ -402,10 +403,11 @@ function Whip:OnUpdate(deltaTime)
     PROFILE("Whip:OnUpdate")
     ScriptActor.OnUpdate(self, deltaTime)
     
-    if Server then        
-        self:UpdateRootState()
-           
+    if Server then 
+       
+        self:UpdateRootState()           
         self:UpdateOrders(deltaTime)
+        
     end
     
 end

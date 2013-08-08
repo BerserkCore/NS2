@@ -15,11 +15,15 @@ Script.Load("lua/Weapons/Alien/BabblerAbility.lua")
 Script.Load("lua/Weapons/Alien/BileBomb.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
+Script.Load("lua/Mixins/JumpMoveMixin.lua")
+Script.Load("lua/Mixins/CrouchMoveMixin.lua")
+Script.Load("lua/CelerityMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
+Script.Load("lua/Weapons/PredictedProjectile.lua")
 
 class 'Gorge' (Alien)
 
@@ -37,6 +41,9 @@ local networkVars =
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
+AddMixinNetworkVars(JumpMoveMixin, networkVars)
+AddMixinNetworkVars(CrouchMoveMixin, networkVars)
+AddMixinNetworkVars(CelerityMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
@@ -57,10 +64,9 @@ Gorge.kYExtents = 0.475
 
 local kMass = 80
 local kJumpHeight = 1.2
-local kInfestationStartSlideForce = 7.5
-local kStartSlideForce = 7
+local kStartSlideSpeed = 8.9
 local kViewOffsetHeight = 0.6
-local kMaxGroundSpeed = 5.1
+local kMaxGroundSpeed = 6
 local kMaxSlidingSpeed = 13
 local kSlidingMoveInputScalar = 0.1
 local kBuildingModeMovementScalar = 0.001
@@ -77,6 +83,9 @@ function Gorge:OnCreate()
 
     InitMixin(self, BaseMoveMixin, { kGravity = Player.kGravity })
     InitMixin(self, GroundMoveMixin)
+    InitMixin(self, JumpMoveMixin)
+    InitMixin(self, CrouchMoveMixin)
+    InitMixin(self, CelerityMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kGorgeFov })
     
     Alien.OnCreate(self)
@@ -84,6 +93,8 @@ function Gorge:OnCreate()
     InitMixin(self, DissolveMixin)
     InitMixin(self, BabblerClingMixin)
     InitMixin(self, TunnelUserMixin)
+    
+    InitMixin(self, PredictedProjectileShooterMixin)
     
     if Client then
         InitMixin(self, RailgunTargetMixin)
@@ -118,12 +129,8 @@ function Gorge:OnInitialized()
     
 end
 
-function Gorge:GetInfestationBonus()
-    return kGorgeInfestationSpeedBonus
-end
-
-function Gorge:GetCeleritySpeedModifier()
-    return kGorgeCeleritySpeedModifier
+function Gorge:GetAirControl()
+    return 5
 end
 
 function Gorge:GetCarapaceSpeedReduction()
@@ -155,6 +162,14 @@ end
 
 function Gorge:GetBaseArmor()
     return kGorgeArmor
+end
+
+function Gorge:GetBaseHealth()
+    return kGorgeHealth
+end
+
+function Gorge:GetHealthPerBioMass()
+    return kGorgeHealthPerBioMass
 end
 
 function Gorge:GetArmorFullyUpgradedAmount()
@@ -266,6 +281,10 @@ local function UpdateGorgeSliding(self, input)
     
 end
 
+function Gorge:GetAirFriction()
+    return 0.8
+end
+
 function Gorge:GetCanRepairOverride(target)
     return true
 end
@@ -290,38 +309,29 @@ function Gorge:OnUpdatePoseParameters(viewModel)
     
 end
 
-function Gorge:ConstrainMoveVelocity(moveVelocity)   
-
-    Alien.ConstrainMoveVelocity(self, moveVelocity)
-    
-    if self:GetIsBellySliding() then
-        moveVelocity:Scale(0)
-    end
-    
-end
-
-function Gorge:GetGroundFrictionForce()
-
-    if self:GetIsBellySliding() then
-        return ConditionalValue(self:GetGameEffectMask(kGameEffect.OnInfestation), 0.1, 0.3)
-    elseif self.crouching then
-        return 14
-    end    
-
-    return Alien.GetGroundFrictionForce(self)
-end
-
 function Gorge:SetCrouchState(newCrouchState)
     self.crouching = newCrouchState
 end
 
 function Gorge:GetMaxSpeed(possible)
+    return kMaxGroundSpeed
+end
 
-    if possible then
-        return kMaxGroundSpeed
-    end
+function Gorge:GetMaxBackwardSpeedScalar()
+    return 0.5
+end
+
+function Gorge:GetAcceleration()
+    return self:GetIsBellySliding() and 0 or 8
+end
+
+function Gorge:GetGroundFriction()
     
-    return kMaxGroundSpeed * self:GetMovementSpeedModifier()
+    if self:GetIsBellySliding() then
+        return self:GetGameEffectMask(kGameEffect.OnInfestation) and 0.068 or 0.2
+    end
+
+    return 7
     
 end
 
@@ -341,68 +351,7 @@ function Gorge:OnUpdateAnimationInput(modelMixin)
     
 end
 
-function Gorge:GetAirMoveScalar()
-    return 0
-end
-
-Gorge.kSlideControl = 1
-
-function Gorge:ModifyVelocity(input, velocity)
-
-    Alien.ModifyVelocity(self, input, velocity)
-
-    if not self:GetIsOnGround() and input.move:GetLength() ~= 0 or self:GetIsBellySliding() then
-    
-        local moveLengthXZ = velocity:GetLengthXZ()
-        local previousY = velocity.y
-        local adjustedZ = false
-        local bellySliding = self:GetIsBellySliding()
-
-        if input.move.z ~= 0 then
-        
-            local redirectedVelocityZ = GetNormalizedVectorXZ(self:GetViewCoords().zAxis) * input.move.z
-            
-            if input.move.z < 0 then
-            
-                redirectedVelocityZ = GetNormalizedVectorXZ(velocity)
-                redirectedVelocityZ:Normalize()
-                
-                local xzVelocity = Vector(velocity)
-                xzVelocity.y = 0
-                
-                VectorCopy(velocity - (xzVelocity * input.time * Gorge.kAirBrakeWeight), velocity)
-                
-            else
-            
-                redirectedVelocityZ = redirectedVelocityZ * input.time * ConditionalValue(bellySliding, Gorge.kSlideControl, Gorge.kAirZMoveWeight) + GetNormalizedVectorXZ(velocity)
-                redirectedVelocityZ:Normalize()
-                redirectedVelocityZ:Scale(moveLengthXZ)
-                redirectedVelocityZ.y = previousY
-                VectorCopy(redirectedVelocityZ,  velocity)
-                adjustedZ = true
-            
-            end
-        
-        end
-    
-        if input.move.x ~= 0  then
-    
-            local redirectedVelocityX = GetNormalizedVectorXZ(self:GetViewCoords().xAxis) * input.move.x
-        
-            if adjustedZ then
-                redirectedVelocityX = redirectedVelocityX * input.time * ConditionalValue(bellySliding, Gorge.kSlideControl, Gorge.kAirStrafeWeight) + GetNormalizedVectorXZ(velocity)
-            else
-                redirectedVelocityX = redirectedVelocityX * input.time * ConditionalValue(bellySliding, Gorge.kSlideControl, 2) + GetNormalizedVectorXZ(velocity)
-            end
-            
-            redirectedVelocityX:Normalize()            
-            redirectedVelocityX:Scale(moveLengthXZ)
-            redirectedVelocityX.y = previousY            
-            VectorCopy(redirectedVelocityX,  velocity)
-            
-        end    
-    
-    end
+function Gorge:ModifyVelocity(input, velocity, deltaTime)
     
     // Give a little push forward to make sliding useful
     if self.startedSliding then
@@ -410,18 +359,39 @@ function Gorge:ModifyVelocity(input, velocity)
         if self:GetIsOnGround() then
     
             local pushDirection = GetNormalizedVectorXZ(self:GetViewCoords().zAxis)
-            local force = ConditionalValue(self:GetGameEffectMask(kGameEffect.OnInfestation), kInfestationStartSlideForce, kStartSlideForce) * self:GetSlowSpeedModifier()
             
-            local impulse = pushDirection * force
+            local currentSpeed = math.max(0, pushDirection:DotProduct(velocity))
+            
+            local maxSpeedTable = { maxSpeed = kStartSlideSpeed, wishDir = pushDirection }
+            self:ModifyMaxSpeed(maxSpeedTable)
+            
+            local addSpeed = math.max(0, maxSpeedTable.maxSpeed - currentSpeed)
+            local impulse = pushDirection * addSpeed
 
-            velocity.x = velocity.x * 0.5 + impulse.x
-            velocity.y = velocity.y * 0.5 + impulse.y
-            velocity.z = velocity.z * 0.5 + impulse.z
+            velocity:Add(impulse)
         
         end
         
         self.startedSliding = false
 
+    end
+    
+    if self:GetIsBellySliding() then
+    
+        local currentSpeed = velocity:GetLengthXZ()
+        local prevY = velocity.y
+        velocity.y = 0  
+        
+        local addVelocity = self:GetViewCoords():TransformVector(input.move)
+        addVelocity.y = 0
+        addVelocity:Normalize()
+        addVelocity:Scale(deltaTime * 10)
+        
+        velocity:Add(addVelocity) 
+        velocity:Normalize()
+        velocity:Scale(currentSpeed)
+        velocity.y = prevY
+    
     end
     
 end

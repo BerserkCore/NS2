@@ -19,7 +19,13 @@ AlienTeamInfo.kMapName = "AlienTeamInfo"
 local networkVars =
 {
     numHives = "integer (0 to 10)",
-    eggCount = "integer (0 to 127)"
+    eggCount = "integer (0 to 120)",
+    bioMassLevel = "integer (0 to 12)",
+    bioMassAlertLevel = "integer (0 to 12)",
+    maxBioMassLevel = "integer (0 to 12)",
+    veilLevel = "integer (0 to 3)",
+    spurLevel = "integer (0 to 3)",
+    shellLevel = "integer (0 to 3)",
 }
 
 function AlienTeamInfo:OnCreate()
@@ -28,10 +34,45 @@ function AlienTeamInfo:OnCreate()
     
     self.numHives = 0
     self.eggCount = 0
+    self.bioMassLevel = 0
+    self.bioMassAlertLevel = 0
+    self.maxBioMassLevel = 0
+    self.veilLevel = 0
+    self.spurLevel = 0
+    self.shellLevel = 0
 
 end
 
 if Server then
+
+    local function GetBuiltStructureCount(className, teamNum)
+    
+        local count = 0
+    
+        for _, structure in ipairs(GetEntitiesForTeam(className, teamNum)) do
+        
+            if structure:GetIsBuilt() and structure:GetIsAlive() then
+                count = count + 1
+            end
+        
+        end
+    
+        return count
+    
+    end
+
+    function AlienTeamInfo:Reset()
+    
+        self.numHives = 0
+        self.eggCount = 0
+        self.bioMassLevel = 0
+        self.bioMassAlertLevel = 0
+        self.maxBioMassLevel = 0
+        self.veilLevel = 0
+        self.spurLevel = 0
+        self.shellLevel = 0
+        
+    end
 
     function AlienTeamInfo:OnUpdate(deltaTime)
     
@@ -39,8 +80,16 @@ if Server then
         
         local team = self:GetTeam()
         if team then
+        
             self.numHives = team:GetNumHives()
             self.eggCount = team:GetActiveEggCount()
+            self.bioMassLevel = Clamp(team:GetBioMassLevel(), 0, 12)
+            self.bioMassAlertLevel = Clamp(team:GetBioMassAlertLevel(), 0 , 12)
+            self.maxBioMassLevel = Clamp(team:GetMaxBioMassLevel(), 0 , 12)
+            self.veilLevel = Clamp(GetBuiltStructureCount("Veil", team:GetTeamNumber()), 0, 3)
+            self.spurLevel = Clamp(GetBuiltStructureCount("Spur", team:GetTeamNumber()), 0, 3)
+            self.shellLevel = Clamp(GetBuiltStructureCount("Shell", team:GetTeamNumber()), 0, 3)
+
         end
         
     end
@@ -49,6 +98,18 @@ end
 
 function AlienTeamInfo:GetNumHives()
     return self.numHives
+end
+
+function AlienTeamInfo:GetBioMassLevel()
+    return self.bioMassLevel
+end
+
+function AlienTeamInfo:GetBioMassAlertLevel()
+    return self.bioMassAlertLevel
+end
+
+function AlienTeamInfo:GetMaxBioMassLevel()
+    return self.maxBioMassLevel
 end
 
 function AlienTeamInfo:GetEggCount()

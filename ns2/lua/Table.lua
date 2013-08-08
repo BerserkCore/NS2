@@ -376,7 +376,7 @@ end
 
 function table.count(t, logError)
     if(t ~= nil) then
-        return table.maxn(t)
+        return (table.maxn(t))
     elseif logError then
         Print("table.count() - Nil table passed in, returning 0.")
     end

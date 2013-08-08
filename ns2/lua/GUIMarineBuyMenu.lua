@@ -64,6 +64,7 @@ local function GetBigIconPixelCoords(techId, researched)
         gBigIconIndex[kTechId.LayMines] = 9
         gBigIconIndex[kTechId.DualMinigunExosuit] = 10
         gBigIconIndex[kTechId.ClawRailgunExosuit] = 11
+        gBigIconIndex[kTechId.DualRailgunExosuit] = 11
     
     end
     
@@ -466,10 +467,9 @@ local function GetItemTechId(researchTechId)
     
         gResearchToWeaponIds = { }
         gResearchToWeaponIds[kTechId.ShotgunTech] = kTechId.Shotgun
-        gResearchToWeaponIds[kTechId.GrenadeLauncherTech] = kTechId.GrenadeLauncher
+        gResearchToWeaponIds[kTechId.AdvancedWeaponry] = { kTechId.GrenadeLauncher, kTechId.Flamethrower }
         gResearchToWeaponIds[kTechId.WelderTech] = kTechId.Welder
         gResearchToWeaponIds[kTechId.MinesTech] = kTechId.LayMines
-        gResearchToWeaponIds[kTechId.FlamethrowerTech] = kTechId.Flamethrower
         gResearchToWeaponIds[kTechId.JetpackTech] = kTechId.Jetpack
         gResearchToWeaponIds[kTechId.ExosuitTech] = kTechId.Exosuit
         gResearchToWeaponIds[kTechId.DualMinigunTech] = kTechId.DualMinigunExosuit
@@ -507,7 +507,14 @@ function GUIMarineBuyMenu:_UpdateItemButtons(deltaTime)
         else
 
             local newResearchedId = GetItemTechId( PlayerUI_GetRecentPurchaseable() )
-            if newResearchedId == item.TechId then
+            local newlyResearched = false 
+            if type(newResearchedId) == "table" then
+                newlyResearched = table.contains(newResearchedId, item.TechId)
+            else
+                newlyResearched = newResearchedId == item.TechId
+            end
+            
+            if newlyResearched then
             
                 local anim = math.cos(Shared.GetTime() * 9) * 0.4 + 0.6
                 useColor = Color(1, 1, anim, 1)

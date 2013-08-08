@@ -480,20 +480,17 @@ local function BuildCommanderHelpFunctions()
     table.insert(gGetAlienCommanderHelp, {kTechId.Spur, GetBaseStructureHelpFunction(kTechId.Spur)} )
     table.insert(gGetAlienCommanderHelp, {kTechId.Veil, GetBaseStructureHelpFunction(kTechId.Veil)} )
 
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeCarapaceShell, GetUpgradeHelpFunction("Shell", kTechId.UpgradeCarapaceShell, kTechId.CarapaceShell, -kWorldButtonSize *.5)} )
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeRegenerationShell, GetUpgradeHelpFunction("Shell", kTechId.UpgradeRegenerationShell, kTechId.RegenerationShell, kWorldButtonSize *.5)} )
-
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeCeleritySpur, GetUpgradeHelpFunction("Spur", kTechId.UpgradeCeleritySpur, kTechId.CeleritySpur, -kWorldButtonSize)} )
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeAdrenalineSpur, GetUpgradeHelpFunction("Spur", kTechId.UpgradeAdrenalineSpur, kTechId.AdrenalineSpur, 0)} )
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeHyperMutationSpur, GetUpgradeHelpFunction("Spur", kTechId.UpgradeHyperMutationSpur, kTechId.HyperMutationSpur, kWorldButtonSize)} )
-
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeSilenceVeil, GetUpgradeHelpFunction("Veil", kTechId.UpgradeSilenceVeil, kTechId.SilenceVeil, -kWorldButtonSize)} )
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeCamouflageVeil, GetUpgradeHelpFunction("Veil", kTechId.UpgradeCamouflageVeil, kTechId.CamouflageVeil, 0)} )
-    table.insert(gGetAlienCommanderHelp, {kTechId.UpgradeFeintVeil, GetUpgradeHelpFunction("Veil", kTechId.UpgradeFeintVeil, kTechId.FeintVeil, kWorldButtonSize)} )
-
-    table.insert(gGetAlienCommanderHelp, {kTechId.Leap, GetResearchHelpFunction("Hive", -kTechId.Leap, -kWorldButtonSize * .5, -kWorldButtonSize) })
-    table.insert(gGetAlienCommanderHelp, {kTechId.BileBomb, GetResearchHelpFunction("Hive", -kTechId.BileBomb, kWorldButtonSize * .5, -kWorldButtonSize) })
+    table.insert(gGetAlienCommanderHelp, {kTechId.BileBomb, GetResearchHelpFunction("Crag", kTechId.BileBomb, -kWorldButtonSize)} )
+    table.insert(gGetAlienCommanderHelp, {kTechId.Umbra, GetResearchHelpFunction("Crag", kTechId.Umbra, 0)} )
+    table.insert(gGetAlienCommanderHelp, {kTechId.Stomp, GetResearchHelpFunction("Crag", kTechId.Stomp, kWorldButtonSize)} )
     
+    table.insert(gGetAlienCommanderHelp, {kTechId.GorgeTunnelTech, GetResearchHelpFunction("Shift", kTechId.GorgeTunnelTech, -kWorldButtonSize)} )
+    table.insert(gGetAlienCommanderHelp, {kTechId.Leap, GetResearchHelpFunction("Shift", kTechId.Leap, 0)} )
+    table.insert(gGetAlienCommanderHelp, {kTechId.Xenocide, GetResearchHelpFunction("Shift", kTechId.Xenocide, kWorldButtonSize)} )
+    
+    table.insert(gGetAlienCommanderHelp, {kTechId.ShadowStep, GetResearchHelpFunction("Shade", kTechId.ShadowStep, -kWorldButtonSize)} )
+    table.insert(gGetAlienCommanderHelp, {kTechId.Vortex, GetResearchHelpFunction("Shade", kTechId.Vortex, 0)} )
+    table.insert(gGetAlienCommanderHelp, {kTechId.Spores, GetResearchHelpFunction("Shade", kTechId.Spores, kWorldButtonSize)} )
     
     table.insert(gGetAlienCommanderHelp, {kTechId.Cyst, GetCystHelpFunction})
     

@@ -8,6 +8,23 @@
 
 kMarineWeaponEffects =
 {
+    power_surge = 
+    {
+        powerSurgeEffects = 
+        {
+            {cinematic = "cinematics/marine/power_surge.cinematic"},
+        }
+    },
+
+    burn_bomb =
+    {
+        burnSporeEffects =
+        {
+            {cinematic = "cinematics/alien/burn_sporecloud.cinematic"},
+            {sound = "sound/NS2.fev/alien/structures/death_grenade"},
+        } 
+    
+    }, 
 
     burn_spore =
     {

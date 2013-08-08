@@ -97,7 +97,7 @@ function Fade:OnUpdateRender()
         
     end
 
-    self:SetOpacity((self:GetIsBlinking()) and 0 or 1, "blinkAmount")
+    //self:SetOpacity((self:GetIsBlinking()) and 0 or 1, "blinkAmount")
 
 end  
 

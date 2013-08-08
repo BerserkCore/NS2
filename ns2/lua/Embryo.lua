@@ -26,7 +26,7 @@ Embryo.kYExtents = .25
 Embryo.kZExtents = .25
 Embryo.kEvolveSpawnOffset = 0.2
 
-local kMinGestationTime = 1.5
+local kMinGestationTime = 5
 
 Embryo.kSkinOffset = Vector(0, 0.02, 0)
 
@@ -268,6 +268,14 @@ function Embryo:GetAnimateDeathCamera()
 end 
 
 function Embryo:GetBaseArmor()
+    return 0
+end
+
+function Embryo:GetBaseHealth()
+    return LookupTechData(self.gestationTypeTechId, kTechDataMaxHealth, 100)
+end
+
+function Embryo:GetHealthPerBioMass()
     return 0
 end
 

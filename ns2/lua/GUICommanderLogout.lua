@@ -122,7 +122,7 @@ function GUICommanderLogout:SendKeyEvent(key, down)
     
         self.mousePressed = down
         
-        if containsPoint then
+        if containsPoint and GetCommanderLogoutAllowed() then
             // Check if the button was pressed.
             if not self.mousePressed then
                 CommanderUI_Logout()
@@ -180,6 +180,12 @@ function GUICommanderLogout:Update(deltaTime)
         
     else
         self.background:SetTexturePixelCoordinates(GetCoordsForFrame(0))
+    end
+    
+    local logoutAllowed = GetCommanderLogoutAllowed()
+    self.background:SetIsVisible(logoutAllowed)
+    if self.smokeyBackground then
+        self.smokeyBackground:SetIsVisible(logoutAllowed)
     end
     
 end

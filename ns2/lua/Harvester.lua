@@ -20,6 +20,7 @@ Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/BiomassMixin.lua")
 
 class 'Harvester' (ResourceTower)
 Harvester.kMapName = "harvester"
@@ -52,6 +53,7 @@ function Harvester:OnCreate()
     InitMixin(self, UmbraMixin)
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
+    InitMixin(self, BiomassMixin)
     
     if Server then
         InitMixin(self, InfestationTrackerMixin)
@@ -83,6 +85,10 @@ function Harvester:OnInitialized()
         
     end
 
+end
+
+function Harvester:GetBioMassLevel()
+    return kHarvesterBiomass
 end
 
 function Harvester:GetMaturityRate()

@@ -34,6 +34,8 @@ Player.screenEffects.disorient = Client.CreateScreenEffect("shaders/Disorient.sc
 Player.screenEffects.disorient:SetActive(false)
 Player.screenEffects.celerityFX = Client.CreateScreenEffect("shaders/Celerity.screenfx")
 Player.screenEffects.celerityFX:SetActive(false)
+Player.screenEffects.shadowStepFX = Client.CreateScreenEffect("shaders/ShadowStep.screenfx")
+Player.screenEffects.shadowStepFX:SetActive(false)
 Player.screenEffects.spectatorTint = Client.CreateScreenEffect("shaders/SpectatorTint.screenfx")
 Player.screenEffects.spectatorTint:SetActive(false)
 
@@ -128,6 +130,32 @@ function PlayerUI_GetWorldMessages()
     end
     
     return messageTable
+
+end
+
+function PlayerUI_GetCanEarnResources()
+
+    local player = Client.GetLocalPlayer()
+    if player then
+        return not player.blockPersonalResources
+    end
+
+    return false
+
+end
+
+function PlayerUI_GetNoResourceGainTimer()
+
+    local player = Client.GetLocalPlayer()
+    if player then
+    
+        if player.timeUntilResourceBlock then        
+            return math.max(0, player.timeUntilResourceBlock - Shared.GetTime())        
+        end
+    
+    end
+    
+    return 0
 
 end
 
@@ -299,7 +327,7 @@ function PlayerUI_GetOrderPath()
             local pheromone = GetMostRelevantPheromone(playerOrigin)
             if pheromone then
             
-                local points = { }
+                local points = PointArray()
                 local isReachable = Pathing.GetPathPoints(playerOrigin, pheromone:GetOrigin(), points)
                 if isReachable then
                     return points
@@ -313,7 +341,7 @@ function PlayerUI_GetOrderPath()
             if currentOrder then
             
                 local targetLocation = currentOrder:GetLocation()
-                local points = { }
+                local points = PointArray()
                 local isReachable = Pathing.GetPathPoints(player:GetOrigin(), targetLocation, points)
                 if isReachable then
                     return points
@@ -362,8 +390,8 @@ function PlayerUI_GetBuyMenuDisplaying()
     
 end
 
-local function LocalIsFriendlyMarineComm(player, unit)
-    return player:isa("MarineCommander") and unit:isa("Player")
+local function LocalIsFriendlyCommander(player, unit)
+    return player:isa("Commander") and unit:isa("Player")
 end
 
 local kUnitStatusDisplayRange = 13
@@ -414,6 +442,7 @@ function PlayerUI_GetUnitStatusInfo()
                     local description = unit:GetUnitName(player)
                     local action = unit:GetActionName(player)
                     local hint = unit:GetUnitHint(player)
+                    local distance = (origin - eyePos):GetLength()
                     
                     local healthBarOrigin = origin + kDefaultHealthOffset
                     local getHealthbarOffset = unit.GetHealthbarOffset
@@ -426,7 +455,10 @@ function PlayerUI_GetUnitStatusInfo()
                     healthBarOrigin = Client.WorldToScreen(healthBarOrigin)
                     
                     if unit == crossHairTarget then
+                    
                         healthBarOrigin.y = math.max(GUIScale(180), healthBarOrigin.y)
+                        healthBarOrigin.x = Clamp(healthBarOrigin.x, GUIScale(320), Client.GetScreenWidth() - GUIScale(320))
+                        
                     end
 
                     local health = 0
@@ -463,6 +495,11 @@ function PlayerUI_GetUnitStatusInfo()
                         badge = unit:GetBadgeIcon() or ""
                     end
                     
+                    local hasWelder = false 
+                    if distance < 10 then    
+                        hasWelder = unit:GetHasWelder(player)
+                    end
+                    
                     local unitState = {
                         
                         Position = origin,
@@ -475,11 +512,12 @@ function PlayerUI_GetUnitStatusInfo()
                         StatusFraction = statusFraction,
                         HealthFraction = health,
                         ArmorFraction = armor,
-                        IsCrossHairTarget = (unit == crossHairTarget and visibleToPlayer) or LocalIsFriendlyMarineComm(player, unit),
+                        IsCrossHairTarget = (unit == crossHairTarget and visibleToPlayer) or LocalIsFriendlyCommander(player, unit),
                         TeamType = kNeutralTeamType,
                         ForceName = unit:isa("Player") and not GetAreEnemies(player, unit),
                         OnScreen = onScreen,
-                        BadgeTexture = badge
+                        BadgeTexture = badge,
+                        HasWelder = hasWelder
                     
                     }
                     
@@ -649,6 +687,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
     local nextWPDist = nextWPDir:GetLength()
     local nextWPMaxDist = 25
     local nextWPScale = isCommander and 0.3 or math.max(0.5, 1 - (nextWPDist / nextWPMaxDist))
+
     
     if isCommander then
         nextWPDist = 0
@@ -659,7 +698,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
         player.nextWPInScreenSpace = true
         player.nextWPDoingTrans = false
         player.nextWPLastVal = { x = 0, y = 0, scale = 0, dist = 0, id = 0 }
-        
+
         player.nextWPCurrWP = Vector(orderWayPoint)
         
     end
@@ -725,8 +764,9 @@ function PlayerUI_GetFinalWaypointInScreenspace()
     
         local replaceTable = { }
         local allEqual = true
+
         for name, field in pairs(returnTable) do
-        
+
             if kAnimateFields[name] then
             
                 replaceTable[name] = Slerp(player.nextWPLastVal[name], returnTable[name], 50)
@@ -745,7 +785,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
         returnTable = replaceTable
         
     end
-    
+
     for name, field in pairs(returnTable) do
         player.nextWPLastVal[name] = field
     end
@@ -791,10 +831,10 @@ function PlayerUI_GetCrosshairY()
                 index = 3
             elseif mapname == Minigun.kMapName then
                 index = 4
-            elseif mapname == Flamethrower.kMapName then
+            elseif mapname == Flamethrower.kMapName or mapname == GrenadeLauncher.kMapName then
                 index = 5
             // All alien crosshairs are the same for now
-            elseif mapname == LerkBite.kMapName or mapname == Spores.kMapName or mapname == LerkUmbra.kMapName or mapname == Parasite.kMapName then
+            elseif mapname == LerkBite.kMapName or mapname == Spores.kMapName or mapname == LerkUmbra.kMapName or mapname == Parasite.kMapName or mapname == Vortex.kMapName then
                 index = 6
             elseif mapname == SpitSpray.kMapName or mapname == BabblerAbility.kMapName then
                 index = 7
@@ -1025,7 +1065,10 @@ function PlayerUI_GetTooltipDataFromTechId(techId, hotkeyIndex)
         end
         
         tooltipData.hotKey = tooltipData.hotKey or ""
-    
+        tooltipData.supply = LookupTechData(techId, kTechDataSupply, 0)
+        
+        tooltipData.biomass = LookupTechData(techId, kTechDataBioMass, 0)
+
         return tooltipData
     
     end
@@ -1863,6 +1906,20 @@ function Player:UpdateScreenEffects(deltaTime)
     // Play disorient screen effect to show we're near a shade
     self:UpdateDisorientFX()
     
+    self:UpdateShadowStepFX()
+    
+end
+
+function Player:UpdateShadowStepFX()
+
+    local shadowStepAmount = 0
+    if self.timeShadowStep then
+        shadowStepAmount = 1 - Clamp((Shared.GetTime() - self.timeShadowStep) / 0.4, 0, 1)
+    end    
+        
+    Player.screenEffects.shadowStepFX:SetParameter("amount", shadowStepAmount)
+    Player.screenEffects.shadowStepFX:SetActive(shadowStepAmount > 0)
+
 end
 
 function Player:GetDrawWorld(isLocal)
@@ -1989,7 +2046,7 @@ function Player:UpdateCommanderPingSound()
                 pingSound = kAlienPingSound
             end    
          
-            StartSoundEffect(pingSound)
+            Shared.PlaySound(nil, pingSound)
             
         end
         
@@ -2131,7 +2188,7 @@ function Player:OnInitLocalClient()
     self.damageIndicators = { }
     
     // Set commander geometry visible
-    SetLocalPlayerIsOverhead(false)
+    Client.SetGroupIsVisible(kCommanderInvisibleGroupName, true)
     
     local loopingIdleSound = self:GetIdleSoundName()
     if loopingIdleSound then
@@ -2594,7 +2651,7 @@ function Player:OnCountDownEnd()
         
     end
     
-    Client.PlayMusic("sound/NS2.fev/round_start")
+    Client.PlayMusic("round_start")
     
 end
 
@@ -2803,7 +2860,7 @@ function PlayerUI_GetRecentPurchaseable()
 end
 
 // returns 0 - 3
-function PlayerUI_GetArmorLevel()
+function PlayerUI_GetArmorLevel(researched)
     local armorLevel = 0
     
     if Client.GetLocalPlayer().gameStarted then
@@ -2815,13 +2872,27 @@ function PlayerUI_GetArmorLevel()
             local armor3Node = techTree:GetTechNode(kTechId.Armor3)
             local armor2Node = techTree:GetTechNode(kTechId.Armor2)
             local armor1Node = techTree:GetTechNode(kTechId.Armor1)
+            
+            if researched then
         
-            if armor3Node and armor3Node:GetResearched() then
-                armorLevel = 3
-            elseif armor2Node and armor2Node:GetResearched()  then
-                armorLevel = 2
-            elseif armor1Node and armor1Node:GetResearched()  then
-                armorLevel = 1
+                if armor3Node and armor3Node:GetResearched() then
+                    armorLevel = 3
+                elseif armor2Node and armor2Node:GetResearched()  then
+                    armorLevel = 2
+                elseif armor1Node and armor1Node:GetResearched()  then
+                    armorLevel = 1
+                end
+            
+            else
+            
+                if armor3Node and armor3Node:GetHasTech() then
+                    armorLevel = 3
+                elseif armor2Node and armor2Node:GetHasTech()  then
+                    armorLevel = 2
+                elseif armor1Node and armor1Node:GetHasTech()  then
+                    armorLevel = 1
+                end
+            
             end
             
         end
@@ -2831,7 +2902,7 @@ function PlayerUI_GetArmorLevel()
     return armorLevel
 end
 
-function PlayerUI_GetWeaponLevel()
+function PlayerUI_GetWeaponLevel(researched)
     local weaponLevel = 0
     
     if Client.GetLocalPlayer().gameStarted then
@@ -2844,12 +2915,26 @@ function PlayerUI_GetWeaponLevel()
             local weapon2Node = techTree:GetTechNode(kTechId.Weapons2)
             local weapon1Node = techTree:GetTechNode(kTechId.Weapons1)
         
-            if weapon3Node and weapon3Node:GetResearched() then
-                weaponLevel = 3
-            elseif weapon2Node and weapon2Node:GetResearched()  then
-                weaponLevel = 2
-            elseif weapon1Node and weapon1Node:GetResearched()  then
-                weaponLevel = 1
+            if researched then
+        
+                if weapon3Node and weapon3Node:GetResearched() then
+                    weaponLevel = 3
+                elseif weapon2Node and weapon2Node:GetResearched()  then
+                    weaponLevel = 2
+                elseif weapon1Node and weapon1Node:GetResearched()  then
+                    weaponLevel = 1
+                end
+            
+            else
+            
+                if weapon3Node and weapon3Node:GetHasTech() then
+                    weaponLevel = 3
+                elseif weapon2Node and weapon2Node:GetHasTech()  then
+                    weaponLevel = 2
+                elseif weapon1Node and weapon1Node:GetHasTech()  then
+                    weaponLevel = 1
+                end
+                
             end
             
         end  
@@ -2857,6 +2942,38 @@ function PlayerUI_GetWeaponLevel()
     end
     
     return weaponLevel
+end
+
+function PlayerUI_GetHasWelder()
+
+    local player = Client.GetLocalPlayer()
+    if player then    
+        return player:GetWeapon(Welder.kMapName) ~= nil    
+    end
+    
+    return false
+
+end
+
+function PlayerUI_GetNanoArmorResearched()
+
+    if Client.GetLocalPlayer().gameStarted then
+    
+        local techTree = GetTechTree()
+    
+        if techTree then  
+        
+            local nanoArmorNode = techTree:GetTechNode(kTechId.NanoArmor)
+            if nanoArmorNode then
+                return nanoArmorNode:GetResearched()
+            end
+        
+        end
+        
+    end
+
+    return false    
+
 end
 
 // Draw the current location on the HUD ("Marine Start", "Processing", etc.)
@@ -2986,6 +3103,40 @@ function PlayerUI_IsACommander()
     
     return false
     
+end
+
+function MarineUI_GetIsWeaponAffectedByUpgrades()
+
+    local player = Client.GetLocalPlayer()
+    if player ~= nil then
+    
+        local weapon = player:GetActiveWeapon()
+        if weapon and weapon.GetIsAffectedByWeaponUpgrades and weapon:GetIsAffectedByWeaponUpgrades() then
+            return true
+        end    
+    
+    end
+    
+    return false
+
+end
+
+function MarineUI_GetWeaponUpgradeTechId()
+
+    local specialTechId = kTechId.None
+    
+    local player = Client.GetLocalPlayer()
+    if player ~= nil then
+    
+        local weapon = player:GetActiveWeapon()
+        if weapon and weapon.GetUpgradeTechId then
+            specialTechId = weapon:GetUpgradeTechId()
+        end
+    
+    end
+    
+    return specialTechId
+
 end
 
 function PlayerUI_IsASpectator()
@@ -3548,47 +3699,10 @@ function Player:SetHotgroup(number, entityList)
     
 end
 
-local function OnJumpLandClient(self)
-
-    if not Shared.GetIsRunningPrediction() then
-    
-        local landSurface = GetSurfaceAndNormalUnderEntity(self)
-        self:TriggerEffects("land", { surface = landSurface, enemy = GetAreEnemies(self, Client.GetLocalPlayer()) })
-        
-    end
-    
-end
-
-function Player:OnJumpLandLocalClient()
-    OnJumpLandClient(self)
-end
-
-function Player:OnJumpLandNonLocalClient()
-    OnJumpLandClient(self)
-end
-
-// Call OnJumpLandNonLocalClient for other players to avoid network traffic
-function Player:CheckClientJumpLandOnSynch()
-
-    if not self:GetIsLocalPlayer() then
-    
-        if self.clientOnSurface == false and self:GetIsOnSurface() then
-            self:OnJumpLandNonLocalClient()
-        end
-        
-        self.clientOnSurface = self:GetIsOnSurface()
-        
-    end
-    
-end
-
-
 function Player:OnPreUpdate()
 
     PROFILE("Player:OnPreUpdate")
 
-    self:CheckClientJumpLandOnSynch()
-    
     if self.locationId ~= self.lastLocationId then
     
         self:OnLocationChange(Shared.GetString(self.locationId))
