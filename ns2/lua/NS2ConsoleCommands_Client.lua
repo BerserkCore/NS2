@@ -135,7 +135,7 @@ end
 local function OnConsoleMusic(name)
 
     if Shared.GetCheatsEnabled() then
-        Client.PlayMusic(name)
+        Client.PlayMusic("sound/NS2.fev/" .. name)
     end
     
 end

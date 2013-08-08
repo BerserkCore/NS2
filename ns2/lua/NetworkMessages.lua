@@ -531,18 +531,19 @@ end
 
 local kCommTargetedAction = 
 {
-    techId              = "enum kTechId",
+    techId = "enum kTechId",
     
     // normalized pick coords for CommTargetedAction
     // or world coords for kCommTargetedAction
-    x                   = "float",
-    y                   = "float",
-    z                   = "float",
+    x = "float",
+    y = "float",
+    z = "float",
     
-    orientationRadians  = "angle (11 bits)"
+    orientationRadians  = "angle (11 bits)",
+    targetId = "entityid"
 }
 
-function BuildCommTargetedActionMessage(techId, x, y, z, orientationRadians)
+function BuildCommTargetedActionMessage(techId, x, y, z, orientationRadians, targetId)
 
     local t = {}
     
@@ -551,13 +552,14 @@ function BuildCommTargetedActionMessage(techId, x, y, z, orientationRadians)
     t.y = y
     t.z = z
     t.orientationRadians = orientationRadians
+    t.targetId = targetId
     
     return t
     
 end
 
 function ParseCommTargetedActionMessage(t)
-    return t.techId, Vector(t.x, t.y, t.z), t.orientationRadians
+    return t.techId, Vector(t.x, t.y, t.z), t.orientationRadians, t.targetId
 end
 
 local kGorgeBuildStructureMessage = 

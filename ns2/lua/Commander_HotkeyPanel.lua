@@ -68,9 +68,25 @@ end
  */
 function CommanderUI_SelectHotkey(idx)
 
-    // The server won't know about this selection, we need to manually tell it.
-    Client.GetLocalPlayer():SendSelectHotkeyGroupMessage(idx)
-    Client.GetLocalPlayer():SelectHotkeyGroup(idx)
+    local commander = Client.GetLocalPlayer()
+
+    if commander and commander:isa("Commander") then
+
+        local selected, hotgroup = commander:GetHotGroupSelected(idx)        
+        if selected then
+        
+            local position = hotgroup[1]:GetOrigin()
+            commander:SetWorldScrollPosition(position.x, position.z)
+            
+        else
+
+            // The server won't know about this selection, we need to manually tell it.
+            commander:SendSelectHotkeyGroupMessage(idx)
+            commander:SelectHotkeyGroup(idx)
+        
+        end
+    
+    end
     
 end
 

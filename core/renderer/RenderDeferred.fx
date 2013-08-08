@@ -50,23 +50,24 @@ float4x4	currentToPrevViewMatrix;
 
 texture     lightingTexture;
 
-float3      vsLightDirection;    // Only for spot and directional lights
-float3      vsLightPosition;     // Only for spot light.
+float3      vsLightDirection;           // Only for spot and directional lights
+float3      vsLightPosition;            // Only for spot light.
 
-float       innerCone;           // Only for spot lights.
-float       outerCone;           // Only for spot lights.
+float       innerCone;                  // Only for spot lights.
+float       outerCone;                  // Only for spot lights.
+float       invConeDifference;          // Only for spot lights (= 1 / (innerCone - outerCone))
 
-float3      lightColor;
+float4      lightColor;                 // (a component is arbitrary)
 float		lightRadius;
 texture     lightGoboTexture;
 float4x4	viewToGoboMatrix;
 
-float3      alvColorRight;          // Only for ambient volume lights.
-float3      alvColorLeft;           // Only for ambient volume lights.
-float3      alvColorUp;             // Only for ambient volume lights.
-float3      alvColorDown;           // Only for ambient volume lights.
-float3      alvColorForward;        // Only for ambient volume lights.
-float3      alvColorBackward;       // Only for ambient volume lights.
+float4      alvColorRight;          // Only for ambient volume lights.
+float4      alvColorLeft;           // Only for ambient volume lights.
+float4      alvColorUp;             // Only for ambient volume lights.
+float4      alvColorDown;           // Only for ambient volume lights.
+float4      alvColorForward;        // Only for ambient volume lights.
+float4      alvColorBackward;       // Only for ambient volume lights.
 float4x4    viewToLightMatrix;
 				   
 float       fogDepthScale;          // scale value for fog control.
@@ -77,7 +78,7 @@ float		fadeOutDistance;
 texture     shadowMap1;             // Shadow map containing static elements
 texture     shadowMap2;             // Shadow map containing dynamic elements
 float4x4    viewToShadowMatrix;
-float4x4    viewToNoiseMatrix;
+float4      shadowNoiseScale;
 float       shadowFade;             // Use to smoothly fade out shadows. 0 if the shadows are completely faded out.
 
 bool        enableStencil;          // Whether or not the stencil buffer should be used when drawing light passes.
@@ -196,7 +197,7 @@ float4 LightVolumeVS(VS_LightVolume_INPUT input) : POSITION
  * Gets the perctage of shadow.
  *   smPosition - The point projected into the shadow map homogenous coordinates
  */
-half GetShadow(uniform bool depthReadTest, half4 smPosition, half4 nmPosition)
+half GetShadow(uniform bool depthReadTest, half4 smPosition)
 {
 
     half radius = 0.0006;
@@ -205,6 +206,8 @@ half GetShadow(uniform bool depthReadTest, half4 smPosition, half4 nmPosition)
 	{
 		radius *= smPosition.w;
 	}
+    
+    half4 nmPosition = smPosition * shadowNoiseScale;
 	
     half4 noise = tex2Dproj(noiseTextureSampler, nmPosition) * radius;
 
@@ -221,38 +224,31 @@ half GetShadow(uniform bool depthReadTest, half4 smPosition, half4 nmPosition)
         };
 
 	int numSamples = 7;
-
-    half shadow = 0.0;
+    half shadow;
     
 	if (depthReadTest)
 	{
-
+        shadow = numSamples;
 		for (int i = 0; i < numSamples; ++i)
 		{
 			half4 texCoord = smPosition + half4(sampleOffset[i], 0, 0);
-			shadow += 1 - min( tex2Dproj(shadowMap1SamplerLinear, texCoord).r,
-                               tex2Dproj(shadowMap2SamplerLinear, texCoord).r );
+			shadow -= min( tex2Dproj(shadowMap1SamplerLinear, texCoord).r,
+                           tex2Dproj(shadowMap2SamplerLinear, texCoord).r );
 		}
-
 	}
 	else
 	{
-		
+        shadow = 0;
 		smPosition /= smPosition.w;
-
 		for (int i = 0; i < numSamples; ++i)
 		{
-		
 			half2 texCoord = smPosition.xy + sampleOffset[i];
-			
 			if (min(tex2D(shadowMap1SamplerPoint, texCoord).r,
 					tex2D(shadowMap2SamplerPoint, texCoord).r) < smPosition.z)
 			{
 				shadow += 1.0;
 			}
-
 		}
-
 	}
     
     return shadow / numSamples;
@@ -263,7 +259,7 @@ half GetShadow(uniform bool depthReadTest, half4 smPosition, half4 nmPosition)
  * Gets the perctage of shadow.
  *   smPosition - The point projected into the shadow map homogenous coordinates
  */
-half GetShadowFast(uniform bool depthReadTest, half4 smPosition, half4 nmPosition)
+half GetShadowFast(uniform bool depthReadTest, half4 smPosition)
 {
 
     half radius = 0.003;
@@ -273,6 +269,7 @@ half GetShadowFast(uniform bool depthReadTest, half4 smPosition, half4 nmPositio
 		radius *= smPosition.w;
 	}
 	
+    half4 nmPosition = smPosition * shadowNoiseScale;
     half4 noise = tex2Dproj(noiseTextureSampler, nmPosition);
 
     half2 sampleOffset[] =
@@ -288,37 +285,29 @@ half GetShadowFast(uniform bool depthReadTest, half4 smPosition, half4 nmPositio
         };
 
 	int numSamples = 1;
-
-    half shadow = 0.0;
+    half shadow = numSamples;
     
 	if (depthReadTest)
 	{
-
 		for (int i = 0; i < numSamples; ++i)
 		{
 			half4 texCoord = smPosition + half4(sampleOffset[i], 0, 0);
-			shadow += 1 - min( tex2Dproj(shadowMap1SamplerLinear, texCoord).r, tex2Dproj(shadowMap2SamplerLinear, texCoord).r );
+			shadow -= min( tex2Dproj(shadowMap1SamplerLinear, texCoord).r, 
+                           tex2Dproj(shadowMap2SamplerLinear, texCoord).r );
 		}
-
 	}
 	else
 	{
-		
 		smPosition /= smPosition.w;
-
 		for (int i = 0; i < numSamples; ++i)
 		{
-		
 			half2 texCoord = smPosition.xy + sampleOffset[i];
-			
 			if (min(tex2D(shadowMap1SamplerPoint, texCoord).r,
 					tex2D(shadowMap2SamplerPoint, texCoord).r) < smPosition.z)
 			{
-				shadow += 1.0;
+				shadow -= 1.0;
 			}
-
 		}
-
 	}
     
     return shadow / numSamples;
@@ -409,19 +398,22 @@ half GetSingleShadowFast(half4 smPosition)
  *      albedo    - surface color
  *      specular  - specular reflection color
  *      shininess - specular exponent
+ *
+ * Note, radiance, albedo and specular are compute as 4 component for
+ * efficiency, even though the alpha has no significance.
  */
-half3 BlinnPhong(half3 radiance, half3 n, half3 l, half3 v, half3 albedo, half3 specular, half shininess)
+half4 BlinnPhong(half4 radiance, half3 n, half3 l, half3 v, half4 albedo, half4 specular, half shininess)
 {
 	half  d = saturate(dot(n, l));
 	half3 h = normalize(l + v);
-	half3 s = pow(saturate(dot(n, h)), shininess) * specular;
+	half4 s = pow(saturate(dot(n, h)), shininess) * specular;
 	return (d * albedo + s) * radiance;
 }
 
 /**
  * Diffuse only shading.
  */
-half3 Diffuse(half3 radiance, half3 n, half3 l, half3 v, half3 albedo)
+half4 Diffuse(half4 radiance, half3 n, half3 l, half3 v, half4 albedo)
 {
 	half d = saturate(dot(n, l));
 	return d * albedo * radiance;
@@ -447,7 +439,7 @@ half GetDistanceAttenuation(half distance)
 half4 AmbientLightPS(PS_DeferredPass_Input input) : COLOR0
 {
 	half4 albedo = tex2D( albedoTextureSampler, input.texCoord );
-    return half4(albedo.rgb * lightColor, 1);
+    return albedo * lightColor;
 }
 
 /**
@@ -458,19 +450,18 @@ half4 SpotLightPS(uniform bool useConeAttenuation, uniform bool shadows, uniform
 
 	half4 albedo 		= tex2D( albedoTextureSampler, input.texCoord );
 	half3 vsNormal   	= GetNormal( input.texCoord  );
-	half3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
+	half3 vsPosition    = GetPosition( input.texCoord, input.projected );
 	
 	half shadow = 1;
 	
 	if (shadows)
 	{
 		half4 smPosition = mul(half4(vsPosition, 1), viewToShadowMatrix);
-		half4 nmPosition = mul(half4(vsPosition, 1), viewToNoiseMatrix);
-		shadow = (1 - GetShadow(depthReadTest, smPosition, nmPosition) * shadowFade);
+		shadow = (1 - GetShadow(depthReadTest, smPosition) * shadowFade);
 	}
     
     // Compute the normalized view direction.
-    half3 v = -normalize(vsPosition);
+    half3 v = normalize(-vsPosition);
         
     // Compute the lighting.
     
@@ -481,26 +472,26 @@ half4 SpotLightPS(uniform bool useConeAttenuation, uniform bool shadows, uniform
     half attenuation = GetDistanceAttenuation(d);
 	if (useConeAttenuation)
 	{
-		attenuation *= saturate((dot(l, vsLightDirection) - outerCone ) / (innerCone - outerCone));
+		attenuation *= saturate((dot(l, vsLightDirection) - outerCone ) * invConeDifference);
 	}
 	
-    half3 radiance = lightColor * attenuation * shadow;
+    half4 radiance = lightColor * attenuation * shadow;
 
 	if (gobo)
 	{
 		float3 lsLightDir = mul(float4(l, 0.0), viewToGoboMatrix);
 		float2 goboTexCoord = (lsLightDir.xy / lsLightDir.z) * 0.5 + 0.5;
-		radiance *= tex2D( lightGoboTextureSampler, goboTexCoord ).rgb;
+		radiance *= tex2D( lightGoboTextureSampler, goboTexCoord );
 	}
 
 	if (specular)
 	{
 		half4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
-		return half4( BlinnPhong(radiance, vsNormal, l, v, albedo.rgb, specularGloss.rgb, specularGloss.a * 256), 1 );
+		return BlinnPhong(radiance, vsNormal, l, v, albedo, specularGloss, specularGloss.a * 256);
 	}
 	else
 	{
-		return half4( Diffuse(radiance, vsNormal, l, v, albedo.rgb), 1 );
+		return Diffuse(radiance, vsNormal, l, v, albedo);
 	}
 	
 }
@@ -511,17 +502,17 @@ half4 SpotLightPS(uniform bool useConeAttenuation, uniform bool shadows, uniform
 half4 SkyLightPS(PS_DeferredPass_Input input) : COLOR0
 {
 
-	half4 albedo 		 = tex2D( albedoTextureSampler, input.texCoord );
+	half4 albedo        = tex2D( albedoTextureSampler, input.texCoord );
 	half4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
-	half3 vsNormal   	 = GetNormal( input.texCoord  );
-	half3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
+	half3 vsNormal      = GetNormal( input.texCoord  );
+	half3 vsPosition    = GetPosition( input.texCoord, input.projected );
     
     // Compute the normalized view direction.
-    half3 v = -normalize(vsPosition);
+    half3 v = normalize(-vsPosition);
         
     // Compute the lighting.
-    half3 radiance = lightColor;
-    return half4( BlinnPhong(radiance, vsNormal, vsLightDirection, v, albedo.rgb, specularGloss.rgb, specularGloss.a * 256), 1 );
+    half4 radiance = lightColor;
+    return BlinnPhong(radiance, vsNormal, vsLightDirection, v, albedo, specularGloss, specularGloss.a * 256);
 
 }
 
@@ -538,10 +529,10 @@ half4 PointLightPS(PS_DeferredPass_Input input) : COLOR0
 
 	half4 albedo		= tex2D( albedoTextureSampler, input.texCoord );
 	half3 vsNormal   	= GetNormal( input.texCoord  );
-	half3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
+	half3 vsPosition    = GetPosition( input.texCoord, input.projected );
     
     // Compute the normalized view direction.
-    half3 v = -normalize(vsPosition);
+    half3 v = normalize(-vsPosition);
         
     // Compute the lighting.
     
@@ -550,9 +541,9 @@ half4 PointLightPS(PS_DeferredPass_Input input) : COLOR0
     l = l / d;
     
     half attenuation = GetDistanceAttenuation(d);
-    half3 radiance = lightColor * attenuation;
+    half4 radiance = lightColor * attenuation;
 	
-	return half4( Diffuse(radiance, vsNormal, l, v, albedo.rgb), 1 );
+	return Diffuse(radiance, vsNormal, l, v, albedo);
 	
 }
 
@@ -561,10 +552,10 @@ half4 PointLightSpecularPS(PS_DeferredPass_Input input) : COLOR0
 
 	half4 albedo		= tex2D( albedoTextureSampler, input.texCoord );
 	half3 vsNormal   	= GetNormal( input.texCoord  );
-	half3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
+	half3 vsPosition    = GetPosition( input.texCoord, input.projected );
     
     // Compute the normalized view direction.
-    half3 v = -normalize(vsPosition);
+    half3 v = normalize(-vsPosition);
         
     // Compute the lighting.
     
@@ -573,10 +564,10 @@ half4 PointLightSpecularPS(PS_DeferredPass_Input input) : COLOR0
     l = l / d;
     
     half attenuation = GetDistanceAttenuation(d);
-    half3 radiance = lightColor * attenuation;
+    half4 radiance = lightColor * attenuation;
 	
 	half4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
-	return half4( BlinnPhong(radiance, vsNormal, l, v, albedo.rgb, specularGloss.rgb, specularGloss.a * 256), 1 );
+	return BlinnPhong(radiance, vsNormal, l, v, albedo, specularGloss, specularGloss.a * 256);
 	
 }
 
@@ -588,7 +579,7 @@ half4 AmbientVolumeLightPS(PS_DeferredPass_Input input) : COLOR0
 
 	half4 albedo 		 = tex2D( albedoTextureSampler, input.texCoord );
 	half3 vsNormal   	 = GetNormal( input.texCoord );
-    half  lightDistance  = length(vsLightPosition - GetPosition( input.texCoord, input.projected.xy ));
+    half  lightDistance  = length(vsLightPosition - GetPosition( input.texCoord, input.projected ));
     
     float attenuation = saturate(1.0f - (lightDistance / lightRadius));
 	
@@ -597,7 +588,7 @@ half4 AmbientVolumeLightPS(PS_DeferredPass_Input input) : COLOR0
 	half3 pf = saturate( lsNormal);
 	half3 nf = saturate(-lsNormal);
 
-	half3 radiance = pf.x * alvColorLeft
+	half4 radiance = pf.x * alvColorLeft
 	               + nf.x * alvColorRight
 				   + nf.y * alvColorUp
 				   + pf.y * alvColorDown
@@ -605,7 +596,7 @@ half4 AmbientVolumeLightPS(PS_DeferredPass_Input input) : COLOR0
 				   + pf.z * alvColorBackward;
 
     float intensity = lightColor.r * attenuation;
-    return half4( saturate(radiance * intensity * albedo.rgb), 1);
+    return saturate(intensity * (radiance * albedo));
 
 }
 
@@ -641,7 +632,7 @@ half4 MotionBlurPS(PS_DeferredPass_Input input) : COLOR0
 
 	int maxSamples = 32;
 
-	half3 vsPosition = GetPosition( input.texCoord, input.projected.xy );
+	half3 vsPosition = GetPosition( input.texCoord, input.projected );
 
 	// This is a hack to account for the fact that pixels on the sky box will have
 	// 0 depth, since it's not possible to clear the G-buffer to a specific depth
@@ -720,15 +711,14 @@ half4 PointLightScatteringPS(uniform bool shadows, uniform bool depthReadTest, P
 	attenuation *= GetDistanceAttenuation(d);
 	
     half4 smPosition = mul(half4(input.vsPosition, 1), viewToShadowMatrix);
-    half4 nmPosition = mul(half4(input.vsPosition, 1), viewToNoiseMatrix);
     
     half shadow = 1;
 	if (shadows)
 	{	
-		shadow = (1 - GetShadowFast(depthReadTest, smPosition, nmPosition) * shadowFade);
+		shadow = (1 - GetShadowFast(depthReadTest, smPosition) * shadowFade);
 	}
 
-	return half4(lightColor * attenuation * shadow * atmosphereDensity, 0);
+	return (attenuation * shadow * atmosphereDensity) * lightColor;
     
 }
 
@@ -741,11 +731,11 @@ float4 ReflectionsPS(PS_DeferredPass_Input input) : COLOR0
 {
 
 	float3 vsNormal      = GetNormal( input.texCoord );
-	float3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
+	float3 vsPosition    = GetPosition( input.texCoord, input.projected );
 	float4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
     
     // Compute the normalized view direction.
-    float3 vsView = -normalize(vsPosition);	
+    float3 vsView = normalize(-vsPosition);	
 
 	// Compute the reflection direction.
 	float3 vsReflect = reflect(-vsView, vsNormal);
@@ -768,7 +758,7 @@ float4 ReflectionsPS(PS_DeferredPass_Input input) : COLOR0
 	float t  = d + q;
 
 	// Fade out the reflection over the volume of the reflection probe.
-	attenuation = max(1 - l2 / probeRadius2, 0);
+	attenuation = saturate(1 - l2 / probeRadius2);
 
 	// Compute the new reflection direction based on the intersection point
 	// with the sphere.

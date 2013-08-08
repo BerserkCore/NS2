@@ -143,7 +143,7 @@ local function CreateBabblerPheromone(self, player)
     else
     
         local startVelocity = viewCoords.zAxis * 10
-        babblerPheromone:Setup(player, startVelocity, true)
+        babblerPheromone:Setup(player, startVelocity, true, nil, player)
     
     end
 

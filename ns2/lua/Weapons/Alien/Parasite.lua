@@ -24,6 +24,9 @@ Parasite.kActivity = enum { 'None', 'Primary' }
 
 kParasiteHUDSlot = 2
 
+local kParasiteSize = 0.15 // size of parasite blob
+local kParasiteExtents = Vector(kParasiteSize, kParasiteSize, kParasiteSize)
+
 local networkVars =
 {
     blocked = "boolean",
@@ -75,6 +78,7 @@ function Parasite:OnProcessMove(input)
 
 end
 
+
 function Parasite:PerformPrimaryAttack(player)
 
     self.activity = Parasite.kActivity.Primary
@@ -95,7 +99,11 @@ function Parasite:PerformPrimaryAttack(player)
         local viewCoords = player:GetViewAngles():GetCoords()
         local startPoint = player:GetEyePos()
     
+        // double trace; first as a ray to allow us to hit through narrow openings, then as a fat box if the first one misses
         local trace = Shared.TraceRay(startPoint, startPoint + viewCoords.zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
+        if not trace.entity then
+            trace = Shared.TraceBox(kParasiteExtents, startPoint, startPoint + viewCoords.zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
+        end
         
         if trace.fraction < 1 then
         

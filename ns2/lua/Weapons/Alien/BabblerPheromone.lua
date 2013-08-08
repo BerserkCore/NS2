@@ -122,56 +122,62 @@ if Server then
             end
             
         end
-    
+        
     end
-
+    
     function BabblerPheromone:ProcessHit(entity)
+    
+        if entity and (GetAreEnemies(self, entity) or HasMixin(entity, "BabblerCling")) and HasMixin(entity, "Live") and entity:GetIsAlive() then
         
-        if entity and (GetAreEnemies(self, entity) or HasMixin(entity, "BabblerCling")) and HasMixin(entity, "Live") and entity:GetIsAlive() and entity:GetCanTakeDamage() then
-        
+            -- Ensure the impact flag is set even if the entity can't take damage.
+            -- Otherwise there will be errors when attacking a Vortexed Marine for example.
             self.impact = true
-            self.destinationEntityId = entity:GetId()
-            self:SetModel(nil)     
-            self:TriggerEffects("babbler_pheromone_puff")
-            self.triggeredPuff = true
-
-            for _, babbler in ipairs(GetEntitiesForTeamWithinRange("Babbler", self:GetTeamNumber(), self:GetOrigin(), kBabblerSearchRange )) do
+            if entity:GetCanTakeDamage() then
             
-                if babbler:GetOwner() == self:GetOwner() then
+                self.destinationEntityId = entity:GetId()
+                self:SetModel(nil)
+                self:TriggerEffects("babbler_pheromone_puff")
+                self.triggeredPuff = true
+                
+                for _, babbler in ipairs(GetEntitiesForTeamWithinRange("Babbler", self:GetTeamNumber(), self:GetOrigin(), kBabblerSearchRange )) do
+                
+                    if babbler:GetOwner() == self:GetOwner() then
                     
-                    // adjust babblers move type
-                    local moveType = kBabblerMoveType.Move
-                    local position = self:GetOrigin()
-                    local giveOrder = true
-
-                    if GetAreFriends(self, entity) and HasMixin(entity, "BabblerCling") then
-                        moveType = kBabblerMoveType.Cling
-                    elseif GetAreEnemies(self, entity) and HasMixin(entity, "Live") and entity:GetIsAlive() and entity:GetCanTakeDamage() then
-                        moveType = kBabblerMoveType.Attack
-                    end
-                    
-                    position = HasMixin(entity, "Target") and entity:GetEngagementPoint() or entity:GetOrigin()                    
-
-                    if giveOrder then
-                    
-                        if babbler:GetIsClinged() then
-                            babbler:Detach()
+                        // Adjust babblers move type.
+                        local moveType = kBabblerMoveType.Move
+                        local position = self:GetOrigin()
+                        local giveOrder = true
+                        
+                        if GetAreFriends(self, entity) and HasMixin(entity, "BabblerCling") then
+                            moveType = kBabblerMoveType.Cling
+                        elseif GetAreEnemies(self, entity) and HasMixin(entity, "Live") and entity:GetIsAlive() and entity:GetCanTakeDamage() then
+                            moveType = kBabblerMoveType.Attack
                         end
                         
-                        babbler:SetMoveType(moveType, entity, position, true)
-
+                        position = HasMixin(entity, "Target") and entity:GetEngagementPoint() or entity:GetOrigin()
+                        
+                        if giveOrder then
+                        
+                            if babbler:GetIsClinged() then
+                                babbler:Detach()
+                            end
+                            
+                            babbler:SetMoveType(moveType, entity, position, true)
+                            
+                        end
+                        
                     end
-
-                end
                     
+                end
+                
+                DestroyEntity(self)
+                
             end
             
-            DestroyEntity(self)
-
-        end   
+        end
         
     end
-
+    
     function BabblerPheromone:OnEntityChange(oldId)
 
         if oldId == self.destinationEntityId then

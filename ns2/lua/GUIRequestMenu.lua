@@ -35,8 +35,14 @@ local function GetIsRequestMenuKey(key)
 end
 
 local gTimeLastMessageSend = 0
-local function GetCanSendRequest()
-    return gTimeLastMessageSend + 2 < Shared.GetTime()
+local function GetCanSendRequest(id)
+
+    local player = Client.GetLocalPlayer()
+    local isAlive = player ~= nil and (not HasMixin(player, "Live") or player:GetIsAlive())
+    local allowWhileDead = id == kVoiceId.VoteConcede or id == kVoiceId.VoteEject
+    
+    return (isAlive or allowWhileDead) and gTimeLastMessageSend + 2 < Shared.GetTime()
+    
 end
 
 local kBackgroundSize = GUIScale(Vector(190, 48, 0))
@@ -175,7 +181,7 @@ end
 
 local function OnEjectCommanderClicked()
 
-    if GetCanSendRequest() then
+    if GetCanSendRequest(kVoiceId.VoteEject) then
 
         Client.SendNetworkMessage("VoiceMessage", BuildVoiceMessage(kVoiceId.VoteEject), true)        
         gTimeLastMessageSend = Shared.GetTime()
@@ -189,7 +195,7 @@ end
 
 local function OnConcedeButtonClicked()
 
-    if GetCanSendRequest() then
+    if GetCanSendRequest(kVoiceId.VoteConcede) then
 
         Client.SendNetworkMessage("VoiceMessage", BuildVoiceMessage(kVoiceId.VoteConcede), true)        
         gTimeLastMessageSend = Shared.GetTime()
@@ -203,7 +209,7 @@ end
 
 local function SendRequest(self, voiceId)
 
-    if GetCanSendRequest() then
+    if GetCanSendRequest(voiceId) then
 
         Client.SendNetworkMessage("VoiceMessage", BuildVoiceMessage(voiceId), true)
         gTimeLastMessageSend = Shared.GetTime()

@@ -13,7 +13,7 @@ class 'GUIDistressBeacon' (GUIScript)
 GUIDistressBeacon.kBeaconTextFontSize = 24
 GUIDistressBeacon.kBeaconTextOffset = Vector(0, -50, 0)
 GUIDistressBeacon.kCommanderBeaconTextOffset = Vector(0, -290, 0)
-GUIDistressBeacon.kTextFontName = "MicrogrammaDBolExt"
+GUIDistressBeacon.kTextFontName = "fonts/MicrogrammaDMedExt_medium.fnt"
 
 function GUIDistressBeacon:Initialize()
 

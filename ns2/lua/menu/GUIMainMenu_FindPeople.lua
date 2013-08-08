@@ -177,9 +177,8 @@ function GUIMainMenu:UpdateFindPeople(deltatime)
     PROFILE("GUIMainMenu:UpdateFindPeople")
 
     local window  = self.findPeopleWindow
-    local visible = window:GetIsVisible()
 
-    if visible then
+    if window and window:GetIsVisible() then
 
         if window.state == kState.WaitingPlayer then
 
@@ -215,7 +214,7 @@ function GUIMainMenu:UpdateFindPeople(deltatime)
 
         end
 
-    elseif window.tryRegister == true then
+    elseif window and window.tryRegister == true then
         local params = {
             steamID = "" .. Client.GetSteamId()
         }

@@ -120,7 +120,9 @@ local function SharedUpdate(self, deltaTime)
             self.isCorroded = false   
         end
         
-        CheckTunnelCorrode(self)
+        if not GetIsVortexed(self) then
+            CheckTunnelCorrode(self)
+        end
         
     elseif Client then
         UpdateCorrodeMaterial(self)

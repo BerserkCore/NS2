@@ -192,7 +192,7 @@ local function ShootGrenade(self, player)
         angles.pitch = GetPitchFromVector(grenadeDirection)
         grenade:SetAngles(angles)
         
-        grenade:Setup(player, startVelocity, true)
+        grenade:Setup(player, startVelocity, true, nil, player)
         
         self.lastFiredGrenadeId = grenade:GetId()
         

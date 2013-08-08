@@ -15,6 +15,7 @@ Script.Load("lua/TechMixin.lua")
 Script.Load("lua/TargetMixin.lua")
 Script.Load("lua/UsableMixin.lua")
 Script.Load("lua/EffectsMixin.lua")
+Script.Load("lua/RelevancyMixin.lua")
 
 if Server then
     Script.Load("lua/InvalidOriginMixin.lua")
@@ -68,6 +69,7 @@ function ScriptActor:OnCreate()
         self.locationEntId = Entity.invalidId
         
         InitMixin(self, InvalidOriginMixin)
+        InitMixin(self, RelevancyMixin)
         
         // Ownership only exists on the Server.
         InitMixin(self, OwnerMixin)

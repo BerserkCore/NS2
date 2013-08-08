@@ -21,7 +21,9 @@ function InvalidOriginMixin:OnInvalidOrigin()
 
     Print("Warning: A " .. self:GetClassName() .. " went out of bounds, destroying...")
     
-    if HasMixin(self, "Live") then
+    if self:isa("Spectator") then
+        self:SetOrigin(Vector(0,0,0))
+    elseif HasMixin(self, "Live") then
         self:Kill()
     else
         DestroyEntity(self)

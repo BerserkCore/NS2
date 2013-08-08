@@ -173,18 +173,18 @@ end
 function ServerSponitor:OnServerPerfResponse(response)
 
     local data, pos, err = json.decode(response)
-
+    
     if err then
-        DebugPrint("Could not parse server perf response. Error: "..ToString(err)..". Response: "..response)
+        Shared.Message("Could not parse server perf response. Error: " .. ToString(err) .. ". Response: " .. response)
     else
-
+    
+        // We don't necessarily expect this, so don't reset to default if it was not provided.
         if IsNumber(data.serverPerfThrottle) then
             self.serverPerfThrottle = data.serverPerfThrottle
-            // We don't necessarily expect this, so don't reset to default if it was not provided
         end
-
+        
     end
-
+    
 end
 
 //----------------------------------------
@@ -352,8 +352,6 @@ end
 //   
 //----------------------------------------
 function ServerSponitor:OnTechEvent(name)
-
-    //DebugPrint("OnTechEvent %s", name)
 
     if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
 

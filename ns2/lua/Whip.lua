@@ -249,6 +249,10 @@ function Whip:OnDestroy()
     
 end
 
+function Whip:GetIsMoveable()
+    return true
+end    
+
 function Whip:GetMaturityRate()
     return kWhipMaturationTime
 end

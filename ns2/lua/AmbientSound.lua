@@ -92,7 +92,15 @@ end
 function AmbientSound:StartPlayingAgain()
 
     if self.playing then
+    
         self.soundEffectInstance:Start()
+        self.triggered = true
+        
+    else
+    
+        self:StartPlaying()
+        self.triggered = true
+        
     end
     
 end

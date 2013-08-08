@@ -56,11 +56,6 @@ function Axe:GetRange()
     return kRange
 end
 
-// Max degrees that weapon can swing left or right
-function Axe:GetSwingAmount()
-    return 10
-end
-
 function Axe:GetShowDamageIndicator()
     return true
 end

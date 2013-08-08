@@ -106,7 +106,7 @@ if Server then
                 local player = client and client:GetControllingPlayer() or nil
                 local name = player and player:GetName() or "Admin"
                 local userId = client and client:GetUserId() or 0
-                Shared.Message("sv - " .. name .. " - " .. userId .. ": " .. fixedCommandName)
+                Shared.Message("sv - " .. name .. " - " .. userId .. ": " ..  ": " .. GetReadableSteamId(userId) .. ": " .. fixedCommandName)
                 return commandFunction(client, ...)
                 
             end

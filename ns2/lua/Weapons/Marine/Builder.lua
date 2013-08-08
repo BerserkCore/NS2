@@ -87,11 +87,6 @@ function Builder:GetHUDSlot()
     return kNoWeaponSlot
 end
 
-// Max degrees that weapon can swing left or right
-function Builder:GetSwingAmount()
-    return 10
-end
-
 function Builder:GetSprintAllowed()
     return false
 end

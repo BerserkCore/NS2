@@ -10,6 +10,10 @@
 
 Script.Load("lua/ConfigFileUtility.lua")
 
+function GetReadableSteamId(steamIdNumber)
+    return "STEAM_0:" .. (steamIdNumber % 2) .. ":" .. math.floor(steamIdNumber / 2)
+end
+
 local function GetPlayerList()
 
     local playerList = EntityListToTable(Shared.GetEntitiesWithClassname("Player"))
@@ -39,14 +43,12 @@ end
 
 local function GetPlayerMatchingSteamId(steamId)
 
-    assert(type(steamId) == "number")
-    
     local match = nil
     
     local function Matches(player)
     
         local playerClient = Server.GetOwner(player)
-        if playerClient and playerClient:GetUserId() == steamId then
+        if playerClient and playerClient:GetUserId() == tonumber(steamId) or GetReadableSteamId(playerClient:GetUserId()) == steamId then
             match = player
         end
         
@@ -59,8 +61,6 @@ end
 
 local function GetPlayerMatchingName(name)
 
-    assert(type(name) == "string")
-    
     local match = nil
     
     local function Matches(player)
@@ -77,14 +77,7 @@ local function GetPlayerMatchingName(name)
 end
 
 local function GetPlayerMatching(id)
-
-    local idNum = tonumber(id)
-    if idNum then
-        return GetPlayerMatchingSteamId(idNum)
-    elseif type(id) == "string" then
-        return GetPlayerMatchingName(id)
-    end
-    
+    return GetPlayerMatchingSteamId(id) or GetPlayerMatchingName(id)
 end
 
 local function PrintStatus(player, client, index)
@@ -92,7 +85,10 @@ local function PrintStatus(player, client, index)
     local playerClient = Server.GetOwner(player)
     // The player may not have an owner. Ragdoll player entities for example.
     if playerClient then
-        ServerAdminPrint(client, player:GetName() .. " : Steam Id = " .. playerClient:GetUserId())
+    
+        local playerId = playerClient:GetUserId()
+        ServerAdminPrint(client, player:GetName() .. " : Steam Id = " .. playerId .. " : " .. GetReadableSteamId(playerId))
+        
     end
     
 end
@@ -105,7 +101,8 @@ local function PrintStatusIP(player, client, index)
     if playerClient then
     
         local playerAddressString = IPAddressToString(Server.GetClientAddress(playerClient))
-        ServerAdminPrint(client, player:GetName() .. " : Steam Id = " .. playerClient:GetUserId() .. " : Address = " .. playerAddressString)
+        local playerId = playerClient:GetUserId()
+        ServerAdminPrint(client, player:GetName() .. " : Steam Id = " .. playerId .. " : " .. GetReadableSteamId(playerId) .. " : Address = " .. playerAddressString)
         
     end
     

@@ -47,7 +47,6 @@ Observatory.kModelName = PrecacheAsset("models/marine/observatory/observatory.mo
 Observatory.kScanSound = PrecacheAsset("sound/NS2.fev/marine/structures/observatory_scan")
 Observatory.kCommanderScanSound = PrecacheAsset("sound/NS2.fev/marine/commander/scan_com")
 
-local kDistressBeaconSoundDistance = 100
 local kDistressBeaconSoundMarine = PrecacheAsset("sound/NS2.fev/marine/common/distress_beacon_marine")
 local kDistressBeaconSoundAlien = PrecacheAsset("sound/NS2.fev/marine/common/distress_beacon_alien")
 
@@ -90,13 +89,14 @@ function Observatory:OnCreate()
     
         self.distressBeaconSoundMarine = Server.CreateEntity(SoundEffect.kMapName)
         self.distressBeaconSoundMarine:SetAsset(kDistressBeaconSoundMarine)
-        self.distressBeaconSoundMarine:SetRelevancyDistance(kDistressBeaconSoundDistance)
+        self.distressBeaconSoundMarine:SetRelevancyDistance(Math.infinity)
         self.distressBeaconSoundMarine:SetExcludeRelevancyMask(kRelevantToTeam1)
 
         self.distressBeaconSoundAlien = Server.CreateEntity(SoundEffect.kMapName)
         self.distressBeaconSoundAlien:SetAsset(kDistressBeaconSoundAlien)
-        self.distressBeaconSoundAlien:SetRelevancyDistance(kDistressBeaconSoundDistance)
+        self.distressBeaconSoundAlien:SetRelevancyDistance(Math.infinity)
         self.distressBeaconSoundAlien:SetExcludeRelevancyMask(kRelevantToTeam2)
+        
     end
     
     InitMixin(self, BaseModelMixin)
@@ -210,9 +210,9 @@ end
 function Observatory:GetDistressOrigin()
 
     // Respawn at nearest built command station
-    local origin = self:GetModelOrigin()
+    local origin = nil
     
-    local nearest = GetNearest(origin, "CommandStation", self:GetTeamNumber(), function(ent) return ent:GetIsBuilt() end)
+    local nearest = GetNearest(self:GetOrigin(), "CommandStation", self:GetTeamNumber(), function(ent) return ent:GetIsBuilt() and ent:GetIsAlive() end)
     if nearest then
         origin = nearest:GetModelOrigin()
     end
@@ -243,24 +243,29 @@ function Observatory:TriggerDistressBeacon()
         self.distressBeaconSoundAlien:Start()
         
         local origin = self:GetDistressOrigin()
-        self.distressBeaconSoundMarine:SetOrigin(origin)
-        self.distressBeaconSoundAlien:SetOrigin(origin)
         
-        // Beam all faraway players back in a few seconds!
-        self.distressBeaconTime = Shared.GetTime() + Observatory.kDistressBeaconTime
+        if origin then
         
-        if Server then
-        
-            TriggerMarineBeaconEffects(self)
+            self.distressBeaconSoundMarine:SetOrigin(origin)
+            self.distressBeaconSoundAlien:SetOrigin(origin)
             
-            local location = GetLocationForPoint(self:GetDistressOrigin())
-            local locationName = location and location:GetName() or ""
-            local locationId = Shared.GetStringIndex(locationName)
-            SendTeamMessage(self:GetTeam(), kTeamMessageTypes.Beacon, locationId)
+            // Beam all faraway players back in a few seconds!
+            self.distressBeaconTime = Shared.GetTime() + Observatory.kDistressBeaconTime
             
+            if Server then
+            
+                TriggerMarineBeaconEffects(self)
+                
+                local location = GetLocationForPoint(self:GetDistressOrigin())
+                local locationName = location and location:GetName() or ""
+                local locationId = Shared.GetStringIndex(locationName)
+                SendTeamMessage(self:GetTeam(), kTeamMessageTypes.Beacon, locationId)
+                
+            end
+            
+            success = true
+        
         end
-        
-        success = true
     
     end
     
@@ -340,21 +345,24 @@ function Observatory:PerformDistressBeacon()
     local anyPlayerWasBeaconed = false
     
     local distressOrigin = self:GetDistressOrigin()
-    for index, player in ipairs(GetPlayersToBeacon(self, distressOrigin)) do
+    if distressOrigin then
     
-        local success = RespawnPlayer(self, player, distressOrigin)
-        if success then
-            anyPlayerWasBeaconed = true
+        for index, player in ipairs(GetPlayersToBeacon(self, distressOrigin)) do
+        
+            local success = RespawnPlayer(self, player, distressOrigin)
+            if success then
+                anyPlayerWasBeaconed = true
+            end
+            
+        end
+        
+        // Also respawn players that are spawning in at infantry portals near command station (use a little extra range to account for vertical difference)
+        for index, ip in ipairs(GetEntitiesForTeamWithinRange("InfantryPortal", self:GetTeamNumber(), distressOrigin, kInfantryPortalAttachRange + 1)) do
+            ip:FinishSpawn()
         end
         
     end
-    
-    // Also respawn players that are spawning in at infantry portals near command station (use a little extra range to account for vertical difference)
-    for index, ip in ipairs(GetEntitiesForTeamWithinRange("InfantryPortal", self:GetTeamNumber(), distressOrigin, kInfantryPortalAttachRange + 1)) do
-        ip:FinishSpawn()
-    end
-       
-    // Play mega-spawn sound in world.
+
     if anyPlayerWasBeaconed then
         self:TriggerEffects("distress_beacon_complete")
     end

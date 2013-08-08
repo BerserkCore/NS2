@@ -116,9 +116,13 @@ AddMixinNetworkVars(TunnelUserMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
-    local nearbyEggs = GetEntitiesWithinRange("Egg", self:GetOrigin(), kSmashEggRange)
-    for _, egg in ipairs(nearbyEggs) do
-        egg:Kill(self, self, self:GetOrigin(), Vector(0, -1, 0))
+    if not GetIsVortexed(self) then
+
+        local nearbyEggs = GetEntitiesWithinRange("Egg", self:GetOrigin(), kSmashEggRange)
+        for _, egg in ipairs(nearbyEggs) do
+            egg:Kill(self, self, self:GetOrigin(), Vector(0, -1, 0))
+        end
+    
     end
     
     // Keep on killing those nasty eggs forever.

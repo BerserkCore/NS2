@@ -6,6 +6,7 @@
 		<input name="opacityMap" type="texture" address="wrap" srgb="true"/>
 		<input name="endTime" type="float">0.0</input>
 		<input name="scale" type="float">0.0</input>
+		<input name="normalMap" type="texture" address="wrap" />
 	</inputs>	
 
 	<params>
@@ -20,9 +21,15 @@
 	
 	<code> 
 	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
 		void MaterialShader(in Material_Input input, inout Material material)
 		{		
-			const float3 tint = float3(50, 8, 1);
+			const float3 tint = float3(200, 40, 4);
 			float intensity = 1.0;
 
 			if (endTime != 0) {
@@ -44,12 +51,14 @@
 			
 			float mask = 1 - clamp(length(input.osPosition) / scale, 0, 1);
 			float3 ash = tex2D( glowpoints, texCoord  * 9 ).rgb;
-			float3 noise = tex2D( noiseMap, texCoord  * 2 - float2(time * .12, time * 0.3) ).rgb;
-			float3 noise2 = tex2D( noiseMap, texCoord  * float2( 3.2, 2.7) - float2(time * -.2, time * .35) ).rgb;
-			float3 noise3 = tex2D( noiseMap, texCoord  * float2( 1.8, 2.1) - float2(time * -.01, time * .03) ).rgb;
+			float3 mask2 = tex2D( opacityMap, texCoord  ).rgb;
+			float3 noise = tex2D( noiseMap, texCoord  * float2( 1.9, 1.2) + float2(time * .25, time * -.7) + (DecodeNormal( tex2D(normalMap, input.texCoord*2 + float2(time * -0.1, time * -.7)) ).xy * .2 )).rgb;
+			float3 noise2 = tex2D( noiseMap, texCoord  * float2( 2.7, 1.7) + float2(time * -.15, time * -.5)+ (DecodeNormal( tex2D(normalMap, input.texCoord*4 + float2(time * -0.25, time * -.35)) ).xy * .1) ).rgb;
+			float3 noise3 = tex2D( noiseMap, texCoord   + float2(time * -.25, time * -.6) ).rgb;
+			
 
-			material.emissive = ( noise * noise2 ) * tint * mask * intensity;
-			material.opacity = ( (noise + noise2 ) * noise3 + ash) * mask * intensity;
+			material.emissive = ( noise * noise2 ) * tint * mask *mask2 * intensity;
+			material.opacity = ( (noise + noise3  ) + ash) * mask *mask2   * intensity;
 			
 		}
 	]]>

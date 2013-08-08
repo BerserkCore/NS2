@@ -1,0 +1,46 @@
+<shader>
+
+	<inputs>
+		<input name="maskMap" type="texture" address="wrap" srgb="true"/>
+		<input name="noiseMap" type="texture" address="wrap" srgb="true"/>
+	
+
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">true</param>
+		<param name="alphaTest">true</param>
+
+	</params>
+	
+	<code> 
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			const float3 tint = float3(2, 12, 80);
+			
+	
+			
+			
+			float3 mask = tex2D( maskMap, input.texCoord ).rgb;
+			float3 noise = tex2D( noiseMap, input.texCoord * float2( .2, .7)  + float2(time * .5, time * -2.61) ).rgb;
+			float3 noise2 = tex2D( noiseMap, input.texCoord  * float2( 1.2, .37) + float2(time * -.41, time * -4.73) ).rgb;
+			float3 noise3 = tex2D( noiseMap, input.texCoord  * float2( 0.8, 0.2) + float2(time * -.1, time * -6.3) ).rgb;
+			float fresnel =  pow(max(-input.vsNormal.z, 0), 13);
+			
+		
+
+			material.emissive = ( noise* noise2 )*tint;
+			material.opacity = ( (noise + noise2 ) + noise3 ) * 2 * mask ;
+			
+		}
+	]]>
+	</code>
+
+</shader>

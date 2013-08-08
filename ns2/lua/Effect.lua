@@ -11,12 +11,10 @@ assert(Client)
 class 'Effect'
 
 Effect.mapName = "effect"
-Effect.kUpdateInterval = .5
+local kUpdateInterval = 0.5
 
 function Effect:SetOrigin(newOrigin)
-
     self.origin = Vector(newOrigin)
-
 end
 
 function Effect:SetAngles(newAngles)
@@ -51,30 +49,30 @@ function Effect:GetStartsOn()
     return self.startsOn
 end
 
-if (Client) then
+if Client then
 
-    // Check if effect should be turned on or of
+    // Check if effect should be turned on or off.
     function Effect:OnUpdate(deltaTime)
-        
+    
         local time = Shared.GetTime()
         
-        // Don't update every tick to reduce garbage
-        if not self.timeOfLastUpdate or (time > (self.timeOfLastUpdate + Effect.kUpdateInterval)) then
+        // Don't update every tick to reduce garbage.
+        if not self.timeOfLastUpdate or (time > (self.timeOfLastUpdate + kUpdateInterval)) then
         
-            if self:GetStartsOn() and not self.startedOn then    
+            if self:GetStartsOn() and not self.startedOn then
             
                 self:StartPlaying()
                 self.startedOn = true
                 
             else
-                    
+            
                 if self:GetOffOnExit() and self.triggered then
                 
                     local player = Client.GetLocalPlayer()
                     local origin = player:GetOrigin()
                     
                     if self:GetOrigin():GetDistanceTo(origin) > self:GetRadius() then
-
+                    
                         self:StopPlaying()
                         self.triggered = false
                         
@@ -89,6 +87,7 @@ if (Client) then
                     
                         self:StartPlaying()
                         self.triggered = true
+                        
                     end
                     
                 end
@@ -100,5 +99,5 @@ if (Client) then
         end
         
     end
-
+    
 end

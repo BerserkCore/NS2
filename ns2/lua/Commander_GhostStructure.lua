@@ -13,6 +13,7 @@ local ghostStructureEnabled = false
 local errorMessage = ""
 local ghostStructureValid = false
 local ghostStructureCoords = Coords()
+local ghostStructureTargetId = Entity.invalidId
 local orientationAngle = 0
 local specifyingOrientation = false
 
@@ -93,6 +94,12 @@ function GetCommanderGhostStructureCoords()
             
             ghostStructureValid, position, attachEntity, errorMessage = GetIsBuildLegal(ghostTechId, trace.endPoint, 0, kStructureSnapRadius, commander, nil, ignoreChecks)
             
+            if trace.entity then
+                ghostStructureTargetId = trace.entity:GetId()
+            else
+                ghostStructureTargetId = Entity.invalidId
+            end
+            
             if attachEntity then
             
                 coords = attachEntity:GetAngles():GetCoords()
@@ -138,7 +145,7 @@ function CommanderGhostStructureLeftMouseButtonDown(x, y)
                 
                 // Send world coords of sentry placement instead of normalized pick ray.
                 // Because the player may have moved since dropping the sentry and orienting it.
-                commander:SendTargetedActionWorld(ghostTechId, ghostStructureCoords.origin, angle)
+                commander:SendTargetedActionWorld(ghostTechId, ghostStructureCoords.origin, angle, Shared.GetEntity(ghostStructureTargetId))
                 
             end
             
@@ -172,7 +179,9 @@ function CommanderGhostStructureSetTech(techId)
     
     specifyingOrientation = false
     ghostStructureEnabled = showGhost and techId ~= kTechId.None and (LookupTechData(techId, kTechDataModel) ~= nil)
-    ghostStructureValid = false
     ghostTechId = techId
+    ghostStructureValid = false
+
+    GetCommanderGhostStructureCoords()
     
 end

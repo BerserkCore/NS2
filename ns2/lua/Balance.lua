@@ -19,7 +19,7 @@ kCommandStationCost = 15
 kExtractorCost = 10
 kResourceUpgradeResearchCost = 5
 
-kInfantryPortalCost = 15
+kInfantryPortalCost = 20
 
 kArmoryCost = 10
 kArmsLabCost = 20
@@ -76,12 +76,12 @@ kDualMinigunTechResearchCost = 20
 kClawRailgunTechResearchCost = 20
 kDualRailgunTechResearchCost = 20
 
-kWeapons1ResearchCost = 15
-kWeapons2ResearchCost = 25
-kWeapons3ResearchCost = 35
-kArmor1ResearchCost = 15
-kArmor2ResearchCost = 25
-kArmor3ResearchCost = 35 
+kWeapons1ResearchCost = 20
+kWeapons2ResearchCost = 30
+kWeapons3ResearchCost = 40
+kArmor1ResearchCost = 20
+kArmor2ResearchCost = 30
+kArmor3ResearchCost = 40
 
 kCatPackCost = 2
 kCatPackTechResearchCost = 10
@@ -119,7 +119,7 @@ kOnosCost = 75
 
 kHydraCost = 3
 kClogCost = 0
-kGorgeTunnelCost = 10
+kGorgeTunnelCost = 5
 kGorgeTunnelBuildTime = 15
 kRuptureCost = 1
 
@@ -282,7 +282,7 @@ kWeapons1DamageScalar = 1.1
 kWeapons2DamageScalar = 1.2
 kWeapons3DamageScalar = 1.3
 
-kNanoShieldDamageReductionDamage = 0.5
+kNanoShieldDamageReductionDamage = 0.25
 
 // ALIEN DAMAGE
 kBiteDamage = 75
@@ -467,7 +467,7 @@ kARCBuildTime = 10
 kARCSplashTechResearchTime = 30
 kARCArmorTechResearchTime = 30
 
-kNanoShieldDuration = 8
+kNanoShieldDuration = 3
 kSentryBuildTime = 3
 
 kMineResearchTime  = 20
@@ -536,7 +536,7 @@ kLeapResearchCost = 25
 kLeapResearchTime = 60
 kBileBombResearchCost = 20
 kBileBombResearchTime = 60
-kGorgeTunnelResearchCost = 30
+kGorgeTunnelResearchCost = 10
 kGorgeTunnelResearchTime = 60
 kWebResearchCost = 20
 kWebResearchTime = 60

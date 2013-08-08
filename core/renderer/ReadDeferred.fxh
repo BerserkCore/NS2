@@ -19,13 +19,13 @@ struct VS_DeferredPass_Input
 struct VS_DeferredPass_Output
 {
     float4 ssPosition       : POSITION;
-    float2 projected        : TEXCOORD0;
+    float3 projected        : TEXCOORD0;
     float2 texCoord         : TEXCOORD1;
 };
 
 struct PS_DeferredPass_Input
 {
-    half2 projected        : TEXCOORD0;
+    half3 projected        : TEXCOORD0;
     half2 texCoord         : TEXCOORD1;
 };  
 
@@ -114,17 +114,10 @@ half GetId(half2 texCoord)
 /**
  * Extracts the view-space position from the G-buffer.
  */
-half3 GetPosition(half2 texCoord, half2 ssPosition)
+half3 GetPosition(half2 texCoord, half3 projected)
 {
-
 	half depth = tex2D(depthTextureSampler, texCoord).r;
-	half3 vsPosition;
-    
-    vsPosition.z   = depth.r;
-    vsPosition.xy = ssPosition * vsPosition.z;
-    
-    return vsPosition;
-	
+    return projected * depth;
 }	
 
 /**
@@ -142,10 +135,11 @@ VS_DeferredPass_Output DeferredPassVS(VS_DeferredPass_Input input)
 	ssPosition.y += rcpFrame.y;
 	
     output.ssPosition   = ssPosition;
-    output.projected    = ssPosition;
-    output.projected.y  = -output.projected.y;
-	
-	output.projected    = output.projected * -imagePlaneSize;
+    output.projected.x  = ssPosition.x;
+    output.projected.y  = -ssPosition.y;
+    output.projected.z  = 1;
+    
+	output.projected.xy *= -imagePlaneSize;
 	
     output.texCoord     = input.texCoord;
 

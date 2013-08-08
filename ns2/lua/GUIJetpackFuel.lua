@@ -13,7 +13,7 @@ class 'GUIJetpackFuel' (GUIScript)
 GUIJetpackFuel.kJetpackFuelTexture = "ui/marine_jetpackfuel.dds"
 
 
-GUIJetpackFuel.kFont = "MicrogrammaDMedExt"
+GUIJetpackFuel.kFont = "fonts/MicrogrammaDMedExt_medium.fnt"
 
 GUIJetpackFuel.kBackgroundWidth = GUIScale(32)
 GUIJetpackFuel.kBackgroundHeight = GUIScale(144)

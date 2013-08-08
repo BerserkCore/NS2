@@ -12,9 +12,6 @@ HealSprayMixin.type = "HealSpray"
 // Players heal by base amount + percentage of max health
 local kHealPlayerPercent = 3
 
-// Structures heal by base x this multiplier (same as NS1)
-local kHealStructuresMultiplier = 5
-
 local kRange = 6
 local kHealCylinderWidth = 3
 

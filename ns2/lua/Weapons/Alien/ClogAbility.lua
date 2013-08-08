@@ -23,6 +23,10 @@ function ClogAbility:OverrideInfestationCheck(trace)
 
 end
 
+function ClogAbility:AllowBackfacing()
+    return true
+end
+
 function ClogAbility:GetIsPositionValid(position, player)
 
     local valid = true

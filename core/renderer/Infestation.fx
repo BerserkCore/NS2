@@ -162,7 +162,7 @@ float4 InfestationMaskPS(PS_DeferredPass_Input input) : COLOR0
 	
 	float3 reflectDir = tex2D( noiseTextureSampler, (input.texCoord / rcpFrame) / 64 ).xyz * 2 - 1;
 	
-	float3 vsPosition = GetPosition( input.texCoord, input.projected.xy );
+	float3 vsPosition = GetPosition( input.texCoord, input.projected );
 	float3 vsNormal   = GetNormal( input.texCoord );
 	
 	const int numSamples = 4;
@@ -214,7 +214,7 @@ PS_SplatDeferred_Output SplatPS(PS_DeferredPass_Input input)
 	float4 mask = tex2D(infestationMaskSampler, input.texCoord);
 
 	float3 vsNormal  = mask.rgb;
-	float3 vsPosition = GetPosition( input.texCoord, input.projected.xy );
+	float3 vsPosition = GetPosition( input.texCoord, input.projected );
 
 	float3 wsNormal = mul(vsNormal, cameraToWorldMatrix);
 	float3 wsPosition = mul(half4(vsPosition, 1), cameraToWorldMatrix);

@@ -140,8 +140,6 @@ function MapBlip:Update()
         local origin = nil        
         if owner.GetPositionForMinimap then
             origin = owner:GetPositionForMinimap()
-        elseif HasMixin(owner, "Target") then
-            origin = owner:GetEngagementPoint()
         else
             origin = owner:GetOrigin()
         end

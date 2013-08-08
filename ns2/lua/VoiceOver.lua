@@ -204,10 +204,3 @@ end
 
 local kAutoMarineVoiceOvers = {}
 local kAutoAlienVoiceOvers = {}
-
-
-// defines priority and rules as of when to trigger a sound effect
-local function BuildVoiceOverRules()
-
-
-end

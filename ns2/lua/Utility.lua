@@ -10,6 +10,8 @@ Script.Load("lua/Table.lua")
 
 gNetworkRandomLogData = nil
 gRandomDebugEnabled = false
+
+kUpVector = Vector(0, 1, 0)
   
 function EntityFilterOne(entity)
     return function (test) return test == entity end
@@ -797,6 +799,18 @@ function SlerpRadians(current, target, rate)
 
 end
 
+function SlerpAngles(current, target, rate)
+
+    local result = Angles()
+    
+    result.pitch = SlerpRadians(current.pitch, target.pitch, rate)
+    result.yaw = SlerpRadians(current.yaw, target.yaw, rate)
+    result.roll = SlerpRadians(current.roll, target.roll, rate)
+    
+    return result
+
+end
+
 function SlerpDegrees(current, target, rate)
 
     // Interpolate the short way around
@@ -808,6 +822,18 @@ function SlerpDegrees(current, target, rate)
    
     return Slerp(current, target, rate)
     
+end
+
+function SlerpVector(current, target, rate)
+
+    local result = Vector()
+
+    result.x = Slerp(current.x, target.x, rate)
+    result.y = Slerp(current.y, target.y, rate)
+    result.z = Slerp(current.z, target.z, rate)
+    
+    return result
+
 end
 
 function LerpColor(startColor, targetColor, percentage)
@@ -1566,7 +1592,7 @@ end
  */
 function StringTrim(inString)
 
-    ASSERT(type(inString) == "string")
+    assert(type(inString) == "string")
     
     // Strip out escape characters.
     inString = inString:gsub("[\a\b\f\n\r\t\v]", "")
@@ -2240,14 +2266,14 @@ end
 
 local TimedRunStackDepth = 0
 function TimedRun( label,func )
-    local startTime = Shared.GetSystemTime()
+    local startTime = Shared.GetSystemTimeReal()
     TimedRunStackDepth = TimedRunStackDepth + 1
     func()
     local spaces = ""
-    for i = 1,TimedRunStackDepth do
-        spaces = spaces..".."
+    for i = 1,TimedRunStackDepth-1 do
+        spaces = spaces.."  "
     end
-    Print("TIME %s%fs %s", spaces, Shared.GetSystemTime()-startTime, label)
+    Print("%s%s took %0.4fms", spaces, label, (Shared.GetSystemTimeReal()-startTime)*1000)
     TimedRunStackDepth = TimedRunStackDepth - 1
 end
 

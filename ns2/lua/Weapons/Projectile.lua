@@ -47,11 +47,15 @@ end
  * Must be called when setting up the projectile.
  * The velocity must not be set directly.
  */
-function Projectile:Setup(player, velocity, gravityEnabled, extents)
+function Projectile:Setup(player, velocity, gravityEnabled, extents, triggeringEnt)
 
     assert(Server)
 
     self:SetOwner(player)
+    
+    if triggeringEnt and HasMixin(triggeringEnt, "Relevancy") then
+        self:SetExcludeRelevancyMask(triggeringEnt:GetExcludeRelevancyMask())
+    end
     
     local setup = {}
     setup.velocity = velocity

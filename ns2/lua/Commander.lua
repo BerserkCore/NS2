@@ -113,9 +113,6 @@ function Commander:OnInitialized()
     
     self:SetIsVisible(false)
     
-    // set to a time to delay any left click action
-    self.leftClickActionDelay = 0
-    
     if Client then
     
         self.drawResearch = false
@@ -463,9 +460,6 @@ function Commander:OnProcessMove(input)
 
     Player.OnProcessMove(self, input)
     
-    // Remove selected units that are no longer valid for selection.
-    self:UpdateSelection(input.time)
-    
     if Server then
         
         if not self.timeLastEnergyCheck then
@@ -483,10 +477,6 @@ function Commander:OnProcessMove(input)
         end
         
     elseif Client then
-    
-        if self.leftClickActionDelay > 0 then
-            self.leftClickActionDelay = math.max(self.leftClickActionDelay - input.time, 0)
-        end
         
         // This flag must be cleared inside OnProcessMove. See explaination in Commander:OverrideInput().
         self.setScrollPosition = false

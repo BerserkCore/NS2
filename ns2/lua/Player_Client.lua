@@ -1905,7 +1905,7 @@ local function UpdateDangerEffects(self)
                     
                         self.dangerEnabled = true
                         self.dangerOrigin = commandStructure:GetOrigin()
-                        Client.PlayMusic("danger")
+                        Client.PlayMusic("sound/NS2.fev/danger")
                         
                     end
                     
@@ -1919,7 +1919,7 @@ local function UpdateDangerEffects(self)
                    not commandStructure:GetIsInCombat() or
                    self.dangerOrigin:GetDistanceTo(playerOrigin) > kDangerCheckEndDistance then
                 
-                    Client.PlayMusic("no_danger")
+                    Client.PlayMusic("sound/NS2.fev/no_danger")
                     self.dangerEnabled = false
                     self.dangerOrigin = nil
                     
@@ -2598,7 +2598,7 @@ function Player:OnCountDownEnd()
         
     end
     
-    Client.PlayMusic("round_start")
+    Client.PlayMusic("sound/NS2.fev/round_start")
     
 end
 
@@ -3711,11 +3711,17 @@ function Player:OnUpdateRender()
 end
 
 function Player:GetCustomSelectionText()
+
     local playerRecord = Scoreboard_GetPlayerRecord(self:GetClientIndex())
-    return string.format("%s kills\n%s deaths\n%s score",
-            ToString(playerRecord.Kills),
-            ToString(playerRecord.Deaths),
-            ToString(playerRecord.Score))
+    if playerRecord then  
+  
+        return string.format("%s kills\n%s deaths\n%s score",
+                ToString(playerRecord.Kills),
+                ToString(playerRecord.Deaths),
+                ToString(playerRecord.Score))
+
+    end
+            
 end
 
 function Player:GetIdleSoundName()

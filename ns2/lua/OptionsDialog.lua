@@ -213,12 +213,13 @@ function OptionsDialogUI_SyncSoundVolumes()
     local soundVol = OptionsDialogUI_GetSoundVolume()
     local musicVol = OptionsDialogUI_GetMusicVolume()
     local voiceVol = OptionsDialogUI_GetVoiceVolume()
+    local recordingGain = Client.GetOptionFloat("recordingGain", 0.5)
     
     // Set current levels (0-1)
     Client.SetSoundVolume( soundVol/100 )
     Client.SetMusicVolume( musicVol/100 )
     Client.SetVoiceVolume( voiceVol/100 )
-
+    Client.SetRecordingGain( recordingGain )
 end
 
 function OptionsDialogUI_OnInit()

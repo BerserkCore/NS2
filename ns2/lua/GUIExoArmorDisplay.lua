@@ -44,7 +44,7 @@ function Initialize()
     text = GUI.CreateItem()
     // Text items always manage their own rendering.
     text:SetOptionFlag(GUIItem.ManageRender)
-    text:SetFontName("MicrogrammaDMedExt")
+    text:SetFontName("fonts/MicrogrammaDmedExt_small.fnt")
     text:SetFontIsBold(true)
     text:SetFontSize(42)
     text:SetTextAlignmentX(GUIItem.Align_Center)

@@ -178,6 +178,7 @@ end
 
 // Return whether action should continue to be processed for the next selected unit. Position will be nil
 // for non-targeted actions and will be the world position target for the action for targeted actions.
+// targetId is the entityId which was hit by the client side trace
 function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace)
 
     local success = false
@@ -313,16 +314,19 @@ end
 
 // Send techId of action and normalized pick vector. Issues order to selected units to the world position represented by
 // the pick vector, or to the entity that it hits.
-function Commander:OrderEntities(orderTechId, trace, orientation)
+function Commander:OrderEntities(orderTechId, trace, orientation, targetId)
 
     local invalid = false
     
-    local targetId = Entity.invalidId
-    if(trace.entity ~= nil) then
+    if not targetId then
+        targetId = Entity.invalidId
+    end
+    
+    if targetId == Entity.invalidId and trace.entity then
         targetId = trace.entity:GetId()
     end
     
-    if (trace.fraction < 1) then
+    if trace.fraction < 1 then
 
         // Give order to selection
         local orderEntities = self:GetSelection()        
@@ -404,7 +408,7 @@ end
 
 // Takes a techId as the action type and normalized screen coords for the position. normPickVec will be nil
 // for non-targeted actions. 
-function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoordsSpecified)
+function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoordsSpecified, targetId)
 
     local success = false
     
@@ -458,24 +462,9 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
         local trace = nil
         if pickVec ~= nil then
         
-            trace = GetCommanderPickTarget(self, pickVec, worldCoordsSpecified, techNode:GetIsBuild(), 
-                                LookupTechData(techNode.techId, kTechDataCollideWithWorldOnly, 0))
-            
+            trace = GetCommanderPickTarget(self, pickVec, worldCoordsSpecified, techNode:GetIsBuild(), LookupTechData(techNode.techId, kTechDataCollideWithWorldOnly, 0))
             if trace ~= nil and trace.fraction < 1 then
             
-                local optionalAttachToMethod = LookupTechData(techNode.techId, kTechDataOptionalAttachToMethod)
-                
-                if optionalAttachToMethod then
-                
-                    // check here if the item should be optionally attached to something
-                    local mask = ConditionalValue(techNode:GetIsBuild(), PhysicsMask.CommanderBuild, PhysicsMask.CommanderSelect) 
-                    local optionalTrace = Shared.TraceRay(self:GetOrigin(), trace.endPoint, CollisionRep.Select, mask, EntityFilterOne(self))
-                    if optionalTrace.entity and optionalAttachToMethod(optionalTrace.entity) then
-                        trace.endPoint = optionalTrace.entity:GetOrigin()
-                    end
-                    
-                end
-                
                 VectorCopy(trace.endPoint, targetPosition)
                 VectorCopy(trace.normal, targetNormal)
                 
@@ -487,7 +476,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
         if techNode:GetIsMenu() then
             self.currentMenu = techId
         elseif techNode:GetIsOrder() then
-            self:OrderEntities(techId, trace, orientation)
+            self:OrderEntities(techId, trace, orientation, targetId)
         else        
         
             // Sort the selected group based on distance to the target position.
@@ -508,7 +497,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
                 
                     local actionSuccess = false
                     local keepProcessing = false
-                    actionSuccess, keepProcessing = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec, orientation, selectedEntity, trace)
+                    actionSuccess, keepProcessing = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec, orientation, selectedEntity, trace, targetId)
                     
                     // Successful if just one of our entities handled action
                     if actionSuccess then
@@ -522,7 +511,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
                 end
                 
             else
-                success = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec, orientation, nil, trace)
+                success = self:ProcessTechTreeActionForEntity(techNode, targetPosition, targetNormal, pickVec, orientation, nil, trace, targetId)
             end
             
         end
@@ -694,7 +683,7 @@ function Commander:GotoIdleWorker()
         Server.SendNetworkMessage(self, "SelectAndGoto", BuildSelectAndGotoMessage(self.lastGotoIdleWorker:GetId()), true)
         
     end
-            
+
 end
 
 function Commander:GotoPlayerAlert()

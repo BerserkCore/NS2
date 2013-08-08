@@ -329,6 +329,11 @@ function ARC:FilterTarget()
     
 end
 
+// for marquee selection
+function ARC:GetIsMoveable()
+    return true
+end
+
 //
 // Do a complete check if the target can be fired on. 
 //

@@ -81,7 +81,7 @@ local function CreateSpitProjectile(self, player)
         
         local spit = CreateEntity(Spit.kMapName, startPoint, player:GetTeamNumber())
         SetAnglesFromVector(spit, viewCoords.zAxis)
-        spit:Setup(player, startVelocity, false)
+        spit:Setup(player, startVelocity, false, nil, player)
         
     end
 

@@ -54,8 +54,8 @@ function OnCommandCommTargetedAction(client, message)
     local player = client:GetControllingPlayer()
     if player:GetIsCommander() then
     
-        local techId, pickVec, orientation = ParseCommTargetedActionMessage(message)
-        player:ProcessTechTreeAction(techId, pickVec, orientation)
+        local techId, pickVec, orientation, entityId = ParseCommTargetedActionMessage(message)
+        player:ProcessTechTreeAction(techId, pickVec, orientation, false, entityId)
     
     end
     
@@ -66,8 +66,8 @@ function OnCommandCommTargetedActionWorld(client, message)
     local player = client:GetControllingPlayer()
     if player:GetIsCommander() then
     
-        local techId, pickVec, orientation = ParseCommTargetedActionMessage(message)
-        player:ProcessTechTreeAction(techId, pickVec, orientation, true)
+        local techId, pickVec, orientation, entityId = ParseCommTargetedActionMessage(message)
+        player:ProcessTechTreeAction(techId, pickVec, orientation, true, entityId)
     
     end
     

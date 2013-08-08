@@ -45,8 +45,9 @@ local function OnLoadComplete(message)
     renderCamera:SetRenderSetup("renderer/Deferred.render_setup") 
     
     Render_SyncRenderOptions()
+    OptionsDialogUI_SyncSoundVolumes()
     
-    MenuMenu_PlayMusic("Main Menu")
+    MenuMenu_PlayMusic("sound/NS2.fev/Main Menu")
     MainMenu_Open()
     
     if message then

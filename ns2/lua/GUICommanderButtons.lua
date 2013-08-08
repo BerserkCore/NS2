@@ -766,10 +766,6 @@ local function SendButtonTargetedAction(index, x, y)
     
     // Don't execute targeted action if we're still on top of the UI
     if not CommanderUI_GetMouseIsOverUI() then
-    
-        if player:TechCausesDelay(techId) then
-            player.leftClickActionDelay = kCommanderLeftClickDelay
-        end
         
         player:SendTargetedAction(techId, normalizedPickRay)
         return true

@@ -126,7 +126,7 @@ function AiBombardAttackType:FlingBomb(bombStart, targetPos, direction, speed)
     SetAnglesFromVector(bomb, direction)
 
     local startVelocity = direction * speed
-    bomb:Setup( self.aiEntity:GetOwner(), startVelocity, true)
+    bomb:Setup( self.aiEntity:GetOwner(), startVelocity, true, nil, self.aiEntity)
     
     bomb:SetLifetime(self:CalcLifetime(bombStart, targetPos, startVelocity))
     

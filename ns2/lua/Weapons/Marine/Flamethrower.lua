@@ -445,10 +445,6 @@ function Flamethrower:GetHasSecondary(player)
     return false
 end
 
-function Flamethrower:GetSwingSensitivity()
-    return .8
-end
-
 function Flamethrower:Dropped(prevOwner)
 
     ClipWeapon.Dropped(self, prevOwner)

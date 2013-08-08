@@ -176,7 +176,7 @@ if Server then
     end
     
     // check if a notification should be send for successful actions
-    function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace)
+    function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace, targetId)
     
         local techId = techNode:GetTechId()
         local success = false
@@ -188,7 +188,7 @@ if Server then
             keepProcessing = false
         
         else
-            success, keepProcessing = Commander.ProcessTechTreeActionForEntity(self, techNode, position, normal, pickVec, orientation, entity, trace)
+            success, keepProcessing = Commander.ProcessTechTreeActionForEntity(self, techNode, position, normal, pickVec, orientation, entity, trace, targetId)
         end
         
         if success then

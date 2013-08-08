@@ -152,6 +152,9 @@ function Projectile:OnUpdate(deltaTime)
             local trace = Shared.TraceCapsule(self.lastOrigin, endPoint, self.radius, 0, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(self))
 
             self:SetOrigin(trace.endPoint)
+            if trace.fraction == 0 or trace.fraction == 1 then
+                trace.normal = Vector(0, 1, 0)
+            end
             self:ProcessHit(trace.entity, trace.surface, trace.normal)
 
         end

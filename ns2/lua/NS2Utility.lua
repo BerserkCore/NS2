@@ -2438,3 +2438,42 @@ end
 function AddMoveCommand( commands, moveMask )
     return bit.bor(commands, moveMask)
 end
+
+function GetSelectablesOnScreen(commander, className, minPos, maxPos)
+
+    assert(Client)
+
+    if not className then
+        className = "Entity"
+    end
+    
+    local selectables = {}
+
+    if not minPos then
+        minPos = Vector(0,0,0)
+    end
+    
+    if not maxPos then
+        maxPos = Vector(Client.GetScreenWidth(), Client.GetScreenHeight(), 0)
+    end
+
+    for _, selectable in ipairs(GetEntitiesWithMixinForTeam("Selectable", commander:GetTeamNumber())) do
+
+        if selectable:isa(className) then
+
+            local screenPos = Client.WorldToScreen(selectable:GetOrigin())
+            if screenPos.x >= minPos.x and screenPos.x <= maxPos.x and
+               screenPos.y >= minPos.y and screenPos.y <= maxPos.y then
+        
+                table.insert(selectables, selectable)
+        
+            end
+        
+        end
+
+    end
+    
+    return selectables
+
+end
+

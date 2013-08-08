@@ -123,11 +123,9 @@ function GUIMainMenu:Initialize()
     }
     
     self.mainWindow:AddEventCallbacks(eventCallbacks)
-    
-    self:CreatePlayWindow()
-    self:CreateTutorialWindow()
-    self:CreateOptionWindow()
-    self:CreateModsWindow()
+
+    // To prevent load delays, we create most windows lazily.
+    // But these are fast enough to just do immediately.
     self:CreatePasswordPromptWindow()
     self:CreateAutoJoinWindow()
     self:CreateAlertWindow()
@@ -180,6 +178,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.playWindow then
+                    self.scriptHandle:CreatePlayWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.playWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -191,6 +192,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.optionWindow then
+                    self.scriptHandle:CreateOptionWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.optionWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -202,6 +206,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.tutorialWindow then
+                    self.scriptHandle:CreateTutorialWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.tutorialWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -230,6 +237,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.playWindow then
+                    self.scriptHandle:CreatePlayWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.playWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -241,6 +251,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.tutorialWindow then
+                    self.scriptHandle:CreateTutorialWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.tutorialWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -252,6 +265,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.optionWindow then
+                    self.scriptHandle:CreateOptionWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.optionWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -263,6 +279,9 @@ function GUIMainMenu:Initialize()
         {
             OnClick = function(self)
             
+                if not self.scriptHandle.modsWindow then
+                    self.scriptHandle:CreateModsWindow()
+                end
                 TriggerOpenAnimation(self.scriptHandle.modsWindow)
                 self.scriptHandle:HideMenu()
                 
@@ -968,7 +987,7 @@ local function GetMaps()
 
 end
 
-GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options)
+GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options, optionElements)
 
     local form = CreateMenuElement(content, "Form", false)
     
@@ -1021,7 +1040,7 @@ GUIMainMenu.CreateOptionsForm = function(mainMenu, content, options)
         label:SetTopOffset(y)
         label:SetIgnoreEvents(true)
 
-        mainMenu.optionElements[option.name] = input
+        optionElements[option.name] = input
         
     end
     
@@ -1069,15 +1088,14 @@ function GUIMainMenu:CreateExploreWindow()
             },
         }
         
-    self.optionElements = { }
-    
+    local createdElements = {}
     local content = self.explore
-    local createServerForm = GUIMainMenu.CreateOptionsForm(self, content, hostOptions)
+    local createServerForm = GUIMainMenu.CreateOptionsForm(self, content, hostOptions, createdElements)
     
     self.createExploreServerForm = createServerForm
     self.createExploreServerForm:SetCSSClass("createserver")
     
-    local mapList = self.optionElements.Map
+    local mapList = createdElements.Map
     
     self.exploreButton = CreateMenuElement(self.tutorialWindow, "MenuButton")
     self.exploreButton:SetCSSClass("apply")
@@ -1144,15 +1162,15 @@ function GUIMainMenu:CreateHostGameWindow()
             },
         }
         
-    self.optionElements = { }
+    local createdElements = {}
     
     local content = self.createGame
-    local createServerForm = GUIMainMenu.CreateOptionsForm(self, content, hostOptions)
+    local createServerForm = GUIMainMenu.CreateOptionsForm(self, content, hostOptions, createdElements)
     
     self.createServerForm = createServerForm
     self.createServerForm:SetCSSClass("createserver")
     
-    local mapList = self.optionElements.Map
+    local mapList = createdElements.Map
     
     self.hostGameButton = CreateMenuElement(self.playWindow, "MenuButton")
     self.hostGameButton:SetCSSClass("apply")
@@ -1975,12 +1993,13 @@ function GUIMainMenu:CreateOptionWindow()
             }, 
         }
         
+    // save our option elements for future reference
     self.optionElements = { }
     
-    local generalForm     = GUIMainMenu.CreateOptionsForm(self, content, generalOptions)
+    local generalForm     = GUIMainMenu.CreateOptionsForm(self, content, generalOptions, self.optionElements)
     local keyBindingsForm = CreateKeyBindingsForm(self, content)
-    local graphicsForm    = GUIMainMenu.CreateOptionsForm(self, content, graphicsOptions)
-    local soundForm       = GUIMainMenu.CreateOptionsForm(self, content, soundOptions)
+    local graphicsForm    = GUIMainMenu.CreateOptionsForm(self, content, graphicsOptions, self.optionElements)
+    local soundForm       = GUIMainMenu.CreateOptionsForm(self, content, soundOptions, self.optionElements)
     
     soundForm:SetCSSClass("sound_options")    
     self.soundForm = soundForm
@@ -2072,7 +2091,7 @@ function GUIMainMenu:Update(deltaTime)
         
         // Refresh the mod list once every 5 seconds.
         self.timeOfLastRefresh = self.timeOfLastRefresh or currentTime
-        if self.modsWindow:GetIsVisible() and currentTime - self.timeOfLastRefresh >= 5 then
+        if self.modsWindow and self.modsWindow:GetIsVisible() and currentTime - self.timeOfLastRefresh >= 5 then
         
             self:RefreshModsList()
             self.timeOfLastRefresh = currentTime
@@ -2102,19 +2121,21 @@ function GUIMainMenu:Update(deltaTime)
         // Update only when visible.
         GUIAnimatedScript.Update(self, deltaTime)
     
-        if self.soundForm:GetIsVisible() then
-            self.optionElements.RecordingVolume:SetValue(Client.GetRecordingVolume())
+        if self.soundForm and self.soundForm:GetIsVisible() then
+            if self.optionElements.RecordingVolume then
+                self.optionElements.RecordingVolume:SetValue(Client.GetRecordingVolume())
+            end
         end
     
         if self.menuBackground:GetIsVisible() then
             self.playerName:SetText(OptionsDialogUI_GetNickname())
         end
         
-        if self.modsWindow:GetIsVisible() then
+        if self.modsWindow and self.modsWindow:GetIsVisible() then
             self:UpdateModsWindow(self)
         end
         
-        if self.playWindow:GetIsVisible() then
+        if self.playWindow and self.playWindow:GetIsVisible() then
         
             local listChanged = false
         
@@ -2160,9 +2181,14 @@ function GUIMainMenu:Update(deltaTime)
         end
         
         self:UpdateFindPeople(deltaTime)
-        self.playNowWindow:UpdateLogic(self)
+
+        if self.playNowWindow then
+            self.playNowWindow:UpdateLogic(self)
+        end
         
-        self.fpsDisplay:SetText(string.format("FPS: %.0f", Client.GetFrameRate()))
+        if self.fpsDisplay then
+            self.fpsDisplay:SetText(string.format("FPS: %.0f", Client.GetFrameRate()))
+        end
         
         if self.updateAutoJoin then
         
@@ -2268,7 +2294,7 @@ function GUIMainMenu:OnAnimationCompleted(animatedItem, animationName, itemHandl
             animBackgroundLink[i]:SetFrameCount(15, 1.6, AnimateLinear, "ANIMATE_LINK_BG")       
         end
         
-    elseif animationName == "ANIMATE_BLINKING_ARROW" then
+    elseif animationName == "ANIMATE_BLINKING_ARROW" and self.blinkingArrow then
     
         self.blinkingArrow:SetCSSClass("blinking_arrow")
         
@@ -2408,7 +2434,8 @@ end
 
 function OnSoundDeviceListChanged()
 
-    if gMainMenu ~= nil then 
+    // The options page may not be initialized yet
+    if gMainMenu ~= nil and gMainMenu.optionElements ~= nil then 
 
         local soundInputDeviceGuid = Client.GetOptionString(kSoundInputDeviceOptionsKey, "Default")
         local soundOutputDeviceGuid = Client.GetOptionString(kSoundOutputDeviceOptionsKey, "Default")

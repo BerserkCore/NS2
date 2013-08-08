@@ -215,8 +215,7 @@ function AlienTeam:OnEntityChange(oldEntityId, newEntityId)
     // handle the change.
     
     self:UpdateClientOwnedStructures(oldEntityId)
-    self:UpdateCloakablesChanged(oldEntityId, newEntityId)
-    
+
 end
 
 local function CreateCysts(hive, harvester, teamNumber)
@@ -866,57 +865,6 @@ function AlienTeam:UpdateCloakables()
         cloakable:SetIsCloaked(true, 1, false)
     end
  
-end
-
-function AlienTeam:RegisterCloakable(cloakable)
-
-    //Print("AlienTeam:RegisterCloakable(%s)", ToString(cloakable))
-
-    local entityId = cloakable:GetId()
-
-    if self.cloakableCloakCount[entityId] == nil then
-        self.cloakableCloakCount[entityId] = 0
-    end
-    
-    table.insertunique(self.cloakables, entityId)
-    self.cloakableCloakCount[entityId] = self.cloakableCloakCount[entityId] + 1
-    
-    //Print("num shades: %s", ToString(self.cloakableCloakCount[entityId]))
-
-end
-
-function AlienTeam:DeregisterCloakable(cloakable)
-
-    //Print("AlienTeam:DeregisterCloakable(%s)", ToString(cloakable))
-
-    local entityId = cloakable:GetId()
-
-    if self.cloakableCloakCount[entityId] == nil then
-        self.cloakableCloakCount[entityId] = 0
-    end
-    
-    self.cloakableCloakCount[entityId] = math.max(self.cloakableCloakCount[entityId] - 1, 0)
-    if self.cloakableCloakCount[entityId] == 0 then
-        table.removevalue(self.cloakables, entityId)
-    end
-    
-    //Print("num shades: %s", ToString(self.cloakableCloakCount[entityId]))
-
-end
-
-function AlienTeam:UpdateCloakablesChanged(oldEntityId, newEntityId)
-
-    // can happen at server/round startup
-    if self.cloakables == nil then
-        return
-    end
-
-    // simply remove from list, new entity will be added automatically by the trigger
-    if oldEntityId then
-        table.removevalue(self.cloakables, oldEntityId)    
-        self.cloakableCloakCount[oldEntityId] = nil
-    end
-
 end
 
 function AlienTeam:GetSpectatorMapName()

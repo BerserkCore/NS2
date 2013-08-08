@@ -17,17 +17,15 @@ RepositioningMixin = CreateMixin( RepositioningMixin )
 RepositioningMixin.type = "Repositioning"
 
 // Most units have a smaller radius than 0.5, for them we have a small gap between as a result
-RepositioningMixin.kRepositiongDistance = 1.2
-
+local kRepositiongDistance = 1.2
 // in case the deltaTime of OnUpdate gets bigger than expected
-RepositioningMixin.kToleranzDistance = 0.15
+local kToleranzDistance = 0.15
+local kRepositioningSpeed = 3
+local kRepositioningTime = 0.7
+local kPositionCheckIntervall = 0.8
+local kDefaultExtents = Vector(0.25, 0.25, 0.25)
 
-RepositioningMixin.kRepositioningSpeed = 3
-RepositioningMixin.kRepositioningTime = 0.7
-
-RepositioningMixin.kPositionCheckIntervall = 0.8
-
-RepositioningMixin.kGroupOrderCompleteRange = 6
+local kGroupOrderCompleteRange = 6
 
 RepositioningMixin.expectedCallbacks =
 {
@@ -58,7 +56,7 @@ function RepositioningMixin:GetRepositioningTime()
         return self:OverrideGetRepositioningTime()
     end
     
-    return RepositioningMixin.kRepositioningTime
+    return kRepositioningTime
 
 end
 
@@ -68,7 +66,7 @@ function RepositioningMixin:GetRepositioningSpeed()
         return self:OverrideRepositioningSpeed()
     end
    
-   return RepositioningMixin.kRepositioningSpeed
+   return kRepositioningSpeed
     
 end
 
@@ -78,7 +76,7 @@ function RepositioningMixin:GetRepositioningDistance()
         return self:OverrideRepositioningDistance()
     end
    
-   return RepositioningMixin.kRepositiongDistance
+   return kRepositiongDistance
     
 end
 
@@ -180,6 +178,10 @@ function RepositioningMixin:FindBetterPosition(yaw, baseYaw, calls)
     end
     
     if validPos then
+        validPos = Pathing.GetIsFlagSet(endPoint, kDefaultExtents, Pathing.PolyFlag_Walk)
+    end
+    
+    if validPos then
         self.targetPos = endPoint
     else
         baseYaw = self:FindBetterPosition(yaw, baseYaw + math.pi/2, calls + 1)
@@ -196,7 +198,7 @@ function RepositioningMixin:PerformRepositioning(deltaTime)
         local direction = self.targetPos - self:GetOrigin()
         self.timeLeftForReposition = Clamp(self.timeLeftForReposition - deltaTime, 0, self:GetRepositioningTime())
         
-        if direction:GetLength() < RepositioningMixin.kToleranzDistance then
+        if direction:GetLength() < kToleranzDistance then
         
             if HasMixin(self, "Pathing") then
                 self:SetCurrentPositionValid(self.targetPos)
@@ -231,9 +233,11 @@ function RepositioningMixin:PerformRepositioning(deltaTime)
         end
         
         direction:Normalize()
-        direction = (deltaTime * self:GetRepositioningSpeed()) * direction
+        local newOrigin = self:GetOrigin() + (deltaTime * self:GetRepositioningSpeed()) * direction
         
-        self:SetOrigin(direction + self:GetOrigin())
+        if Pathing.GetIsFlagSet(newOrigin, kDefaultExtents, Pathing.PolyFlag_Walk) then        
+            self:SetOrigin(newOrigin)
+        end
     
     else
         self.isRepositioning = false
@@ -243,7 +247,7 @@ end
 
 function RepositioningMixin:_GetShouldCheckPosition()
 
-    if (self.timeLastPositionCheck == nil) or (self.timeLastPositionCheck + RepositioningMixin.kPositionCheckIntervall < Shared.GetTime()) then
+    if (self.timeLastPositionCheck == nil) or (self.timeLastPositionCheck + kPositionCheckIntervall < Shared.GetTime()) then
     
         self.timeLastPositionCheck = Shared.GetTime()
         return true
@@ -284,7 +288,7 @@ function RepositioningMixin:OnOrderComplete(currentOrder)
         /* disabled, here is not the right place for group orders
         if(currentOrder:GetType() == kTechId.Move) then
 
-            local entitiesInRange = GetEntitiesWithMixinForTeamWithinRange("Repositioning", self:GetTeamNumber(), self:GetOrigin(), RepositioningMixin.kGroupOrderCompleteRange)
+            local entitiesInRange = GetEntitiesWithMixinForTeamWithinRange("Repositioning", self:GetTeamNumber(), self:GetOrigin(), kGroupOrderCompleteRange)
             
             for index, entity in ipairs(entitiesInRange) do
             

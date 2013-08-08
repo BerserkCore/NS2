@@ -133,7 +133,7 @@ float4 AmbientOcclusion2PS(PS_DeferredPass_Input input) : COLOR0
 	const float contrast	= 2.0;
 	const float brightness	= 0.2;
 	
-	float3 vsPosition = GetPosition( input.texCoord, input.projected.xy );
+	float3 vsPosition = GetPosition( input.texCoord, input.projected );
 	float3 vsNormal   = GetNormal( input.texCoord );
 	
 	// The actual view space normal can have a negative z value which causes
@@ -280,7 +280,7 @@ half4 ClassicAmbientOcclusionPS(PS_DeferredPass_Input input ) : COLOR0
 		
 	half3 reflectDir = tex2D( noiseTextureSampler, (input.texCoord / rcpFrame) / 64 ).xyz * 2 - 1;
 	
-	half3 vsPosition = GetPosition( input.texCoord, input.projected.xy );
+	half3 vsPosition = GetPosition( input.texCoord, input.projected );
 	half3 vsNormal   = GetNormal( input.texCoord );
 	
 	const int numSamples 			= 16;

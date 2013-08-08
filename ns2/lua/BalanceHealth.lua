@@ -117,8 +117,8 @@ kBoneWallHealth = 300 kBoneWallArmor = 300 kBoneWallPointValue = 5
 kPowerPointHealth = 2000	kPowerPointArmor = 1000	kPowerPointPointValue = 15
 kDoorHealth = 2000	kDoorArmor = 1000	kDoorPointValue = 15
 
-kTunnelEntranceHealth = 1400	kTunnelEntranceArmor = 0	kTunnelEntrancePointValue = 15
-kMatureTunnelEntranceHealth = 1600	kMatureTunnelEntranceArmor = 100
+kTunnelEntranceHealth = 1400	kTunnelEntranceArmor = 100	kTunnelEntrancePointValue = 15
+kMatureTunnelEntranceHealth = 1600	kMatureTunnelEntranceArmor = 200
 
 // Hide armor
 kLerkHideArmor = 0

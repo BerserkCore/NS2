@@ -110,6 +110,11 @@ local function OnCommandAnimInputs(entId)
     
 end
 
+local displayFPS = false
+local function OnCommandDisplayFPS()
+    displayFPS = not displayFPS
+end
+
 local function OnCommandSetSoundVolume(volume)
 
     if volume == nil then
@@ -241,6 +246,7 @@ Event.Hook("Console_debugtext", OnCommandDebugText)
 Event.Hook("Console_locate", OnCommandLocate)
 Event.Hook("Console_distance", OnCommandDistance)
 Event.Hook("Console_animinputs", OnCommandAnimInputs)
+Event.Hook("Console_fps", OnCommandDisplayFPS)
 Event.Hook("Console_name", OnCommandSetName)
 Event.Hook("Console_functioncontractsenabled", OnCommandFunctionContractsEnabled)
 Event.Hook("Console_cleardebuglines", OnCommandClearDebugLines)
@@ -263,6 +269,10 @@ Event.Hook("Console_debugnotifications", OnCommandDebugNotifications)
 
 local function OnUpdateClient()
 
+    if displayFPS then
+        Client.ScreenMessage(string.format("FPS: %.0f", Client.GetFrameRate()))
+    end
+    
     local player = Client.GetLocalPlayer()
     if locationDisplayedOnScreen == true then
     

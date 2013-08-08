@@ -672,6 +672,11 @@ local function FindSomethingToDo(self)
     
 end
 
+// for marquee selection
+function MAC:GetIsMoveable()
+    return true
+end
+
 function MAC:ProcessFollowAndWeldOrder(deltaTime, orderTarget, targetPosition)
 
     local currentOrder = self:GetCurrentOrder()

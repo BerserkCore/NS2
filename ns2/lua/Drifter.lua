@@ -225,7 +225,7 @@ function Drifter:GetHoverHeight()
 end
 
 function Drifter:GetDeathIconIndex()
-    return kDeathMessageIcon.HydraSpike
+    return kDeathMessageIcon.None
 end
 
 local function PlayOrderedSounds(self)
@@ -282,6 +282,11 @@ function Drifter:ResetOrders(resetOrigin, clearOrders)
     
     self.oldLocation = nil
     
+end
+
+// for marquee selection
+function Drifter:GetIsMoveable()
+    return true
 end
 
 function Drifter:ProcessMoveOrder(moveSpeed, deltaTime)

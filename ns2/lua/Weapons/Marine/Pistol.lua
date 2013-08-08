@@ -212,14 +212,6 @@ function Pistol:GetPrimaryIsBlocking()
     return true
 end
 
-function Pistol:GetBlendTime()
-    return 0
-end
-
-function Pistol:GetSwingAmount()
-    return 15
-end
-
 function Pistol:GetIsLaserActive()
     return self.altMode and self:GetIsActive()
 end

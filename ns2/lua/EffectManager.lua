@@ -10,6 +10,7 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/SharedDecal.lua")
+Script.Load("lua/RelevancyMixin.lua")
 
 class 'EffectManager'
 
@@ -500,17 +501,18 @@ function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, t
     local coords  = triggeringParams[kEffectHostCoords]    
     local player  = GetPlayerFromTriggeringEntity(triggeringEntity)
     local success = false
+    local effectEntity = nil
     
     // World cinematics
     if effectTable[kCinematicType] then
     
-        Shared.CreateEffect(nil, cinematicName, nil, coords)
+        effectEntity = Shared.CreateEffect(nil, cinematicName, nil, coords)
         success = true
 
     // World positioned shared cinematics
     elseif effectTable[kPlayerCinematicType] then
     
-        Shared.CreateEffect(player, cinematicName, nil, coords)
+        effectEntity = Shared.CreateEffect(player, cinematicName, nil, coords)
         success = true        
 
     // Parent effect to triggering entity
@@ -519,9 +521,9 @@ function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, t
         local inWorldSpace = effectTable[kEffectParamWorldSpace]
         local attachPoint = effectTable[kEffectParamAttachPoint] 
         if attachPoint then
-            Shared.CreateAttachedEffect(player, cinematicName, triggeringEntity, Coords.GetIdentity(), attachPoint, false, inWorldSpace == true)
+            effectEntity = Shared.CreateAttachedEffect(player, cinematicName, triggeringEntity, Coords.GetIdentity(), attachPoint, false, inWorldSpace == true)
         else
-            Shared.CreateEffect(player, cinematicName, triggeringEntity, Coords.GetIdentity())
+            effectEntity = Shared.CreateEffect(player, cinematicName, triggeringEntity, Coords.GetIdentity())
         end
         
         success = true
@@ -537,7 +539,7 @@ function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, t
                 
                 if player then
                 
-                    Shared.CreateAttachedEffect(player, cinematicName, triggeringEntity, Coords.GetIdentity(), attachPoint, false, inWorldSpace == true)
+                    effectEntity = Shared.CreateAttachedEffect(player, cinematicName, triggeringEntity, Coords.GetIdentity(), attachPoint, false, inWorldSpace == true)
                     success = true
                     
                 else
@@ -565,7 +567,7 @@ function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, t
                 local viewModel = player:GetViewModelEntity()
                 if viewModel and not player:GetIsThirdPerson() then
                 
-                    Shared.CreateAttachedEffect(player, cinematicName, viewModel, Coords.GetIdentity(), attachPoint or "", true, inWorldSpace == true)    
+                    effectEntity = Shared.CreateAttachedEffect(player, cinematicName, viewModel, Coords.GetIdentity(), attachPoint or "", true, inWorldSpace == true)    
                     success = true
                     
                 else
@@ -607,12 +609,13 @@ function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, t
             
         end
     
-    end    
+    end
     
     if success then
         self:DisplayDebug(ToString(cinematicName), effectTable, triggeringParams, triggeringEntity)
     end
     
+    CopyRelevancyMask(triggeringEntity, effectEntity)
     
     return success
     

@@ -30,6 +30,10 @@ function StructureAbility:GetIsPositionValid(position)
     return true
 end
 
+function StructureAbility:AllowBackfacing()
+    return false
+end
+
 function StructureAbility:GetDropRange()
     return kGorgeCreateDistance
 end

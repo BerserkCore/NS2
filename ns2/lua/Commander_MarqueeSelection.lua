@@ -49,13 +49,8 @@ function SetCommanderMarqueeeSelectorUp(mouseX, mouseY)
 	
 	selectorCursorDown = false
 	
-	local player = Client.GetLocalPlayer()
-	
-	// Create normalized coords which can be used on client and server
-    local pickStartVec = CreatePickRay(player, selectorStartX, selectorStartY)
-    local pickEndVec = CreatePickRay(player, mouseX, mouseY)
-    
-    player:MarqueeSelectEntities(pickStartVec, pickEndVec, player.shiftDown)
+	local player = Client.GetLocalPlayer()    
+    player:MarqueeSelectEntities(selectorStartX, selectorStartY, mouseX, mouseY, player.shiftDown)
     
 end
 

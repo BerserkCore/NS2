@@ -420,7 +420,7 @@ function DropStructureAbility:GetPositionForStructure(startPosition, direction, 
         
     end
     
-    if trace.normal:DotProduct(GetNormalizedVector(startPosition - trace.endPoint)) < 0 then
+    if not structureAbility.AllowBackfacing() and trace.normal:DotProduct(GetNormalizedVector(startPosition - trace.endPoint)) < 0 then
         validPosition = false
     end    
     

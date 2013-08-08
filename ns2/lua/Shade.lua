@@ -131,7 +131,7 @@ function Shade:OnCreate()
         InitMixin(self, CommanderGlowMixin)            
     end
     
-    self:SetLagCompensated(true)
+    self:SetLagCompensated(false)
     self:SetPhysicsType(PhysicsType.Kinematic)
     self:SetPhysicsGroup(PhysicsGroup.MediumStructuresGroup)
     
@@ -146,7 +146,6 @@ function Shade:OnInitialized()
     if Server then
     
         InitMixin(self, StaticTargetMixin)
-        InitMixin(self, SleeperMixin)
 
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
@@ -180,10 +179,6 @@ end
 
 function Shade:GetDamagedAlertId()
     return kTechId.AlienAlertStructureUnderAttack
-end
-
-function Shade:GetCanDie(byDeathTrigger)
-    return not byDeathTrigger
 end
 
 function Shade:OverrideCreateManufactureEntity(techId)
@@ -341,47 +336,7 @@ function Shade:OnOverrideOrder(order)
     
 end
 
-function Shade:GetCanSleep()
-    return true
-end
-
 if Server then
-
-    function Shade:OnConstructionComplete(builder)
-        self:SetSphere(Shade.kCloakRadius)
-    end
-    
-    function Shade:OnTriggerListChanged(entity, entered)
-        
-        local team = self:GetTeam()
-        if team then
-            if entered then
-                team:RegisterCloakable(entity)    
-            else
-                team:DeregisterCloakable(entity)
-            end
-        end
-    
-    end
-
-    /*    
-    function Shade:OnKill(attacker, doer, point, direction)
-    
-        ScriptActor.OnKill(self, attacker, doer, point, direction)
-        
-        local team = self:GetTeam()
-        if team then
-            for _, cloakable in ipairs(self:GetEntitiesInTrigger()) do
-                team:DeregisterCloakable(cloakable)
-            end
-        end 
-        
-    end
-    */
-    
-    function Shade:GetTrackEntity(entity)
-        return HasMixin(entity, "Team") and entity:GetTeamNumber() == self:GetTeamNumber() and HasMixin(entity, "Cloakable") and self:GetIsBuilt() and self:GetIsAlive()
-    end
     
     function Shade:OnConstructionComplete()    
         self:AddTimedCallback(Shade.UpdateCloaking, Shade.kCloakUpdateRate)    
@@ -416,4 +371,4 @@ function Shade:GetTechAllowed(techId, techNode, player)
     
 end
 
-Shared.LinkClassToMap("Shade", Shade.kMapName, networkVars, true)
+Shared.LinkClassToMap("Shade", Shade.kMapName, networkVars)

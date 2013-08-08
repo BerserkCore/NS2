@@ -470,7 +470,7 @@ function DisablePlayerDanger(player)
 
     // Stop looping music.
     if player:GetIsLocalPlayer() then
-        Client.StopMusic("danger")
+        Client.StopMusic("sound/NS2.fev/danger")
     end
     
 end
@@ -2220,6 +2220,11 @@ function Player:GetMaxBackwardSpeedScalar()
     return Player.kWalkBackwardSpeedScalar
 end
 
+// for marquee selection
+function Player:GetIsMoveable()
+    return true
+end
+
 function Player:GetAirMoveScalar()
     return .7
 end
@@ -2558,21 +2563,21 @@ function Player:HandleButtons(input)
     self:HandleAttacks(input)
     
     // self:HandleDoubleTap(input)
-    
-    if bit.band(input.commands, Move.NextWeapon) ~= 0 then
-        self:SelectNextWeapon()
-    end
-    
-    if bit.band(input.commands, Move.PrevWeapon) ~= 0 then
-        self:SelectPrevWeapon()
-    end
-    
+
     if bit.band(input.commands, Move.Reload) ~= 0 then
         self:Reload()
     end
     
     // Weapon switch
     if not self:GetIsCommander() and not self:GetIsUsing() then
+    
+        if bit.band(input.commands, Move.NextWeapon) ~= 0 then
+            self:SelectNextWeapon()
+        end
+        
+        if bit.band(input.commands, Move.PrevWeapon) ~= 0 then
+            self:SelectPrevWeapon()
+        end
     
         if bit.band(input.commands, Move.Weapon1) ~= 0 then
             self:SwitchWeapon(1)

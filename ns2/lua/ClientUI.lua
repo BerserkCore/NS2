@@ -32,6 +32,10 @@ for n, e in pairs(kBothAlienAndMarine) do
     
 end
 
+function AddClientUIScriptForTeam(showOnTeam, scriptName)
+    kShowOnTeam[showOnTeam][scriptName] = true
+end
+
 // Below are the rules for what scripts should be active when the local player is a certain class.
 local kShowAsClass = { }
 kShowAsClass["Marine"] = { ["Hud/Marine/GUIMarineHUD"] = true, GUIPoisonedFeedback = true, GUIPickups = true, GUIOrders = true,
@@ -49,6 +53,10 @@ kShowAsClass["AlienCommander"] = { GUIEggDisplay = true, GUICommanderPheromoneDi
 kShowAsClass["ReadyRoomPlayer"] = { }
 kShowAsClass["TeamSpectator"] = { }
 kShowAsClass["Spectator"] = { }
+
+function AddClientUIScriptForClass(className, scriptName)
+    kShowAsClass[className][scriptName] = true
+end
 
 local scripts = { }
 

@@ -50,10 +50,10 @@ local function FilterOutMarqueeSelection(selection)
             table.insertunique(toRemove, entityPair)
         else
         
-            if HasMixin(entity, "Construct") then
-                foundStructure = true
-            else
+            if entity.GetIsMoveable and entity:GetIsMoveable() then
                 foundNonStructure = true
+            else
+                foundStructure = true
             end
             
         end
@@ -64,7 +64,8 @@ local function FilterOutMarqueeSelection(selection)
     
         for index, entity in ipairs(selection) do
 
-            if HasMixin(entity, "Construct") then
+            // filter out non moveables
+            if not entity.GetIsMoveable or not entity:GetIsMoveable() then
                 table.insertunique(toRemove, entity)
             end
             
@@ -84,13 +85,21 @@ end
 
 // Input vectors are normalized world vectors emanating from player, representing a selection region where the marquee 
 // existed (or they were created around the vector where the mouse was clicked for a single selection). 
-function Commander:MarqueeSelectEntities(pickStartVec, pickEndVec, shiftSelect)
+function Commander:MarqueeSelectEntities(selectorStartX, selectorStartY, mouseX, mouseY, shiftSelect)
 
-    local newSelection = {}
+    local startPos = Vector(
+        selectorStartX < mouseX and selectorStartX or mouseX,
+        selectorStartY < mouseY and selectorStartY or mouseY,
+        0
+    )
+    
+    local endPos = Vector(
+        selectorStartX >= mouseX and selectorStartX or mouseX,
+        selectorStartY >= mouseY and selectorStartY or mouseY,
+        0
+    )
 
-    // allow marquee select only on friends    
-    local potentials = GetEntitiesWithMixinForTeam("Selectable", self:GetTeamNumber())    
-    self:GetEntitiesBetweenVecs(potentials, pickStartVec, pickEndVec, newSelection)
+    local newSelection = GetSelectablesOnScreen(self, nil, startPos, endPos)
     FilterOutMarqueeSelection(newSelection)
     
     if not shiftSelect then
@@ -177,8 +186,6 @@ local function GoToRootMenu(self)
     if Client and self == Client.GetLocalPlayer() then
     
         self:TriggerButtonIndex(4)
-        self.createSelectionCircles = true
-        self:UpdateSelectionCircles()
         
     elseif Server then
         self:ProcessTechTreeAction(kTechId.RootMenu, nil, nil)
@@ -201,15 +208,11 @@ function Commander:GetSelection()
     
 end
 
-function Commander:UpdateSelection(deltaTime)
-    
-end
-
 // Returns true if hotkey exists and was selected
 function Commander:SelectHotkeyGroup(number)
 
-    if Client then
-        self:SendSelectHotkeyGroupMessage(number)
+    if Client then    
+        self:SendSelectHotkeyGroupMessage(number)        
     end
     
     local selection = false
@@ -230,37 +233,38 @@ function Commander:SelectHotkeyGroup(number)
     
 end
 
-function Commander:GotoHotkeyGroup(number, position)
+function Commander:GetHotGroup(number)
 
-    if (number >= 1 and number <= Player.kMaxHotkeyGroups) then
-    
-        if table.count(self.hotkeyGroups[number]) > 0 then
+    local hotgroupEntities = {}
+
+    for _, entity in ipairs(GetEntitiesWithMixinForTeam("Selectable", self:GetTeamNumber())) do
         
-            // Goto first unit in group
-            local entityId = self.hotkeyGroups[number][1]
-            local entity = Shared.GetEntity(entityId)
-            if entity then
-            
-                VectorCopy(entity:GetOrigin(), position)
-
-                // Add in extra x offset to center view where we're told, not ourselves            
-                position.x = position.x - Commander.kViewOffsetXHeight
-                
-                // Jump to hotkey group if not nearby, else jump to previous
-                // position before we jumped to group
-                local dist = (self:GetOrigin() - position):GetLength()
-                if dist < 1 then
-                    VectorCopy(self.positionBeforeJump, position)
-                end
-                
-                return true
-            
-            end
-            
+        if entity:GetHotGroupNumber() == number then
+            table.insert(hotgroupEntities, entity)
         end
         
-    end 
+    end
     
-    return false
-           
+    return hotgroupEntities
+
+end
+
+function Commander:GetHotGroupSelected(number)
+
+    local hotgroupEntities = self:GetHotGroup(number)
+    local hotGroupSize = #hotgroupEntities
+    local numSelected = 0
+    local teamNum = self:GetTeamNumber()
+    
+    for _, entity in ipairs(hotgroupEntities) do
+
+        if entity:GetIsSelected(teamNum) then
+            numSelected = numSelected + 1
+        end
+    
+    end
+    
+    // return true when the hotgroup exists and every entity is selected
+    return numSelected ~= 0 and numSelected == hotGroupSize, hotgroupEntities
+
 end

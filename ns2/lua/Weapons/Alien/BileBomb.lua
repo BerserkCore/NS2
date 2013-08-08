@@ -127,7 +127,7 @@ function BileBomb:FireBombProjectile(player)
         local startVelocity = viewCoords.zAxis * kBombVelocity
         
         local bomb = CreateEntity(Bomb.kMapName, startPoint, player:GetTeamNumber())
-        bomb:Setup(player, startVelocity, true)
+        bomb:Setup(player, startVelocity, true, nil, player)
         
     end
     

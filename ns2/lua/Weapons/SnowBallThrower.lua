@@ -50,7 +50,7 @@ local function FireBombProjectile(player)
         local startVelocity = viewCoords.zAxis * kBombVelocity
         
         local snowBall = CreateEntity(SnowBall.kMapName, startPoint, player:GetTeamNumber())
-        snowBall:Setup(player, startVelocity, true)
+        snowBall:Setup(player, startVelocity, true, nil, player)
         
     end
     

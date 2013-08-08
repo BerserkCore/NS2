@@ -444,10 +444,33 @@ if Server then
             Print("Warning -- Found only %d %s entities.", resourcePoints:GetSize(), ResourcePoint.kPointMapName)
         end
         
-        // Reset teams (keep players on them)
-        local team1TechPoint = self:ChooseTechPoint(techPoints, kTeam1Index)
+        local team1TechPoint = nil
+        local team2TechPoint = nil
+        if Server.spawnSelectionOverrides then
+        
+            local selectedSpawn = self.techPointRandomizer:random(1, #Server.spawnSelectionOverrides)
+            selectedSpawn = Server.spawnSelectionOverrides[selectedSpawn]
+            
+            for t = 1, #techPoints do
+            
+                local techPointName = string.lower(techPoints[t]:GetLocationName())
+                if techPointName == selectedSpawn.marineSpawn then
+                    team1TechPoint = techPoints[t]
+                elseif techPointName == selectedSpawn.alienSpawn then
+                    team2TechPoint = techPoints[t]
+                end
+                
+            end
+            
+        else
+        
+            // Reset teams (keep players on them)
+            team1TechPoint = self:ChooseTechPoint(techPoints, kTeam1Index)
+            team2TechPoint = self:ChooseTechPoint(techPoints, kTeam2Index)
+            
+        end
+        
         self.team1:ResetPreservePlayers(team1TechPoint)
-        local team2TechPoint = self:ChooseTechPoint(techPoints, kTeam2Index)
         self.team2:ResetPreservePlayers(team2TechPoint)
         
         assert(self.team1:GetInitialTechPoint() ~= nil)

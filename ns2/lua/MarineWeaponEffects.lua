@@ -90,6 +90,7 @@ kMarineWeaponEffects =
         {
             {stop_sound = "sound/NS2.fev/marine/rifle/reload", classname = "Rifle"},
             {stop_sound = "sound/NS2.fev/marine/pistol/reload", classname = "Pistol"},
+            {stop_sound = "sound/NS2.fev/marine/flamethrower/reload", classname = "Flamethrower"}
         },
     },
     

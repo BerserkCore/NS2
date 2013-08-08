@@ -23,6 +23,8 @@ local kAnimationGraph = PrecacheAsset("models/marine/jetpack/jetpack.animation_g
 local kImpactCinematic = PrecacheAsset("cinematics/marine/jetpack/impact.cinematic")
 local kJetpackTakeOffEffect = PrecacheAsset("cinematics/marine/jetpack/takeoff.cinematic")
 
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/jetpack_thruster.surface_shader")
+
 local kSmokeEffectInterval = 0.1
 local kSmokeEffectDuration = 0.7
 

@@ -153,7 +153,7 @@ function CameraHolderMixin:GetCameraViewCoords()
     // Check if the host wants to avoid having the camera penetrate the world.
     if distance ~= 0 and self.GetPreventCameraPenetration and self:GetPreventCameraPenetration() then
     
-        local trace = Shared.TraceRay(position, originAtDistance, CollisionRep.Move, PhysicsMask.Movement, EntityFilterOne(self))
+        local trace = Shared.TraceRay(position, originAtDistance, CollisionRep.Move, PhysicsMask.Movement, EntityFilterAll())
         if trace.fraction < 1 then
         
             local direction = trace.endPoint - position

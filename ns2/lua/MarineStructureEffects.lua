@@ -103,7 +103,7 @@ kMarineStructureEffects =
         {
             {cinematic = "cinematics/marine/structures/death_large.cinematic", classname = "RoboticsFactory", done = true},
             {cinematic = "cinematics/marine/structures/death_large.cinematic", classname = "PhaseGate", done = true},
-            {cinematic = "cinematics/marine/structures/death_large.cinematic", classname = "Extractor", done = true},
+            {cinematic = "cinematics/marine/structures/death_small.cinematic", classname = "Extractor", done = true},
             {cinematic = "cinematics/marine/structures/death_large.cinematic", classname = "CommandStation", done = true},
             {cinematic = "cinematics/marine/structures/death_large.cinematic", classname = "PrototypeLab", done = true},
             {cinematic = "cinematics/marine/structures/death_large.cinematic", classname = "ArmsLab", done = true},

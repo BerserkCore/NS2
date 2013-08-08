@@ -54,7 +54,7 @@ function StompMixin:PerformStomp(player)
         
         local shockWave = CreateEntity(Shockwave.kMapName, origin, player:GetTeamNumber())
         local velocity = GetNormalizedVectorXZ(player:GetViewCoords().zAxis) * kShockwaveSpeed
-        shockWave:Setup(player, velocity, false)
+        shockWave:Setup(player, velocity, false, nil, player)
         
     end
     

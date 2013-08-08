@@ -286,6 +286,7 @@ if Server then
         SharedUpdate(self, input.time)
     end
     
+    // this causes an issue: when the distance is too big (going to ready room, moving through phase gate) MarkNearbyDirty(self) will miss previous revealed entities. 
     function LOSMixin:SetOrigin(origin)
     
         // matso: optimization; SetOrigin is called A LOT, so we just add us to an update-los queue when we move enough
