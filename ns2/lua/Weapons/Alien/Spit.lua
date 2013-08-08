@@ -55,23 +55,14 @@ end
 
 function Spit:ProcessHit(targetHit, surface, normal)
 
-    //self:TriggerEffects("spit_hit", { effecthostcoords = Coords.GetTranslation(self:GetOrigin()) } )
-    self:DoDamage(kSpitDamage, targetHit, self:GetOrigin() + normal * kHitEffectOffset, self:GetCoords().zAxis, surface, false, false)
+    //TODO: create decal
+    
+    if Client or (Server and self:GetOwner() ~= targetHit) then
+        self:DoDamage(kSpitDamage, targetHit, self:GetOrigin() + normal * kHitEffectOffset, self:GetCoords().zAxis, surface, false, false)
+    end
     
     if Server then
-    
-        /*
-        if targetHit and targetHit:isa("Marine") then
-        
-            local direction = self:GetOrigin() - targetHit:GetEyePos()
-            direction:Normalize()
-            targetHit:OnSpitHit(direction)
-            
-        end
-        */
-
-        DestroyEntity(self)    
-
+        DestroyEntity(self) 
     end
     
 end

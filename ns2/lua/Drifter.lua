@@ -646,7 +646,7 @@ function Drifter:OnUpdate(deltaTime)
 end
 
 function Drifter:GetCanCloakOverride()
-    return not self:GetHasOrder()
+    return not self:GetHasOrder() or self:GetCurrentOrder():GetType() == kTechId.HoldPosition
 end
 
 if Client then

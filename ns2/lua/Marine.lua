@@ -877,8 +877,6 @@ function Marine:OnPostUpdateCamera(deltaTime)
         self:SetDesiredCameraYOffset(-1.3)
     end
     
-    return done
-
 end
 
 function Marine:GetHasCatpackBoost()

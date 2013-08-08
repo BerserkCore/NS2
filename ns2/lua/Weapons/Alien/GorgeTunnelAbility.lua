@@ -66,7 +66,7 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
             
                 local traceStart = startPos + kCheckDirections[i]
             
-                local trace = Shared.TraceRay(traceStart, traceStart - Vector(0, kVerticalOffset + 0.1, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOne(player))
+                local trace = Shared.TraceRay(traceStart, traceStart - Vector(0, kVerticalOffset + 0.1, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOneAndIsa(player, "Babbler"))
             
                 if trace.fraction < 0.65 or trace.fraction >= 1.0 then
                     valid = false

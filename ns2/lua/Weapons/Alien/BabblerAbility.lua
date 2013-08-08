@@ -19,7 +19,7 @@ class 'BabblerAbility' (Ability)
 BabblerAbility.kMapName = "babblerability"
 
 local kAnimationGraph = PrecacheAsset("models/alien/gorge/gorge_view.animation_graph")
-local kPheromoneTraceWidth = 0.1
+local kPheromoneTraceWidth = 0.3
 
 local networkVars =
 {
@@ -103,7 +103,7 @@ local function FindTarget(self, player)
 
     local startPoint = player:GetEyePos()
     local direction = player:GetViewCoords().zAxis
-    local extents = Vector(kPheromoneTraceWidth, kPheromoneTraceWidth, kPheromoneTraceWidth)
+    local extents = GetDirectedExtentsForDiameter(direction, kPheromoneTraceWidth)
     
     local trace = Shared.TraceBox(extents, startPoint, startPoint + direction * self:GetRange(), CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
     

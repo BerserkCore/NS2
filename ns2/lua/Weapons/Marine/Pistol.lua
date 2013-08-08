@@ -23,7 +23,7 @@ local kClipSize = 10
 // 10 bullets per second
 local kMaxRateOfFire = 10
 local kRange = 200
-local kSpread = ClipWeapon.kCone1Degrees
+local kSpread = Math.Radians(0.4)
 local kAltSpread = ClipWeapon.kCone0Degrees
 
 local kLaserAttachPoint = "fxnode_laser"
@@ -32,6 +32,7 @@ local networkVars =
 {
     altMode = "boolean",
     emptyPoseParam = "private float (0 to 1 by 0.01)",
+    queuedShots = "private compensated integer (0 to 10)"
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -167,6 +168,10 @@ if Client then
     
 end
 
+function Pistol:OnMaxFireRateExceeded()
+    self.queuedShots = Clamp(self.queuedShots + 1, 0, 10)
+end
+
 function Pistol:GetAnimationGraphName()
     return kAnimationGraph
 end
@@ -287,6 +292,35 @@ if Server then
         return false
     end 
     
+end
+
+function Pistol:OnDraw(player, previousWeaponMapName)
+
+    ClipWeapon.OnDraw(self, player, previousWeaponMapName)
+
+    self.queuedShots = 0
+    
+end
+
+function Pistol:OnReload(player)
+
+    ClipWeapon.OnReload(self, player)
+
+    self.queuedShots = 0
+
+end
+
+function Pistol:OnProcessMove(input)
+
+    ClipWeapon.OnProcessMove(self, input)
+
+    if self.queuedShots > 0 then
+    
+        self.queuedShots = math.max(0, self.queuedShots - 1)
+        self:OnPrimaryAttack(self:GetParent())
+    
+    end
+
 end
 
 Shared.LinkClassToMap("Pistol", Pistol.kMapName, networkVars)

@@ -60,7 +60,7 @@ local networkVars = {
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
-AddMixinNetworkVars(ModelMixin, networkVars)
+AddMixinNetworkVars(ClientModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(GameEffectsMixin, networkVars)
 AddMixinNetworkVars(FlinchMixin, networkVars)
@@ -127,7 +127,7 @@ function TunnelEntrance:OnCreate()
     ScriptActor.OnCreate(self)
     
     InitMixin(self, BaseModelMixin)
-    InitMixin(self, ModelMixin)
+    InitMixin(self, ClientModelMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, GameEffectsMixin)
     InitMixin(self, FlinchMixin)
@@ -295,6 +295,7 @@ end
 function TunnelEntrance:Interact()
 
     self.beingUsed = true
+    self.clientBeingUsed = true
     self.timeLastInteraction = Shared.GetTime()
     
 end
@@ -337,6 +338,8 @@ if Server then
     end
 
     function TunnelEntrance:OnUpdate(deltaTime)
+    
+        self:ForceUpdateUntil(Shared.GetTime() + 1)
     
         ScriptActor.OnUpdate(self, deltaTime)        
         self.connected = self.tunnelId ~= nil and self.tunnelId ~= Entity.invalidId and Shared.GetEntity(self.tunnelId) ~= nil
@@ -472,8 +475,10 @@ end
 
 function TunnelEntrance:OnUpdateAnimationInput(modelMixin)
 
+    local sucking = self.beingUsed or ( self.clientBeingUsed and self.timeLastInteraction and self.timeLastInteraction + 0.1 > Shared.GetTime() )
+
     modelMixin:SetAnimationInput("open", self.connected)
-    modelMixin:SetAnimationInput("player_in", self.beingUsed)
+    modelMixin:SetAnimationInput("player_in", sucking)
     modelMixin:SetAnimationInput("player_out", self.timeLastExited + 0.2 > Shared.GetTime())
     
 end

@@ -9,6 +9,8 @@
 // Set the name of the VM for debugging
 decoda_name = "Client"
 
+Script.Load("lua/PreLoadMod.lua")
+
 Script.Load("lua/ClientResources.lua")
 Script.Load("lua/Shared.lua")
 Script.Load("lua/Effect.lua")
@@ -959,6 +961,7 @@ local function SendAddBotCommands()
         local numAlienBots = Client.GetOptionInteger("botsSettings_numAlienBots", 0)
         local addMarineCom = Client.GetOptionBoolean("botsSettings_marineCom", false)
         local addAlienCom = Client.GetOptionBoolean("botsSettings_alienCom", false)
+        local marineSkill = Client.GetOptionString("botsSettings_marineSkillLevel", "Intermediate")
 
         if numMarineBots > 0 then
             Shared.ConsoleCommand( string.format("addbot %d 1", numMarineBots) )
@@ -976,6 +979,13 @@ local function SendAddBotCommands()
             Shared.ConsoleCommand("addbot 1 2 com")
         end
 
+        local skill2jitter =
+        {
+            Beginner = 1.2,
+            Intermediate = 0.8,
+            Expert = 0.4
+        }
+        Shared.ConsoleCommand(string.format("marinejitter %f", skill2jitter[marineSkill]))
     end
 
 end
@@ -1094,3 +1104,5 @@ function()
         DebugPrint("active weapon id = %d", player.activeWeaponId )
     end
 end)
+
+Script.Load("lua/PostLoadMod.lua")

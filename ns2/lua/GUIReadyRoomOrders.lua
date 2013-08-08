@@ -76,7 +76,6 @@ local function CreateVisionElement(self)
 
 end
 
-local kLogoSize = GUIScale(Vector(1024, 301, 0)) * 0.75
 function GUIReadyRoomOrders:Initialize()
 
     self.activeVisions = { }
@@ -88,16 +87,9 @@ function GUIReadyRoomOrders:Initialize()
     self.welcomeText:SetTextAlignmentX(GUIItem.Align_Center)
     self.welcomeText:SetTextAlignmentY(GUIItem.Align_Center)
     self.welcomeText:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.welcomeText:SetText("This is a modified version of NS2")
+    self.welcomeText:SetText(Locale.ResolveString("WELCOME_TO_READY_ROOM"))
     self.welcomeText:SetColor(kFadeOutColor)
     self.welcomeTextStartTime = Shared.GetTime()
-    
-    self.logo = GetGUIManager():CreateGraphicItem()
-    self.logo:SetSize(kLogoSize)
-    self.logo:SetPosition(Vector(-kLogoSize.x * 0.5, kLogoSize.y * 0.5, 0))
-    self.logo:SetAnchor(GUIItem.Middle, GUIItem.Top)
-    self.logo:SetTexture("ui/menu/logo.dds")
-    self.logo:SetColor(kFadeOutColor)
     
 end
 
@@ -111,11 +103,6 @@ function GUIReadyRoomOrders:Uninitialize()
     if self.welcomeText then
         GUI.DestroyItem(self.welcomeText)
     end
-    
-    if self.logo then
-        GUI.DestroyItem(self.logo)
-    end
-    
     self.welcomeText = nil
     
 end
@@ -124,10 +111,16 @@ local function UpdateWelcomeText(self, deltaTime)
 
     local now = Shared.GetTime()
     local timeSinceStart = now - (self.welcomeTextStartTime + kWelcomeDelay)
-    local color = LerpColor(kFadeOutColor, kFadeInColor, Clamp(timeSinceStart / kWelcomeFadeInTime, 0, 1))
-
-    self.welcomeText:SetColor(color)
-    self.logo:SetColor(color)
+    local color = nil
+    if timeSinceStart <= kWelcomeFadeInTime then
+        color = LerpColor(kFadeOutColor, kFadeInColor, Clamp(timeSinceStart / kWelcomeFadeInTime, 0, 1))
+    elseif timeSinceStart >= kWelcomeStartFadeOutTime then
+        color = LerpColor(kFadeInColor, kFadeOutColor, Clamp((timeSinceStart - kWelcomeStartFadeOutTime) / kWelcomeFadeOutTime, 0, 1))
+    end
+    
+    if color then
+        self.welcomeText:SetColor(color)
+    end
     
 end
 

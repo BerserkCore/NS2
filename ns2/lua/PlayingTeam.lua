@@ -167,7 +167,7 @@ function PlayingTeam:ResetTeam()
     
     self.conceded = false
     
-    if commandStructure:isa("Hive") then
+    if commandStructure and commandStructure:isa("Hive") then
         commandStructure:SetHotGroupNumber(1)
     end 
     
@@ -802,7 +802,7 @@ function PlayingTeam:Update(timePassed)
         self:UpdateMinResTick()
 
         if #gServerBots > 0 then
-            self.brain:Update(timePassed)
+            self:GetTeamBrain():Update(timePassed)
         end
 
     else

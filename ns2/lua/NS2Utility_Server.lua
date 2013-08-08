@@ -11,14 +11,14 @@ Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
 function OnCommanderLogOut(commander)
-
+/*
     local client = Server.GetOwner(commander)
     
     local addTime = math.max(0, 60 - GetGamerules():GetGameTimeChanged())
     
     client.timeUntilResourceBlock = Shared.GetTime() + addTime + kCommanderResourceBlockTime
     client.blockPersonalResources = true
-
+*/
 end
 
 function SetAlwaysRelevantToCommander(unit, relevant)

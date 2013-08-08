@@ -23,8 +23,8 @@ local kBioMassBarSize = GUIScale(Vector(480, 64, 0))
 
 local kBioMassIconSize = kBioMassBarSize.x / 12
 
-local kBackgroundCoords = { 0, 64, 480, 128 }
-local kForegroundCoords = { 0, 0, 480, 64 }
+local kBackgroundCoords = { 0, 160, 1200, 320 }
+local kForegroundCoords = { 0, 0, 1200, 160 }
 
 local kBackgroundColor = Color(1, 1, 1, 1)
 local kForegroundColor = Color(1, 1, 1, 1)
@@ -34,8 +34,8 @@ local kTextColor = Color(0,0,0,1)
 local kUnlocked = Color(kIconColors[kAlienTeamType])
 local kLocked = Color(0.4,0.4,0.4,1)
 
-local kFontScale = GUIScale(Vector(1,1,1)) * 0.35
-local kLevelTextPos = GUIScale(Vector(300, 0, 0))
+local kFontScale = GUIScale(Vector(1,1,1)) * 0.25
+local kLevelTextPos = GUIScale(Vector(300, 18, 0))
 
 local kBackgroundNoiseTexture = PrecacheAsset("ui/alien_commander_bg_smoke.dds")
 local kSmokeyBackgroundSize = GUIScale(Vector(700, 300, 0))
@@ -148,7 +148,7 @@ function GUIBioMassDisplay:Initialize()
     self.smokeyBackground:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
     self.smokeyBackground:SetFloatParameter("correctionX", 0.7)
     self.smokeyBackground:SetFloatParameter("correctionY", 0.4)
-    self.smokeyBackground:SetLayer(kGUILayerPlayerHUDBackground)
+    self.smokeyBackground:SetLayer(0)
 
     self.background = GetGUIManager():CreateGraphicItem()
     self.background:SetAnchor(GUIItem.Left, GUIItem.Top)

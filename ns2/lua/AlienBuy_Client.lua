@@ -441,16 +441,19 @@ function AlienBuy_GetAlienCost(alienType, hasHyperMutation)
     local cost = nil
     
     local techNode = GetAlienTechNode(alienType, true)
+    local techId = kTechId.None
     if techNode ~= nil then
         cost = techNode:GetCost()
+        techId = techNode:GetTechId()
     end
     
     if cost == nil then
         cost = 0
     end
     
-    if hasHyperMutation then
-        cost = cost * kHyperMutationCostScalar
+    local player = Client.GetLocalPlayer()
+    if player and player:GetTechId() == techId then
+        cost = 0
     end
     
     return cost

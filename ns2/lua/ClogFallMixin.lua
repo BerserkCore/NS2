@@ -27,6 +27,7 @@ ClogFallMixin.networkVars =
 function ClogFallMixin:__initmixin()
 
     assert(Server)
+    self.startClogFall = false
     self.isClogFalling = false
     self.fallDestinationY = self:GetOrigin().y
     self.attachedClogIds = {}
@@ -35,17 +36,23 @@ function ClogFallMixin:__initmixin()
     
 end
 
+-- The startClogFall variable adds a delay to prevent the fall from happening during the destruction of
+-- the entity this entity is attached to. There are problems with falling during that destruction.
+local function StartClogFall(self)
+    self.startClogFall = true
+end
+
 function ClogFallMixin:OnDestroy()
 
     for _, attachedId in ipairs(self.attachedClogIds) do
     
         local entity = Shared.GetEntity(attachedId)
         if entity and HasMixin(entity, "ClogFall") then
-            entity:TriggerClogFall()
+            StartClogFall(entity)
         end
-    
+        
     end
-
+    
 end
 
 function ClogFallMixin:GetIsFalling()
@@ -76,10 +83,10 @@ function ClogFallMixin:RemoveAttachedClog(structure)
     table.removevalue(self.attachedClogIds, structure:GetId())
 end
 
-function ClogFallMixin:TriggerClogFall()
+local function TriggerClogFall(self)
 
     PROFILE("ClogFallMixin:TriggerClogFall")
-
+    
     // clear attached
     if self.clogParentId and self.clogParentId ~= Entity.invalidId then
     
@@ -111,7 +118,7 @@ function ClogFallMixin:TriggerClogFall()
             
                 local verticalDistance = entity:GetOrigin().y - self:GetOrigin().y
                 if verticalDistance < 0.4 then
-                    entity:TriggerClogFall()
+                    StartClogFall(entity)
                 end
                 
             end
@@ -128,8 +135,8 @@ function ClogFallMixin:TriggerClogFall()
     
 end
 
-// applies deltaVec recursive to any attached objects
-function ClogFallMixin:AddClogFall(deltaMove)
+-- Applies deltaVec recursive to any attached objects.
+local function AddClogFall(self, deltaMove)
 
     local origin = self:GetOrigin()
     origin.y = origin.y + deltaMove
@@ -139,7 +146,7 @@ function ClogFallMixin:AddClogFall(deltaMove)
     
         local entity = Shared.GetEntity(attachedId)
         if entity and HasMixin(entity, "ClogFall") then
-            entity:AddClogFall(deltaMove)
+            AddClogFall(entity, deltaMove)
         end
         
     end
@@ -173,13 +180,20 @@ end
 
 local function SharedUpdate(self, deltaTime)
 
+    if self.startClogFall then
+    
+        TriggerClogFall(self)
+        self.startClogFall = false
+        
+    end
+    
     if self.isClogFalling then
     
         local deltaMove = deltaTime * kClogFallSpeed
-        deltaMove = math.max(self.fallDestinationY, self:GetOrigin().y - deltaMove )
+        deltaMove = math.max(self.fallDestinationY, self:GetOrigin().y - deltaMove)
         deltaMove = deltaMove - self:GetOrigin().y
         
-        self:AddClogFall(deltaMove)
+        AddClogFall(self, deltaMove)
         
     end
     

@@ -166,6 +166,7 @@ function Shotgun:OnTag(tagName)
     continueReloading = false
     if self:GetIsReloading() and tagName == "reload_end" then
         continueReloading = true
+        self.reloading = false
     end
     
     if tagName == "end" then

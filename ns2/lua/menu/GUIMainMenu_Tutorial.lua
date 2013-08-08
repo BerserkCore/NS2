@@ -154,14 +154,19 @@ function GUIMainMenu:CreateBotsPage()
             label   = "# MARINE BOTS",
             value   = "8"
         },
-        /* TEMP - renable when marine com actually does something
+        {
+            name = "MarineSkillLevel",
+            label = "MARINE SKILL LEVEL",
+            type = "select",
+            values = {"Beginner", "Intermediate", "Expert"},
+            value = "Intermediate"
+        },
         {
             name    = "AddMarineCommander",
             label   = "MARINE COMMANDER BOT",
             value   = "false",
             type    = "checkbox"
         },
-        */
         {
             name    = "NumAlienBots",
             label   = "# ALIEN BOTS",
@@ -209,8 +214,9 @@ function GUIMainMenu:CreateBotsPage()
 
                 Client.SetOptionBoolean("sendBotsCommands", true)
                 Client.SetOptionInteger("botsSettings_numMarineBots", tonumber(formData.NumMarineBots))
+                Client.SetOptionString("botsSettings_marineSkillLevel", formData.MarineSkillLevel)
                 Client.SetOptionInteger("botsSettings_numAlienBots", tonumber(formData.NumAlienBots))
-                // TEMP Client.SetOptionBoolean("botsSettings_marineCom", formData.AddMarineCommander)
+                Client.SetOptionBoolean("botsSettings_marineCom", formData.AddMarineCommander)
                 Client.SetOptionBoolean("botsSettings_alienCom", formData.AddAlienCommander)
                 
                 if Client.StartServer(mapName, serverName, password, port, maxPlayers) then
@@ -224,7 +230,7 @@ function GUIMainMenu:CreateBotsPage()
 
     local betaNotice = CreateMenuElement( form, "Font", false )
     betaNotice:SetCSSClass("warning_text")
-    betaNotice:SetText("NOTE: Bots are a work-in-progress. We recommend using the default # of bots\nand making yourself Marine commander. Enjoy!")
+    betaNotice:SetText("NOTE: Bots are a work in progress. We recommend using the default # of bots and making yourself\nMarine commander. You can have friends join your game, but make sure your ports are forwarded.\nEnjoy!")
 
     self.botsPage:AddEventCallbacks(
     {
@@ -254,7 +260,7 @@ function GUIMainMenu:CreateTutorialWindow()
 
     self.tutorialWindow = self:CreateWindow()
     self.tutorialWindow:DisableCloseButton()
-    self:SetupWindow(self.tutorialWindow, "TRAINING")
+    self:SetupWindow(self.tutorialWindow, "PRACTICE")
     self.tutorialWindow:SetCSSClass("tutorial_window")
     
     local back = CreateMenuElement(self.tutorialWindow, "MenuButton")

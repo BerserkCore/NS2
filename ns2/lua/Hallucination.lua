@@ -23,7 +23,6 @@ Script.Load("lua/LOSMixin.lua")
 Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/SleeperMixin.lua")
 Script.Load("lua/RepositioningMixin.lua")
-Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/SoftTargetMixin.lua")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/hallucination.surface_shader")
@@ -315,11 +314,6 @@ function Hallucination:OnInitialized()
         InitMixin(self, RepositioningMixin)
 
         self:SetPhysicsType(PhysicsType.Kinematic)
-        
-        // This Mixin must be inited inside this OnInitialized() function.
-        if not HasMixin(self, "MapBlip") then
-            InitMixin(self, MapBlipMixin)
-        end
         
         InitMixin(self, MobileTargetMixin)
     

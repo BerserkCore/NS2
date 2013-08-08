@@ -228,7 +228,7 @@ end
 
 function Hive:GetMainMenuButtons()
 
-    local techButtons = { kTechId.ShiftHatch, kTechId.Drifter, kTechId.None, kTechId.None,
+    local techButtons = { kTechId.Drifter, kTechId.ShiftHatch, kTechId.None, kTechId.None,
                           kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
     if self:GetTechId() == kTechId.Hive then

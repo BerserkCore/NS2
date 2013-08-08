@@ -251,7 +251,7 @@ function Hydra:GetReceivesStructuralDamage()
 end
 
 function Hydra:GetDamagedAlertId()
-    return kTechId.AlienAlertHydraUnderAttack
+    return kTechId.AlienAlertStructureUnderAttack
 end
 
 function Hydra:GetCanSleep()

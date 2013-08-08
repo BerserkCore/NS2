@@ -1713,7 +1713,7 @@ function GetSelectionText(entity, teamNumber)
     
     if HasMixin(entity, "Maturity") then
     
-        if entity:GetMaturityLevel() == kMaturityLevel.Grow then
+        if entity:GetMaturityLevel() == kMaturityLevel.Grown then
             maturity = Locale.ResolveString("GROWN") .. " "
         end
         
@@ -2483,7 +2483,6 @@ function GetTexCoordsForTechId(techId)
         
         gTechIdPosition[kTechId.Swipe] = kDeathMessageIcon.Swipe
         gTechIdPosition[kTechId.Blink] = kDeathMessageIcon.Blink
-        gTechIdPosition[kTechId.ShadowStep] = kDeathMessageIcon.ShadowStep
         gTechIdPosition[kTechId.Vortex] = kDeathMessageIcon.Vortex
         
         gTechIdPosition[kTechId.Gore] = kDeathMessageIcon.Gore

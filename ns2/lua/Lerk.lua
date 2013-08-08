@@ -181,11 +181,11 @@ end
 
 function Lerk:ModifyGravityForce(gravityTable)
 
-    if self:GetCrouching() then
-        gravityTable.gravity = gravityTable.gravity * 4
-
-    elseif self.gliding or self:GetIsWallGripping() or self:GetIsOnGround() then
+    if self.gliding or self:GetIsWallGripping() or self:GetIsOnGround() then
         gravityTable.gravity = 0
+        
+    elseif self:GetCrouching() then
+        gravityTable.gravity = gravityTable.gravity * 4
         
     end
 
@@ -369,8 +369,8 @@ local function UpdateFlap(self, input, velocity)
                 // the speed we already have in the new direction
                 local currentSpeed = move:DotProduct(velocity)
                 // prevent exceeding max speed of kMaxSpeed by flapping
-                local maxSpeedTable = { maxSpeed = kMaxSpeed, wishDir = wishDir }
-                self:ModifyMaxSpeed(maxSpeedTable)
+                local maxSpeedTable = { maxSpeed = kMaxSpeed }
+                self:ModifyMaxSpeed(maxSpeedTable, input)
                 
                 local maxSpeed = math.max(currentSpeed, maxSpeedTable.maxSpeed)
                 
@@ -419,11 +419,20 @@ local function UpdateGlide(self, input, velocity, deltaTime)
         local currentDir = GetNormalizedVector(velocity)
         local glideAccel = -currentDir.y * deltaTime * kGlideAccel
 
-        local maxSpeedTable = { maxSpeed = kMaxSpeed, wishDir = wishDir }
-        self:ModifyMaxSpeed(maxSpeedTable)
+        local maxSpeedTable = { maxSpeed = kMaxSpeed }
+        self:ModifyMaxSpeed(maxSpeedTable, input)
         
         local speed = velocity:GetLength() // velocity:DotProduct(wishDir) * 0.1 + velocity:GetLength() * 0.9
         local useSpeed = math.min(maxSpeedTable.maxSpeed, speed + glideAccel)
+		
+		// when speed falls below 1, set horizontal speed to 1, and vertical speed to zero, but allow dive to regain speed
+		if useSpeed < 4 then
+			useSpeed = 4
+			local newY = math.min(wishDir.y, 0)
+			wishDir.y = newY
+			wishDir = GetNormalizedVector(wishDir)
+		end
+		
         // when gliding we always have 100% control
         local redirectVelocity = wishDir * useSpeed
         VectorCopy(redirectVelocity, velocity)

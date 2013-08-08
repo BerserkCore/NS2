@@ -176,6 +176,10 @@ function CameraHolderMixin:IsAnimated()
     return self.animatePosition or self.animateAngles or self.animateDistance or self.animateYOffset
 end
 
+function CameraHolderMixin:GetCrouchCameraAnimationAllowed(result)
+    result.allowed = result.allowed and not self:IsAnimated()
+end
+
 function CameraHolderMixin:GetInterpolatedCameraParams()
 
     local p = 1
@@ -346,7 +350,7 @@ end
 function CameraHolderMixin:SetDesiredCameraYOffset(yOffset)
 
     if self.cameraYOffset ~= yOffset then
-
+    
         if not self:IsAnimated() then
             self:SetDesiredCamera(0.3, { follow = true })
         end
@@ -354,7 +358,7 @@ function CameraHolderMixin:SetDesiredCameraYOffset(yOffset)
         self:SetCameraYOffset(yOffset)
 
     end
-
+    
 end  
 
 function CameraHolderMixin:SetCameraYOffset(yOffset)
@@ -369,9 +373,7 @@ end
  * Set to 0 to get out of third person.
  */
 function CameraHolderMixin:SetIsThirdPerson(distance, duration)
-
     self:SetDesiredCameraDistance(distance, duration, callback)
-    
 end
 
 local function properAnglesDirection(start, desired)

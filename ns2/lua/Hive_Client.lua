@@ -20,14 +20,8 @@ function Hive:OnUpdate(deltaTime)
     local effectName = Hive.kIdleMistEffect
     
     if self:GetTechId() == kTechId.Hive then
-        effectName = Hive.kIdleMistEffect                
-    elseif self:GetTechId() == kTechId.HiveMass then
-        effectName = Hive.kL2IdleMistEffect
-        self:RemoveEffect(Hive.kIdleMistEffect)                
-    elseif self:GetTechId() == kTechId.HiveColony then
-        effectName = Hive.kL3IdleMistEffect    
-        self:RemoveEffect(Hive.kL2IdleMistEffect)
-    end    
+        effectName = Hive.kIdleMistEffect
+    end
     
     local isVisible = (not self:GetIsCloaked())
     

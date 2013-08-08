@@ -236,6 +236,7 @@ kDamageEffects =
             {decal = "cinematics/vfx_materials/decals/railgun_hole_02.material", scale = 0.3, doer = "Railgun", done = true},
             
             // surface alien weapons
+            {decal = "cinematics/vfx_materials/decals/spit_decal.material", scale = 0.25, doer = "Spit", done = true}, 
             {decal = "cinematics/vfx_materials/decals/bullet_hole_02.material", scale = 0.25, doer = "LerkBite", alt_mode = true, done = true}, 
             {decal = "cinematics/vfx_materials/decals/bullet_hole_02.material", scale = 0.25, doer = "Spores", alt_mode = true, done = true}, 
             {decal = "cinematics/vfx_materials/decals/bullet_hole_02.material", scale = 0.25, doer = "LerkUmbra", alt_mode = true, done = true}, 

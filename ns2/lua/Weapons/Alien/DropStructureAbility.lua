@@ -390,7 +390,7 @@ function DropStructureAbility:GetPositionForStructure(startPosition, direction, 
     if trace.fraction == 1 then
     
         origin = startPosition + direction * range
-        trace = Shared.TraceRay(origin, origin - Vector(0, range, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterTwo(player, self))
+        trace = Shared.TraceRay(origin, origin - Vector(0, range, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, FilterBabblersAndTwo(player, self))
         
     end
     

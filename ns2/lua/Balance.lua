@@ -184,7 +184,7 @@ kPlayingTeamInitialTeamRes = 60
 kMaxTeamResources = 200
 
 kPlayerInitialIndivRes = 20
-kCommanderInitialIndivRes = 0
+kCommanderInitialIndivRes = 20
 kMaxPersonalResources = 100
 
 kResourceTowerResourceInterval = 6
@@ -227,7 +227,7 @@ kAxeDamage = 25
 kAxeDamageType = kDamageType.Structural
 
 
-kGrenadeLauncherGrenadeDamage = 180
+kGrenadeLauncherGrenadeDamage = 165
 kGrenadeLauncherGrenadeDamageType = kDamageType.Structural
 kGrenadeLauncherClipSize = 4
 kGrenadeLauncherGrenadeDamageRadius = 6
@@ -242,7 +242,7 @@ kShotgunRange = 30
 
 kNadeLauncherClipSize = 4
 
-kFlamethrowerDamage = 26
+kFlamethrowerDamage = 23
 kBurnDamagePerSecond = 2
 kFlamethrowerDamageType = kDamageType.Flame
 kFlamethrowerClipSize = 50
@@ -424,7 +424,7 @@ kWhipBombardROF = 6
 
 
 // SPAWN TIMES
-kMarineRespawnTime = 8
+kMarineRespawnTime = 9
 
 kAlienSpawnTime = 10
 kEggGenerationRate = 13

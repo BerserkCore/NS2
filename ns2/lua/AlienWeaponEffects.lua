@@ -14,16 +14,6 @@ kAlienWeaponEffects =
     {
     },
     
-    spit_hit =
-    {
-        spitHitEffects =
-        {
-            {sound = "sound/NS2.fev/alien/gorge/spit_hit"},
-            {cinematic = "cinematics/alien/gorge/spit_impact.cinematic"},
-        }
-    
-    },
-    
     bite_kill =
     {
         biteKillSound =

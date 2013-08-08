@@ -91,7 +91,7 @@ local function GetCostRecuperationFor(self, upgradeId)
     if LookupTechData(upgradeId, kTechDataGestateName) and not table.contains(self.initialUpgrades, self.lifeFormTechId) then
         
         costRecuperation = GetCostForTech(self.lifeFormTechId)
-        
+
     elseif categoryId then
     
         for _, currentUpgradeId in ipairs(self.upgrades) do
@@ -114,7 +114,7 @@ local function GetCostForUpgrade(self, upgradeId)
         cost = 0
     else
         cost = LookupTechData(self.lifeFormTechId, kTechDataUpgradeCost, 0)
-    end    
+    end  
 
     return cost
     
@@ -282,9 +282,8 @@ function AlienUpgradeManager:AddUpgrade(upgradeId, override)
         end
     
         table.insert(self.upgrades, upgradeId)
-        if not table.contains(self.initialUpgrades, upgradeId) then
-            self.availableResources = self.availableResources - cost
-        end
+        self.availableResources = self.availableResources - cost
+
         return true
         
     end

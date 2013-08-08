@@ -119,7 +119,7 @@ end
 function Commander:AttemptToResearchOrUpgrade(techNode, entity)
     
     // research is only allowed for single selection
-    if techNode:GetIsResearch() then
+    if techNode:GetIsResearch() and not self.isBotRequestedAction then
     
         local selection = self:GetSelection()
     
@@ -179,7 +179,7 @@ end
 // Return whether action should continue to be processed for the next selected unit. Position will be nil
 // for non-targeted actions and will be the world position target for the action for targeted actions.
 // targetId is the entityId which was hit by the client side trace
-function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, isCommanderPicked, orientation, entity, trace, isBot)
+function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, isCommanderPicked, orientation, entity, trace)
 
     local success = false
     local keepProcessing = true
@@ -190,7 +190,7 @@ function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, is
     local techButtons = self:GetCurrentTechButtons(self.currentMenu, entity)
     
     // For bots, do not worry about which menu is active
-    if isBot ~= true then
+    if not self.isBotRequestedAction then
         if techButtons == nil or table.find(techButtons, techId) == nil then
             return success, keepProcessing
         end

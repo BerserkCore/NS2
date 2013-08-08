@@ -782,6 +782,10 @@ end
 
 function GUIScoreboard:SendKeyEvent(key, down)
 
+    if ChatUI_EnteringChatMessage() then
+        return false
+    end
+    
     if GetIsBinding(key, "Scoreboard") then
         self.visible = down
     end

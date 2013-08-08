@@ -576,7 +576,7 @@ function Skulk:OnUpdate(deltaTime)
     
     Alien.OnUpdate(self, deltaTime)
     
-    UpdateDashEffects(self)
+    //UpdateDashEffects(self)
     
 end
 
@@ -584,7 +584,7 @@ function Skulk:OnProcessSpectate(deltaTime)
 
     Alien.OnProcessSpectate(self, deltaTime)
     
-    UpdateDashEffects(self)
+    //UpdateDashEffects(self)
 
 end
 
@@ -592,7 +592,7 @@ function Skulk:OnProcessMove(input)
 
     Alien.OnProcessMove(self, input)
     
-    UpdateDashEffects(self)
+    //UpdateDashEffects(self)
 
 end
 

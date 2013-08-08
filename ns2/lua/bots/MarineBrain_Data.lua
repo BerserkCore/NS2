@@ -3,6 +3,8 @@ Script.Load("lua/bots/BotDebug.lua")
 Script.Load("lua/bots/CommonActions.lua")
 Script.Load("lua/bots/BrainSenses.lua")
 
+local gMarineAimJitterAmount = 0.8
+
 //----------------------------------------
 //  Data includes values, but also functions.
 //  We put them in this file so we can easily hotload it and iterate live.
@@ -151,7 +153,7 @@ local function PerformAttackEntity( eyePos, target, lastSeenPos, bot, brain, mov
         // jitter view target a little bit, if they are moving at all
         local jitter = Vector(0,0,0)
         if HasMixin(target, "BaseMove") then
-            jitter = Vector( math.random(), math.random(), math.random() ) * 0.8
+            jitter = Vector( math.random(), math.random(), math.random() ) * gMarineAimJitterAmount
         end
         bot:GetMotion():SetDesiredViewTarget( aimPos+jitter )
         move.commands = AddMoveCommand( move.commands, Move.PrimaryAttack )
@@ -432,7 +434,35 @@ kMarineBrainActions =
                 PerformAttack( marine:GetEyePos(), threat.memory, bot, brain, move )
             end }
     end,
+/*
+    function(bot, brain)
 
+        local name = "weld"
+        local marine = bot:GetPlayer()
+        local sdb = brain:GetSenses()
+        local weight = 0.0
+
+        if sdb:Get("welder") ~= nil and sdb:Get("nearestWeldable") ~= nil then
+            weight = 0.4
+        else
+            weight = 0.0
+        end
+
+        return { name = name, weight = weight,
+            perform = function(move)
+
+                if not sdb:Get("welderReady") then
+                    // switch to welder
+                    marine:SetActiveWeapon( Welder.kMapName, true )
+                else
+                    local target = sdb:Get("nearestWeldable")
+                    assert(target ~= nil)
+                    PerformUse( marine, target, bot, brain , move )
+                end
+
+            end }
+    end,
+*/
     function(bot, brain)
 
         local name = "order"
@@ -864,6 +894,16 @@ function CreateMarineBrainSenses()
             end
             end)
 
+    s:Add("welder", function(db)
+            local marine = db.bot:GetPlayer()
+            return marine:GetWeapon( Welder.kMapName )
+            end)
+
+    s:Add("welderReady", function(db)
+            local marine = db.bot:GetPlayer()
+            return marine:GetActiveWeapon():GetMapName() == Welder.kMapName
+            end)
+
     s:Add("weaponReady", function(db)
             return db:Get("ammoFraction") > 0
             end)
@@ -931,6 +971,23 @@ function CreateMarineBrainSenses()
                 end)
 
             return {entity = power, distance = dist}
+            end)
+
+    s:Add("nearestWeldable", function(db)
+
+            local marine = db.bot:GetPlayer()
+            local targets = GetEntitiesWithMixinForTeamWithinRange( "Weldable", kMarineTeamType, marine:GetOrigin(), 10.0 )
+
+            local dist, target = GetMinTableEntry( targets,
+                function(target)
+                    assert( target ~= nil )
+                    if target:GetCanBeWelded() then
+                        return marine:GetOrigin():GetDistance( target:GetOrigin() )
+                    end
+                end)
+
+            return {target = target, distance = dist}
+
             end)
 
     s:Add("nearestCyst", function(db)
@@ -1005,3 +1062,10 @@ function CreateMarineBrainSenses()
 
 end
 
+if Server then
+Event.Hook("Console_marinejitter", function(client, arg)
+        gMarineAimJitterAmount = tonumber(arg)
+        Print("gMarineAimJitterAmount = %f", gMarineAimJitterAmount)
+        end
+        )
+end

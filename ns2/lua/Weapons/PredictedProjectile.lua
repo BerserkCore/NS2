@@ -19,6 +19,7 @@ end
 
 function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, startPoint, velocity, bounce, friction, gravity, clearOnImpact)
 
+    local projectile = nil
     local projectileController = ProjectileController()
     projectileController:Initialize(startPoint, velocity, _G[className].kRadius, self, bounce, friction, gravity, GetEnemyTeamNumber(self:GetTeamNumber()), clearOnImpact)
     projectileController.projectileId = self.nextProjectileId
@@ -28,7 +29,7 @@ function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, st
     
     if Server then
     
-        local projectile = CreateEntity(_G[className].kMapName, startPoint, self:GetTeamNumber())
+        projectile = CreateEntity(_G[className].kMapName, startPoint, self:GetTeamNumber())
         projectile.projectileId = self.nextProjectileId
         projectile:SetProjectileController(projectileController)
         projectileEntId = projectile:GetId()
@@ -76,6 +77,8 @@ function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, st
     if self.nextProjectileId > kMaxNumProjectiles then
         self.nextProjectileId = 1
     end
+    
+    return projectile
 
 end
 
@@ -316,18 +319,6 @@ function ProjectileController:Update(deltaTime, projectile, predict)
         local impact, hitEntity, normal, endPoint = self:Move(velocity * deltaTime, velocity)
         if impact then
         
-            local clampedSpeed = velocity:GetLength()
-
-            // bounce
-            local impactForce = math.max(0, (-normal):DotProduct(velocity))
-            velocity:Add(impactForce * normal * self.bounce * 2)
-            /*
-            local newSpeed = velocity:GetLength()
-            
-            if newSpeed > clampedSpeed then
-                velocity:Scale(clampedSpeed / newSpeed)
-            end
-            */
             // some projectiles may predict impact
             if projectile then
             
@@ -338,6 +329,10 @@ function ProjectileController:Update(deltaTime, projectile, predict)
                 end   
                 
             end
+            
+            // bounce
+            local impactForce = math.max(0, (-normal):DotProduct(velocity))
+            velocity:Add(impactForce * normal * self.bounce * 2)
             
             self.stopSimulation = self.clearOnImpact or ( hitEntity ~= nil and HasMixin(hitEntity, "Team") and hitEntity:GetTeamNumber() == self.detonateWithTeam )
         

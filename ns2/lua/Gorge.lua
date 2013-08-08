@@ -362,8 +362,8 @@ function Gorge:ModifyVelocity(input, velocity, deltaTime)
             
             local currentSpeed = math.max(0, pushDirection:DotProduct(velocity))
             
-            local maxSpeedTable = { maxSpeed = kStartSlideSpeed, wishDir = pushDirection }
-            self:ModifyMaxSpeed(maxSpeedTable)
+            local maxSpeedTable = { maxSpeed = kStartSlideSpeed }
+            self:ModifyMaxSpeed(maxSpeedTable, input)
             
             local addSpeed = math.max(0, maxSpeedTable.maxSpeed - currentSpeed)
             local impulse = pushDirection * addSpeed

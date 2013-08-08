@@ -18,7 +18,7 @@ StunMixin.optionalCallbacks =
 
 StunMixin.networkVars =
 {
-    stunTime = "private interpolated float"
+    stunTime = "private time"
 }
 
 function StunMixin:__initmixin()
@@ -29,22 +29,28 @@ function StunMixin:__initmixin()
 end
 
 function StunMixin:SetStun(duration)
-    
+
     local allowed = true
     
     if self.GetIsStunAllowed then
         allowed = self:GetIsStunAllowed()
     end
-
-    if allowed then    
+    
+    if allowed then
+    
         self.stunTime = Shared.GetTime() + duration
-        self.timeLastStun = Shared.GetTime()  
+        self.timeLastStun = Shared.GetTime()
+        
     end
     
 end
 
 function StunMixin:GetIsStunned()
     return Shared.GetTime() < self.stunTime
+end
+
+function StunMixin:GetCrouchCameraAnimationAllowed(result)
+    result.allowed = result.allowed and not self:GetIsStunned()
 end
 
 local function SharedUpdate(self)
@@ -58,7 +64,7 @@ local function SharedUpdate(self)
             if self.OnStun then
                 self:OnStun(self:GetRemainingStunTime())
             end
-        
+            
         else
         
             if self.OnStunEnd then
@@ -66,11 +72,11 @@ local function SharedUpdate(self)
             end
             
             self.stunTime = 0
-        
+            
         end
-    
+        
     end
-
+    
 end
 
 function StunMixin:GetRemainingStunTime()
@@ -81,12 +87,10 @@ function StunMixin:OnProcessMove(input)
     SharedUpdate(self)
 end
 
-// This is only needed on the Server because the local client
-// is predicted with OnProcessMove.
 if Server then
 
-    function StunMixin:OnUpdate(deltaTime)
-        SharedUpdate(self) 
+    function StunMixin:OnUpdate(dt)
+        SharedUpdate(self)
     end
     
 end

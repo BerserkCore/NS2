@@ -55,7 +55,7 @@ function MedPack:OnTouch(recipient)
 end
 
 function MedPack:GetIsValidRecipient(recipient)
-    return not GetIsVortexed(recipient) and recipient:GetHealth() < recipient:GetMaxHealth() and (not recipient.timeLastMedpack or recipient.timeLastMedpack + kPickupDelay <= Shared.GetTime())
+    return recipient:GetIsAlive() and not GetIsVortexed(recipient) and recipient:GetHealth() < recipient:GetMaxHealth() and (not recipient.timeLastMedpack or recipient.timeLastMedpack + kPickupDelay <= Shared.GetTime())
 end
 
 

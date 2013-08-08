@@ -20,6 +20,11 @@ CrouchMoveMixin.expectedCallbacks =
     GetCrouchSpeedScalar = ""
 }
 
+CrouchMoveMixin.optionalCallbacks =
+{
+    GetCrouchCameraAnimationAllowed = "Return false from this callback to prevent camera animation from crouching."
+}
+
 local kCrouchAnimationTime = 0.25
 
 function CrouchMoveMixin:__initmixin()
@@ -39,8 +44,19 @@ function CrouchMoveMixin:GetExtentsOverride()
 
 end
 
+local kCrouchCameraAnimationAllowedTable = { allowed = true }
 function CrouchMoveMixin:OnUpdateCamera(deltaTime)
 
+    if self.GetCrouchCameraAnimationAllowed then
+    
+        kCrouchCameraAnimationAllowedTable.allowed = true
+        self:GetCrouchCameraAnimationAllowed(kCrouchCameraAnimationAllowedTable)
+        if not kCrouchCameraAnimationAllowedTable.allowed then
+            return
+        end
+        
+    end
+    
     // Update view offset from crouching
     local offset = -self:GetCrouchShrinkAmount() * self:GetCrouchAmount()
     self:SetCameraYOffset(offset)

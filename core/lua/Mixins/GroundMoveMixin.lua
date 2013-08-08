@@ -127,10 +127,6 @@ local function GetWishDir(self, move, simpleAcceleration, velocity)
     if simpleAcceleration == nil then
         simpleAcceleration = true
     end
-    
-    if not self.lastXDir then
-        self.lastXDir = 1
-    end
 
     // don't punish people for using the forward key, help them
     if not simpleAcceleration and not self.onGround and move.z ~= 0 and not DoesStopMove(self, move, velocity) then
@@ -138,10 +134,6 @@ local function GetWishDir(self, move, simpleAcceleration, velocity)
         if move.x ~= 0 then
             move.z = 0
         elseif velocity then
-        
-            if not self.lastXMove then
-                self.lastXMove = 0
-            end
             
             local translateDirection = (-self:GetViewCoords().xAxis):DotProduct(GetNormalizedVectorXZ(velocity))
             local xMove = translateDirection == 0 and 1 or translateDirection / math.abs(translateDirection)
@@ -153,8 +145,6 @@ local function GetWishDir(self, move, simpleAcceleration, velocity)
             if math.abs(translateDirection) * speedFraction > 0.2 then            
                 move.x = xMove
             end
-            
-            self.lastXMove = move.x
 
         end
     
@@ -184,13 +174,23 @@ function GroundMoveMixin:EnableGroundMove()
     self.timeGroundAllowed = 0
 end
 
-function GroundMoveMixin:ModifyMaxSpeed(maxSpeedTable)
+function GroundMoveMixin:ModifyMaxSpeed(maxSpeedTable, input)
 
-    if maxSpeedTable.wishDir then
-        local backwardsDir = math.max(0, maxSpeedTable.wishDir:DotProduct(-self:GetViewCoords().zAxis))
-        local backwardsSpeedMod = 1 - Clamp(1 - self:GetMaxBackwardSpeedScalar(), 0, 1) * backwardsDir
-        maxSpeedTable.maxSpeed = maxSpeedTable.maxSpeed * backwardsSpeedMod
-    end
+	local backwardsSpeedScalar = 1
+	
+	if input and input.move.z == -1 then
+	
+		if input.move.x ~= 0 then
+			backwardsSpeedScalar = self:GetMaxBackwardSpeedScalar() * 1.4
+		else
+			backwardsSpeedScalar = self:GetMaxBackwardSpeedScalar()
+		end	
+		
+		backwardsSpeedScalar = Clamp(backwardsSpeedScalar, 0, 1)
+	
+	end
+	
+    maxSpeedTable.maxSpeed = maxSpeedTable.maxSpeed * backwardsSpeedScalar
 
 end
 
@@ -247,8 +247,8 @@ local function Accelerate(self, input, velocity, deltaTime)
     local prevXZSpeed = velocity:GetLengthXZ()
     local currentDir = GetNormalizedVector(velocity)
     
-    local maxSpeedTable = { maxSpeed = self:GetMaxSpeed(), wishDir = GetWishDir(self, input.move, true, velocity) }
-    self:ModifyMaxSpeed(maxSpeedTable)
+    local maxSpeedTable = { maxSpeed = self:GetMaxSpeed() }
+    self:ModifyMaxSpeed(maxSpeedTable, input)
     
     local groundFraction = self.onGround and GetOnGroundFraction(self) or 0
     
@@ -259,7 +259,7 @@ local function Accelerate(self, input, velocity, deltaTime)
     local clampedAirSpeed = prevXZSpeed + deltaTime * kMaxAirAccel
     local clampSpeedXZ = math.max(self.onGround and maxSpeedTable.maxSpeed or clampedAirSpeed, prevXZSpeed)
     
-    if input.move.z == 1 then
+    if input.move.z == 1 and not self.onGround then
         ForwardControl(self, deltaTime, velocity)
     end
     

@@ -188,7 +188,8 @@ local function ShootGrenade(self, player)
         
         local grenade = player:CreatePredictedProjectile("Grenade", grenadeStartPoint, startVelocity, 0.6)
         
-        if GetIsVortexed(player) then
+        // grenade entity is only created on the server
+        if GetIsVortexed(player) and grenade then
             grenade:SetVortexDuration(player.remainingVortexDuration)
         end
     

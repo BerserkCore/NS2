@@ -110,7 +110,7 @@ end
 function ResourceTower:GetTechButtons()
 
     return {
-        kTechId.TransformResources, kTechId.CollectResources, kTechId.None, kTechId.None, kTechId.None,
+        kTechId.CollectResources, kTechId.None, kTechId.None, kTechId.None,
         kTechId.None, kTechId.None, kTechId.None, kTechId.None,         
     }
 

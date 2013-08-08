@@ -28,7 +28,6 @@ function WorldTooltip:OnCreate()
     Entity.OnCreate(self)
     
     InitMixin(self, TechMixin)
-    self.techId = kTechId.WorldTooltip
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ClientModelMixin)
     self:SetModel(WorldTooltip.kModelName)

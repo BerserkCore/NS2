@@ -150,9 +150,11 @@ function CommanderBrain:ExecuteTechId( commander, techId, position, hostEntity )
 
     local techNode = commander:GetTechTree():GetTechNode( techId )
 
-    assert( hostEntity:GetTechAllowed(techId, techNode, commander) )
+    local allowed, canAfford = hostEntity:GetTechAllowed( techId, techNode, commander )
+    assert( allowed and canAfford )
 
     // We should probably use ProcessTechTreeAction instead here...
+    commander.isBotRequestedAction = true // Hackapalooza...
     local success, keepGoing = commander:ProcessTechTreeActionForEntity(
             techNode,
             position,
@@ -160,8 +162,7 @@ function CommanderBrain:ExecuteTechId( commander, techId, position, hostEntity )
             true,   // isCommanderPicked
             0,  // orientation
             hostEntity,
-            nil, // trace
-            true // isBot
+            nil // trace
             )
 
     if success then
@@ -173,10 +174,7 @@ function CommanderBrain:ExecuteTechId( commander, techId, position, hostEntity )
         end
 
     else
-
-        if self.debug then
-            DebugPrint("Failed to perform action %s", EnumToString(kTechId, techId))
-        end
+        DebugPrint("COM BOT ERROR: Failed to perform action %s", EnumToString(kTechId, techId))
     end
     
     return success

@@ -54,7 +54,7 @@ Onos.kMomentumEffectTriggerDiff = 3
 Onos.kGroundFrictionForce = 3
 
 // used for animations and sound effects
-Onos.kMaxSpeed = 6.2
+Onos.kMaxSpeed = 6.6
 Onos.kChargeSpeed = 10.5
 
 Onos.kHealth = kOnosHealth
@@ -157,7 +157,7 @@ function Onos:GetPlayerControllersGroup()
 end
 
 function Onos:GetAcceleration()
-    return 3.6
+    return 3.3
 end
 
 function Onos:GetAirControl()
@@ -165,7 +165,7 @@ function Onos:GetAirControl()
 end
 
 function Onos:GetGroundFriction()
-    return 1.9 + (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.57
+    return 3 + (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.1
 end
 
 function Onos:GetCarapaceSpeedReduction()
@@ -250,51 +250,48 @@ function Onos:EndCharge()
 end
 
 function Onos:PreUpdateMove(input, runningPrediction)
-    // determines how manuverable the onos is. When not charging, manuverability is 1. 
+
+    // determines how manuverable the onos is. When not charging, manuverability is 1.
     // when charging it goes towards zero as the speed increased. At zero, you can't strafe or change
     // direction.
     // The math.sqrt makes you drop manuverability quickly at the start and then drop it less and less
     // the 0.8 cuts manuverability to zero before the max speed is reached
-    // Fiddle until it feels right. 
+    // Fiddle until it feels right.
     // 0.8 allows about a 90 degree turn in atrium, ie you can start charging
     // at the entrance, and take the first two stairs before you hit the lockdown.
     local manuverability = ConditionalValue(self.charging, math.max(0, 0.8 - math.sqrt(self:GetChargeFraction())), 1)
-
+    
     if self.charging then
-
-        // fiddle here to determine strafing 
+    
+        // fiddle here to determine strafing
         input.move.x = input.move.x * math.max(0.3, manuverability)
         input.move.z = 1
         
         self:DeductAbilityEnergy(Onos.kChargeEnergyCost * input.time)
-    
-        local xzViewDirection = self:GetViewCoords().zAxis
-        xzViewDirection.y = 0
-        xzViewDirection:Normalize()
         
         // stop charging if out of energy, jumping or we have charged for a second and our speed drops below 4.5
-        // - changed from 0.5 to 1s, as otherwise touchin small obstactles orat started stopped you from charging 
-        if self:GetEnergy() == 0 or 
+        // - changed from 0.5 to 1s, as otherwise touchin small obstactles orat started stopped you from charging
+        if self:GetEnergy() == 0 or
            self:GetIsJumping() or
-          (self.timeLastCharge + 1 < Shared.GetTime() and self:GetVelocity():GetLengthXZ() < 4.5 ) then
-    
+          (self.timeLastCharge + 1 < Shared.GetTime() and self:GetVelocity():GetLengthXZ() < 4.5) then
+        
             self:EndCharge()
             
         end
-            
-    end
-
-    if self.autoCrouching then
-        self.crouching = self.autoCrouching
-    end 
-
-    if Client and self == Client.GetLocalPlayer() then
-
-        // Lower mouse sensitivity when charging, only affects the local player.
-        Client.SetMouseSensitivityScalar(manuverability)
         
     end
-
+    
+    if self.autoCrouching then
+        self.crouching = self.autoCrouching
+    end
+    
+    if Client and self == Client.GetLocalPlayer() then
+    
+        // Lower mouse sensitivity when charging, only affects the local player.
+        Client.SetMouseSensitivityScalarX(manuverability)
+        
+    end
+    
 end
 
 function Onos:GetAngleSmoothRate()
@@ -315,7 +312,7 @@ function Onos:PostUpdateMove(input, runningPrediction)
 end
 
 function Onos:GetAirFriction()
-    return 0.25
+    return 0.28
 end
 
 function Onos:TriggerCharge(move)

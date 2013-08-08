@@ -15,9 +15,9 @@ kExosuitHealth = 100	kExosuitArmor = 280	kExosuitPointValue = 20
 		
 kSkulkHealth = 70	kSkulkArmor = 10	kSkulkPointValue = 5    kSkulkHealthPerBioMass = 4
 kGorgeHealth = 160	kGorgeArmor = 75	kGorgePointValue = 7    kGorgeHealthPerBioMass = 2
-kLerkHealth = 125	kLerkArmor = 30	    kLerkPointValue = 15    kLerkHealthPerBioMass = 3
-kFadeHealth = 210	kFadeArmor = 65    kFadePointValue = 20    kFadeHealthPerBioMass = 15
-kOnosHealth = 700	kOnosArmor = 350	kOnosPointValue = 30    kOnosHealtPerBioMass = 100
+kLerkHealth = 125	kLerkArmor = 45	    kLerkPointValue = 15    kLerkHealthPerBioMass = 2
+kFadeHealth = 250	kFadeArmor = 80    kFadePointValue = 20    kFadeHealthPerBioMass = 10
+kOnosHealth = 900	kOnosArmor = 450	kOnosPointValue = 30    kOnosHealtPerBioMass = 50
 
 kMarineWeaponHealth = 400
 		
@@ -38,7 +38,7 @@ kRepairMarineArmorPointValue = 1
 kSkulkArmorFullyUpgradedAmount = 30
 kGorgeArmorFullyUpgradedAmount = 100
 kLerkArmorFullyUpgradedAmount = 60
-kFadeArmorFullyUpgradedAmount = 90
+kFadeArmorFullyUpgradedAmount = 100
 kOnosArmorFullyUpgradedAmount = 550
 
 kBalanceInfestationHurtPercentPerSecond = 2

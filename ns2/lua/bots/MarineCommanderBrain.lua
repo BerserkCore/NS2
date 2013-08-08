@@ -1,6 +1,9 @@
 
 Script.Load("lua/bots/CommanderBrain.lua")
 Script.Load("lua/bots/MarineCommanderBrain_Data.lua")
+Script.Load("lua/bots/BotDebug.lua")
+
+gBotDebug:AddBoolean("mcom")
 
 gMarineCommanderBrains = {}
 

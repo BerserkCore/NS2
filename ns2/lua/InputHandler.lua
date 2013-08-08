@@ -88,7 +88,8 @@ local _keyBinding =
 }
 
 local _mouseAccel = 1.0
-local _sensitivityScalar = 1.0
+local _sensitivityScalarX = 1.0
+local _sensitivityScalarY = 1.0
 local _cameraYaw = 0
 local _cameraPitch = 0
 local _keyState = { }
@@ -103,16 +104,29 @@ local _bufferedHotKey = 0
 function Client.SetYaw(yaw)
     _cameraYaw = yaw
 end
+
 function Client.SetPitch(pitch)
     _cameraPitch = pitch
 end
 
 // Provide support for these functions that were removed from the API in Build 237
 function Client.SetMouseSensitivityScalar(sensitivityScalar)
-    _sensitivityScalar = sensitivityScalar
+
+    _sensitivityScalarX = sensitivityScalar
+    _sensitivityScalarY = sensitivityScalar
+    
 end
+
+function Client.SetMouseSensitivityScalarX(sensitivityScalarX)
+    _sensitivityScalarX = sensitivityScalarX
+end
+
+function Client.SetMouseSensitivityScalarY(sensitivityScalarY)
+    _sensitivityScalarY = sensitivityScalarY
+end
+
 function Client.GetMouseSensitivityScalar()
-    return _sensitivityScalar
+    return _sensitivityScalarX
 end
 
 function SetKeyEventBlocker(setKeyEventBlocker)
@@ -158,7 +172,7 @@ end
  * Adjusts the mouse movement to take into account the sensitivity setting and
  * and any mouse acceleration.
  */
-local function ApplyMouseAdjustments(amount)
+local function ApplyMouseAdjustments(amount, sensitivity)
     
     // This value matches what the GoldSrc/Source engine uses, so that
     // players can use the values they are familiar with.
@@ -169,7 +183,7 @@ local function ApplyMouseAdjustments(amount)
         sign = -1.0
     end
     
-    return sign * math.pow(math.abs(amount * rotateScale), _mouseAccel) * _sensitivityScalar
+    return sign * math.pow(math.abs(amount * rotateScale), _mouseAccel) * sensitivity
     
 end
 
@@ -203,11 +217,11 @@ local function OnSendKeyEvent(key, down, amount, repeated)
         if not Client.GetMouseVisible() then
         
             if key == InputKey.MouseX then
-                _cameraYaw = _cameraYaw - ApplyMouseAdjustments(amount)
+                _cameraYaw = _cameraYaw - ApplyMouseAdjustments(amount, _sensitivityScalarX)
             elseif key == InputKey.MouseY then
             
                 local limit = math.pi / 2 + 0.0001
-                _cameraPitch = Math.Clamp(_cameraPitch + ApplyMouseAdjustments(amount), -limit, limit)
+                _cameraPitch = Math.Clamp(_cameraPitch + ApplyMouseAdjustments(amount, _sensitivityScalarY), -limit, limit)
                 
             end
             

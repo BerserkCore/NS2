@@ -293,7 +293,7 @@ end
 
 Shared.RegisterNetworkMessage( "Ping", kPingMessage )
 
-kWorldTextMessageType = enum({ 'Resources', 'Resource', 'Damage' })
+kWorldTextMessageType = enum({ 'Resources', 'Resource', 'Damage', 'CommanderError' })
 local kWorldTextMessage =
 {
     messageType = "enum kWorldTextMessageType",

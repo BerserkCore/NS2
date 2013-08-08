@@ -9,6 +9,8 @@
 // Set the name of the VM for debugging
 decoda_name = "Predict"
 
+Script.Load("lua/PreLoadMod.lua")
+
 Script.Load("lua/Shared.lua")
 Script.Load("lua/NetworkMessages_Predict.lua")
 Script.Load("lua/MapEntityLoader.lua")
@@ -30,3 +32,5 @@ function OnMapLoadEntity(className, groupName, values)
 end        
 
 Event.Hook("MapLoadEntity", OnMapLoadEntity)
+
+Script.Load("lua/PostLoadMod.lua")

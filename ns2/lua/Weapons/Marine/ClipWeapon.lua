@@ -23,15 +23,16 @@ ClipWeapon.kMapName = "clipweapon"
 
 local networkVars =
 {
-    blockingPrimary = "boolean",
-    blockingSecondary = "boolean",
+    blockingPrimary = "compensated boolean",
+    blockingSecondary = "compensated boolean",
     timeAttackStarted = "time",
     deployed = "boolean",
     
     ammo = "integer (0 to 255)",
     clip = "integer (0 to 200)",
     
-    reloading = "boolean",
+    reloading = "compensated boolean",
+    reloaded = "compensated boolean",
     
     lastTimeSprinted = "time"
 }
@@ -278,6 +279,11 @@ function ClipWeapon:GetIsPrimaryAttackAllowed(player)
     
     if attackAllowed and self.GetPrimaryMaxRateOfFire then
         attackAllowed = (Shared.GetTime() - self.timeAttackStarted) > 1.0 / self:GetPrimaryMaxRateOfFire()
+        
+        if not attackAllowed and self.OnMaxFireRateExceeded then
+            self:OnMaxFireRateExceeded()
+        end
+        
     end
     
     return self:GetIsDeployed() and not sprintedRecently and attackAllowed
@@ -553,10 +559,12 @@ function ClipWeapon:OnTag(tagName)
         
     elseif tagName == "reload" then
         FillClip(self)
+        self.reloaded = true
     elseif tagName == "deploy_end" then
         self.deployed = true
-    elseif tagName == "reload_end" then
+    elseif tagName == "reload_end" and self.reloaded then
         self.reloading = false
+        self.reloaded = false
     elseif tagName == "attack_end" then
         self.blockingPrimary = false
     elseif tagName == "alt_attack_end" then

@@ -215,9 +215,9 @@ kAlienMinInnateRegeneration = 1
 kAlienMaxInnateRegeneration = 20
 
 // used for regeneration upgrade
-kAlienRegenerationPercentage = 0.05
-kAlienMinRegeneration = 7
-kAlienMaxRegeneration = 45
+kAlienRegenerationPercentage = 0.04
+kAlienMinRegeneration = 6
+kAlienMaxRegeneration = 40
 
 // when in combat self healing (innate healing or through upgrade) is multiplied with this value
 kAlienRegenerationCombatModifier = 1
@@ -260,7 +260,7 @@ kMaxWebLength = 8
 kMACSupply = 5
 kArmorySupply = 5
 kARCSupply = 20
-kSentrySupply = 15
+kSentrySupply = 10
 kRoboticsFactorySupply = 5
 kInfantryPortalSupply = 0
 kPhaseGateSupply = 0

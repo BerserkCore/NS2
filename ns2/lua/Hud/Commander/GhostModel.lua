@@ -135,6 +135,13 @@ function GhostModel:Update()
     
     if modelCoords then
     
+        if not modelCoords:GetIsFinite() then
+        
+            self:SetIsVisible(false)
+            return self.renderModel:GetCoords()
+            
+        end
+        
         self.renderModel:SetCoords(modelCoords)
         
         local direction = GhostModelUI_GetNearestAttachPointDirection()

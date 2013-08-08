@@ -653,10 +653,16 @@ if Server then
     local function UpdateTargetPosition(self)
     
         local target = self:GetTarget()
-        if self.moveType == kBabblerMoveType.Cling and target then            
-            self.targetPosition = target:GetFreeBabblerAttachPointOrigin()            
+        if self.moveType == kBabblerMoveType.Cling and target then
+        
+            self.targetPosition = target:GetFreeBabblerAttachPointOrigin()
+            -- If there are no free attach points, stop trying to cling.
+            if not self.targetPosition then
+                self:SetMoveType(kBabblerMoveType.None)
+            end
+            
         end
-    
+        
     end
     
     local function NoObstacleInWay(self, targetPosition)
