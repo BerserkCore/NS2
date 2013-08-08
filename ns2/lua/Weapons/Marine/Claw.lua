@@ -20,7 +20,7 @@ local networkVars =
     clawAttacking = "private boolean"
 }
 
-local kClawRange = 2
+local kClawRange = 2.2
 
 AddMixinNetworkVars(TechMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)

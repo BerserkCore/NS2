@@ -24,6 +24,8 @@ local kRailgunSpread = Math.Radians(0)
 
 local kChargeSound = PrecacheAsset("sound/NS2.fev/marine/heavy/railgun_charge")
 
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/alien_frag.surface_shader")
+
 local networkVars =
 {
     timeChargeStarted = "time",

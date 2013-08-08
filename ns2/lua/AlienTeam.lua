@@ -688,7 +688,7 @@ function AlienTeam:InitTechTree()
      
     self.techTree:AddResearchNode(kTechId.Xenocide,          kTechId.Leap,               kTechId.ThreeHives)
     self.techTree:AddResearchNode(kTechId.Umbra,             kTechId.Spores,             kTechId.ThreeHives)
-    self.techTree:AddResearchNode(kTechId.WebTech,           kTechId.BileBomb,           kTechId.ThreeHives)
+    //self.techTree:AddResearchNode(kTechId.WebTech,           kTechId.BileBomb,           kTechId.ThreeHives)
     self.techTree:AddResearchNode(kTechId.Vortex,            kTechId.Blink,              kTechId.ThreeHives)
     self.techTree:AddResearchNode(kTechId.BoneShield,        kTechId.TwoHives,           kTechId.None)  
     self.techTree:AddResearchNode(kTechId.Stomp,             kTechId.ThreeHives,         kTechId.None)
@@ -699,7 +699,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuildNode(kTechId.Clog,             kTechId.None,               kTechId.None)
     self.techTree:AddBuildNode(kTechId.BabblerEgg,       kTechId.None,               kTechId.None)
     self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.TwoHives) 
-    self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
+    //self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
 
     // personal upgrades (all alien types)
     

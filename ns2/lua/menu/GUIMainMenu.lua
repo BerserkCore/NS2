@@ -1928,7 +1928,7 @@ function GUIMainMenu:CreateOptionWindow()
             },
             {
                 name    = "TextureStreaming",
-                label   = "TEXTURE STREAMING (EXPERIMENTAL)",
+                label   = "TEXTURE STREAMING",
                 type    = "select",
                 values  = { "OFF", "ON" },
                 callback = autoApplyCallback

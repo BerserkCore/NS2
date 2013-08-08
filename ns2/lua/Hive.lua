@@ -259,11 +259,11 @@ local function GetLifeFormButtons(self)
         if GetIsTechResearched(teamNum, kTechId.Leap) then
             upgrades[1] = kTechId.Xenocide
         end  
-
+        /*
         if GetIsTechResearched(teamNum, kTechId.BileBomb) then
             upgrades[2] = kTechId.WebTech
         end
-      
+       */
         if GetIsTechResearched(teamNum, kTechId.Spores) then
             upgrades[4] = kTechId.Umbra
         end   
