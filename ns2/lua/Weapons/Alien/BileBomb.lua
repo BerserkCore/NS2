@@ -79,7 +79,7 @@ function BileBomb:OnTag(tagName)
                 
             end
             
-            TEST_EVENT("BileBomp shot")
+            TEST_EVENT("BileBomb shot")
             
         end
     

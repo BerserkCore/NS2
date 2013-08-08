@@ -8,7 +8,9 @@
 
 local kSponitor2Url = "http://sponitor2.herokuapp.com/api/send/"
 
-local kDebugAlwaysPost = false
+local gDebugAlwaysPost = false
+
+local kPlayerCountCheckPeriod = 60.0    // Update player count stats every N seconds
 
 local function CollectActiveModIds()
 
@@ -67,6 +69,22 @@ function ServerSponitor:Initialize( game )
 
     self.matchId = nil
     self.reportDetails = false
+    self.teamStats = {}
+    self.sincePlayerCountCheck = 0.0
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
+local function ResetTeamStats(stats, team)
+    stats.pvpKills = 0
+    stats.team = team
+    stats.minNumPlayers = team:GetNumPlayers()
+    stats.maxNumPlayers = stats.minNumPlayers
+    stats.avgNumPlayersSum = 0
+    stats.avgNumRookiesSum = 0
+    stats.numPlayerCountSamples = 0
 
 end
 
@@ -105,6 +123,9 @@ function ServerSponitor:ListenToTeam(team)
             function(techId)
                 self:OnTechEvent("BUY "..TechIdToString(techId))
             end )
+
+    self.teamStats[team:GetTeamType()] = {}
+    ResetTeamStats( self.teamStats[ team:GetTeamType() ], team )
 
 end
 
@@ -153,6 +174,17 @@ function ServerSponitor:OnStartMatch()
     Shared.SendHTTPRequest( kSponitor2Url.."matchStart", "POST", {data=jsonData},
         function(response) self:OnMatchStartResponse(response) end )
 
+    self.sincePlayerCountCheck = kPlayerCountCheckPeriod
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
+function ServerSponitor:OnJoinTeam( player, team )
+
+    // We were gonna track unique steam IDs here, but could not figure out how to
+
 end
 
 //----------------------------------------
@@ -160,13 +192,16 @@ end
 //----------------------------------------
 function ServerSponitor:OnEndMatch(winningTeam)
 
-    if self.matchId or kDebugAlwaysPost then
+    if self.matchId or gDebugAlwaysPost then
 
         local startHiveTech = "None"
 
         if self.game.initialHiveTechId then
             startHiveTech = EnumToString(kTechId, self.game.initialHiveTechId)
         end
+
+        local stats1 = self.teamStats[kMarineTeamType]
+        local stats2 = self.teamStats[kAlienTeamType]
 
         local jsonData = json.encode(
         {
@@ -177,12 +212,31 @@ function ServerSponitor:OnEndMatch(winningTeam)
             start_location2     = self.game.startingLocationNameTeam2,
             start_path_distance = self.game.startingLocationsPathDistance,
             start_hive_tech     = startHiveTech,
+
+            pvpKills1           = stats1.pvpKills,
+            pvpKills2           = stats2.pvpKills,
+            minPlayers1         = stats1.minNumPlayers,
+            minPlayers2         = stats2.minNumPlayers,
+            maxPlayers1         = stats1.maxNumPlayers,
+            maxPlayers2         = stats2.maxNumPlayers,
+            avgPlayers1         = stats1.avgNumPlayersSum / stats1.numPlayerCountSamples,
+            avgPlayers2         = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
+            avgRookies1         = stats1.avgNumRookiesSum / stats1.numPlayerCountSamples,
+            avgRookies2         = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
+            totalTResMined1     = stats1.team:GetTotalTeamResourcesFromTowers(),
+            totalTResMined2     = stats2.team:GetTotalTeamResourcesFromTowers(),
         })
         
         Shared.SendHTTPRequest( kSponitor2Url.."matchEnd", "POST", {data=jsonData} )
 
         self.matchId = nil
 
+    end
+
+    // Reset team stats here instead of OnStartMatch. This is because there is data we want to track
+    // before the match actually starts, such as players joining the team.
+    for teamType, stats in pairs(self.teamStats) do
+        ResetTeamStats( stats, stats.team )
     end
 
 end
@@ -196,7 +250,7 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
         return
     end
 
-    if (self.matchId and self.reportDetails) or kDebugAlwaysPost then
+    if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
 
         local targetWeapon = "None"
 
@@ -206,13 +260,14 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
 
         local attackerOrigin = attacker:GetOrigin()
         local targetOrigin = target:GetOrigin()
+        local attackerTeamType = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType)
 
         local jsonData = json.encode(
         {
             matchId        = self.matchId,
             time           = Shared.GetGMTString(false),
             attackerClass  = attacker:GetClassName(),
-            attackerTeam   = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType),
+            attackerTeam   = attackerTeamType,
             attackerWeapon = weapon:GetClassName(),
             attackerX      = string.format("%.2f", attackerOrigin.x),
             attackerY      = string.format("%.2f", attackerOrigin.y),
@@ -230,6 +285,16 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
 
         Shared.SendHTTPRequest( kSponitor2Url.."kill", "POST", {data=jsonData} )
 
+        if attacker:isa("Player") and target:isa("Player") then
+        
+            local tstats = self.teamStats[attackerTeamType]
+
+            if tstats then
+                tstats.pvpKills = tstats.pvpKills + 1
+            end
+
+        end
+
     end
 
 end
@@ -241,7 +306,7 @@ function ServerSponitor:OnTechEvent(name)
 
     //DebugPrint("OnTechEvent %s", name)
 
-    if (self.matchId and self.reportDetails) or kDebugAlwaysPost then
+    if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
 
         local jsonData = json.encode(
         {
@@ -255,4 +320,32 @@ function ServerSponitor:OnTechEvent(name)
     end
 
 end
+
+//----------------------------------------
+//  
+//----------------------------------------
+function ServerSponitor:Update(dt)
+
+    if self.matchId or gDebugAlwaysPost then
+
+        self.sincePlayerCountCheck = self.sincePlayerCountCheck + dt
+
+        if self.sincePlayerCountCheck >= kPlayerCountCheckPeriod then
+
+            self.sincePlayerCountCheck = 0.0
+
+            for teamType, stats in pairs(self.teamStats) do
+                local numPlayers, numRookies = stats.team:GetNumPlayers()   // only call this once - it does some computation
+                stats.minNumPlayers = math.min( stats.minNumPlayers, numPlayers )
+                stats.maxNumPlayers = math.max( stats.maxNumPlayers, numPlayers )
+                stats.avgNumPlayersSum = stats.avgNumPlayersSum + numPlayers
+                stats.avgNumRookiesSum = stats.avgNumRookiesSum + numRookies
+                stats.numPlayerCountSamples = stats.numPlayerCountSamples + 1
+            end
+        end
+
+    end
+
+end
+
 

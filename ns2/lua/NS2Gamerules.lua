@@ -894,6 +894,8 @@ if Server then
                 CheckForNoCommander(self, self.team2, "AlienCommander")
                 
             end
+
+            self.sponitor:Update(timePassed)
             
         end
         
@@ -1134,11 +1136,15 @@ if Server then
             end
             
             newPlayer:TriggerEffects("join_team")
-            
-            return success, newPlayer
+
+            if success then
+                self.sponitor:OnJoinTeam( newPlayer, team )
+            end
+
+			return success, newPlayer
             
         end
-        
+
         // Return old player
         return success, player
         

@@ -139,6 +139,7 @@ end
 function Team:GetNumPlayers()
 
     local numPlayers = 0
+    local numRookies = 0
     
     // Player may have been deleted this tick, so check id to make sure player count is correct)
     for index, playerId in ipairs(self.playerIds) do
@@ -147,11 +148,14 @@ function Team:GetNumPlayers()
         // Verify the player has a Client attached to it (we don't want to count ragdolls as team players for example.
         if player ~= nil and player:GetId() ~= Entity.invalidId and Server.GetOwner(player) ~= nil then
             numPlayers = numPlayers + 1
+            if player:GetIsRookie() then
+                numRookies = numRookies + 1
+            end
         end
         
     end
     
-    return numPlayers
+    return numPlayers, numRookies
     
 end
 

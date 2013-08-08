@@ -140,6 +140,7 @@ function PlayingTeam:OnInitialized()
     
     self.teamResources = 0
     self.totalTeamResourcesCollected = 0
+    self.totalTeamResFromTowers = 0
     self:AddTeamResources(kPlayingTeamInitialTeamRes)
     
     self.ejectCommVoteManager:Reset()
@@ -486,6 +487,14 @@ function PlayingTeam:GetTotalTeamResources()
     return self.totalTeamResourcesCollected
 
 end
+
+
+function PlayingTeam:GetTotalTeamResourcesFromTowers()
+
+    return self.totalTeamResFromTowers
+
+end
+
 function PlayingTeam:GetHasTeamLost()
 
     if GetGamerules():GetGameStarted() and not Shared.GetCheatsEnabled() then
@@ -791,6 +800,8 @@ function PlayingTeam:UpdateResourceTowers()
         
         self:SplitPres(pResGained)
         self:AddTeamResources(tResGained)
+        
+        self.totalTeamResFromTowers = self.totalTeamResFromTowers + tResGained
     
     end
 

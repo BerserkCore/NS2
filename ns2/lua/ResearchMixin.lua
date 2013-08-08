@@ -336,19 +336,19 @@ function ResearchMixin:TechResearched(structure, researchId)
     if structure and structure:GetId() == self:GetId() then
     
         local researchNode = self:GetTeam():GetTechTree():GetTechNode(researchId)
-        if researchNode and (researchNode:GetIsEnergyManufacture() or researchNode:GetIsManufacture() or researchNode:GetIsPlasmaManufacture()) then        
-
-            // Handle manufacture actions        
+        if researchNode and (researchNode:GetIsEnergyManufacture() or researchNode:GetIsManufacture() or researchNode:GetIsPlasmaManufacture()) then
+        
+            // Handle manufacture actions
             self:CreateManufactureEntity(researchId)
             
         elseif self.OnResearchComplete then
             self:OnResearchComplete(researchId)
         end
-    
+        
         self:ClearResearch()
         
     end
-
+    
 end
 
 function ResearchMixin:OnPowerOff()
