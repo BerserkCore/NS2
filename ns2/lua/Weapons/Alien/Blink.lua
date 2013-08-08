@@ -20,7 +20,7 @@ Blink.kMapName = "blink"
 // initial force added when starting blink
 local kEtherealForce = 13.5
 // always add a little above top speed
-local kBlinkAddForce = 0.3
+local kBlinkAddForce = 0.5
 local kEtherealVerticalForce = 2
 
 local networkVars =
@@ -146,21 +146,25 @@ function Blink:SetEthereal(player, state)
         
             player.etherealStartTime = Shared.GetTime()
             TriggerBlinkOutEffects(self, player)
-            player:AddHealth(kHealthOnBlink)
-            
-            local currentVelocity = player:GetViewCoords().zAxis:DotProduct(player:GetVelocity())
-            
-            local celerityLevel = GetHasCelerityUpgrade(player) and GetSpurLevel(player:GetTeamNumber()) or 0
-            local maxSpeed = kEtherealForce + celerityLevel * 1
-            
-            // need to handle celerity different for the fade. blink is a big part of the basic movement, celerity wont be significant enough if not considered here
-            local celerityMultiplier = 1 + celerityLevel * 0.7
 
-            local addSpeed = Clamp(maxSpeed - currentVelocity, 0, maxSpeed) + kBlinkAddForce * celerityMultiplier
-            local newVelocity = player:GetViewCoords().zAxis * addSpeed + player:GetVelocity()
+            local celerityLevel = GetHasCelerityUpgrade(player) and GetSpurLevel(player:GetTeamNumber()) or 0
+            local oldSpeed = player:GetVelocity():GetLength()
+            local newSpeed = math.max(oldSpeed, kEtherealForce + celerityLevel * 1)
+
+            // need to handle celerity different for the fade. blink is a big part of the basic movement, celerity wont be significant enough if not considered here
+            local celerityMultiplier = 1 + celerityLevel * 0.5
+
+            
+            local newVelocity = player:GetViewCoords().zAxis * (kEtherealForce + celerityLevel * 1) + player:GetVelocity()
+            if newVelocity:GetLength() > newSpeed then
+                newVelocity:Scale(newSpeed / newVelocity:GetLength())
+            end
+            
             if player:GetIsOnGround() then
                 newVelocity.y = math.max(newVelocity.y, kEtherealVerticalForce)
             end
+            
+            newVelocity:Add(player:GetViewCoords().zAxis * kBlinkAddForce * celerityMultiplier)
             
             player:SetVelocity(newVelocity)
             player.onGround = false

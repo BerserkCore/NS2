@@ -149,6 +149,10 @@ function Onos:OnInitialized()
     self:SetModel(Onos.kModelName, kOnosAnimationGraph)
     
     self:AddTimedCallback(Onos.UpdateStooping, Onos.kStoopingCheckInterval)
+    
+    if Client then
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
+    end
 
 end
 
@@ -540,32 +544,23 @@ end
 
 local kOnosHeadMoveAmount = 0.3
 // Give dynamic camera motion to the player
-function Onos:OnPostUpdateCamera(deltaTime) 
+function Onos:PlayerCameraCoordsAdjustment(cameraCoords)
 
     local camOffsetHeight = 0
-    
-    if not self.currentCameraAnim then
-        self.currentCameraAnim = 0
-    end
-    
-    if not self:GetIsJumping() then
-        camOffsetHeight = -self:GetMaxViewOffsetHeight() * self:GetCrouchShrinkAmount() * self:GetCrouchAmount()
-    end
-    
+
     if self:GetIsFirstPerson() then
     
         if not self:GetIsJumping() then
 
             local movementScalar = Clamp((self:GetVelocity():GetLength() / self:GetMaxSpeed(true)), 0.0, 0.8)
             local bobbing = ( math.cos((Shared.GetTime() - self:GetTimeGroundTouched()) * 7) - 1 )
-            camOffsetHeight = camOffsetHeight + kOnosHeadMoveAmount * movementScalar * bobbing
+            cameraCoords.origin.y = cameraCoords.origin.y + kOnosHeadMoveAmount * movementScalar * bobbing
             
         end
         
     end
-    
-    self.currentCameraAnim = Slerp(self.currentCameraAnim, camOffsetHeight, deltaTime * 0.5)    
-    self:SetCameraYOffset(self.currentCameraAnim)
+
+    return cameraCoords
 
 end
 

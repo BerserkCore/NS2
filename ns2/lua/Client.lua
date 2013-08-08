@@ -73,6 +73,11 @@ Client.timeLimitedDecals = { }
 
 Client.timeOfLastPowerPoints = nil
 
+Client.serverHidden = false
+function Client.GetServerIsHidden()
+    return Client.serverHidden
+end
+
 Client.localClientIndex = nil
 function Client.GetLocalClientIndex()
     return Client.localClientIndex

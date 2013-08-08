@@ -61,6 +61,8 @@ local kBlinkSpeed = 14.8
 // Delay before you can blink again after a blink.
 local kMinEnterEtherealTime = 0.4
 
+local kFadeGravityMod = 1.0
+
 if Server then
     Script.Load("lua/Fade_Server.lua")
 elseif Client then    
@@ -96,7 +98,7 @@ AddMixinNetworkVars(BabblerClingMixin, networkVars)
 
 function Fade:OnCreate()
 
-    InitMixin(self, BaseMoveMixin, { kGravity = Player.kGravity })
+    InitMixin(self, BaseMoveMixin, { kGravity = Player.kGravity * kFadeGravityMod })
     InitMixin(self, GroundMoveMixin)
     InitMixin(self, JumpMoveMixin)
     InitMixin(self, CrouchMoveMixin)
@@ -143,10 +145,14 @@ function Fade:OnInitialized()
         
         self:AddHelpWidget("GUIFadeShadowStepHelp", 2)
         self:AddHelpWidget("GUIFadeBlinkHelp", 2)
-        self:AddHelpWidget("GUIFadeDoubleJumpHelp", 2)
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
         
     end
     
+end
+
+function Fade:ModifyJump(input, velocity, jumpVelocity)
+    jumpVelocity:Scale(kFadeGravityMod)
 end
 
 function Fade:OnDestroy()
@@ -177,6 +183,10 @@ function Fade:MovementModifierChanged(newMovementModifierState, input)
         self:TriggerShadowStep(input.move)
     end
     
+end
+
+function Fade:ModifyCrouchAnimation(crouchAmount)    
+    return Clamp(crouchAmount * (1 - ( (self:GetVelocityLength() - kMaxSpeed) / (kMaxSpeed * 0.5))), 0, 1)
 end
 
 function Fade:GetHeadAttachpointName()
@@ -264,7 +274,7 @@ function Fade:ModifyVelocity(input, velocity, deltaTime)
         end 
         
         // additional acceleration when holding down blink to exceed max speed
-        velocity:Add(wishDir * 3 * deltaTime)
+        velocity:Add(wishDir * 0.3 * deltaTime)
         
     end
 

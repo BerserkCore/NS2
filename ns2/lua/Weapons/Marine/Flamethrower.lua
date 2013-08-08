@@ -39,7 +39,7 @@ local kSmokeEffectRate = 1.5
 local kImpactEffectRate = 0.3
 local kPilotEffectRate = 0.3
 local kTrailLength = 9.5
-local kConeWidth = 0.2
+local kConeWidth = 0.17
 
 local kFirstPersonTrailCinematics =
 {

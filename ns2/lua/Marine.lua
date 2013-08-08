@@ -291,8 +291,10 @@ function Marine:OnInitialized()
         self:AddHelpWidget("GUIMarineHealthRequestHelp", 2)
         self:AddHelpWidget("GUIMarineFlashlightHelp", 2)
         self:AddHelpWidget("GUIBuyShotgunHelp", 2)
-        self:AddHelpWidget("GUIMarineWeldHelp", 2)
+        // No more auto weld orders.
+        //self:AddHelpWidget("GUIMarineWeldHelp", 2)
         self:AddHelpWidget("GUIMapHelp", 1)
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
         
         self.notifications = { }
         self.timeLastSpitHitEffect = 0

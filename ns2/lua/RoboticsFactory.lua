@@ -159,10 +159,6 @@ function RoboticsFactory:GetRequiresPower()
     return true
 end
 
-function RoboticsFactory:GetShowOrderLine()
-    return true
-end
-
 function RoboticsFactory:GetNanoShieldOffset()
     return Vector(0, -0.8, 0)
 end

@@ -204,6 +204,8 @@ function ARC:UpdateOrders(deltaTime)
         local canMove = self.deployMode == ARC.kDeployMode.Undeployed
         if currentOrder:GetType() == kTechId.Move and canMove then
             self:UpdateMoveOrder(deltaTime)
+        elseif currentOrder:GetType() == kTechId.ARCDeploy then
+            self:Deploy()
         end
         
     else

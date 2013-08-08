@@ -27,6 +27,7 @@ kGUILayerMinimap = 14
 kGUILayerScoreboard = 15
 kGUILayerCountDown = 16
 kGUILayerTestEvents = 17
+kGUILayerMainMenuNews = 19
 kGUILayerMainMenu = 20
 // The Web layer must be much higher than the MainMenu layer
 // because the MainMenu layer inserts items above

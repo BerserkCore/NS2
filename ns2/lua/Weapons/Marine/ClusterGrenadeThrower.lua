@@ -17,7 +17,7 @@ local networkVars =
 
 class 'ClusterGrenadeThrower' (GrenadeThrower)
 
-ClusterGrenadeThrower.kMapName = "clustergrenadethrower"
+ClusterGrenadeThrower.kMapName = "clustergrenade"
 
 ClusterGrenadeThrower.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster_view.model")
 local kAnimationGraph = PrecacheAsset("models/marine/grenades/gr_cluster_view.animation_graph")
@@ -30,8 +30,8 @@ function ClusterGrenadeThrower:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function ClusterGrenadeThrower:GetGrenadeMapName()
-    return ClusterGrenade.kMapName
+function ClusterGrenadeThrower:GetGrenadeClassName()
+    return "ClusterGrenade"
 end
 
 Shared.LinkClassToMap("ClusterGrenadeThrower", ClusterGrenadeThrower.kMapName, networkVars)

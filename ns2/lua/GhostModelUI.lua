@@ -108,6 +108,21 @@ function GhostModelUI_GetNearestAttachStructureDirection()
     
 end
 
+function GhostModelUI_GetCost()
+
+    local player = Client.GetLocalPlayer()
+    if player then
+    
+        if not player.GetGhostModelCost then
+            return LookupTechData(player:GetGhostModelTechId(), kTechDataCostKey)
+        else    
+            return player:GetGhostModelCost()    
+        end
+        
+    end
+
+end
+
 function GhostModelUI_GetGhostModelCoords()
 
     local player = Client.GetLocalPlayer()

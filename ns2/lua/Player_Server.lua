@@ -821,3 +821,11 @@ function Player:OnClientUpdated(client)
     end
 
 end
+
+// only use intensity value here to reduce traffic
+function Player:SetCameraShake(intensity)
+
+    local message = BuildCameraShakeMessage(intensity)
+    Server.SendNetworkMessage(self, "CameraShake", message, false)
+
+end

@@ -115,6 +115,8 @@ function Hive:OnCreate()
         // when constructed first level is added automatically
         self.bioMassLevel = 0
         
+        self:UpdateIncludeRelevancyMask()
+        
     end
     
 end
@@ -166,6 +168,13 @@ if Client then
     
 end
 
+function Hive:SetIncludeRelevancyMask(includeMask)
+
+    includeMask = bit.bor(includeMask, kRelevantToTeam2Commander)    
+    CommandStructure.SetIncludeRelevancyMask(self, includeMask)    
+
+end
+
 function Hive:GetCanBeUsed(player, useSuccessTable)
 
     if not self:GetIsBuilt() then
@@ -192,10 +201,6 @@ end
 
 function Hive:GetMatureMaxEnergy()
     return kMatureHiveMaxEnergy
-end
-
-function Hive:GetShowOrderLine()
-    return true
 end
 
 function Hive:OnCollision(entity)

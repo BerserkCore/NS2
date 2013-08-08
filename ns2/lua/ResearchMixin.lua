@@ -361,8 +361,8 @@ end
 
 function ResearchMixin:OnPowerOff()
 
-    if self:GetIsResearching() then        
-        AbortResearch(self, true)            
-    end       
+    if self:GetIsResearching() and self:GetResearchingId() ~= kTechId.Recycle then        
+        AbortResearch(self, true)
+    end
 
 end

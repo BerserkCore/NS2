@@ -130,7 +130,11 @@ if Client then
             local model = entity._renderModel
             if model ~= nil then
                 if model:GetZone() == RenderScene.Zone_ViewModel then
-                    model:AddMaterial(viewMaterial)
+                
+                    if viewMaterial then                
+                        model:AddMaterial(viewMaterial)
+                    end
+                    
                 else
                     model:AddMaterial(material)
                 end
@@ -153,7 +157,11 @@ if Client then
                 local model = entity._renderModel
                 if model ~= nil then
                     if model:GetZone() == RenderScene.Zone_ViewModel then
-                        model:RemoveMaterial(viewMaterial)
+                        
+                        if viewMaterial then                    
+                            model:RemoveMaterial(viewMaterial)
+                        end
+                        
                     else
                         model:RemoveMaterial(material)
                     end
@@ -170,8 +178,15 @@ if Client then
             local material = Client.CreateRenderMaterial()
             material:SetMaterial("cinematics/vfx_materials/parasited.material")
 
-            local viewMaterial = Client.CreateRenderMaterial()
-            viewMaterial:SetMaterial("cinematics/vfx_materials/parasited.material")
+            local showViewMaterial = not self.GetShowParasiteView or self:GetShowParasiteView()
+            local viewMaterial = nil
+
+            if showViewMaterial then
+
+                viewMaterial = Client.CreateRenderMaterial()
+                viewMaterial:SetMaterial("cinematics/vfx_materials/parasited.material")
+            
+            end
             
             self.parasiteEntities = {}
             self.parasiteMaterial = material
@@ -185,13 +200,20 @@ if Client then
     function ParasiteMixin:_RemoveParasiteEffect()
 
         if self.parasiteMaterial then
+        
             RemoveEffect(self.parasiteEntities, self.parasiteMaterial, self.parasiteViewMaterial)
             Client.DestroyRenderMaterial(self.parasiteMaterial)
-            Client.DestroyRenderMaterial(self.parasiteViewMaterial)
             self.parasiteMaterial = nil
-            self.parasiteViewMaterial = nil
             self.parasiteEntities = nil
-        end            
+            
+        end
+
+        if self.parasiteViewMaterial then
+            
+            Client.DestroyRenderMaterial(self.parasiteViewMaterial)
+            self.parasiteViewMaterial = nil
+            
+        end        
 
     end
     

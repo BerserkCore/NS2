@@ -89,33 +89,37 @@ function GetCommanderGhostStructureCoords()
             local x, y = Client.GetCursorPosScreen()
             local trace = GetCommanderPickTarget(commander, CreatePickRay(commander, x, y), false, true)
             
-            // We only want to do the "ValidExit" check after picking a location for a structure requiring a valid exit.
-            local ignoreChecks = LookupTechData(ghostTechId, kTechDataSpecifyOrientation, false) and kIgnoreValidExitCheck or nil
+            if trace.fraction < 1 then
             
-            ghostStructureValid, position, attachEntity, errorMessage = GetIsBuildLegal(ghostTechId, trace.endPoint, 0, kStructureSnapRadius, commander, nil, ignoreChecks)
-            
-            if trace.entity then
-                ghostStructureTargetId = trace.entity:GetId()
-            else
-                ghostStructureTargetId = Entity.invalidId
-            end
-            
-            if attachEntity then
-            
-                coords = attachEntity:GetAngles():GetCoords()
-                coords.origin = position
+                // We only want to do the "ValidExit" check after picking a location for a structure requiring a valid exit.
+                local ignoreChecks = LookupTechData(ghostTechId, kTechDataSpecifyOrientation, false) and kIgnoreValidExitCheck or nil
                 
-            else
-                coords.origin = position
+                ghostStructureValid, position, attachEntity, errorMessage = GetIsBuildLegal(ghostTechId, trace.endPoint, 0, kStructureSnapRadius, commander, nil, ignoreChecks)
+                
+                if trace.entity then
+                    ghostStructureTargetId = trace.entity:GetId()
+                else
+                    ghostStructureTargetId = Entity.invalidId
+                end
+                
+                if attachEntity then
+                
+                    coords = attachEntity:GetAngles():GetCoords()
+                    coords.origin = position
+                    
+                else
+                    coords.origin = position
+                end
+                
+                local coordsMethod = LookupTechData(ghostTechId, kTechDataOverrideCoordsMethod, nil)
+                
+                if coordsMethod then
+                    coords = coordsMethod(coords)
+                end
+                
+                ghostStructureCoords = coords
+                
             end
-            
-            local coordsMethod = LookupTechData(ghostTechId, kTechDataOverrideCoordsMethod, nil)
-            
-            if coordsMethod then
-                coords = coordsMethod(coords)
-            end
-            
-            ghostStructureCoords = coords
             
         end
         

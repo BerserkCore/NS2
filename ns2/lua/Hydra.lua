@@ -174,6 +174,8 @@ function Hydra:OnInitialized()
         
     end
     
+    self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
+    
 end
 
 function Hydra:GetBarrelPoint()

@@ -62,7 +62,7 @@ Skulk.kZExtents = .45
 
 local kWallJumpInterval = 0.4
 local kWallJumpForce = 5.2 // scales down the faster you are
-local kMinWallJumpForce = 0.0
+local kMinWallJumpForce = 0.1
 local kVerticalWallJumpForce = 4.3
 
 if Server then
@@ -141,6 +141,7 @@ function Skulk:OnInitialized()
         self:AddHelpWidget("GUISkulkParasiteHelp", 1)
         self:AddHelpWidget("GUISkulkLeapHelp", 2)
         self:AddHelpWidget("GUIMapHelp", 1)
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
         
     end
     
@@ -469,8 +470,8 @@ function Skulk:ModifyJump(input, velocity, jumpVelocity)
         jumpVelocity.y = 3 + math.min(1, 1 + viewCoords.zAxis.y) * 2
 
         local celerityMod = (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.4
-        local currentSpeed = math.max(0, self.bonusVec:DotProduct(velocity))
-        local fraction = 1 - Clamp( (currentSpeed) / (10 + celerityMod), 0, 1)        
+        local currentSpeed = velocity:GetLengthXZ()
+        local fraction = 1 - Clamp( currentSpeed / (11 + celerityMod), 0, 1)        
         
         local force = math.max(kMinWallJumpForce, (kWallJumpForce + celerityMod) * fraction)
           
@@ -578,14 +579,6 @@ function Skulk:OnUpdate(deltaTime)
     
     //UpdateDashEffects(self)
     
-end
-
-function Skulk:OnProcessSpectate(deltaTime)
-
-    Alien.OnProcessSpectate(self, deltaTime)
-    
-    //UpdateDashEffects(self)
-
 end
 
 function Skulk:OnProcessMove(input)

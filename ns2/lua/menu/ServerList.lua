@@ -121,8 +121,9 @@ function SortByMode(a, b)
     
 end
 
+-- An empty mode string matches every mode. Otherwise, match the mode string of the entry to the passed in mode.
 function FilterServerMode(mode)
-    return function(entry) return string.find(string.upper(entry.mode), string.upper(mode)) ~= nil end
+    return function(entry) return string.len(mode) == 0 or string.upper(entry.mode) == string.upper(mode) end
 end
 
 function FilterServerName(name)

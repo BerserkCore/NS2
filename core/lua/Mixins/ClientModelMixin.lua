@@ -31,7 +31,6 @@ function ClientModelMixin:__initmixin()
 
     self.limitedModel = true
     self.fullyUpdated = Client or Predict
-    self.forceNextUpdate = true
     
     if Server then
         self.forceModelUpdateUntilTime = 0
@@ -42,46 +41,41 @@ end
 if Server then
 
     function ClientModelMixin:SetCoords()
-        self.forceModelUpdateUntilTime = Shared.GetTime() + 1
+        self:ForceUpdateUntil(Shared.GetTime() + 1)
     end
 
     function ClientModelMixin:SetAngles()
-        self.forceModelUpdateUntilTime = Shared.GetTime() + 1
+        self:ForceUpdateUntil(Shared.GetTime() + 1)
     end
     
     function ClientModelMixin:SetOrigin()
-        self.forceModelUpdateUntilTime = Shared.GetTime() + 1
+        self:ForceUpdateUntil(Shared.GetTime() + 1)
     end
     
     function ClientModelMixin:SetAttachPoint()
-        self.forceModelUpdateUntilTime = Shared.GetTime() + 1
+        self:ForceUpdateUntil(Shared.GetTime() + 1)
     end
     
     function ClientModelMixin:OnConstructionComplete()
-        self.forceModelUpdateUntilTime = Shared.GetTime() + 1
+        self:ForceUpdateUntil(Shared.GetTime() + 1)
     end
 
     function ClientModelMixin:ForceUpdateUntil(time)
         self.forceModelUpdateUntilTime = time
+        self:MarkPhysicsDirty()
     end
     
     function ClientModelMixin:OnConstruct(builder, fraction)
     
         if math.floor(fraction * 10) ~= self.lastFractionTenth then
             self.lastFractionTenth = math.floor(fraction * 10)
-            self.forceNextUpdate = true
+            self:OnUpdatePhysics()
         end
         
     end
     
     local function CheckForceUpdate(self)
-    
-        if self.GetUpdateServerModel then
-            self.fullyUpdated = self:GetUpdateServerModel()
-        end
-
         self.fullyUpdated = self.forceModelUpdateUntilTime > Shared.GetTime()
-        
     end
     
     function ClientModelMixin:OnUpdate()

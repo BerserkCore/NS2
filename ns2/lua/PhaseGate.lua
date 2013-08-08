@@ -464,4 +464,8 @@ function PhaseGate:GetUnitNameOverride(viewer)
 
 end
 
+function CheckSpaceForPhaseGate(techId, origin, normal, commander)
+    return GetHasRoomForCapsule(Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents), origin + Vector(0, 0.1 + Player.kYExtents, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls)
+end
+
 Shared.LinkClassToMap("PhaseGate", PhaseGate.kMapName, networkVars)

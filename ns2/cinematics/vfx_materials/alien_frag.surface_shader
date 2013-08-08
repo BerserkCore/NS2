@@ -23,9 +23,8 @@
 			return pow(x,p);
 		}
 		
-		float paramSlow(float x, float p) {
-			x -= 1;
-			return -abs(pow(x,p)) + 1.0;
+        float paramSlow(float x, float p) {
+			return 1 - pow(abs(x - 1),p);
 		}
 		
 		float3 DecodeNormal(const float4 texNormal)

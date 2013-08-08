@@ -81,12 +81,12 @@ function GUIInsight_PenTool:SendKeyEvent(key, down)
                 
             end
             drawMode = kDrawMode.WorldPen
-            return true
+            return false
             
         elseif key == InputKey.MouseButton2 then
         
             drawMode = kDrawMode.ScreenPen
-            return true
+            return false
         
         end
     

@@ -104,6 +104,8 @@ PhysicsMask = enum
     // Melee attacks
     Melee = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.ProjectileGroup, PhysicsGroup.PathingGroup),
 
+    PredictedProjectileGroup = CreateMaskExcludingGroups(PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.BabblerGroup, PhysicsGroup.ProjectileGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.DroppedWeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.PathingGroup),
+    
     // Allows us to mark props as non interfering for commander selection (culls out any props with commAlpha < 1)
     CommanderSelect = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.BigPlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.PathingGroup),
 

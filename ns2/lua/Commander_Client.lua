@@ -393,6 +393,10 @@ function Commander:OnDestroy()
     
 end
 
+function Commander:GetCanSeeConstructIcon(ofEntity)
+    return true
+end
+
 function Commander:AddGhostGuide(origin, radius)
 
     local guide = nil
@@ -827,7 +831,7 @@ function Commander:SendAction(techId)
 
     //Print("Commander:SendAction(%s)", EnumToString(kTechId, techId))
     
-    local message = BuildCommActionMessage(techId)
+    local message = BuildCommActionMessage(techId, self.shiftDown)
     Client.SendNetworkMessage("CommAction", message, true)
     
 end
@@ -838,7 +842,7 @@ function Commander:SendTargetedAction(techId, normalizedPickRay, orientation, en
 
     local entityId = entity and entity:GetId() or Entity.invalidId
     local orientation = ConditionalValue(orientation, orientation, math.random() * 2 * math.pi)
-    local message = BuildCommTargetedActionMessage(techId, normalizedPickRay.x, normalizedPickRay.y, normalizedPickRay.z, orientation, entityId)
+    local message = BuildCommTargetedActionMessage(techId, normalizedPickRay.x, normalizedPickRay.y, normalizedPickRay.z, orientation, entityId, self.shiftDown)
     Client.SendNetworkMessage("CommTargetedAction", message, true)
     self.timeLastTargetedAction = Shared.GetTime()
     self:SetCurrentTech(kTechId.None)
@@ -854,7 +858,7 @@ function Commander:SendTargetedActionWorld(techId, worldCoords, orientation, ent
     //Print("Commander:SendTargetedActionWorld(%s)", EnumToString(kTechId, techId))
     
     local entityId = entity and entity:GetId() or Entity.invalidId
-    local message = BuildCommTargetedActionMessage(techId, worldCoords.x, worldCoords.y, worldCoords.z, ConditionalValue(orientation, orientation, 0), entityId)
+    local message = BuildCommTargetedActionMessage(techId, worldCoords.x, worldCoords.y, worldCoords.z, ConditionalValue(orientation, orientation, 0), entityId, self.shiftDown)
     Client.SendNetworkMessage("CommTargetedActionWorld", message, true)
     self:SetCurrentTech(kTechId.None)
     self.timeLastTargetedAction = Shared.GetTime()

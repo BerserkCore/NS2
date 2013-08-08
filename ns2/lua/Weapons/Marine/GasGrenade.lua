@@ -6,20 +6,23 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/Weapons/Projectile.lua")
+Script.Load("lua/Weapons/PredictedProjectile.lua")
 Script.Load("lua/OwnerMixin.lua")
 
-class 'GasGrenade' (Projectile)
+class 'GasGrenade' (PredictedProjectile)
 
-GasGrenade.kMapName = "gasgrenade"
-GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_nerve.model")
+GasGrenade.kMapName = "gasgrenadeprojectile"
+GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
+GasGrenade.kUseServerPosition = true
+
+GasGrenade.kRadius = 0.17
 
 local networkVars = 
 {
     releaseGas = "boolean"
 }
 
-local kLifeTime = 13
+local kLifeTime = 20
 local kGasReleaseDelay = 5
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -32,7 +35,7 @@ end
 
 function GasGrenade:OnCreate()
 
-    Projectile.OnCreate(self)
+    PredictedProjectile.OnCreate(self)
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
@@ -68,9 +71,11 @@ if Client then
 
     function GasGrenade:OnUpdateRender()
     
+        PredictedProjectile.OnUpdateRender(self)
+    
         if self.releaseGas and not self.clientGasReleased then
 
-            self:TriggerEffects("release_nervegas")        
+            self:TriggerEffects("release_nervegas", { effethostcoords = Coords.GetTranslation(self:GetOrigin())} )        
             self.clientGasReleased = true
         
         end
@@ -117,14 +122,14 @@ NerveGasCloud.kEffectName = PrecacheAsset("cinematics/marine/nervegascloud.cinem
 local gNerveGasDamageTakers = {}
 
 local kCloudUpdateRate = 0.3
-local kSpreadDelay = 2
-local kNerveGasCloudRadius = 3.5
+local kSpreadDelay = 0.6
+local kNerveGasCloudRadius = 4
 local kNerveGasCloudLifetime = 6
 
-local kCloudMoveSpeed = 0.7
+local kCloudMoveSpeed = 2
 
-kNerveGasDamagePerSecond = 80
-kNerveGasDamageType = kDamageType.ArmorOnly
+kNerveGasDamagePerSecond = 40
+kNerveGasDamageType = kDamageType.Structural // kDamageType.ArmorOnly
 
 local networkVars =
 {
@@ -227,7 +232,7 @@ if Server then
     
         if self.endPos then
             local newPos = SlerpVector(self:GetOrigin(), self.endPos, deltaTime * kCloudMoveSpeed)
-            self:SetOrigin(newPos)    
+            self:SetOrigin(newPos)
         end
         
     end

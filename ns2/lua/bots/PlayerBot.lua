@@ -72,7 +72,7 @@ end
 function PlayerBot:UpdateName()
 
     // Set name after a bit of time to simulate real players
-    if self.botSetName == nil and math.random() < .01 then
+    if self.botSetName == nil and math.random() < .1 then
 
         local player = self:GetPlayer()
         local name = player:GetName()
@@ -82,7 +82,7 @@ function PlayerBot:UpdateName()
             local index = Clamp(math.ceil(math.random() * numNames), 1, numNames)
             self.botSetName = true
             
-            name = self:GetNamePrefix() .. TrimName(kBotNames[index]) .. " T"..ToString(self.forceTeam)
+            name = self:GetNamePrefix() .. TrimName(kBotNames[index]) 
             
             // Treat "NsPlayer" as special.
             if name ~= player:GetName() and name ~= kDefaultPlayerName and string.len(name) > 0 then

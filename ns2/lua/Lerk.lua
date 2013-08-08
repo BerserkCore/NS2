@@ -149,6 +149,7 @@ function Lerk:OnInitialized()
         
         self:AddHelpWidget("GUILerkFlapHelp", 2)
         self:AddHelpWidget("GUILerkSporesHelp", 2)
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
         
     end
     
@@ -494,10 +495,8 @@ end
 
 function Lerk:PreUpdateMove(input, runningPrediction)
 
-    PROFILE("Lerk:HandleButtons")
+    PROFILE("Lerk:PreUpdateMove")
 
-    Alien.HandleButtons(self, input)
-    
     local wallGripPressed = bit.band(input.commands, Move.MovementModifier) ~= 0 and bit.band(input.commands, Move.Jump) == 0
     
     if not self:GetIsWallGripping() and wallGripPressed and self.wallGripAllowed then

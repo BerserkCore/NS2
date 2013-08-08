@@ -66,6 +66,7 @@ kAlienStructureEffects =
     {
         alienConstruct =
         {
+            {sound = "sound/NS2.fev/alien/gorge/build", doer = "Gorge", done = true},
             {sound = "sound/NS2.fev/alien/structures/generic_build", isalien = true, done = true},
         },
     },

@@ -230,7 +230,7 @@ kAxeDamageType = kDamageType.Structural
 kGrenadeLauncherGrenadeDamage = 165
 kGrenadeLauncherGrenadeDamageType = kDamageType.Structural
 kGrenadeLauncherClipSize = 4
-kGrenadeLauncherGrenadeDamageRadius = 6
+kGrenadeLauncherGrenadeDamageRadius = 4.8
 kGrenadeLifetime = 2.0
 kGrenadeUpgradedLifetime = 1.5
 
@@ -242,7 +242,7 @@ kShotgunRange = 30
 
 kNadeLauncherClipSize = 4
 
-kFlamethrowerDamage = 23
+kFlamethrowerDamage = 19
 kBurnDamagePerSecond = 2
 kFlamethrowerDamageType = kDamageType.Flame
 kFlamethrowerClipSize = 50
@@ -256,9 +256,9 @@ kFlamethrowerStackRate = 0.4
 kFlameRadius = 1.8
 kFlameDamageStackWeight = 0.5
 
-kExoDualGunModifier = 0.7
+kExoDualGunModifier = 0.85
 
-kMinigunDamage = 25
+kMinigunDamage = 20
 kMinigunDamageType = kDamageType.Heavy
 kMinigunClipSize = 250
 
@@ -520,7 +520,7 @@ kShadeBuildTime = 18
 kEvolveHallucinationsResearchTime = 30
 
 kHydraBuildTime = 13
-kCystBuildTime = 2.2
+kCystBuildTime = 5
 
 kSkulkGestateTime = 3
 kGorgeGestateTime = 7

@@ -27,7 +27,7 @@ function GUIMainMenuNews:Initialize()
     self.webContainer:SetAnchor(GUIItem.Right, GUIItem.Center)
     self.webContainer:SetPosition(Vector(-xSize - 0.14 * Client.GetScreenWidth(), -ySize / 2, 0))
     self.webContainer:SetTexture(kTextureName)
-    self.webContainer:SetLayer(kGUILayerMainMenuWeb)
+    self.webContainer:SetLayer(kGUILayerMainMenuNews)
     
     self.buttonDown = { [InputKey.MouseButton0] = false, [InputKey.MouseButton1] = false, [InputKey.MouseButton2] = false }
     

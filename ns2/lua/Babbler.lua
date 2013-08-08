@@ -74,7 +74,7 @@ local function CreateHitBox(self)
 
     if not self.hitBox then
     
-        self.hitBox = Shared.CreatePhysicsSphereBody(false, Babbler.kRadius * 2, Babbler.kMass, self:GetCoords() )
+        self.hitBox = Shared.CreatePhysicsSphereBody(false, Babbler.kRadius * 1.4, Babbler.kMass, self:GetCoords() )
         self.hitBox:SetGroup(PhysicsGroup.BabblerGroup)
         self.hitBox:SetCoords(self:GetCoords())
         self.hitBox:SetEntity(self)

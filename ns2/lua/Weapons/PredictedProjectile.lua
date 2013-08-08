@@ -9,7 +9,6 @@
 PredictedProjectileShooterMixin = CreateMixin(PredictedProjectileShooterMixin)
 PredictedProjectileShooterMixin.type = "PredictedProjectile"
 
-local physicsMask = PhysicsMask.Bullets
 local kMaxNumProjectiles = 200
 
 function PredictedProjectileShooterMixin:__initmixin()
@@ -19,9 +18,15 @@ end
 
 function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, startPoint, velocity, bounce, friction, gravity, clearOnImpact)
 
+    if Predict or (not Server and _G[className].kUseServerPosition) then
+        return nil
+    end
+    
+    local minLifeTime = _G[className].kMinLifeTime
+
     local projectile = nil
     local projectileController = ProjectileController()
-    projectileController:Initialize(startPoint, velocity, _G[className].kRadius, self, bounce, friction, gravity, GetEnemyTeamNumber(self:GetTeamNumber()), clearOnImpact)
+    projectileController:Initialize(startPoint, velocity, _G[className].kRadius, self, bounce, friction, gravity, GetEnemyTeamNumber(self:GetTeamNumber()), clearOnImpact, minLifeTime)
     projectileController.projectileId = self.nextProjectileId
     projectileController.modelName = _G[className].kModelName
     
@@ -217,7 +222,9 @@ end
 
 class 'ProjectileController'
 
-function ProjectileController:Initialize(startPoint, velocity, radius, predictor, bounce, friction, gravity, detonateWithTeam, clearOnImpact)
+function ProjectileController:Initialize(startPoint, velocity, radius, predictor, bounce, friction, gravity, detonateWithTeam, clearOnImpact, minLifeTime)
+
+    self.creationTime = Shared.GetTime()
 
     self.controller = Shared.CreateCollisionObject(predictor)
     self.controller:SetPhysicsType(CollisionObject.Kinematic)
@@ -231,17 +238,21 @@ function ProjectileController:Initialize(startPoint, velocity, radius, predictor
     
     self.controller:SetPosition(startPoint, false)
     
+    self.minLifeTime = minLifeTime or 0
+    
     self.detonateWithTeam = detonateWithTeam
     self.clearOnImpact = clearOnImpact
 
 end
 
+local kNullVector = Vector(0,0,0)
 local function ApplyFriction(velocity, frictionForce, deltaTime)
 
     if frictionForce > 0 then
     
-        local friction = -GetNormalizedVector(velocity) * deltaTime * velocity:GetLength() * frictionForce        
-        local newVelocity = SlerpVector(velocity, Vector(0,0,0), friction)
+        local appliedFrictionForce = math.max(frictionForce, velocity:GetLength() * frictionForce)   
+        local friction = -GetNormalizedVector(velocity) * deltaTime * appliedFrictionForce        
+        local newVelocity = SlerpVector(velocity, kNullVector, friction)
         VectorCopy(newVelocity, velocity)
     
     end
@@ -259,10 +270,10 @@ function ProjectileController:Move(offset, velocity)
     
         if offset:GetLengthSquared() <= 0.0 then
             break
-        end    
-    
-        local trace = self.controller:Move(offset, CollisionRep.Move, CollisionRep.Move, PhysicsMask.Movement)
-    
+        end
+        
+        local trace = self.controller:Move(offset, CollisionRep.Move, CollisionRep.Move, PhysicsMask.PredictedProjectileGroup)
+        
         if trace.fraction < 1 then
         
             impact = true
@@ -319,8 +330,10 @@ function ProjectileController:Update(deltaTime, projectile, predict)
         local impact, hitEntity, normal, endPoint = self:Move(velocity * deltaTime, velocity)
         if impact then
         
+            local oldEnough = self.minLifeTime + self.creationTime <= Shared.GetTime()
+        
             // some projectiles may predict impact
-            if projectile then
+            if projectile and oldEnough then
             
                 projectile:SetOrigin(endPoint)
                 
@@ -335,6 +348,7 @@ function ProjectileController:Update(deltaTime, projectile, predict)
             velocity:Add(impactForce * normal * self.bounce * 2)
             
             self.stopSimulation = self.clearOnImpact or ( hitEntity ~= nil and HasMixin(hitEntity, "Team") and hitEntity:GetTeamNumber() == self.detonateWithTeam )
+            self.stopSimulation = self.stopSimulation and oldEnough
         
         end
         
@@ -408,12 +422,12 @@ function PredictedProjectile:OnInitialized()
 
         local owner = Shared.GetEntity(self.ownerId)
         
-        if owner and owner == Client.GetLocalPlayer() and Client.GetIsControllingPlayer() then        
+        if not self.kUseServerPosition and owner and owner == Client.GetLocalPlayer() and Client.GetIsControllingPlayer() then        
             owner:SetProjectileEntity(self)
         else
         
             if self.kModelName then
-        
+
                 local modelIndex = Shared.GetModelIndex(self.kModelName)
                 if modelIndex then
                     self.renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)
@@ -485,10 +499,6 @@ end
 
 function PredictedProjectile:SetProjectileController(controller)
     self.projectileController = controller
-end
-
-function PredictedProjectile:SetModel(model)
-    self.renderModel = model
 end
 
 if Server then

@@ -172,7 +172,11 @@ function Cyst:OnCreate()
     InitMixin(self, DetectableMixin)
     
     if Server then
+    
         InitMixin(self, SpawnBlockMixin)
+        self:UpdateIncludeRelevancyMask()
+        self.timeLastCystConstruction = 0
+        
     elseif Client then
         InitMixin(self, CommanderGlowMixin)    
     end
@@ -199,6 +203,10 @@ function Cyst:OnDestroy()
     
     ScriptActor.OnDestroy(self)
     
+end
+
+function Cyst:GetShowSensorBlip()
+    return false
 end
 
 function Cyst:GetSpawnBlockDuration()
@@ -232,11 +240,6 @@ local function DestroyNearbyCysts(self)
         
     end
     
-end
-
-function Cyst:GetCanAutoBuild()
-    local cystParent = self:GetCystParent()
-    return cystParent ~= nil and (not HasMixin(cystParent, "Construct") or cystParent:GetIsBuilt() )
 end
 
 function Cyst:OnInitialized()
@@ -450,7 +453,7 @@ function Cyst:OnUpdate(deltaTime)
         elseif Client then
             
             if not self.connectedFraction then
-                self.connectedFraction = self.connected and 1 or 0
+                self.connectedFraction = (self.connected and self:GetIsBuilt()) and 1 or 0
             end
             
             local animate = 1
@@ -458,7 +461,7 @@ function Cyst:OnUpdate(deltaTime)
                 animate = -1
             end
 
-            self.connectedFraction = Clamp(self.connectedFraction + animate * deltaTime, 0, 1)
+            self.connectedFraction = Clamp(self.connectedFraction + animate * deltaTime, 0, self:GetBuiltFraction())
             
         end
     
@@ -489,7 +492,7 @@ function Cyst:GetCystParent()
     
 end
 
-local function MarkPotentialDeployedCysts(ents, origin)
+function MarkPotentialDeployedCysts(ents, origin)
 
     for i = 1, #ents do
     
@@ -570,13 +573,6 @@ function GetIsDeadCystNearby(origin)
     
     return deadCyst
 
-end
- 
-function GetCystParentAvailable(techId, origin, normal, commander)
-
-    local parent, path = GetCystParentFromPoint(origin, normal, "GetIsConnectedAndAlive")
-    return parent ~= nil // and not GetIsDeadCystNearby(origin)
-    
 end
 
 /**
@@ -725,6 +721,146 @@ function AlignCyst(coords, normal)
     end
     
     return coords
+
+end
+
+function Cyst:SetIncludeRelevancyMask(includeMask)
+
+    includeMask = bit.bor(includeMask, kRelevantToTeam2Commander)    
+    ScriptActor.SetIncludeRelevancyMask(self, includeMask)    
+
+end
+
+local kBestLength = 20
+local kPointOffset = Vector(0, 0.1, 0)
+local kParentSearchRange = 400
+
+function FindPathToClosestParent(origin)
+
+    PROFILE("Cyst:FindPathToClosestParent")
+
+    local parents = GetEntitiesWithinRange("Cyst", origin, kParentSearchRange)
+    table.copy(GetEntitiesWithinRange("Hive", origin, kParentSearchRange), parents, true)
+    
+    Shared.SortEntitiesByDistance(origin, parents)
+    
+    local currentPathLength = 100000
+    local closestConnectedPathLength = 100000
+    
+    local currentPath = PointArray()
+    local closestConnectedPath = PointArray()
+    
+    local closestParent = nil
+    local closestConnectedParent = nil
+    
+    for i = 1, #parents do
+    
+        local parent = parents[i]
+        
+        if parent:GetIsAlive() and (not parent:isa("Hive") or parent:GetIsBuilt()) then
+        
+            local path = PointArray()
+            Pathing.GetPathPoints(parent:GetOrigin() + kPointOffset, origin + kPointOffset, path)
+            local pathLength = GetPointDistance(path)
+
+            // it can happen on some maps, just break here when path length or number of points higher than 500
+            if pathLength > 500 or #path > 500 then
+                ASSERT(false)
+                //DebugPrint("path length %s, points %s", ToString(pathLength), ToString(#path))
+                break
+            end
+            
+            if ( parent:isa("Cyst") and parent:GetIsConnected() ) or parent:isa("Hive") then
+            
+                if pathLength < closestConnectedPathLength then
+            
+                    closestConnectedPath = path
+                    closestConnectedPathLength = pathLength
+                    closestConnectedParent = parent
+                
+                end
+                
+            end
+            
+            if currentPathLength > pathLength then
+            
+                currentPath = path
+                currentPathLength = pathLength
+                closestParent = parent
+                
+            elseif currentPathLength + 6 < pathLength then                
+                break
+            end            
+        
+        end
+    
+    end
+    
+    if closestConnectedPathLength < kCystMaxParentRange and closestParent ~= closestConnectedParent then
+        return closestConnectedPath, closestConnectedParent
+    end
+    
+    return currentPath, closestParent
+
+end
+
+function GetCystParentAvailable(techId, origin, normal, commander)
+
+    PROFILE("Cyst:GetCystParentAvailable")
+
+    local points, parent = GetCystPoints(origin)
+    return parent ~= nil
+    
+end
+
+function GetCystPoints(origin)
+
+    PROFILE("Cyst:GetCystPoints")
+
+    local path, parent = FindPathToClosestParent(origin)
+
+    local splitPoints = {}
+    
+    if parent then
+
+        table.insert(splitPoints, parent:GetOrigin())
+        
+        local fromPoint = Vector(parent:GetOrigin())
+        local currentDistance = 0
+        local maxDistance = kCystMaxParentRange - 1.5
+        local minDistance = kCystRedeployRange - 1
+
+        for i = 1, #path do
+        
+            if #splitPoints > 20 then
+                DebugPrint("split points exceeded 20")
+                return {}, nil
+            end
+        
+            local point = path[i]
+            currentDistance = currentDistance + (point - fromPoint):GetLength()       
+            
+            if i == #path then
+            
+                if currentDistance > minDistance then
+                    table.insert(splitPoints, point)
+                end
+            
+            elseif currentDistance > maxDistance then
+            
+                table.insert(splitPoints, path[i])
+                currentDistance = (path[i] - point):GetLength()
+                
+            end
+            
+            fromPoint = point
+        
+        end
+    
+    end
+    
+    return splitPoints, parent
+    
 
 end
 

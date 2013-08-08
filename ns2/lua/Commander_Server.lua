@@ -317,7 +317,7 @@ end
 
 // Send techId of action and normalized pick vector. Issues order to selected units to the world position represented by
 // the pick vector, or to the entity that it hits.
-function Commander:OrderEntities(orderTechId, trace, orientation, targetId)
+function Commander:OrderEntities(orderTechId, trace, orientation, targetId, shiftDown)
 
     local invalid = false
     
@@ -339,7 +339,7 @@ function Commander:OrderEntities(orderTechId, trace, orientation, targetId)
         
             if HasMixin(entity, "Orders") then
             
-                local type = entity:GiveOrder(orderTechId, targetId, trace.endPoint, orientation, not self.queuingOrders, false)                            
+                local type = entity:GiveOrder(orderTechId, targetId, trace.endPoint, orientation, not shiftDown, false)                            
             
                 if type == kTechId.None then            
                     invalid = true    
@@ -411,7 +411,9 @@ end
 
 // Takes a techId as the action type and normalized screen coords for the position. normPickVec will be nil
 // for non-targeted actions. 
-function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoordsSpecified, targetId)
+function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoordsSpecified, targetId, shiftDown)
+
+    self.shiftDown = shiftDown
 
     local success = false
     
@@ -479,7 +481,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
         if techNode:GetIsMenu() then
             self.currentMenu = techId
         elseif techNode:GetIsOrder() then
-            self:OrderEntities(techId, trace, orientation, targetId)
+            self:OrderEntities(techId, trace, orientation, targetId, shiftDown)
         else        
         
             // Sort the selected group based on distance to the target position.

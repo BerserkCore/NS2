@@ -53,6 +53,8 @@ AlienCommander.kBoneWallSpawnSound = PrecacheAsset("sound/NS2.fev/alien/common/i
 AlienCommander.kHealWaveSound = PrecacheAsset("sound/NS2.fev/alien/common/frenzy")
 AlienCommander.kShadeInkSound = PrecacheAsset("sound/NS2.fev/alien/structures/shift/echo")
 
+AlienCommander.kCreateCystSound = PrecacheAsset("sound/NS2.fev/alien/commander/DI_drop_2D")
+
 local kHoverSound = PrecacheAsset("sound/NS2.fev/alien/commander/hover")
 
 local function GetNearest(self, className)
@@ -212,6 +214,108 @@ if Server then
         return techId == kTechId.ThreatMarker or techId == kTechId.LargeThreatMarker or techId ==  kTechId.NeedHealingMarker or techId == kTechId.WeakMarker or techId == kTechId.ExpandingMarker    
     end
     
+    function AlienCommander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoordsSpecified, targetId, shiftDown)
+    
+        local success = false
+    
+        if techId == kTechId.Cyst then
+
+            local team = self:GetTeam()
+            
+            local trace = GetCommanderPickTarget(self, pickVec, worldCoordsSpecified, true, false)
+            local cost = 0
+            
+            if trace.fraction ~= 1 then
+            
+                local legalBuildPosition, position, attachEntity, errorString = GetIsBuildLegal(techId, trace.endPoint, orientation, kStructureSnapRadius, self)
+                
+                if legalBuildPosition then
+                
+                    local cystPoints, parent = GetCystPoints(trace.endPoint)
+                    cost = math.max(0, (#cystPoints - 1) * kCystCost)
+                    
+                    if cost <= team:GetTeamResources() and parent ~= nil then
+                    
+                        local previousParent = parent
+                        local createdCysts = 0
+                    
+                        for i = 2, #cystPoints do
+                        
+                            local normalTrace = Shared.TraceRay(cystPoints[i] + Vector(0, 0.25, 0), cystPoints[i] + Vector(0, -15, 0), CollisionRep.Default, PhysicsMask.CommanderBuild, EntityFilterAll())
+                            
+                            if normalTrace.fraction == 1 then
+                            
+                                Shared.Message("Warning: Invalid trace")
+                                normalTrace.normal = Vector(0, 1, 0)
+                                normalTrace.endPoint = cystPoints[i]
+                                
+                            end
+                            
+                            local cyst = CreateEntity(Cyst.kMapName, normalTrace.endPoint, self:GetTeamNumber())
+                            cyst:SetCoords(AlignCyst(Coords.GetTranslation(normalTrace.endPoint), normalTrace.normal))    
+
+                            cyst:SetImmuneToRedeploymentTime(0.05)                    
+                         
+                            if not cyst:GetIsConnected() then
+                                cyst:ReplaceParent(previousParent)
+                            end
+                            
+                            previousParent = cyst
+                            createdCysts = createdCysts + 1
+                        
+                        end
+                        
+                        if createdCysts > 0 then
+                            success = true
+                            team:AddTeamResources(-createdCysts * kCystCost)
+                        end
+                    
+                    end
+                    
+                end
+                
+                if errorString then
+                
+                    local commander = self:isa("Commander") and self or self:GetOwner()                
+                    if commander then
+                    
+                        if Server then
+                            local message = BuildCommanderErrorMessage(errorString, position)
+                            Server.SendNetworkMessage(commander, "CommanderError", message, true)  
+                        end
+                    
+                    end
+                
+                end
+ 
+            end
+        
+        else        
+            success = Commander.ProcessTechTreeAction(self, techId, pickVec, orientation, worldCoordsSpecified, targetId, shiftDown)            
+        end
+
+        if success then
+        
+            local soundToPlay = nil
+            
+            if techId == kTechId.BoneWall then
+                soundToPlay = AlienCommander.kBoneWallSpawnSound
+            elseif techId == kTechId.HealWave then
+                soundToPlay = AlienCommander.kHealWaveSound
+            elseif techId == kTechId.ShadeInk then
+                soundToPlay = AlienCommander.kShadeInkSound
+            elseif techId == kTechId.Cyst then
+                soundToPlay = AlienCommander.kCreateCystSound
+            end
+
+            if soundToPlay then
+                Shared.PlayPrivateSound(self, soundToPlay, nil, 1.0, self:GetOrigin())
+            end
+
+        end    
+    
+    end
+    
     // check if a notification should be send for successful actions
     function AlienCommander:ProcessTechTreeActionForEntity(techNode, position, normal, pickVec, orientation, entity, trace, targetId)
     
@@ -246,20 +350,6 @@ if Server then
             local location = GetLocationForPoint(position)
             local locationName = location and location:GetName() or ""
             self:TriggerNotification(Shared.GetStringIndex(locationName), techId)
-            
-            local soundToPlay = nil
-            
-            if techId == kTechId.BoneWall then
-                soundToPlay = AlienCommander.kBoneWallSpawnSound
-            elseif techId == kTechId.HealWave then
-                soundToPlay = AlienCommander.kHealWaveSound
-            elseif techId == kTechId.ShadeInk then
-                soundToPlay = AlienCommander.kShadeInkSound
-            end      
-            
-            if soundToPlay then
-                Shared.PlayPrivateSound(self, soundToPlay, nil, 1.0, self:GetOrigin())
-            end
         
         end
         
@@ -309,6 +399,16 @@ function AlienCommander:GetTechAllowed(techId, techNode, self)
     return allowed, canAfford
     
 end    
+
+function AlienCommander:GetCanSeeConstructIcon(ofEntity)
+
+    if ofEntity:isa("Cyst") then
+        return ofEntity.underConstruction    
+    end
+
+    return true
+    
+end
 
 function AlienCommander:GetIsInQuickMenu(techId)
     return Commander.GetIsInQuickMenu(self, techId) or techId == kTechId.MarkersMenu

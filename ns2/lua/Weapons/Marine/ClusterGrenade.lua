@@ -8,20 +8,26 @@
 
 Script.Load("lua/Weapons/Projectile.lua")
 
-class 'ClusterGrenade' (Projectile)
+class 'ClusterGrenade' (PredictedProjectile)
 
-ClusterGrenade.kMapName = "clustergrenade"
+ClusterGrenade.kMapName = "clustergrenadeprojectile"
 ClusterGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster.model")
 
 local networkVars = { }
 
 local kLifeTime = 2
 
+ClusterGrenade.kRadius = 0.17
+
 kClusterGrenadeDamageRadius = 10
-kClusterGrenadeDamage = 40
+kClusterGrenadeDamage = 60
 
 kClusterFragmentDamageRadius = 8
 kClusterFragmentDamage = 25
+
+local kGrenadeCameraShakeDistance = 15
+local kGrenadeMinShakeIntensity = 0.01
+local kGrenadeMaxShakeIntensity = 0.12
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
@@ -33,6 +39,11 @@ local kClusterGrenadeFragmentPoints =
     Vector(-0.1, 0.12, -0.1),
     Vector(0.1, 0.12, -0.1),
     Vector(-0.1, 0.12, 0.1),
+    
+    Vector(-0.0, 0.12, 0.1),
+    Vector(-0.1, 0.12, 0.0),
+    Vector(0.1, 0.12, 0.0),
+    Vector(0.0, 0.12, -0.1),
 }
 
 local function CreateFragments(self)
@@ -45,7 +56,7 @@ local function CreateFragments(self)
         local creationPoint = origin + kClusterGrenadeFragmentPoints[i]
         local fragment = CreateEntity(ClusterFragment.kMapName, creationPoint, self:GetTeamNumber())
         
-        local startVelocity = GetNormalizedVector(creationPoint - origin) * (8 + math.random() * 3)   
+        local startVelocity = GetNormalizedVector(creationPoint - origin) * (6 + math.random() * 6)   
         fragment:Setup(player, startVelocity, true, nil, self)
     
     end
@@ -54,7 +65,7 @@ end
 
 function ClusterGrenade:OnCreate()
 
-    Projectile.OnCreate(self)
+    PredictedProjectile.OnCreate(self)
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
@@ -69,18 +80,27 @@ function ClusterGrenade:OnCreate()
     
 end
 
-function ClusterGrenade:GetProjectileModel()
-    return ClusterGrenade.kModelName
-end
-
 function ClusterGrenade:ProcessHit(targetHit, surface)
 
-    if targetHit and (HasMixin(targetHit, "Live") and GetGamerules():CanEntityDoDamageTo(self, targetHit)) and self:GetOwner() ~= targetHit and
-       (not targetHit:isa("Whip") or targetHit:GetIsOnFire()) then
-        self:Detonate(targetHit, surface)
-    elseif self:GetVelocity():GetLength() > 2 then
-        self:TriggerEffects("grenade_bounce")
+    if targetHit and GetAreEnemies(self, targetHit) then
+    
+        if Server then
+            self:Detonate(targetHit)
+        else
+            return true
+        end    
+    
     end
+
+    if Server then
+    
+        if self:GetVelocity():GetLength() > 2 then
+            self:TriggerEffects("grenade_bounce")
+        end
+        
+    end
+    
+    return false
     
 end
 
@@ -116,6 +136,8 @@ function ClusterGrenade:Detonate(targetHit)
     
     self:TriggerEffects("cluster_grenade_explode", params)
     CreateExplosionDecals(self)
+    TriggerCameraShake(self, kGrenadeMinShakeIntensity, kGrenadeMaxShakeIntensity, kGrenadeCameraShakeDistance)
+    
     DestroyEntity(self)
 
 end

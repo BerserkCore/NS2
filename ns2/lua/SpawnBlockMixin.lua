@@ -24,10 +24,15 @@ SpawnBlockMixin.optionalCallbacks =
 function SpawnBlockMixin:__initmixin()
 
     self.spawnBlocked = false
+    self.storedTeamNumber = self:GetTeamNumber()
 
 end
 
 if Server then
+
+    function SpawnBlockMixin:SetTeamNumber(teamNumber)    
+        self.storedTeamNumber = teamNumber    
+    end
 
     local function CreateSpawnBlocker(self)
     
@@ -36,7 +41,7 @@ if Server then
             local gameStarted = GetGamerules() and GetGamerules():GetGameStarted()
             if gameStarted then
             
-                local spawnBlocker = CreateEntity(SpawnBlocker.kMapName, self:GetOrigin(), self:GetTeamNumber())
+                local spawnBlocker = CreateEntity(SpawnBlocker.kMapName, self:GetOrigin(), self.storedTeamNumber)
 
                 if self.GetSpawnBlockDuration then
                     spawnBlocker:SetDuration(self:GetSpawnBlockDuration())

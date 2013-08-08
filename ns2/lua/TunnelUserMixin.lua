@@ -23,18 +23,14 @@ TunnelUserMixin.networkVars =
 }
 
 function TunnelUserMixin:__initmixin()
-    
-    self.tunnelNearby = false 
+
+    self.tunnelNearby = false
     // set to true when colliding with a tunnel, resets to falls when no tunnel entrance entitiy is nearby
     self.enableTunnelEntranceCheck = false
     self.clientIsInTunnel = false
     self.clientTimeTunnelUsed = -20
     self.timeTunnelUsed = 0
     self.canUseTunnel = true
-
-    if Client and HasMixin(self, "Help") then
-        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
-    end
     
     if Server then
         self.timeSinkInStarted = nil

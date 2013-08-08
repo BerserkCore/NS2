@@ -499,33 +499,25 @@ function PlayingTeam:SetTeamResources(amount)
 end
 
 function PlayingTeam:GetTeamResources()
-
     return self.teamResources
-    
 end
 
-function PlayingTeam:AddTeamResources(amount, countTowardsTotal)
+function PlayingTeam:AddTeamResources(amount)
 
-    if countTowardsTotal then
-    
-        // Save towards victory condition
+    if amount > 0 then
         self.totalTeamResourcesCollected = self.totalTeamResourcesCollected + amount
-        
     end
+    
     self:SetTeamResources(self.teamResources + amount)
     
 end
+
 function PlayingTeam:GetTotalTeamResources()
-
     return self.totalTeamResourcesCollected
-
 end
 
-
 function PlayingTeam:GetTotalTeamResourcesFromTowers()
-
     return self.totalTeamResFromTowers
-
 end
 
 function PlayingTeam:GetHasTeamLost()

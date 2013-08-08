@@ -118,6 +118,11 @@ if Client then
             
         end
         
+        local parent = self:GetParent()
+        if parent and parent.ModifyViewModelCoords then
+            overrideCoords = parent:ModifyViewModelCoords(overrideCoords)
+        end
+        
         return overrideCoords
         
     end

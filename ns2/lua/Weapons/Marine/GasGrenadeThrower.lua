@@ -17,7 +17,7 @@ local networkVars =
 
 class 'GasGrenadeThrower' (GrenadeThrower)
 
-GasGrenadeThrower.kMapName = "gasgrenadethrower"
+GasGrenadeThrower.kMapName = "gasgrenade"
 
 GasGrenadeThrower.kModelName = PrecacheAsset("models/marine/grenades/gr_nerve_view.model")
 local kAnimationGraph = PrecacheAsset("models/marine/grenades/gr_nerve_view.animation_graph")
@@ -30,8 +30,8 @@ function GasGrenadeThrower:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function GasGrenadeThrower:GetGrenadeMapName()
-    return GasGrenade.kMapName
+function GasGrenadeThrower:GetGrenadeClassName()
+    return "GasGrenade"
 end
 
 Shared.LinkClassToMap("GasGrenadeThrower", GasGrenadeThrower.kMapName, networkVars)

@@ -14,31 +14,52 @@ GrenadeThrower.kMapName = "grenadethrower"
 
 kMaxHandGrenades = 2
 
-local kGrenadeVelocity = 15
+local kGrenadeVelocity = 18
 
 local networkVars =
 {
-    numGrenades = "integer (0 to ".. kMaxHandGrenades ..")",
+    grenadesLeft = "integer (0 to ".. kMaxHandGrenades ..")",
 }
 
 local function ThrowGrenade(self, player)
 
-    if Server then
-    
+    if Server or (Client and Client.GetIsControllingPlayer()) then
+
         local viewAngles = player:GetViewAngles()
         local viewCoords = viewAngles:GetCoords()
-        local startPoint = player:GetEyePos() + viewCoords.zAxis * 1
+        local startPoint = player:GetEyePos() + viewCoords.zAxis * 0.4
         
         local startPointTrace = Shared.TraceRay(player:GetEyePos(), startPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(player))
         startPoint = startPointTrace.endPoint
         
         local startVelocity = viewCoords.zAxis * kGrenadeVelocity
-        
-        local grenade = CreateEntity(self:GetGrenadeMapName(), startPoint, player:GetTeamNumber())
-        grenade:Setup(player, startVelocity, true, nil, player)
-        
+        local grenadeClassName = self:GetGrenadeClassName()
+        local grenade = player:CreatePredictedProjectile(grenadeClassName, startPoint, startVelocity, 0.7, 0.45)
+    
     end
 
+end
+
+function GrenadeThrower:OnCreate()
+
+    Weapon.OnCreate(self)
+    
+    self.grenadesLeft = kMaxHandGrenades
+
+end
+
+function GrenadeThrower:OnPrimaryAttack(player)
+
+    if self.grenadesLeft > 0 then
+        self.primaryAttacking = true
+    else
+        self.primaryAttacking = false
+    end    
+
+end
+
+function GrenadeThrower:OnPrimaryAttackEnd(player)
+    self.primaryAttacking = false
 end
 
 function GrenadeThrower:OnTag(tagName)
@@ -47,7 +68,22 @@ function GrenadeThrower:OnTag(tagName)
     
         local player = self:GetParent()
         if player then
+        
             ThrowGrenade(self, player)
+            self.grenadesLeft = math.max(0, self.grenadesLeft - 1)
+            
+            if self.grenadesLeft == 0 then
+            
+                self:OnHolster(player)
+                player:RemoveWeapon(self)
+                player:SwitchWeapon(1)
+                
+                if Server then                
+                    DestroyEntity(self)
+                end
+                
+            end
+            
         end
         
     end
@@ -66,8 +102,15 @@ function GrenadeThrower:GetAnimationGraphName()
     assert(false)
 end
 
-function GrenadeThrower:GetGrenadeMapName()
+function GrenadeThrower:GetGrenadeClassName()
     assert(false)
+end
+
+function GrenadeThrower:OnUpdateAnimationInput(modelMixin)
+
+    modelMixin:SetAnimationInput("activity", self.primaryAttacking and "primary" or "none")
+    modelMixin:SetAnimationInput("grenadesLeft", self.grenadesLeft)
+
 end
 
 Shared.LinkClassToMap("GrenadeThrower", GrenadeThrower.kMapName, networkVars)

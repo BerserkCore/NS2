@@ -3,7 +3,10 @@ Script.Load("lua/bots/BotUtils.lua")
 Script.Load("lua/bots/BotDebug.lua")
 Script.Load("lua/bots/ManyToOne.lua")
 
-gBotDebug:AddBoolean("debugteam")
+-- gBotDebug is only available on the server.
+if gBotDebug then
+    gBotDebug:AddBoolean("debugteam")
+end
 
 class 'TeamBrain'
 

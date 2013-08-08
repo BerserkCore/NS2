@@ -45,21 +45,13 @@ kMarineStructureEffects =
 
     // When players or MACs build a structure
     construct =
-    {
-        
-        marineConstructSounds =
-        {
-            // TODO: hook up new sounds for builder
-            //{ sound = "sound/NS2.fev/marine/welder/deploy", isalien = false, done = true },
-        },
-    
+    {    
         marineConstructEffects =
         {
             {cinematic = "cinematics/marine/construct_infantryportal.cinematic", classname = "InfantryPortal", isalien = false, done = true},
             {cinematic = "cinematics/marine/construct_big.cinematic", classname = "CommandStation", isalien = false, done = true},
             {cinematic = "cinematics/marine/construct.cinematic", isalien = false},
-        },
-        
+        },        
     },
     
     // Play when marine welds another marine's armor

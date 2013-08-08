@@ -131,6 +131,9 @@ function XenocideLeap:OnProcessMove(input)
                 RadiusDamage(hitEntities, player:GetOrigin(), kXenocideRange, kXenocideDamage, self)
                 
                 player.spawnReductionTime = 12
+                
+                player:SetBypassRagdoll(true)
+                
                 player:Kill()
                 
             end

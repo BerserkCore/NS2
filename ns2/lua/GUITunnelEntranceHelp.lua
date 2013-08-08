@@ -37,7 +37,8 @@ function GUITunnelEntranceHelp:Update(dt)
     
         if GetIsPointInGorgeTunnel(player:GetOrigin()) then
         
-            HelpWidgetIncreaseUse(self, "GUITunnelEntranceHelp")   
+            HelpWidgetIncreaseUse(self, "GUITunnelEntranceHelp")
+            self.tunnelImage:SetIsVisible(false)
             self.wasInTunnel = true 
             
         else
@@ -49,7 +50,7 @@ function GUITunnelEntranceHelp:Update(dt)
             end
             
             self.tunnelImage:SetIsVisible(showWidget)
-        
+            
         end
         
     end

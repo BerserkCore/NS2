@@ -338,9 +338,7 @@ if Server then
     end
 
     function TunnelEntrance:OnUpdate(deltaTime)
-    
-        self:ForceUpdateUntil(Shared.GetTime() + 1)
-    
+
         ScriptActor.OnUpdate(self, deltaTime)        
         self.connected = self.tunnelId ~= nil and self.tunnelId ~= Entity.invalidId and Shared.GetEntity(self.tunnelId) ~= nil
         self.beingUsed = self.timeLastInteraction + 0.1 > Shared.GetTime()  
@@ -475,7 +473,9 @@ end
 
 function TunnelEntrance:OnUpdateAnimationInput(modelMixin)
 
-    local sucking = self.beingUsed or ( self.clientBeingUsed and self.timeLastInteraction and self.timeLastInteraction + 0.1 > Shared.GetTime() )
+    local sucking = self.beingUsed or (self.clientBeingUsed and self.timeLastInteraction and self.timeLastInteraction + 0.1 > Shared.GetTime())
+    -- sucking will be nil when self.clientBeingUsed is nil. Handle this case here.
+    sucking = sucking or false
 
     modelMixin:SetAnimationInput("open", self.connected)
     modelMixin:SetAnimationInput("player_in", sucking)

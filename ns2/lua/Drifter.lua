@@ -156,7 +156,9 @@ function Drifter:OnCreate()
     self:SetPhysicsType(PhysicsType.Kinematic)
     self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
     
-    if Client then
+    if Server then
+        self:UpdateIncludeRelevancyMask()
+    elseif Client then
         InitMixin(self, UnitStatusMixin)
     end
     
@@ -239,6 +241,13 @@ end
 
 function Drifter:GetTurnSpeedOverride()
     return Drifter.kTurnSpeed
+end
+
+function Drifter:SetIncludeRelevancyMask(includeMask)
+
+    includeMask = bit.bor(includeMask, kRelevantToTeam2Commander)    
+    ScriptActor.SetIncludeRelevancyMask(self, includeMask)    
+
 end
 
 function Drifter:GetCanSleep()
@@ -751,7 +760,7 @@ function Drifter:PerformActivation(techId, position, normal, commander)
         local cost = GetCostForTech(techId)
         if cost <= team:GetTeamResources() then
         
-            self:GiveOrder(techId, nil, position + Vector(0, 0.2, 0), nil, true, true)
+            self:GiveOrder(techId, nil, position + Vector(0, 0.2, 0), nil, not commander.shiftDown, false)
             // Only 1 Drifter will process this activation.
             keepProcessing = false
             

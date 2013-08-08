@@ -8,12 +8,14 @@
 
 Script.Load("lua/Weapons/Projectile.lua")
 
-class 'PulseGrenade' (Projectile)
+class 'PulseGrenade' (PredictedProjectile)
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/elec_trails.surface_shader")
 
-PulseGrenade.kMapName = "pulsegrenade"
+PulseGrenade.kMapName = "pulsegrenadeprojectile"
 PulseGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
+
+PulseGrenade.kRadius = 0.17
 
 local networkVars = { }
 
@@ -23,13 +25,17 @@ kPulseGrenadeDamageRadius = 7
 kPulseGrenadeDamage = 120
 kPulseGrenadeEnergyDamage = 95
 
+local kGrenadeCameraShakeDistance = 15
+local kGrenadeMinShakeIntensity = 0.01
+local kGrenadeMaxShakeIntensity = 0.14
+
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 
 function PulseGrenade:OnCreate()
 
-    Projectile.OnCreate(self)
+    PredictedProjectile.OnCreate(self)
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
@@ -50,12 +56,25 @@ end
 
 function PulseGrenade:ProcessHit(targetHit)
 
-    if targetHit and (HasMixin(targetHit, "Live") and GetGamerules():CanEntityDoDamageTo(self, targetHit)) and self:GetOwner() ~= targetHit and
-       (not targetHit:isa("Whip") or targetHit:GetIsOnFire()) then
-        self:Detonate(targetHit, surface)
-    elseif self:GetVelocity():GetLength() > 2 then
-        self:TriggerEffects("grenade_bounce")
+    if targetHit and GetAreEnemies(self, targetHit) then
+    
+        if Server then
+            self:Detonate(targetHit)
+        else
+            return true
+        end    
+    
     end
+
+    if Server then
+    
+        if self:GetVelocity():GetLength() > 2 then
+            self:TriggerEffects("grenade_bounce")
+        end
+        
+    end
+    
+    return false
     
 end
 
@@ -111,7 +130,9 @@ function PulseGrenade:Detonate(targetHit)
     end
     
     self:TriggerEffects("pulse_grenade_explode", params)    
-    CreateExplosionDecals(self)    
+    CreateExplosionDecals(self)
+    TriggerCameraShake(self, kGrenadeMinShakeIntensity, kGrenadeMaxShakeIntensity, kGrenadeCameraShakeDistance)
+ 
     DestroyEntity(self)
 
 end

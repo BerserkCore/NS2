@@ -185,12 +185,11 @@ function GUIBioMassDisplay:Initialize()
     self.levelText:SetTextAlignmentY(GUIItem.Align_Max)
     self.levelText:SetColor(kAlienFontColor)
     
-    self.background:AddChild(self.foreground)    
-    self.background:AddChild(self.effectiveBiomass)    
+    self.background:AddChild(self.foreground)
+    self.background:AddChild(self.effectiveBiomass)
     self.background:AddChild(self.alertTexture)
-    self.background:AddChild(self.bioMassText)
-    self.background:AddChild(self.levelText)    
-
+    self.background:AddChild(self.levelText)
+    
 end
 
 function GUIBioMassDisplay:Uninitialize()

@@ -189,6 +189,8 @@ function Gamerules:OnClientConnect(client)
     
     Server.SendNetworkMessage(client, "SetClientIndex", { clientIndex = client:GetId() }, true)
     
+    Server.SendNetworkMessage(client, "ServerHidden", { hidden = Server.GetServerHidden() }, true)
+    
     return player
     
 end

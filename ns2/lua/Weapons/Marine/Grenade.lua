@@ -20,7 +20,10 @@ Grenade.kModelName = PrecacheAsset("models/marine/rifle/rifle_grenade.model")
 
 Grenade.kRadius = 0.17
 
-local kMinLifeTime = .7
+Grenade.kMinLifeTime = 0.15
+local kGrenadeCameraShakeDistance = 15
+local kGrenadeMinShakeIntensity = 0.02
+local kGrenadeMaxShakeIntensity = 0.13
 
 local networkVars = { }
 
@@ -28,35 +31,6 @@ AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
-
--- Blow up after a time.
-local function UpdateLifetime(self)
-
-    // Grenades are created in predict movement, so in order to get the correct
-    // lifetime, we start counting our lifetime from the first UpdateLifetime rather than when
-    // we were created
-    if not self.endOfLife then
-    
-        local lifeTime = kGrenadeLifetime
-        local owner = self:GetOwner()
-        if owner and GetHasTech(owner, kTechId.DetonationTimeTech) then
-            lifeTime = kGrenadeUpgradedLifetime
-        end
-
-        self.endOfLife = Shared.GetTime() + lifeTime
-        
-    end
-
-    if self.endOfLife <= Shared.GetTime() then
-    
-        self:Detonate(nil)
-        return false
-        
-    end
-    
-    return true
-    
-end
 
 function Grenade:OnCreate()
 
@@ -67,12 +41,9 @@ function Grenade:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, DamageMixin)
     InitMixin(self, VortexAbleMixin)
-    
-    if Server then
-    
-        self:AddTimedCallback(UpdateLifetime, 0.1)
-        self.endOfLife = nil
-        
+
+    if Server then    
+        self:AddTimedCallback(Grenade.Detonate, kGrenadeLifetime)        
     end
     
 end
@@ -154,47 +125,9 @@ if Server then
         self:TriggerEffects("grenade_explode", params)
         
         CreateExplosionDecals(self)
+        TriggerCameraShake(self, kGrenadeMinShakeIntensity, kGrenadeMaxShakeIntensity, kGrenadeCameraShakeDistance)
         
         DestroyEntity(self)
-        
-    end
-    
-    function Grenade:PrepareToBeWhackedBy(whacker)
-    
-        self.whackerId = whacker:GetId()
-        
-        // It is possible that the endOfLife isn't set yet.
-        if not self.endOfLife then
-            self.endOfLife = 0
-        end
-        
-        // Prolong lifetime a bit to give it time to get out of range.
-        self.endOfLife = Shared.GetTime() + 0.45
-        
-    end
-    
-    function Grenade:GetWhacker()
-        return self.whackerId and Shared.GetEntity(self.whackerId)
-    end
-    
-    function Grenade:IsWhacked()
-        return self.whacked == true
-    end
-    
-    function Grenade:Whack(velocity)
-    
-        // whack the grenade back where it came from.
-        self:SetVelocity(velocity)        
-        self.whacked = true
-        
-    end
-    
-    function Grenade:GetCanDetonate()
-    
-        if self.creationTime then
-            return self.creationTime + kMinLifeTime < Shared.GetTime()
-        end
-        return false
         
     end
     

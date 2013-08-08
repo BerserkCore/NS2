@@ -388,11 +388,13 @@ local function UnlockAbility(forAlien, techId)
 
         local tierWeapon = forAlien:GetWeapon(mapName)
         if not tierWeapon then
-            forAlien:GiveItem(mapName)
-        end
         
-        if activeWeapon then
-            forAlien:SetActiveWeapon(activeWeapon:GetMapName())
+            forAlien:GiveItem(mapName)
+            
+            if activeWeapon then
+                forAlien:SetActiveWeapon(activeWeapon:GetMapName())
+            end
+            
         end
     
     end
@@ -492,6 +494,34 @@ function ScaleWithPlayerCount(value, numPlayers, scaleUp)
     end
 
     return value * factor
+
+end
+
+function TriggerCameraShake(triggerinEnt, minIntensity, maxIntensity, range)
+
+    local players = GetEntitiesWithinRange("Player", triggerinEnt:GetOrigin(), range)
+    local owner = HasMixin(triggerinEnt, "Owner") and triggerinEnt:GetOwner()
+
+    if owner then
+    
+        table.removevalue(players, owner)
+        local shakeIntensity = (owner:GetOrigin() - triggerinEnt:GetOrigin()):GetLength() / (range*2)
+        shakeIntensity = 1 - Clamp(shakeIntensity, 0, 1)
+        shakeIntensity = minIntensity + shakeIntensity * (maxIntensity - minIntensity)
+        
+        owner:SetCameraShake(shakeIntensity)
+        
+    end
+    
+    for _, player in ipairs(players) do
+    
+        local shakeIntensity = (player:GetOrigin() - triggerinEnt:GetOrigin()):GetLength() / range
+        shakeIntensity = 1 - Clamp(shakeIntensity, 0, 1)
+        shakeIntensity = minIntensity + shakeIntensity * (maxIntensity - minIntensity)
+        
+        player:SetCameraShake(shakeIntensity)
+    
+    end
 
 end
 

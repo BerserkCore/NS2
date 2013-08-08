@@ -156,8 +156,9 @@ local kAlienMenu =
 
 local kRequestMenus = 
 {
-    ["AlienSpectator"] = {},
-    ["MarineSpectator"] = {},
+    ["Spectator"] = { },
+    ["AlienSpectator"] = { },
+    ["MarineSpectator"] = { },
     
     ["Marine"] = kMarineMenu,
     ["JetpackMarine"] = kMarineMenu,
@@ -166,9 +167,9 @@ local kRequestMenus =
         [LEFT_MENU] = { kVoiceId.RequestWeld, kVoiceId.MarineRequestOrder, kVoiceId.Ping },
         [RIGHT_MENU] = { kVoiceId.MarineTaunt, kVoiceId.MarineCovering, kVoiceId.MarineFollowMe, kVoiceId.MarineHostiles, kVoiceId.MarineLetsMove }
     },
-
+    
     ["Skulk"] = kAlienMenu,
-    ["Gorge"] = 
+    ["Gorge"] =
     {
         [LEFT_MENU] = { kVoiceId.AlienRequestHealing, kVoiceId.AlienRequestEnzyme, kVoiceId.AlienRequestHarvester, kVoiceId.Ping },
         [RIGHT_MENU] = { kVoiceId.AlienTaunt, kVoiceId.AlienChuckle }    
@@ -180,10 +181,9 @@ local kRequestMenus =
     ["Embryo"] =
     {
         [LEFT_MENU] = { kVoiceId.AlienRequestMist },
-        [RIGHT_MENU] = { kVoiceId.AlienTaunt, kVoiceId.EmbryoChuckle }  
+        [RIGHT_MENU] = { kVoiceId.AlienTaunt, kVoiceId.EmbryoChuckle }
     }
-    
-}    
+}
 
 function GetRequestMenu(side, className)
 
@@ -192,16 +192,15 @@ function GetRequestMenu(side, className)
         return menu[side]
     end
     
-    return {}
-
+    return { }
+    
 end
-
 
 if Client then
 
     function GetVoiceDescriptionText(voiceId)
-        
-        local descriptionText = ""   
+    
+        local descriptionText = ""
         
         local soundData = kSoundData[voiceId]
         if soundData then
@@ -213,7 +212,7 @@ if Client then
     end
     
     function GetVoiceKeyBind(voiceId)
-        
+    
         local soundData = kSoundData[voiceId]
         if soundData then
             return soundData.KeyBind

@@ -124,6 +124,7 @@ function Gorge:OnInitialized()
     
         self:AddHelpWidget("GUIGorgeHealHelp", 2)
         self:AddHelpWidget("GUIGorgeBellySlideHelp", 2)
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
         
     end
     
@@ -503,6 +504,10 @@ if Client then
     
     end
 
+end
+
+function Gorge:GetCanSeeDamagedIcon(ofEntity)
+    return not ofEntity:isa("Cyst")
 end
 
 function Gorge:GetCanAttack()

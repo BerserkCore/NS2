@@ -681,6 +681,12 @@ function BaseModelMixin:OnUpdate(deltaTime)
     if Server and self.fullyUpdated then
         SynchronizeAnimation(self)
         self:MarkPhysicsDirty()
+        
+        // force update here
+        if self:GetHasClientModel() then
+            self:OnUpdatePhysics()
+        end
+        
     end
 
     UpdateAnimationState(self, self.fullyUpdated, true)
@@ -1014,7 +1020,12 @@ function BaseModelMixin:GetModelCamera(index)
 end
 
 function BaseModelMixin:SetAnimationInput(name, value)
+
+    assert(name ~= nil)
+    assert(value ~= nil)
+    
     self.animationInputValues[name] = value
+    
 end
 
 function BaseModelMixin:OnUpdateRender()
@@ -1072,7 +1083,6 @@ function BaseModelMixin:OnUpdatePhysics()
         
         self:UpdatePhysicsModel()
         UpdatePhysicsBoneCoords(self)
-        self.forceNextUpdate = false
         
     end
     

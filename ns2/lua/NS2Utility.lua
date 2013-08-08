@@ -1449,6 +1449,9 @@ function SetPlayerPoseParameters(player, viewModel, headAngles)
     
     local speedScalar = velocity:GetLength() / player:GetMaxSpeed(true)
     local crouchAmount = HasMixin(player, "CrouchMove") and player:GetCrouchAmount() or 0
+    if player.ModifyCrouchAnimation then
+        crouchAmount = player:ModifyCrouchAnimation(crouchAmount)
+    end
     
     player:SetPoseParam("move_yaw", moveYaw)
     player:SetPoseParam("move_speed", speedScalar)
@@ -2709,6 +2712,16 @@ function UpdateAlienStructureMove(self, deltaTime)
             
         else
             self.moving = false
+        end
+
+        if HasMixin(self, "Obstacle") then
+
+            if currentOrder and currentOrder:GetType() == kTechId.Move then
+                self:RemoveFromMesh()
+            elseif self.obstacleId == -1 then
+                self:AddToMesh()
+            end
+
         end   
 
     elseif Client then

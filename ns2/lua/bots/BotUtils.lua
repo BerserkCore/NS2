@@ -299,3 +299,23 @@ function GetAvailableResourcePoints()
     return rps
 
 end
+
+function GetServerContainsBots()
+
+    local hasBots = false
+    local players = Shared.GetEntitiesWithClassname("Player")
+    for p = 0, players:GetSize() - 1 do
+    
+        local ownerClient = Server.GetOwner(players:GetEntityAtIndex(p))
+        if ownerClient and ownerClient:GetIsVirtual() then
+        
+            hasBots = true
+            break
+            
+        end
+        
+    end
+    
+    return hasBots
+    
+end

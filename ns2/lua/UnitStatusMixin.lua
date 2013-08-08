@@ -53,7 +53,7 @@ function UnitStatusMixin:GetUnitStatus(forEntity)
 
         if not GetIsUnitActive(self) then
         
-            if HasMixin(self, "Construct") and not self:GetIsBuilt() and (forEntity:isa("Gorge") or forEntity:isa("Marine") or forEntity:isa("Commander")) then
+            if HasMixin(self, "Construct") and not self:GetIsBuilt() and (forEntity:isa("Gorge") or forEntity:isa("Marine") or (forEntity.GetCanSeeConstructIcon and forEntity:GetCanSeeConstructIcon(self)) ) then
                 unitStatus = kUnitStatus.Unbuilt 
 
             elseif HasMixin(self, "PowerConsumer") and self:GetRequiresPower() and not self:GetIsPowered() then
@@ -68,7 +68,7 @@ function UnitStatusMixin:GetUnitStatus(forEntity)
             elseif HasMixin(self, "Research") and self:GetIsResearching() then
                 unitStatus = kUnitStatus.Researching
             
-            elseif HasMixin(self, "Live") and self:GetHealthScalar() < 1 and self:GetIsAlive() then
+            elseif HasMixin(self, "Live") and self:GetHealthScalar() < 1 and self:GetIsAlive() and (not forEntity.GetCanSeeDamagedIcon or forEntity:GetCanSeeDamagedIcon(self)) then
             
                 if forEntity:isa("Marine") and self:isa("Marine") and self:GetArmor() < self:GetMaxArmor() then            
                     unitStatus = kUnitStatus.Damaged

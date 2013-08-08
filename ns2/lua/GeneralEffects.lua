@@ -387,20 +387,6 @@ kGeneralEffectData =
         }        
     },    
     
-    construct =
-    {
-        constructEffects =
-        {
-            //{cinematic = "cinematics/alien/structures/build.cinematic", isalien = true},
-            
-            // Gorge
-            {sound = "sound/NS2.fev/alien/gorge/build", classname = "Gorge", done = true},
-            
-            // Drifter construction effects        
-            {sound = "sound/NS2.fev/alien/structures/generic_build", classname = "Drifter", done = true},
-        },
-    },
-    
     // Called whenever the object is destroyed (this will happen after death, but also when an entity is deleted
     // due to a round reset. Called only on the server.
     on_destroy =

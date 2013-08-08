@@ -253,7 +253,7 @@ local function Accelerate(self, input, velocity, deltaTime)
     local groundFraction = self.onGround and GetOnGroundFraction(self) or 0
     
     local wishSpeed = self.onGround and maxSpeedTable.maxSpeed or kMaxAirVeer
-    local currentSpeed = velocity:DotProduct(wishDir)
+    local currentSpeed = math.min(velocity:GetLength(), velocity:DotProduct(wishDir))
     local addSpeed = wishSpeed - currentSpeed
     
     local clampedAirSpeed = prevXZSpeed + deltaTime * kMaxAirAccel
@@ -517,7 +517,7 @@ function GroundMoveMixin:UpdatePosition(input, velocity, deltaTime)
             if hitObstacle then
 
                 if self.onGround then
-                    velocity:Scale(0.22)    
+                    velocity:Scale(0.38)    
                 else
                     velocity:Scale(0.5)  
                 end

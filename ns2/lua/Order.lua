@@ -26,12 +26,15 @@ local networkVars =
     orderLocation = "vector",
     orderOrientation = "interpolated angle (11 bits)",
     orderSource = "vector",
+    ownerId = "entityid",
+    orderIndex = "integer (0 to 100)",
 }
 
 function Order:OnCreate()
 
     if Server then
         InitMixin(self, OwnerMixin)
+        self.orderIndex = 0
     end
     
     InitMixin(self, EntityChangeMixin)
@@ -126,6 +129,10 @@ function Order:GetLocation()
     
     return location
     
+end
+
+function Order:GetShowLine()
+    return LookupTechData(self.orderType, kTechDataShowOrderLine, false)
 end
 
 // When setting this location, add in GetHoverHeight() so MACs and Drifters stay off the ground
@@ -267,6 +274,24 @@ function GetCopyFromOrder(order)
     orderCopy:SetOwner(order:GetOwner())
     
     return orderCopy
+
+end
+
+function Order:SetIndex(index)
+    self.orderIndex = index
+end
+
+function Order:GetIndex()
+    return self.orderIndex
+end
+
+if Client then
+
+    function Order:GetOwner()
+        if self.ownerId and self.ownerId ~= Entity.invalidId then
+            return Shared.GetEntity(self.ownerId)
+        end
+    end
 
 end
 

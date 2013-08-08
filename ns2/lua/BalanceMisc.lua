@@ -12,7 +12,7 @@ kShiftStructurespeedScalar = 1
 
 kPoisonDamageThreshhold = 5
 
-kSpawnBlockRange = 4
+kSpawnBlockRange = 5
 
 kInfestationBuildModifier = 0.75
 

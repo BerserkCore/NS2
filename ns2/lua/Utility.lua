@@ -817,9 +817,19 @@ function SlerpVector(current, target, rate)
 
     local result = Vector()
 
-    result.x = Slerp(current.x, target.x, rate)
-    result.y = Slerp(current.y, target.y, rate)
-    result.z = Slerp(current.z, target.z, rate)
+    if type(rate) == "number" then
+
+        result.x = Slerp(current.x, target.x, rate)
+        result.y = Slerp(current.y, target.y, rate)
+        result.z = Slerp(current.z, target.z, rate)
+    
+    elseif rate:isa("Vector") then
+    
+        result.x = Slerp(current.x, target.x, rate.x)
+        result.y = Slerp(current.y, target.y, rate.y)
+        result.z = Slerp(current.z, target.z, rate.z)
+    
+    end
     
     return result
 

@@ -265,7 +265,7 @@ local function DropStructure(self, player, origin, direction, structureAbility, 
                 
                 if onEntity and HasMixin(onEntity, "ClogFall") and HasMixin(structure, "ClogFall") then
                     onEntity:ConnectToClog(structure)
-                end    
+                end
                 
                 // Check for space
                 if structure:SpaceClearForEntity(coords.origin) then

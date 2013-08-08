@@ -185,6 +185,15 @@ end
 
 function GUIHotkeyIcons:ContainsPoint(pointX, pointY)
 
-    return GUIItemContainsPoint(self:GetBackground(), pointX, pointY)
+    for i = 1, #self.hotkeys do
+    
+        local hotKeyTable = self.hotkeys[i]
+        if hotKeyTable.Icon:GetIsVisible() and GUIItemContainsPoint(hotKeyTable.Icon, pointX, pointY) then
+            return true
+        end
+    
+    end
+
+    return false
 
 end

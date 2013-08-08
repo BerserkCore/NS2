@@ -30,7 +30,7 @@ local function UpdateSensorBlip(self)
         alive = self:GetIsAlive()
     end
     
-    if not self:GetIsDetected() or not alive then
+    if not self:GetIsDetected() or not alive or (self.GetShowSensorBlip and not self:GetShowSensorBlip()) then
     
         if blip then
         

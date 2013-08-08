@@ -128,21 +128,17 @@ kMarineWeaponEffects =
         },
     },
     
-    pistol_attack_shell = 
-    {
-        pistolAttackShell = 
-        {
-            // First-person and weapon shell casings
-            {viewmodel_cinematic = "cinematics/marine/pistol/shell.cinematic", attach_point = "fxnode_pistolcasing"}       
-        },
-    },
-    
     pistol_attack = 
     {
         pistolAttackEffects = 
         {
             {viewmodel_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
+            // First-person and weapon shell casings
+            {viewmodel_cinematic = "cinematics/marine/pistol/shell.cinematic", attach_point = "fxnode_pistolcasing"},
+            
             {weapon_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
+            {weapon_cinematic = "cinematics/marine/pistol/shell.cinematic", attach_point = "fxnode_pistolcasing"} ,
+            
             // Sound effect
             {player_sound = "sound/NS2.fev/marine/pistol/fire"},
         },
@@ -164,6 +160,7 @@ kMarineWeaponEffects =
             
             {viewmodel_cinematic = "cinematics/marine/shotgun/muzzle_flash.cinematic", attach_point = "fxnode_shotgunmuzzle"},
             {weapon_cinematic = "cinematics/marine/shotgun/muzzle_flash.cinematic", attach_point = "fxnode_shotgunmuzzle"},
+            {weapon_cinematic = "cinematics/marine/shotgun/shell.cinematic", attach_point = "fxnode_shotguncasing"} ,
         },
 
         shotgunAttackEmptyEffects = 

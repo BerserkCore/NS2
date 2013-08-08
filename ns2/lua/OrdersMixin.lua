@@ -36,6 +36,19 @@ OrdersMixin.networkVars =
     currentOrderId  = "entityid"
 }
 
+local function UpdateOrderIndizes(self)
+
+    for i = 1, #self.orders do
+    
+        local order = Shared.GetEntity(self.orders[i])
+        if order then
+            order:SetIndex(i)
+        end
+    
+    end
+
+end
+
 function OrdersMixin:__initmixin()
 
     self.ignoreOrders = false
@@ -56,6 +69,8 @@ local function OrderChanged(self)
     else
         self.currentOrderId = Entity.invalidId
     end
+    
+    UpdateOrderIndizes(self)
     
     if self.OnOrderChanged then
         self:OnOrderChanged()
@@ -78,6 +93,7 @@ function OrdersMixin:CopyOrdersTo(dest)
     for index, orderId in ipairs(self.orders) do
 
         local orderCopy = GetCopyFromOrder(Shared.GetEntity(orderId))
+        orderCopy:SetOwner(dest)
         
         table.insert(dest.orders, orderCopy:GetId())
         
@@ -103,13 +119,13 @@ function OrdersMixin:GetIgnoreOrders()
     return self.ignoreOrders
 end
 
-local function SetOrder(self, order, clearExisting, insertFirst, giver, reusedOrder)
+local function SetOrder(self, order, clearExisting, insertFirst, giver)
 
     if self.ignoreOrders or order:GetType() == kTechId.Default then
         return false
     end
     
-    if clearExisting and not reusedOrder then
+    if clearExisting then
         self:ClearOrders()
     end
     
@@ -122,16 +138,7 @@ local function SetOrder(self, order, clearExisting, insertFirst, giver, reusedOr
         
     end
     
-    if giver == nil or not giver:isa("Player") then
-    
-        giver = self:GetOwner()
-        if giver == nil then
-            giver = self
-        end
-        
-    end
-    
-    order:SetOwner(giver)
+    order:SetOwner(self)
     
     if not reusedOrder then
     
@@ -210,19 +217,11 @@ function OrdersMixin:GiveOrder(orderType, targetId, targetOrigin, orientation, c
     local order = nil
     local reusedOrder = false
     
-    if clearExisting and self:GetHasOrder() then
-    
-        order = self:GetCurrentOrder()
-        order:Initialize(orderType, targetId, targetOrigin, tonumber(orientation))
-        reusedOrder = true
-        
-    else
-        order = CreateOrder(orderType, targetId, targetOrigin, orientation)
-    end
+    order = CreateOrder(orderType, targetId, targetOrigin, orientation)
     
     OverrideOrder(self, order)
     
-    local success = SetOrder(self, order, clearExisting, insertFirst, giver, reusedOrder)
+    local success = SetOrder(self, order, clearExisting, insertFirst, giver)
     
     if success and self.OnOrderGiven then
         self:OnOrderGiven(order)
@@ -261,7 +260,7 @@ function OrdersMixin:GiveSharedOrder(order, clearExisting, insertFirst, giver)
 
     //OverrideOrder(self, order)
     
-    SetOrder(self, order, clearExisting, insertFirst, giver, reusedOrder)
+    SetOrder(self, order, clearExisting, insertFirst, giver)
     
     if self.OnOrderGiven then
         self:OnOrderGiven(order)
@@ -345,6 +344,10 @@ function OrdersMixin:GetCurrentOrder()
     end
     return nil
     
+end
+
+function OrdersMixin:GetLastOrder()
+    return Shared.GetEntity(self.orders[#self.orders])
 end
 
 function OrdersMixin:ClearCurrentOrder()
@@ -597,4 +600,68 @@ function OrdersMixin:CopyPlayerDataFrom(player)
         player:TransferOrders(self)
     end
     
+end
+
+if Client then
+
+    function ResetOrders(self)
+    
+        if self.lastClientOrderUpdate ~= Shared.GetTime() then
+            
+            self.ordersClient = {}
+            self.lastClientOrderUpdate = Shared.GetTime()
+            
+        end
+    
+    end
+
+    function OrdersMixin:AddClientOrder(order)
+    
+        ResetOrders(self)        
+        self.ordersClient[order:GetIndex()] = order
+    
+    end
+
+    local gLastOrdersUpdate = nil
+    local function UpdateOrdersClient()
+    
+        // update all orders for all entities once per frame
+        if gLastOrdersUpdate ~= Shared.GetTime() then
+        
+            for _, order in ientitylist(Shared.GetEntitiesWithClassname("Order")) do
+            
+                if not order:GetIsDestroyed() then
+            
+                    local orderOwner = order:GetOwner()
+                    if orderOwner and orderOwner.AddClientOrder then
+                        orderOwner:AddClientOrder(order)
+                    end
+                
+                end
+            
+            end
+        
+            gLastOrdersUpdate = Shared.GetTime()
+        
+        end
+        
+    
+    end
+
+    function OrdersMixin:GetOrdersClient()
+    
+        ResetOrders(self)
+        UpdateOrdersClient()
+        
+        local orders = {}
+
+        for i, order in pairs(self.ordersClient) do
+            table.insert(orders, order)
+        end
+        
+        return orders
+    
+    end
+
+
 end

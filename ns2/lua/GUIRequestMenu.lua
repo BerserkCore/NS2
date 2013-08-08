@@ -256,8 +256,8 @@ end
 function GUIRequestMenu:Initialize()
 
     self.teamType = PlayerUI_GetTeamType()
-    self.playerClass = PlayerUI_GetPlayerClassName()
-
+    self.playerClass = Client.GetIsControllingPlayer() and PlayerUI_GetPlayerClassName() or "Spectator"
+    
     self.background = GetGUIManager():CreateGraphicItem()
     self.background:SetAnchor(GUIItem.Middle, GUIItem.Center)
     self.background:SetSize(kMenuSize)
@@ -265,7 +265,7 @@ function GUIRequestMenu:Initialize()
     self.background:SetTexture(kMenuTexture[self.teamType])
     self.background:SetIsVisible(false)
     
-    self.menuButtons = {}
+    self.menuButtons = { }
     
     self.ejectCommButton = CreateEjectButton(self, self.teamType)
     self.voteConcedeButton = CreateConcedeButton(self, self.teamType)
@@ -326,30 +326,27 @@ function GUIRequestMenu:SetIsVisible(isVisible)
         if wasVisible ~= isVisible then
         
             if isVisible and GetCanOpenRequestMenu(self) then
+            
                 OnShow_RequestMenu()
                 MouseTracker_SetIsVisible(true)
                 self.background:SetIsVisible(true)
+                
             else
+            
                 OnHide_RequestMenu()
                 MouseTracker_SetIsVisible(false)
                 self.background:SetIsVisible(false)
-            end    
-        
+                
+            end
+            
         end
-
+        
     end
     
 end
 
 
 function GUIRequestMenu:Update(deltaTime)
-
-    if self.playerClass ~= PlayerUI_GetPlayerClassName() then
-
-        self:Uninitialize()
-        self:Initialize()
-        
-    end
 
     if self.background:GetIsVisible() then
     
@@ -377,7 +374,7 @@ function GUIRequestMenu:Update(deltaTime)
         for i = 1, #self.menuButtons do
         
             local button = self.menuButtons[i]
-
+            
             local keyBindString = (button.KeyBind and BindingsUI_GetInputValue(button.KeyBind)) or ""
             if keyBindString ~= nil and keyBindString ~= "" then
                 keyBindString = "[" .. string.sub(keyBindString, 1, 1) .. "]"
@@ -390,24 +387,19 @@ function GUIRequestMenu:Update(deltaTime)
             else
                 button.Background:SetTexture(kBackgroundTexture[self.teamType])
             end
-        
+            
         end
         
         if not PlayerUI_GetCanDisplayRequestMenu() then
             self:SetIsVisible(false)
         end
-    
+        
     end
-
+    
 end
 
 function GUIRequestMenu:SendKeyEvent(key, down)
 
-    // Spectators cannot use this menu.
-    if not Client.GetIsControllingPlayer() then
-        return false
-    end
-    
     local hitButton = false
     
     if ChatUI_EnteringChatMessage() then
@@ -467,25 +459,28 @@ function GUIRequestMenu:SendKeyEvent(key, down)
         
         // make sure that the menu is not conflicting when the player wants to attack
         if (not hitButton and key == InputKey.MouseButton0) or key == InputKey.MouseButton1 then
+        
             self:SetIsVisible(false)
             return false
+            
         end
-    
+        
     end
-
+    
     local success = false
     
     if GetIsBinding(key, "RequestMenu") then
     
         if self.requestMenuKeyDown ~= down then
             self:SetIsVisible(down)
-        end    
+        end
         self.requestMenuKeyDown = down
         
         return true
+        
     end
     
-    // return true only when the player clicked on a button, so you wont start attacking accidentally
+    // Return true only when the player clicked on a button, so you wont start attacking accidentally.
     if hitButton then
     
         if down then
@@ -502,9 +497,16 @@ function GUIRequestMenu:SendKeyEvent(key, down)
         end
         
         success = true
-
+        
     end
     
     return success
+    
+end
 
+function GUIRequestMenu:OnLocalPlayerChanged(newPlayer)
+
+    self:Uninitialize()
+    self:Initialize()
+    
 end

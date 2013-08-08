@@ -17,10 +17,10 @@ local networkVars =
 
 class 'PulseGrenadeThrower' (GrenadeThrower)
 
-PulseGrenadeThrower.kMapName = "pulsegrenadethrower"
+PulseGrenadeThrower.kMapName = "pulsegrenade"
 
-PulseGrenadeThrower.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster_view.model")
-local kAnimationGraph = PrecacheAsset("models/marine/grenades/gr_cluster_view.animation_graph")
+PulseGrenadeThrower.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse_view.model")
+local kAnimationGraph = PrecacheAsset("models/marine/grenades/gr_pulse_view.animation_graph")
 
 function PulseGrenadeThrower:GetViewModelName()
     return PulseGrenadeThrower.kModelName
@@ -30,8 +30,8 @@ function PulseGrenadeThrower:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function PulseGrenadeThrower:GetGrenadeMapName()
-    return PulseGrenade.kMapName
+function PulseGrenadeThrower:GetGrenadeClassName()
+    return "PulseGrenade"
 end
 
 Shared.LinkClassToMap("PulseGrenadeThrower", PulseGrenadeThrower.kMapName, networkVars)

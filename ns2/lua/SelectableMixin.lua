@@ -102,6 +102,9 @@ function SelectableMixin:SetSelected(teamNumber, selected, keepSelection, sendMe
 
     if Client then
     
+        // prevent auto selection update a bit
+        self.timeLastSelectionAutoUpdate = Shared.GetTime()
+    
         local player = Client.GetLocalPlayer()
         // only commanders are allowed to select something
         if player and player:isa("Commander") then   
@@ -213,6 +216,32 @@ function SelectableMixin:UpdateIncludeRelevancyMask()
 end
 
 if Client then
+
+    function SelectableMixin:OnUpdate(deltaTime)
+    
+        local enoughTimePassed = self.timeLastSelectionAutoUpdate == nil or ( self.timeLastSelectionAutoUpdate + 0.1 < Shared.GetTime() )
+    
+        // check selection state
+        local player = Client.GetLocalPlayer()
+        if enoughTimePassed and player and player:isa("Commander") and Client.GetIsControllingPlayer and self.selectionMaskClient then
+        
+            local teamNumber = player:GetTeamNumber()
+        
+            local selectedClient = bit.band(self.selectionMaskClient, teamNumber) ~= 0
+            local selectedServer = bit.band(self.selectionMask, teamNumber) ~= 0
+            
+            if selectedClient ~= selectedServer then
+            
+                local selectUnitMessage = BuildSelectUnitMessage(teamNumber, self, selectedClient, true)
+                Client.SendNetworkMessage("SelectUnit", selectUnitMessage, true)
+                
+                self.timeLastSelectionAutoUpdate = Shared.GetTime()
+                
+            end
+        
+        end
+    
+    end
 
     function SelectableMixin:OnDestroy()
     

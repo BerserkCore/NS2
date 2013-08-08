@@ -11,15 +11,6 @@
 
 local Client_GetLocalPlayer = Client.GetLocalPlayer
 
-function ScriptActor:OnInitialized()
-
-    PROFILE("ScriptActor:OnInitialized")
-    Entity.OnInitialized(self)
-    
-    self:OnInitialized()
-    
-end
-
 function ScriptActor:OnDestroy()
     
     self:DestroyAttachedEffects() 

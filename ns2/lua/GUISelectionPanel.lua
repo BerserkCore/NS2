@@ -511,6 +511,7 @@ function GUISelectionPanel:CreateMultiSelectionIcon()
 
 end
 
+/* this blocks queued orders currently
 function GUISelectionPanel:SendKeyEvent(key, down)
 
     if key == InputKey.LeftShift then
@@ -526,6 +527,7 @@ function GUISelectionPanel:SendKeyEvent(key, down)
     return false
 
 end
+*/
 
 function GUISelectionPanel:SetIconTextureCoordinates(selectedIcon, entity)
 

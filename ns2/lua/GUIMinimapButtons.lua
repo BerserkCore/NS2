@@ -85,7 +85,7 @@ function GUIMinimapButtons:Update(deltaTime)
 end
 
 function GUIMinimapButtons:ContainsPoint(pointX, pointY)
-    return GUIItemContainsPoint(self.background, pointX, pointY)
+    return GUIItemContainsPoint(self.pingButton, pointX, pointY)
 end
 
 function GUIMinimapButtons:SendKeyEvent(key, down)

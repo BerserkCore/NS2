@@ -41,6 +41,9 @@ for k, v in ipairs(kLoopingSounds) do PrecacheAsset(v) end
 local kEndSounds = { "sound/NS2.fev/marine/rifle/end", "sound/NS2.fev/marine/rifle/end_upgrade_1", "sound/NS2.fev/marine/rifle/end_upgrade_3"  }
 for k, v in ipairs(kEndSounds) do PrecacheAsset(v) end
 
+local kLoopingShellCinematic = PrecacheAsset("cinematics/marine/rifle/shell_looping.cinematic")
+local kLoopingShellCinematicFirstPerson = PrecacheAsset("cinematics/marine/rifle/shell_looping_1p.cinematic")
+local kShellEjectAttachPoint = "fxnode_riflecasing"
 
 local kMuzzleCinematics = {
     PrecacheAsset("cinematics/marine/rifle/muzzle_flash.cinematic"),
@@ -69,6 +72,16 @@ local function DestroyMuzzleEffect(self)
 
 end
 
+local function DestroyShellEffect(self)
+
+    if self.shellsCinematic then
+        Client.DestroyCinematic(self.shellsCinematic)            
+    end
+    
+    self.shellsCinematic = nil
+
+end
+
 local function CreateMuzzleEffect(self)
 
     local player = self:GetParent()
@@ -81,6 +94,44 @@ local function CreateMuzzleEffect(self)
         self.firstPersonLoaded = player:GetIsLocalPlayer() and player:GetIsFirstPerson()
     
     end
+
+end
+
+local function CreateShellCinematic(self)
+
+    local parent = self:GetParent()
+
+    if parent and Client.GetLocalPlayer() == parent then
+        self.loadedFirstPersonShellEffect = true
+    else
+        self.loadedFirstPersonShellEffect = false
+    end
+
+    if self.loadedFirstPersonShellEffect then
+        self.shellsCinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)        
+        self.shellsCinematic:SetCinematic(kLoopingShellCinematicFirstPerson)
+    else
+        self.shellsCinematic = Client.CreateCinematic(RenderScene.Zone_Default)
+        self.shellsCinematic:SetCinematic(kLoopingShellCinematic)
+    end    
+    
+    self.shellsCinematic:SetRepeatStyle(Cinematic.Repeat_Endless)
+    
+    if self.loadedFirstPersonShellEffect then    
+        self.shellsCinematic:SetParent(parent:GetViewModelEntity())
+    else
+        self.shellsCinematic:SetParent(self)
+    end
+    
+    self.shellsCinematic:SetCoords(Coords.GetIdentity())
+    
+    if self.loadedFirstPersonShellEffect then  
+        self.shellsCinematic:SetAttachPoint(parent:GetViewModelEntity():GetAttachPointIndex(kShellEjectAttachPoint))
+    else    
+        self.shellsCinematic:SetAttachPoint(self:GetAttachPointIndex(kShellEjectAttachPoint))
+    end    
+
+    self.shellsCinematic:SetIsActive(false)
 
 end
 
@@ -106,6 +157,7 @@ function Rifle:OnDestroy()
     ClipWeapon.OnDestroy(self)
     
     DestroyMuzzleEffect(self)
+    DestroyShellEffect(self)
     
 end
 
@@ -151,13 +203,15 @@ end
 
 function Rifle:OnHolster(player)
 
-    DestroyMuzzleEffect(self)    
+    DestroyMuzzleEffect(self)  
+    DestroyShellEffect(self)  
     ClipWeapon.OnHolster(self, player)
     
 end
 
 function Rifle:OnHolsterClient()
     DestroyMuzzleEffect(self)
+    DestroyShellEffect(self)
     ClipWeapon.OnHolsterClient(self)
 end
 
@@ -309,6 +363,22 @@ if Client then
             self.muzzleCinematic:SetIsVisible(true)
         end
         
+        if player then
+        
+            local useFirstPerson = player == Client.GetLocalPlayer()
+            
+            if useFirstPerson ~= self.loadedFirstPersonShellEffect then
+                DestroyShellEffect(self)
+            end
+        
+            if not self.shellsCinematic then
+                CreateShellCinematic(self)
+            end
+        
+            self.shellsCinematic:SetIsActive(true)
+
+        end
+        
     end
     
     // needed for first person muzzle effect since it is attached to the view model entity: view model entity gets cleaned up when the player changes (for example becoming a commander and logging out again) 
@@ -317,6 +387,7 @@ if Client then
         
         ClipWeapon.OnParentChanged(self, oldParent, newParent)
         DestroyMuzzleEffect(self)
+        DestroyShellEffect(self)
         
     end
     
@@ -328,6 +399,10 @@ if Client then
         
         if self.muzzleCinematic then
             self.muzzleCinematic:SetIsVisible(false)
+        end
+        
+        if self.shellsCinematic then
+            self.shellsCinematic:SetIsActive(false)
         end
         
     end

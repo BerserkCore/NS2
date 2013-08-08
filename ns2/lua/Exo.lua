@@ -22,6 +22,7 @@ Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/NanoShieldMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
@@ -120,6 +121,7 @@ AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
@@ -152,6 +154,7 @@ function Exo:OnCreate()
     InitMixin(self, SelectableMixin)
     InitMixin(self, CorrodeMixin)
     InitMixin(self, TunnelUserMixin)
+    InitMixin(self, ParasiteMixin)
     
     self:SetIgnoreHealth(true)
     
@@ -279,6 +282,8 @@ function Exo:OnInitialized()
         self.flares:SetAttachPoint(self:GetAttachPointIndex(kFlaresAttachpoint))
         self.flares:SetIsVisible(false)
         
+        self:AddHelpWidget("GUITunnelEntranceHelp", 1)
+        
     end
     
 end
@@ -298,6 +303,10 @@ end
 
 function Exo:GetPlayerControllersGroup()
     return PhysicsGroup.BigPlayerControllersGroup
+end
+
+function Exo:GetShowParasiteView()
+    return false
 end
 
 function Exo:OnInitLocalClient()

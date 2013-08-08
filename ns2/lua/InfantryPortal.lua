@@ -275,10 +275,6 @@ function InfantryPortal:GetRequiresPower()
     return true
 end
 
-function InfantryPortal:GetShowOrderLine()
-    return true
-end
-
 local function QueueWaitingPlayer(self)
 
     if self:GetIsAlive() and self.queuedPlayerId == Entity.invalidId then
@@ -533,16 +529,23 @@ function GetInfantryPortalGhostGuides(commander)
 
 end
 
+local kTraceOffset = 0.1
 function GetCommandStationIsBuilt(techId, origin, normal, commander)
 
     // check if there is a built command station in our team
     if not commander then
         return false
-    end    
+    end
+
+    local spaceFree = GetHasRoomForCapsule(Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents), origin + Vector(0, 0.1 + Player.kYExtents, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls)
     
-    local cs = GetEntitiesForTeamWithinRange("CommandStation", commander:GetTeamNumber(), origin, 15)
-    if cs and #cs > 0 then
-        return cs[1]:GetIsBuilt()
+    if spaceFree then
+    
+        local cs = GetEntitiesForTeamWithinRange("CommandStation", commander:GetTeamNumber(), origin, 15)
+        if cs and #cs > 0 then
+            return cs[1]:GetIsBuilt()
+        end
+    
     end
     
     return false

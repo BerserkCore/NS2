@@ -32,6 +32,10 @@ local kTimedDestruction = 0.5
 // range in which other mines are trigger when detonating
 local kMineChainDetonateRange = 3
 
+local kMineCameraShakeDistance = 15
+local kMineMinShakeIntensity = 0.01
+local kMineMaxShakeIntensity = 0.13
+
 local networkVars = { }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -101,6 +105,7 @@ local function Detonate(self, armFunc)
     DestroyEntity(self)
     
     CreateExplosionDecals(self)
+    TriggerCameraShake(self, kMineMinShakeIntensity, kMineMaxShakeIntensity, kMineCameraShakeDistance)
     
     TEST_EVENT("Mine detonated")
     

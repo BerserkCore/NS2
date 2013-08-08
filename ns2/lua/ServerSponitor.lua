@@ -61,6 +61,23 @@ local function GetUpgradeAttribsString(ent)
 
 end
 
+
+local function SendSponitorRequest(url, requestType, data, callback)
+
+    -- Don't send any data when this server has bots connected.
+    -- We don't want to track any bot data.
+    if not GetServerContainsBots() then
+    
+        if callback then
+            Shared.SendHTTPRequest(url, requestType, data, callback)
+        else
+            Shared.SendHTTPRequest(url, requestType, data)
+        end
+        
+    end
+    
+end
+
 //----------------------------------------
 //   
 //----------------------------------------
@@ -187,28 +204,25 @@ function ServerSponitor:OnServerPerfResponse(response)
     
 end
 
-//----------------------------------------
-//   
-//----------------------------------------
 function ServerSponitor:OnStartMatch()
 
     local jsonData = json.encode(
     {
-        startTime      = Shared.GetGMTString(false),
-        version        = Shared.GetBuildNumber(),
-        map            = Shared.GetMapName(),
-        serverIp       = IPAddressToString(Server.GetIpAddress()),
+        startTime = Shared.GetGMTString(false),
+        version = Shared.GetBuildNumber(),
+        map = Shared.GetMapName(),
+        serverIp = IPAddressToString(Server.GetIpAddress()),
         isRookieServer = Server.GetIsRookieFriendly(),
-        modIds         = CollectActiveModIds(),
+        modIds = CollectActiveModIds()
     })
     
-    Shared.SendHTTPRequest( kSponitor2Url.."matchStart", "POST", {data=jsonData},
-        function(response) self:OnMatchStartResponse(response) end )
-
+    SendSponitorRequest(kSponitor2Url.."matchStart", "POST", { data = jsonData },
+        function(response) self:OnMatchStartResponse(response) end)
+    
     // Reset check timers
     self.sincePlayerCountCheck = kPlayerCountCheckPeriod
     self.sincePerfCheck = kPerfCheckPeriod
-
+    
 end
 
 //----------------------------------------
@@ -226,52 +240,52 @@ end
 function ServerSponitor:OnEndMatch(winningTeam)
 
     if self.matchId or gDebugAlwaysPost then
-
+    
         local startHiveTech = "None"
-
+        
         if self.game.initialHiveTechId then
             startHiveTech = EnumToString(kTechId, self.game.initialHiveTechId)
         end
-
+        
         local stats1 = self.teamStats[kMarineTeamType]
         local stats2 = self.teamStats[kAlienTeamType]
-
+        
         local jsonData = json.encode(
         {
-            matchId             = self.matchId,
-            endTime             = Shared.GetGMTString(false),
-            winner              = winningTeam:GetTeamType(),
-            start_location1     = self.game.startingLocationNameTeam1,
-            start_location2     = self.game.startingLocationNameTeam2,
+            matchId = self.matchId,
+            endTime = Shared.GetGMTString(false),
+            winner = winningTeam:GetTeamType(),
+            start_location1 = self.game.startingLocationNameTeam1,
+            start_location2 = self.game.startingLocationNameTeam2,
             start_path_distance = self.game.startingLocationsPathDistance,
-            start_hive_tech     = startHiveTech,
-
-            pvpKills1           = stats1.pvpKills,
-            pvpKills2           = stats2.pvpKills,
-            minPlayers1         = stats1.minNumPlayers,
-            minPlayers2         = stats2.minNumPlayers,
-            maxPlayers1         = stats1.maxNumPlayers,
-            maxPlayers2         = stats2.maxNumPlayers,
-            avgPlayers1         = stats1.avgNumPlayersSum / stats1.numPlayerCountSamples,
-            avgPlayers2         = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
-            avgRookies1         = stats1.avgNumRookiesSum / stats1.numPlayerCountSamples,
-            avgRookies2         = stats2.avgNumRookiesSum / stats2.numPlayerCountSamples,
-            totalTResMined1     = stats1.team:GetTotalTeamResourcesFromTowers(),
-            totalTResMined2     = stats2.team:GetTotalTeamResourcesFromTowers(),
+            start_hive_tech = startHiveTech,
+            
+            pvpKills1 = stats1.pvpKills,
+            pvpKills2 = stats2.pvpKills,
+            minPlayers1 = stats1.minNumPlayers,
+            minPlayers2 = stats2.minNumPlayers,
+            maxPlayers1 = stats1.maxNumPlayers,
+            maxPlayers2 = stats2.maxNumPlayers,
+            avgPlayers1 = stats1.avgNumPlayersSum / stats1.numPlayerCountSamples,
+            avgPlayers2 = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
+            avgRookies1 = stats1.avgNumRookiesSum / stats1.numPlayerCountSamples,
+            avgRookies2 = stats2.avgNumRookiesSum / stats2.numPlayerCountSamples,
+            totalTResMined1 = stats1.team:GetTotalTeamResourcesFromTowers(),
+            totalTResMined2 = stats2.team:GetTotalTeamResourcesFromTowers(),
         })
         
-        Shared.SendHTTPRequest( kSponitor2Url.."matchEnd", "POST", {data=jsonData} )
-
+        SendSponitorRequest(kSponitor2Url .. "matchEnd", "POST", { data = jsonData })
+        
         self.matchId = nil
-
+        
     end
-
+    
     // Reset team stats here instead of OnStartMatch. This is because there is data we want to track
     // before the match actually starts, such as players joining the team.
     for teamType, stats in pairs(self.teamStats) do
-        ResetTeamStats( stats, stats.team )
+        ResetTeamStats(stats, stats.team)
     end
-
+    
 end
 
 //----------------------------------------
@@ -282,46 +296,44 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
     if not attacker or not target or not weapon then
         return
     end
-
+    
     if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
-
+    
         local targetWeapon = "None"
-
+        
         if target.GetActiveWeapon and target:GetActiveWeapon() then
             targetWeapon = target:GetActiveWeapon():GetClassName()
         end
-
+        
         local attackerOrigin = attacker:GetOrigin()
         local targetOrigin = target:GetOrigin()
         local attackerTeamType = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType)
-
+        
         local jsonData, jsonError = json.encode(
         {
-            matchId        = self.matchId,
-            time           = Shared.GetGMTString(false),
-            attackerClass  = attacker:GetClassName(),
-            attackerTeam   = attackerTeamType,
+            matchId = self.matchId,
+            time = Shared.GetGMTString(false),
+            attackerClass = attacker:GetClassName(),
+            attackerTeam = attackerTeamType,
             attackerWeapon = weapon:GetClassName(),
-            attackerX      = string.format("%.2f", attackerOrigin.x),
-            attackerY      = string.format("%.2f", attackerOrigin.y),
-            attackerZ      = string.format("%.2f", attackerOrigin.z),
-            attackerAttrs  = GetUpgradeAttribsString(attacker),
-            targetClass    = target:GetClassName(),
-            targetTeam     = target:GetTeamType(),
-            targetWeapon   = targetWeapon,
-            targetX        = string.format("%.2f", targetOrigin.x),
-            targetY        = string.format("%.2f", targetOrigin.y),
-            targetZ        = string.format("%.2f", targetOrigin.z),
-            targetAttrs    = GetUpgradeAttribsString(target),
+            attackerX = string.format("%.2f", attackerOrigin.x),
+            attackerY = string.format("%.2f", attackerOrigin.y),
+            attackerZ = string.format("%.2f", attackerOrigin.z),
+            attackerAttrs = GetUpgradeAttribsString(attacker),
+            targetClass = target:GetClassName(),
+            targetTeam = target:GetTeamType(),
+            targetWeapon = targetWeapon,
+            targetX = string.format("%.2f", targetOrigin.x),
+            targetY = string.format("%.2f", targetOrigin.y),
+            targetZ = string.format("%.2f", targetOrigin.z),
+            targetAttrs = GetUpgradeAttribsString(target),
             targetLifeTime = string.format("%.2f", ((target.GetCreationTime and Shared.GetTime() - target:GetCreationTime()) or 0)),
         })
-
+        
         if jsonData then
-
-            Shared.SendHTTPRequest( kSponitor2Url.."kill", "POST", {data=jsonData} )
-
+            SendSponitorRequest(kSponitor2Url .. "kill", "POST", { data = jsonData })
         else
-
+        
             // the encoder returned nil, so there was an error. Post it to Spon2.
             jsonData = json.encode(
             {
@@ -330,10 +342,10 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
                 type = "server killpost",
                 text = jsonError,
             })
-            Shared.SendHTTPRequest( kSponitor2Url.."error", "POST", {data=jsonData} )
-
+            SendSponitorRequest(kSponitor2Url .. "error", "POST", { data = jsonData })
+            
         end
-
+        
         if attacker:isa("Player") and target:isa("Player") then
         
             local tstats = self.teamStats[attackerTeamType]
@@ -354,18 +366,18 @@ end
 function ServerSponitor:OnTechEvent(name)
 
     if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
-
+    
         local jsonData = json.encode(
         {
             matchId = self.matchId,
             time = Shared.GetGMTString(false),
             name = name,
         })
-
-        Shared.SendHTTPRequest( kSponitor2Url.."tech", "POST", {data=jsonData} )
-
+        
+        SendSponitorRequest(kSponitor2Url .. "tech", "POST", { data = jsonData })
+        
     end
-
+    
 end
 
 //----------------------------------------
@@ -374,21 +386,21 @@ end
 local function UpdatePerformanceReporting(self, dt)
 
     if self.matchId or gDebugAlwaysPost then
-   
+    
         self.sincePerfCheck = self.sincePerfCheck + dt
-
+        
         if self.sincePerfCheck >= kPerfCheckPeriod then
-
+        
             self.sincePerfCheck = 0.0
-
+            
             if math.random() < self.serverPerfThrottle then
-
+            
                 local totalNumPlayers = 0
-
+                
                 for teamType, stats in pairs(self.teamStats) do
                     totalNumPlayers = totalNumPlayers + stats.currNumPlayers
                 end
-
+                
                 local jsonData = json.encode(
                 {
                     matchId = self.matchId,
@@ -397,16 +409,16 @@ local function UpdatePerformanceReporting(self, dt)
                     numEntities = Shared.GetEntitiesWithClassname("Entity"):GetSize(),
                     numPlayers = totalNumPlayers
                 })
-
-                Shared.SendHTTPRequest( kSponitor2Url.."serverPerformance", "POST", {data=jsonData},
-                    function(response) self:OnServerPerfResponse(response) end )
-
+                
+                SendSponitorRequest(kSponitor2Url .. "serverPerformance", "POST", { data = jsonData },
+                    function(response) self:OnServerPerfResponse(response) end)
+                
             end
-
+            
         end
-
+        
     end
-
+    
 end
 
 //----------------------------------------

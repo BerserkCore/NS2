@@ -208,6 +208,11 @@ local function OnSetClientIndex(message)
 end
 Client.HookNetworkMessage("SetClientIndex", OnSetClientIndex)
 
+local function OnSetServerHidden(message)
+    Client.serverHidden = message.hidden
+end
+Client.HookNetworkMessage("ServerHidden", OnSetServerHidden)
+
 local function OnSetClientTeamNumber(message)
     Client.localClientTeamNumber = message.teamNumber
 end
@@ -219,6 +224,18 @@ local function OnMessageAutoConcedeWarning(message)
     ChatUI_AddSystemMessage(warningText)
     
 end
+
+local function OnCommandCameraShake(message)
+
+    local intensity = ParseCameraShakeMessage(message)
+    
+    local player = Client.GetLocalPlayer()
+    if player and player.SetCameraShake then
+        player:SetCameraShake(intensity * 0.1, 5, 0.25)    
+    end
+
+end
+
 Client.HookNetworkMessage("AutoConcedeWarning", OnMessageAutoConcedeWarning)
 
 Client.HookNetworkMessage("Ping", OnCommandPing)
@@ -246,3 +263,5 @@ Client.HookNetworkMessage("CommanderError", OnCommandCommanderError)
 Client.HookNetworkMessage("VoteConcedeCast", OnVoteConcedeCast)
 Client.HookNetworkMessage("VoteEjectCast", OnVoteEjectCast)
 Client.HookNetworkMessage("TeamConceded", OnTeamConceded)
+Client.HookNetworkMessage("CameraShake", OnCommandCameraShake)
+

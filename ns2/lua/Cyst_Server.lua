@@ -24,10 +24,7 @@ function Cyst:SetCystParent(parent)
 end
 
 function Cyst:GetCanAutoBuild()
-
-    local parent = self:GetCystParent()
-    return parent and parent:GetIsBuilt()
-
+    return false
 end
 
 /**

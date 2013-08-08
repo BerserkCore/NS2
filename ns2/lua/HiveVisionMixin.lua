@@ -31,9 +31,20 @@ if Client then
             local model = self:GetRenderModel()
             if model ~= nil then
                 HiveVision_RemoveModel( model )
+                //DebugPrint("%s remove model", self:GetClassName())
             end
         end
         
+    end
+    
+    local function GetMaxDistanceFor(player)
+    
+        if player:isa("AlienCommander") then
+            return 63
+        end
+
+        return 33
+    
     end
 
     function HiveVisionMixin:OnUpdate(deltaTime)   
@@ -41,8 +52,11 @@ if Client then
         // Determine if the entity should be visible on hive sight
         local visible = HasMixin(self, "ParasiteAble") and self:GetIsParasited()
         local player = Client.GetLocalPlayer()
+        
+        // check the distance here as well. seems that the render mask is not correct for newly created models or models which get destroyed in the same frame
+        local playerCanSeeHiveVision = player ~= nil and (player:GetOrigin() - self:GetOrigin()):GetLength() <= GetMaxDistanceFor(player) and (player:isa("Alien") or player:isa("AlienCommander") or player:isa("AlienSpectator"))
 
-        if self:isa("Player") then
+        if not visible and self:isa("Player") then
         
             // Make friendly players always show up.            
             if player ~= self then
@@ -55,14 +69,20 @@ if Client then
             
         end
         
+        if visible and not playerCanSeeHiveVision then
+            visible = false
+        end
+        
         // Update the visibility status.
         if visible ~= self.hiveSightVisible then
             local model = self:GetRenderModel()
             if model ~= nil then
                 if visible then
                     HiveVision_AddModel( model )
+                    //DebugPrint("%s add model", self:GetClassName())
                 else
                     HiveVision_RemoveModel( model )
+                    //DebugPrint("%s remove model", self:GetClassName())
                 end                    
                 self.hiveSightVisible = visible    
             end

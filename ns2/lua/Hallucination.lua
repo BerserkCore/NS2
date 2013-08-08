@@ -658,29 +658,6 @@ if Server then
     
     end
     
-    function Hallucination:OverrideTechTreeAction(techNode, position, orientation, commander)
-
-        local success = false
-        local keepProcessing = true
-        
-        // Convert build tech actions into build orders (gorge and drifter hallucinations)
-        if(techNode:GetIsEnergyBuild()) then
-            
-            self:GiveOrder(kTechId.Build, techNode:GetTechId(), position, orientation, not commander.queuingOrders, false, commander)
-
-            if self:GetOwner() == nil then
-                self:SetOwner(commander)
-            end
-            
-            success = true
-            keepProcessing = false
-            
-        end
-        
-        return success, keepProcessing
-        
-    end
-    
 end
 
 function Hallucination:GetEngagementPointOverride()
