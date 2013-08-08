@@ -370,7 +370,7 @@ function Flamethrower:OnPrimaryAttack(player)
         ClipWeapon.OnPrimaryAttack(self, player)
         
         if Server then
-        
+
             if self:GetIsDeployed() and self:GetClip() > 0 and self:GetPrimaryAttacking() then
             
                 self.createParticleEffects = true
@@ -391,7 +391,7 @@ function Flamethrower:OnPrimaryAttack(player)
                 
             end
             
-        elseif Client then
+        elseif Client and self.createParticleEffects then
         
             // Fire the cool flame effect periodically
 			// Don't crank the period too low - too many effects slows down the game a lot.

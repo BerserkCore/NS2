@@ -40,7 +40,6 @@ local function GetBlobPlacement(x, z, xRadius, hostCoords)
     end
     
     local position = trace.endPoint
-    local averagePosition = Vector(0,0,0)
     local averageNormal = Vector(0,0,0)
 
     // Trace some rays to determine the average position and normal of

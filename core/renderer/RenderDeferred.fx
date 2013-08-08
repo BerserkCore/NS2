@@ -67,8 +67,8 @@ float3      alvColorUp;             // Only for ambient volume lights.
 float3      alvColorDown;           // Only for ambient volume lights.
 float3      alvColorForward;        // Only for ambient volume lights.
 float3      alvColorBackward;       // Only for ambient volume lights.
-float4x4    alvMatrix;
-
+float4x4    viewToLightMatrix;
+				   
 float       fogDepthScale;          // scale value for fog control.
 float3      fogColor;               // color value for fog control.
 
@@ -399,19 +399,11 @@ half GetSingleShadowFast(half4 smPosition)
     return tex2D(shadowMap1SamplerPoint, smPosition.xy).r + bias < smPosition.z;
 }    
 
-half GetDoubleShadowFast(half4 smPosition)
-{
-    half bias = 0.004;
-    smPosition.xy /= smPosition.w;
-    return min(tex2D(shadowMap1SamplerPoint, smPosition.xy).r,
-			   tex2D(shadowMap2SamplerPoint, smPosition.xy).r) + bias < smPosition.z;
-}
-
 /**
- * Computes Blinn-Phong shading. Returns the final color of the pixel gamma corrected.
+ * Computes Blinn-Phong shading.
  *
- *      radiance  - indident radiance at the point.
- *      n          - world space surface normal
+ *      radiance  - incident radiance at the point.
+ *      n         - world space surface normal
  *      l         - world space direction to the light
  *      v         - world space direction to the viewer
  *      albedo    - surface color
@@ -420,20 +412,10 @@ half GetDoubleShadowFast(half4 smPosition)
  */
 half3 BlinnPhong(half3 radiance, half3 n, half3 l, half3 v, half3 albedo, half3 specular, half shininess)
 {
-
-	half d = dot(n, l);
-	
-	if (d > 0)
-	{
-		half3 h = normalize(l + v);
-		half3 s = pow(saturate(dot(n, h)), shininess) * specular;
-		return (d * albedo + s) * radiance;
-	}
-	else
-	{
-		return 0;
-	}
-
+	half  d = saturate(dot(n, l));
+	half3 h = normalize(l + v);
+	half3 s = pow(saturate(dot(n, h)), shininess) * specular;
+	return (d * albedo + s) * radiance;
 }
 
 /**
@@ -441,18 +423,8 @@ half3 BlinnPhong(half3 radiance, half3 n, half3 l, half3 v, half3 albedo, half3 
  */
 half3 Diffuse(half3 radiance, half3 n, half3 l, half3 v, half3 albedo)
 {
-
-	half d = dot(n, l);
-	
-	if (d > 0)
-	{
-		return d * albedo * radiance;
-	}
-	else
-	{
-		return 0;
-	}
-
+	half d = saturate(dot(n, l));
+	return d * albedo * radiance;
 }
 
 half GetDistanceAttenuation(half distance)
@@ -463,10 +435,9 @@ half GetDistanceAttenuation(half distance)
 	//  1) The attenuation goes to 0 at the light radius
 	//  2) The attenuation is "slower" so that light fills the light sphere more evenly
 	//  3) The light doesn't blow out at points very close to the light source
-
-    half falloffExponent = 2.0f; // The higher this value, the faster the light falls off.
 	
-    return pow(saturate(1.0f - distance / lightRadius), falloffExponent);
+	half l = saturate(1.0f - distance / lightRadius);
+    return l * l;
 	
 }
 
@@ -485,8 +456,8 @@ half4 AmbientLightPS(PS_DeferredPass_Input input) : COLOR0
 half4 SpotLightPS(uniform bool useConeAttenuation, uniform bool shadows, uniform bool depthReadTest, uniform bool specular, uniform bool gobo, PS_DeferredPass_Input input) : COLOR0
 {
 
-	half4 albedo 		 = tex2D( albedoTextureSampler, input.texCoord );
-	half3 vsNormal   	 = GetNormal( input.texCoord  );
+	half4 albedo 		= tex2D( albedoTextureSampler, input.texCoord );
+	half3 vsNormal   	= GetNormal( input.texCoord  );
 	half3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
 	
 	half shadow = 1;
@@ -507,9 +478,12 @@ half4 SpotLightPS(uniform bool useConeAttenuation, uniform bool shadows, uniform
     half  d = length(l);
     l = l / d;
     
-    half attenuation = useConeAttenuation ? (saturate((dot(l, vsLightDirection) - outerCone ) / (innerCone - outerCone))) : 1.0f;
-	attenuation *= GetDistanceAttenuation(d);
-
+    half attenuation = GetDistanceAttenuation(d);
+	if (useConeAttenuation)
+	{
+		attenuation *= saturate((dot(l, vsLightDirection) - outerCone ) / (innerCone - outerCone));
+	}
+	
     half3 radiance = lightColor * attenuation * shadow;
 
 	if (gobo)
@@ -559,10 +533,7 @@ half4 SkyLightShadowsPS(PS_DeferredPass_Input input) : COLOR0
     return SkyLightPS( input );
 }
 
-/**
- * Pixel shader for computing the illumination from 2 point lights.
- */  
-half4 PointLightPS(uniform bool specular, PS_DeferredPass_Input input) : COLOR0
+half4 PointLightPS(PS_DeferredPass_Input input) : COLOR0
 {
 
 	half4 albedo		= tex2D( albedoTextureSampler, input.texCoord );
@@ -581,15 +552,31 @@ half4 PointLightPS(uniform bool specular, PS_DeferredPass_Input input) : COLOR0
     half attenuation = GetDistanceAttenuation(d);
     half3 radiance = lightColor * attenuation;
 	
-	if (specular)
-	{
-		half4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
-		return half4( BlinnPhong(radiance, vsNormal, l, v, albedo.rgb, specularGloss.rgb, specularGloss.a * 256), 1 );
-	}
-	else
-	{
-		return half4( Diffuse(radiance, vsNormal, l, v, albedo.rgb), 1 );
-	}
+	return half4( Diffuse(radiance, vsNormal, l, v, albedo.rgb), 1 );
+	
+}
+
+half4 PointLightSpecularPS(PS_DeferredPass_Input input) : COLOR0
+{
+
+	half4 albedo		= tex2D( albedoTextureSampler, input.texCoord );
+	half3 vsNormal   	= GetNormal( input.texCoord  );
+	half3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
+    
+    // Compute the normalized view direction.
+    half3 v = -normalize(vsPosition);
+        
+    // Compute the lighting.
+    
+    half3 l = vsLightPosition - vsPosition;
+    half  d = length(l);
+    l = l / d;
+    
+    half attenuation = GetDistanceAttenuation(d);
+    half3 radiance = lightColor * attenuation;
+	
+	half4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
+	return half4( BlinnPhong(radiance, vsNormal, l, v, albedo.rgb, specularGloss.rgb, specularGloss.a * 256), 1 );
 	
 }
 
@@ -601,57 +588,24 @@ half4 AmbientVolumeLightPS(PS_DeferredPass_Input input) : COLOR0
 
 	half4 albedo 		 = tex2D( albedoTextureSampler, input.texCoord );
 	half3 vsNormal   	 = GetNormal( input.texCoord );
-    float lightDistance = length(vsLightPosition - GetPosition( input.texCoord, input.projected.xy ));
-
-    if (lightDistance > lightRadius)
-    {
-        return 0.0f;
-    }
+    half  lightDistance  = length(vsLightPosition - GetPosition( input.texCoord, input.projected.xy ));
     
-    // if we don't want scaling based on distance in the volume, disable this factor;
-    float depth = 1.0f - (lightDistance / lightRadius);
+    float attenuation = saturate(1.0f - (lightDistance / lightRadius));
+	
+	half3 lsNormal = mul( half4(vsNormal, 0), viewToLightMatrix );
+	
+	half3 pf = saturate( lsNormal);
+	half3 nf = saturate(-lsNormal);
 
-    half3 wsNormal;
-    wsNormal = vsNormal.x * half3(worldToCameraMatrix[0].x, worldToCameraMatrix[1].x, worldToCameraMatrix[2].x)
-             + vsNormal.y * half3(worldToCameraMatrix[0].y, worldToCameraMatrix[1].y, worldToCameraMatrix[2].y)
-             + vsNormal.z * half3(worldToCameraMatrix[0].z, worldToCameraMatrix[1].z, worldToCameraMatrix[2].z);
+	half3 radiance = pf.x * alvColorLeft
+	               + nf.x * alvColorRight
+				   + nf.y * alvColorUp
+				   + pf.y * alvColorDown
+				   + nf.z * alvColorForward
+				   + pf.z * alvColorBackward;
 
-    // Compute the lighting.       
-    float contribution = 0.0f;
-    float3 radiance = float3(0.0f, 0.0f, 0.0f);
-    
-    // left-pointing contribution;
-    float3 alvLightDir = float3(alvMatrix[0].x, alvMatrix[0].y, alvMatrix[0].z);
-    contribution = dot(alvLightDir, wsNormal);
-    if (contribution > 0.0f) { radiance += alvColorLeft * contribution; }
-        
-    // right-pointing contribution;
-    alvLightDir *= -1.0f;
-    contribution = dot(alvLightDir, wsNormal);
-    if (contribution > 0.0f) { radiance += alvColorRight * contribution; }
-    
-    // down-pointing contribution;
-    alvLightDir = float3(alvMatrix[1].x, alvMatrix[1].y, alvMatrix[1].z);
-    contribution = dot(alvLightDir, wsNormal);
-    if (contribution > 0.0f) { radiance += alvColorDown * contribution; }
-        
-    // up-pointing contribution;
-    alvLightDir *= -1.0f;
-    contribution = dot(alvLightDir, wsNormal);
-    if (contribution > 0.0f) { radiance += alvColorUp * contribution; }
-        
-    // backward-pointing contribution;
-    alvLightDir = float3(alvMatrix[2].x, alvMatrix[2].y, alvMatrix[2].z);
-    contribution = dot(alvLightDir, wsNormal);
-    if (contribution > 0.0f) { radiance += alvColorBackward * contribution; }
-        
-    // forward-pointing contribution;
-    alvLightDir *= -1.0f;
-    contribution = dot(alvLightDir, wsNormal);
-    if (contribution > 0.0f) { radiance += alvColorForward * contribution; }
-
-    float intensity = lightColor.r * depth;
-    return half4( clamp(radiance * intensity * albedo.rgb, 0.0f, 1.0f), 1);
+    float intensity = lightColor.r * attenuation;
+    return half4( saturate(radiance * intensity * albedo.rgb), 1);
 
 }
 
@@ -696,7 +650,7 @@ half4 MotionBlurPS(PS_DeferredPass_Input input) : COLOR0
 	if (vsPosition.z == 0)
 	{
 		vsPosition.z   = 1000;
-		vsPosition.xy = -imagePlaneSize * input.projected.xy * vsPosition.z;
+		vsPosition.xy = input.projected.xy * vsPosition.z;
 	}		
 
 	half4 vsOldPosition = mul( half4(vsPosition, 1), currentToPrevViewMatrix );
@@ -775,18 +729,6 @@ half4 PointLightScatteringPS(uniform bool shadows, uniform bool depthReadTest, P
 	}
 
 	return half4(lightColor * attenuation * shadow * atmosphereDensity, 0);
-    
-}
-
-half4 ScatteringPS(PS_Scattering_INPUT input) : COLOR0
-{
-    
-    half4 smPosition = mul(half4(input.vsPosition, 1), viewToShadowMatrix);
-    half4 nmPosition = mul(half4(input.vsPosition, 1), viewToNoiseMatrix);
-
-    half shadow = 1 - GetSingleShadowFast(smPosition);
-
-    return half4(lightColor * shadow * atmosphereDensity, 0);
     
 }
 
@@ -944,14 +886,35 @@ technique SpotLight[Shadows, ShadowsDepthReadTest][Specular][Gobo]
     }
 }
 
-technique PointLight[Specular]
+technique PointLight
 {
     pass p0
     {
         ZEnable             = False;
         ZWriteEnable        = False;
         VertexShader        = compile vs_2_0 DeferredPassVS();
-        PixelShader         = compile ps_2_0 PointLightPS(Specular);
+        PixelShader         = compile ps_2_0 PointLightPS();
+        CullMode            = None;
+        AlphaBlendEnable    = True;
+        SrcBlend            = One;
+        DestBlend           = One;
+        ColorWriteEnable    = Red | Green | Blue;
+        StencilEnable       = <enableStencil>;
+        StencilFunc         = Less;
+        StencilPass         = Zero;
+		StencilMask         = <stencilMask>;
+		StencilWriteMask	= <stencilMask>;
+    }
+}
+
+technique PointLightSpecular
+{
+    pass p0
+    {
+        ZEnable             = False;
+        ZWriteEnable        = False;
+        VertexShader        = compile vs_2_0 DeferredPassVS();
+        PixelShader         = compile ps_2_0 PointLightSpecularPS();
         CullMode            = None;
         AlphaBlendEnable    = True;
         SrcBlend            = One;

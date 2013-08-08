@@ -50,11 +50,17 @@ function MapBlip:UpdateRelevancy()
     
     local mask = 0
     
-    if self.mapBlipTeam == kTeam1Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
-        mask = bit.bor(mask, kRelevantToTeam1)
-    end
-    if self.mapBlipTeam == kTeam2Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
+    if self.mapBlipType == kMinimapBlipType.Infestation or self.mapBlipType == kMinimapBlipType.InfestationDying then
         mask = bit.bor(mask, kRelevantToTeam2)
+    else    
+    
+        if self.mapBlipTeam == kTeam1Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
+            mask = bit.bor(mask, kRelevantToTeam1)
+        end
+        if self.mapBlipTeam == kTeam2Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
+            mask = bit.bor(mask, kRelevantToTeam2)
+        end
+    
     end
     
     self:SetExcludeRelevancyMask( mask )

@@ -86,7 +86,7 @@ end
 
 // stored the name of the last killer
 local gKillerName = ""
-local gKillerWeaponIconIndex = 0
+local gKillerWeaponIconIndex = kDeathMessageIcon.None
 
 function GetKillerNameAndWeaponIcon()
     return gKillerName, gKillerWeaponIconIndex
@@ -247,7 +247,7 @@ function AddDeathMessage(killerIsPlayer, killerIndex, killerTeamNumber, iconInde
     local killedSelf = killerIsPlayer and targetIsPlayer and killerIndex == targetIndex
     
     local deathMessage = { GetColorForTeamNumber(killerTeamNumber), killerName, GetColorForTeamNumber(targetTeamNumber), killedSelf and "" or targetName, iconIndex, targetIsPlayer }
-    table.insertunique(queuedDeathMessages, deathMessage)
+    table.insert(queuedDeathMessages, deathMessage)
     
     local player = Client.GetLocalPlayer()
     if player and player:GetName() == targetName then

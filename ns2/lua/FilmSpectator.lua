@@ -17,6 +17,9 @@ FilmSpectator.kMapName = "filmspectator"
 local kDollySpeed = .4 // Amount per key press
 local networkVars =
 {
+    // We want these at full precision for smooth camera motion/
+    m_origin = "interpolated compensated vector",
+    m_angles = "interpolated compensated angles",
     dollySpeed = "vector",
     dollyMode = "boolean",
     dollyViewAngles = "vector",

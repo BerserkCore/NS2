@@ -117,7 +117,7 @@ function GUIWorldText:UpdateDamageMessage(message, messageItem, useColor, deltaT
         messageItem:SetText("-" .. CommaValue(tostring(math.round(newNumber))))
         
     else
-        messageItem:SetText("-" .. CommaValue(tostring(targetNumber)))
+        messageItem:SetText("-" .. CommaValue(tostring(math.round(targetNumber))))
     end
     
     local player = Client.GetLocalPlayer()

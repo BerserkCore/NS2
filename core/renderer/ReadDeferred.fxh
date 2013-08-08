@@ -121,7 +121,7 @@ half3 GetPosition(half2 texCoord, half2 ssPosition)
 	half3 vsPosition;
     
     vsPosition.z   = depth.r;
-    vsPosition.xy = -imagePlaneSize * ssPosition * vsPosition.z;
+    vsPosition.xy = ssPosition * vsPosition.z;
     
     return vsPosition;
 	
@@ -144,6 +144,9 @@ VS_DeferredPass_Output DeferredPassVS(VS_DeferredPass_Input input)
     output.ssPosition   = ssPosition;
     output.projected    = ssPosition;
     output.projected.y  = -output.projected.y;
+	
+	output.projected    = output.projected * -imagePlaneSize;
+	
     output.texCoord     = input.texCoord;
 
     return output;

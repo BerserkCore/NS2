@@ -160,7 +160,7 @@ local function GetCanSpawnEgg(self)
 
     local canSpawnEgg = false
     
-    if self:GetIsBuilt() then
+    if self:GetIsBuilt() and self:GetIsAlive() then
     
         if Shared.GetTime() > (self.timeOfLastEgg + GetEggSpawnTime(self)) then    
             canSpawnEgg = true

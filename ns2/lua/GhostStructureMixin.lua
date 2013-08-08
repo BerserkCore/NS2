@@ -79,8 +79,10 @@ if Server then
     
     function GhostStructureMixin:OnKill()
     
-        self:TriggerEffects("ghoststructure_destroy")
-        DestroyEntity(self)
+        if self:GetIsGhostStructure() then
+            self:TriggerEffects("ghoststructure_destroy")
+            DestroyEntity(self)
+        end
     
     end
     

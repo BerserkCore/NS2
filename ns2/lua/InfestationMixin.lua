@@ -17,6 +17,8 @@ InfestationMixin.expectedCallbacks =
     GetInfestationRadius = "How far infestation should spread from entity." 
 }
 
+local gInfestationMultiplier = 1
+
 InfestationMixin.networkVars =
 {
     desiredInfestationRadius = "float",
@@ -118,7 +120,7 @@ end
 
 function InfestationMixin:__initmixin()
     
-    self.growthRate = self:GetInfestationGrowthRate()
+    self.growthRate = self:GetInfestationGrowthRate() * gInfestationMultiplier
     self.desiredInfestationRadius = self:GetInfestationMaxRadius()
     self.infestationPatches = {}
     
@@ -239,4 +241,24 @@ end
 
 function InfestationMixin:GetDestructionAllowed(destructionAllowedTable)
     destructionAllowedTable.allowed = destructionAllowedTable.allowed and self.allowDestruction
+end
+
+
+if Server then
+
+    local function OnCommandInfestationSpeed(client, value)
+
+        if Shared.GetCheatsEnabled() and value then
+        
+            local infestationMultiplier = tonumber(value)
+            if infestationMultiplier then
+                gInfestationMultiplier = infestationMultiplier
+            end
+            
+        end
+
+    end
+
+    Event.Hook("Console_infestationspeed", OnCommandInfestationSpeed)
+
 end

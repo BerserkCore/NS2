@@ -820,7 +820,7 @@ function Client.AddWorldMessage(messageType, message, position, entityId)
                     currentWorldMessage.creationTime = time
                     currentWorldMessage.position = position
                     currentWorldMessage.previousNumber = tonumber(currentWorldMessage.message)
-                    currentWorldMessage.message = tostring(tonumber(currentWorldMessage.message) + tonumber(message))
+                    currentWorldMessage.message = currentWorldMessage.message + message
                     currentWorldMessage.minimumAnimationFraction = kWorldDamageRepeatAnimationScalar
                     
                     updatedExisting = true

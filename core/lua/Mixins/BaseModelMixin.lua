@@ -791,7 +791,17 @@ function BaseModelMixin:ResetAnimationGraphState()
 end
 
 function BaseModelMixin:GetRenderModel()
+
+    -- Sometimes GetRenderModel() is called inside of a function like
+    -- OnProcessMove() which is called BEFORE OnUpdateRender() is called
+    -- which is what normally creates the renderModel. This check covers
+    -- that case.
+    if not self._renderModel then
+        UpdateRenderModel(self)
+    end
+    
     return self._renderModel
+    
 end
 function BaseModelMixin:GetCollisionModel()
     return self.physicsModel

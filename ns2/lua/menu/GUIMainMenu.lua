@@ -1340,11 +1340,18 @@ local function InitOptions(optionElements)
     local anisotropicFiltering = OptionsDialogUI_GetAnisotropicFiltering()
     local antiAliasing = OptionsDialogUI_GetAntiAliasing()
     
-    local soundInputDeviceGuid = Client.GetOptionString(kSoundInputDeviceOptionsKey, "")
-    local soundOutputDeviceGuid = Client.GetOptionString(kSoundOutputDeviceOptionsKey, "")
+    local soundInputDeviceGuid = Client.GetOptionString(kSoundInputDeviceOptionsKey, "Default")
+    local soundOutputDeviceGuid = Client.GetOptionString(kSoundOutputDeviceOptionsKey, "Default")
 
-    local soundInputDevice =  math.max(Client.FindSoundDeviceByGuid(Client.SoundDeviceType_Input, soundInputDeviceGuid), 0) + 1
-    local soundOutputDevice = math.max(Client.FindSoundDeviceByGuid(Client.SoundDeviceType_Output, soundOutputDeviceGuid), 0) + 1
+    local soundInputDevice = 1
+    if soundInputDeviceGuid ~= 'Default' then
+        soundInputDevice = math.max(Client.FindSoundDeviceByGuid(Client.SoundDeviceType_Input, soundInputDeviceGuid), 0) + 2
+    end
+    
+    local soundOutputDevice = 1
+    if soundOutputDeviceGuid ~= 'Default' then
+        soundOutputDevice = math.max(Client.FindSoundDeviceByGuid(Client.SoundDeviceType_Output, soundOutputDeviceGuid), 0) + 2
+    end
     
     local soundVol = Client.GetOptionInteger("soundVolume", 90) / 100
     local musicVol = Client.GetOptionInteger("musicVolume", 90) / 100
@@ -1581,7 +1588,22 @@ local function OnSoundDeviceChanged(window, formElement, deviceType)
         return
     end
 
-    local deviceId = formElement:GetActiveOptionIndex() - 1
+    local activeOptionIndex = formElement:GetActiveOptionIndex()
+    
+    if activeOptionIndex == 1 then
+        if Client.GetSoundDeviceCount(deviceType) > 0 then
+            Client.SetSoundDevice(deviceType, 0)
+        end
+        
+        if deviceType == Client.SoundDeviceType_Input then
+            Client.SetOptionString(kSoundInputDeviceOptionsKey, 'Default')
+        elseif deviceType == Client.SoundDeviceType_Output then
+            Client.SetOptionString(kSoundOutputDeviceOptionsKey, 'Default')
+        end        
+        return
+    end
+    
+    local deviceId = activeOptionIndex - 2
 
     // Get GUIDs of all audio devices
     local numDevices = Client.GetSoundDeviceCount(deviceType)
@@ -1674,7 +1696,7 @@ function GUIMainMenu:CreateOptionWindow()
     
     self.warningLabel = CreateMenuElement(self.optionWindow, "MenuButton", false)
     self.warningLabel:SetCSSClass("warning_label")
-    self.warningLabel:SetText("Engine restart required")
+    self.warningLabel:SetText("Game restart required")
     self.warningLabel:SetIgnoreEvents(true)
     self.warningLabel:SetIsVisible(false)
     
@@ -2387,9 +2409,19 @@ end
 function OnSoundDeviceListChanged()
 
     if gMainMenu ~= nil then 
-    
-        local soundInputDevice = math.max(0, Client.GetSoundDevice(Client.SoundDeviceType_Input)) + 1
-        local soundOutputDevice = math.max(0, Client.GetSoundDevice(Client.SoundDeviceType_Output)) + 1
+
+        local soundInputDeviceGuid = Client.GetOptionString(kSoundInputDeviceOptionsKey, "Default")
+        local soundOutputDeviceGuid = Client.GetOptionString(kSoundOutputDeviceOptionsKey, "Default")
+
+        local soundInputDevice = 1
+        if soundInputDeviceGuid ~= 'Default' then
+            soundInputDevice = math.max(Client.FindSoundDeviceByGuid(Client.SoundDeviceType_Input, soundInputDeviceGuid), 0) + 2
+        end
+        
+        local soundOutputDevice = 1
+        if soundOutputDeviceGuid ~= 'Default' then
+            soundOutputDevice = math.max(Client.FindSoundDeviceByGuid(Client.SoundDeviceType_Output, soundOutputDeviceGuid), 0) + 2
+        end
 
         local soundOutputDevices = OptionsDialogUI_GetSoundDeviceNames(Client.SoundDeviceType_Output)
         local soundInputDevices = OptionsDialogUI_GetSoundDeviceNames(Client.SoundDeviceType_Input)

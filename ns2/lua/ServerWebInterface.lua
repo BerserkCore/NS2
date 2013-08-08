@@ -6,7 +6,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-local kMaxPerfDatas = 500
+local kMaxPerfDatas = 30
 
 // How often to log performance data in seconds.
 local kLogPerfDataRate = 60

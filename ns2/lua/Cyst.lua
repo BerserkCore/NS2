@@ -15,6 +15,7 @@ Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
 Script.Load("lua/GameEffectsMixin.lua")
 Script.Load("lua/CatalystMixin.lua")
+Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/Mixins/ClientModelMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/CombatMixin.lua")
@@ -266,6 +267,11 @@ function Cyst:OnInitialized()
         
         self:SetModel(Cyst.kModelName, Cyst.kAnimationGraph)
         
+        // This Mixin must be inited inside this OnInitialized() function.
+        if not HasMixin(self, "MapBlip") then
+            InitMixin(self, MapBlipMixin)
+        end
+        
     elseif Client then    
     
         InitMixin(self, UnitStatusMixin)
@@ -510,7 +516,10 @@ local function ServerUpdate(self, point, deltaTime)
             self:ReconnectOthers()
         end
         
-        self.connected = connectedNow
+        if connectedNow ~= self.connected then
+            self.connected = connectedNow
+            self:MarkBlipDirty()
+        end
         
         // point == nil signals that the impulse tracker is done
         if self.impulseActive and point == nil then

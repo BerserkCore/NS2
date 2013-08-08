@@ -94,7 +94,7 @@ kWorldMessageLifeTime = 1.0
 kCommanderErrorMessageLifeTime = 2.0
 kWorldMessageResourceOffset = Vector(0, 2.5, 0)
 kResourceMessageRange = 35
-kWorldDamageNumberAnimationSpeed = 150
+kWorldDamageNumberAnimationSpeed = 220
 // Updating messages with new numbers shouldn't reset animation - keep it big and faded-in intead of growing
 kWorldDamageRepeatAnimationScalar = .1
 

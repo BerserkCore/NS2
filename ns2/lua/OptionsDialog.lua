@@ -81,9 +81,10 @@ function OptionsDialogUI_GetSoundDeviceNames(deviceType)
 
     local numDevices = Client.GetSoundDeviceCount(deviceType)
     local deviceNames = { }
+    deviceNames[1] = 'Default'
     
     for id = 1, numDevices do
-        deviceNames[id] = Client.GetSoundDeviceName(deviceType, id - 1) 
+        deviceNames[id + 1] = Client.GetSoundDeviceName(deviceType, id - 1) 
     end
     
     return deviceNames

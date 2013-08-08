@@ -135,15 +135,16 @@ function MapBlipMixin:GetMapBlipInfo()
     // Don't display PowerPoints unless they are in an unpowered state.
     elseif self:isa("PowerPoint") then
         blipType = ConditionalValue( self:GetIsDisabled(), kMinimapBlipType.DestroyedPowerPoint, kMinimapBlipType.PowerPoint)
-    elseif self:isa("Infestation") then
+    elseif self:isa("Cyst") then
     
         blipType = kMinimapBlipType.Infestation
         
-        if not self.hostAlive then
+        if not self:GetIsConnected() then
             blipType = kMinimapBlipType.InfestationDying
         end
         
         blipTeam = self:GetTeamNumber()
+        isAttacked = false
         
     // Everything else that is supported by kMinimapBlipType.
     elseif self:GetIsVisible() then

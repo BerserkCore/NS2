@@ -92,6 +92,11 @@ if Server then
             return false
         end
         
+        local viewerDead = HasMixin(viewer, "Live") and not viewer:GetIsAlive()
+        if viewerDead then
+            return false
+        end
+        
         // Anything cloaked or camoflaged is invisible to us.
         if (HasMixin(entity, "Cloakable") and entity:GetIsCloaked()) or
            (entity.GetIsCamouflaged and entity:GetIsCamouflaged()) then
@@ -337,6 +342,10 @@ if Server then
             self.updateLOS = true
         end
         
+    end
+    
+    function LOSMixin:OnKill()
+        MarkNearbyDirty(self)
     end
     
     function LOSMixin:OnDestroy()

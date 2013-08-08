@@ -77,6 +77,7 @@ function GUIProgressBar:Initialize()
     self.progressBarBg:SetPosition(GUIProgressBar.kBgPosition)
     self.progressBarBg:SetTexture(texture)
     self.progressBarBg:SetTexturePixelCoordinates(unpack(kBackgroundPixelCoords))
+    self.progressBarBg:SetLayer(kGUILayerPlayerHUD)
     self.progressBarBg:SetColor(Color(1,1,1,0))
     
     if self.teamType == kMarineTeamType then
@@ -140,6 +141,7 @@ function GUIProgressBar:InitSmokeBg()
     self.smokeyBackground:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
     self.smokeyBackground:SetFloatParameter("correctionX", 0.6)
     self.smokeyBackground:SetFloatParameter("correctionY", 0.4)
+    self.smokeyBackground:SetLayer(kGUILayerPlayerHUDBackground)
     
     self.smokeyBackground:SetInheritsParentAlpha(true)
     

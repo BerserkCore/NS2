@@ -38,18 +38,18 @@ local kScanColor = Color(0.2, 0.8, 1, 1)
 local kScanAnimDuration = 2
 
 local kInfestationColor = { }
-kInfestationColor[kMinimapBlipTeam.Friendly] = Color(1, 1, 0, .22)
-kInfestationColor[kMinimapBlipTeam.Enemy] = Color(1, 0.67, 0.06, .15)
-kInfestationColor[kMinimapBlipTeam.Neutral] = Color(0.2, 0.7, 0.2, .090)
-kInfestationColor[kMinimapBlipTeam.Alien] = Color(0.2, 0.7, 0.2, .090)
-kInfestationColor[kMinimapBlipTeam.Marine] = Color(0.2, 0.7, 0.2, .15)
+kInfestationColor[kMinimapBlipTeam.Friendly] = Color(1, 1, 0, .25)
+kInfestationColor[kMinimapBlipTeam.Enemy] = Color(1, 0.67, 0.06, .25)
+kInfestationColor[kMinimapBlipTeam.Neutral] = Color(0.2, 0.7, 0.2, .25)
+kInfestationColor[kMinimapBlipTeam.Alien] = Color(0.2, 0.7, 0.2, .25)
+kInfestationColor[kMinimapBlipTeam.Marine] = Color(0.2, 0.7, 0.2, .25)
 
 local kInfestationDyingColor = { }
-kInfestationDyingColor[kMinimapBlipTeam.Friendly] = Color(1, 0.2, 0, .5)
-kInfestationDyingColor[kMinimapBlipTeam.Enemy] = Color(1, 0.67, 0.06, .15)
-kInfestationDyingColor[kMinimapBlipTeam.Neutral] =Color(1, 0.67, 0.06, .11)
-kInfestationDyingColor[kMinimapBlipTeam.Alien] = Color(1, 0.67, 0.06, .11)
-kInfestationDyingColor[kMinimapBlipTeam.Marine] = Color(0.2, 0.7, 0.2, .15)
+kInfestationDyingColor[kMinimapBlipTeam.Friendly] = Color(1, 0.2, 0, .25)
+kInfestationDyingColor[kMinimapBlipTeam.Enemy] = Color(1, 0.2, 0, .25)
+kInfestationDyingColor[kMinimapBlipTeam.Neutral] =Color(1, 0.2, 0, .25)
+kInfestationDyingColor[kMinimapBlipTeam.Alien] = Color(1, 0.2, 0, .25)
+kInfestationDyingColor[kMinimapBlipTeam.Marine] = Color(1, 0.2, 0, .25)
 
 local kShrinkingArrowInitSize = Vector(kBlipSize * 10, kBlipSize * 10, 0)
 
@@ -952,7 +952,7 @@ function GUIMinimap:SetBlipScale(blipScale)
         local blipSize = Vector(kBlipSize, kBlipSize, 0)
         blipSizeTable[kBlipSizeType.Normal] = blipSize * (0.7 * blipScale)
         blipSizeTable[kBlipSizeType.TechPoint] = blipSize * blipScale
-        blipSizeTable[kBlipSizeType.Infestation] = blipSize * (0.7 * 2.2 * blipScale)
+        blipSizeTable[kBlipSizeType.Infestation] = blipSize * (2 * blipScale)
         blipSizeTable[kBlipSizeType.Egg] = blipSize * (0.7 * 0.5 * blipScale)
     end
     

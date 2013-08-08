@@ -30,7 +30,7 @@ function OnCommandDamage(damageTable)
 
     local target, amount, hitpos = ParseDamageMessage(damageTable)
     if target then
-        Client.AddWorldMessage(kWorldTextMessageType.Damage, ToString(math.round(amount)), hitpos, target:GetId())
+        Client.AddWorldMessage(kWorldTextMessageType.Damage, amount, hitpos, target:GetId())
     end
     
 end
