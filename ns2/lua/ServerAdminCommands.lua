@@ -311,6 +311,7 @@ local function Ban(client, playerId, duration, ...)
         bannedUntilTime = bannedUntilTime + (duration * 60)
     end
     
+    local playerIdNum = tonumber(playerId)
     if player then
     
         table.insert(bannedPlayers, { name = player:GetName(), id = Server.GetOwner(player):GetUserId(), reason = StringConcatArgs(...), time = bannedUntilTime })
@@ -318,11 +319,11 @@ local function Ban(client, playerId, duration, ...)
         ServerAdminPrint(client, player:GetName() .. " has been banned")
         Server.DisconnectClient(Server.GetOwner(player))
         
-    elseif tonumber(playerId) > 0 then
+    elseif playerIdNum and playerIdNum > 0 then
     
-        table.insert(bannedPlayers, { name = "Unknown", id = tonumber(playerId), reason = StringConcatArgs(...), time = bannedUntilTime })
+        table.insert(bannedPlayers, { name = "Unknown", id = playerIdNum, reason = StringConcatArgs(...), time = bannedUntilTime })
         SaveBannedPlayers()
-        ServerAdminPrint(client, "Player with SteamId " .. playerId .. " has been banned")
+        ServerAdminPrint(client, "Player with SteamId " .. playerIdNum .. " has been banned")
         
     else
         ServerAdminPrint(client, "No matching player")
@@ -336,7 +337,7 @@ local function UnBan(client, steamId)
     local found = false
     for p = #bannedPlayers, 1, -1 do
     
-        if bannedPlayers[p].id == steamId then
+        if bannedPlayers[p].id == tonumber(steamId) then
         
             table.remove(bannedPlayers, p)
             ServerAdminPrint(client, "Removed " .. steamId .. " from the ban list")
@@ -349,7 +350,7 @@ local function UnBan(client, steamId)
     if found then
         SaveBannedPlayers()
     else
-        ServerAdminPrint(client, "No matching Steam Id in ban list")
+        ServerAdminPrint(client, "No matching Steam Id in ban list: " .. steamId)
     end
     
 end

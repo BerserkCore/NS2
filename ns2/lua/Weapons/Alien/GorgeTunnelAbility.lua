@@ -33,8 +33,7 @@ function GorgeTunnelAbility:GetDropMapName()
 end
 
 local kUpVector = Vector(0, 1, 0)
-local kTolerance = 0.9
-local kCheckDistance = 1.5
+local kCheckDistance = 0.8 // bigger than onos
 local kVerticalOffset = 0.3
 local kVerticalSpace = 2
 
@@ -67,9 +66,9 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
             
                 local traceStart = startPos + kCheckDirections[i]
             
-                local trace = Shared.TraceRay(traceStart, traceStart - Vector(0, kVerticalOffset * 1.09, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOne(player))
+                local trace = Shared.TraceRay(traceStart, traceStart - Vector(0, kVerticalOffset + 0.1, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOne(player))
             
-                if trace.fraction < 0.9 or trace.fraction >= 1.0 then
+                if trace.fraction < 0.65 or trace.fraction >= 1.0 then
                     valid = false
                     break
                 end
@@ -85,7 +84,7 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
     if valid then
     
         local extents = Vector(kCheckDistance, 0.5, kCheckDistance)
-        local trace =  Shared.TraceBox(extents, position + Vector(0, 0.1, 0), position + Vector(0, kVerticalSpace, 0), CollisionRep.Move, PhysicsMask.Movement, EntityFilterAll())
+        local trace =  Shared.TraceBox(extents, position + Vector(0, 0.2, 0), position + Vector(0, kVerticalSpace, 0), CollisionRep.Move, PhysicsMask.Movement, EntityFilterAll())
         valid = valid and trace.fraction == 1
     
     end

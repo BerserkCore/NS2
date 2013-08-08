@@ -8,8 +8,10 @@
 
 class 'GUIWaitingForAutoTeamBalance' (GUIScript)
 
-local kFontName = "fonts/AgencyFB_large.fnt"
+local kFontName = "fonts/AgencyFB_medium.fnt"
 local kFontColor = Color(0.8, 0.8, 0.8, 1)
+
+local clientIsWaitingForAutoTeamBalance = false
 
 function GUIWaitingForAutoTeamBalance:Initialize()
 
@@ -34,6 +36,6 @@ function GUIWaitingForAutoTeamBalance:Uninitialize()
     
 end
 
-function GUIWaitingForAutoTeamBalance:SetIsVisible(visible)
-    self.waitingText:SetIsVisible(visible)
+function GUIWaitingForAutoTeamBalance:Update(deltaTime)
+    self.waitingText:SetIsVisible(PlayerUI_GetIsWaitingForTeamBalance())
 end

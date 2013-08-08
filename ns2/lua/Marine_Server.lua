@@ -276,34 +276,24 @@ function Marine:AttemptToBuy(techIds)
         
             Shared.PlayPrivateSound(self, Marine.kSpendResourcesSoundName, nil, 1.0, self:GetOrigin())
             
-            if techId == kTechId.Jetpack then
+            if self:GetTeam() and self:GetTeam().OnBought then
+                self:GetTeam():OnBought(techId)
+            end
             
+            if techId == kTechId.Jetpack then
+
                 // Need to apply this here since we change the class.
                 self:AddResources(-GetCostForTech(techId))
                 self:GiveJetpack()
-
-                if self.GetTeam and self:GetTeam().OnBought then
-                    self:GetTeam():OnBought(techId)
-                end
                 
             elseif kIsExoTechId[techId] then
-                BuyExo(self, techId)
-
-                if self.GetTeam and self:GetTeam().OnBought then
-                    self:GetTeam():OnBought(techId)
-                end
-                    
+                BuyExo(self, techId)    
             else
             
                 // Make sure we're ready to deploy new weapon so we switch to it properly.
                 if self:GiveItem(mapName) then
                 
-                    Shared.PlayWorldSound(nil, Marine.kGunPickupSound, nil, self:GetOrigin())
-                    
-                    if self.GetTeam and self:GetTeam().OnBought then
-                        self:GetTeam():OnBought(techId)
-                    end
-                    
+                    Shared.PlayWorldSound(nil, Marine.kGunPickupSound, nil, self:GetOrigin())                    
                     return true
                     
                 end

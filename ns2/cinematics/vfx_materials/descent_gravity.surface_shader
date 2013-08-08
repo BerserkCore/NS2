@@ -1,0 +1,39 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="cloudMap" type="texture" address="wrap" srgb="true"/>
+		<input name="maskMap" type="texture" address="wrap" srgb="true"/>
+		<input name="normalMap" type="texture" address="wrap" />
+	</inputs>
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="twoSided">true</param>
+
+	</params>
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float4 mask = tex2D(maskMap, input.texCoord );
+			float4 tex3 = tex2D(cloudMap, input.texCoord*2 + float2(time * -.1, time * 0.5));
+
+			float4 tex2 = tex2D(emissiveMap, input.texCoord + float2(time * -.02, time * -.24));
+			float4 tex = tex2D(emissiveMap, input.texCoord*1.5 + float2(time * .05, time * -1) + (DecodeNormal( tex2D(normalMap, input.texCoord*.5 + float2(time * -0.1, time * 0.1)) ).xy * .05 ));
+
+					
+			
+			material.emissive =tex.rgb + tex2.rgb *80   ;
+			material.opacity  = tex.rgb*tex3.a *tex3.rgb *mask.rgb*6 ;			
+		}
+	]]>		
+	</code>
+
+</shader>

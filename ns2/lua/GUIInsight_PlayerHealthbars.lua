@@ -37,17 +37,17 @@ local kPoisonColor = Color(0, 1, 0, 1)
 local kHealthDrainColor = Color(1, 0, 0, 1)
 local kEnergyColor = Color(1,1,0,1)
 local kAmmoColors = {
-    ["rifle"] = Color(0,0.2,1.0,1), // blue
-    ["pistol"] = Color(0,0.8,0.8,1), // teal
-    ["axe"] = Color(0.8,0.8,0.8,1), // white
-    ["shotgun"] = Color(0.2,0.8,0.2,1), // green
-    ["flamethrower"] = Color(0.8,0.8,0,1), // yellow
-    ["grenadelauncher"] = Color(0.8,0,0.8,1), // purple
-    ["minigun"] = Color(0.8,0.2,0.2,1), // red
-    ["railgun"] = Color(1.0,0.5,0,1)} // orange
-    // mines?
-    // welder?
-    
+    ["rifle"] = Color(0,0,1,1), // blue
+    ["pistol"] = Color(0,1,1,1), // teal
+    ["axe"] = Color(1,1,1,1), // white
+    ["welder"] = Color(1,1,1,1), // white
+    ["builder"] = Color(1,1,1,1), // white
+    ["mine"] = Color(1,1,1,1), // white
+    ["shotgun"] = Color(0,1,0,1), // green
+    ["flamethrower"] = Color(1,1,0,1), // yellow
+    ["grenadelauncher"] = Color(1,0,1,1), // magenta
+    ["minigun"] = Color(1,0,0,1), // red
+    ["railgun"] = Color(1,0.5,0,1)} // orange
 
 function GUIInsight_PlayerHealthbars:Initialize()
 
@@ -123,7 +123,7 @@ function GUIInsight_PlayerHealthbars:UpdatePlayers(deltaTime)
     for index, player in ientitylist(players) do
 
         local playerIndex = player:GetId()
-        local relevant = player:GetIsVisible() and player:GetIsAlive() and not player:isa("Commander") and not player:isa("Spectator")
+        local relevant = player:GetIsVisible() and player:GetIsAlive() and not player:isa("Commander") and not player:isa("Spectator") and not player:isa("ReadyRoomPlayer")
             
         if relevant then
         
@@ -149,7 +149,7 @@ function GUIInsight_PlayerHealthbars:UpdatePlayers(deltaTime)
             if not playerList[playerIndex] then -- Add new GUI for new players
             
                 playerGUI = self:CreatePlayerGUIItem()
-                playerGUI.StoredValues.TotalFraction = healthFraction
+                playerGUI.StoredValues.TotalFraction = healthFraction+armorFraction
                 table.insert(playerList, playerIndex, playerGUI)
 
             else
@@ -229,10 +229,10 @@ function GUIInsight_PlayerHealthbars:UpdatePlayers(deltaTime)
             else
                 local activeWeapon = player:GetActiveWeapon()
                 if activeWeapon then
+                    local ammoColor = kAmmoColors[activeWeapon.kMapName] or kEnergyColor
                     if activeWeapon:isa("ClipWeapon") then
                         energyFraction = activeWeapon:GetClip() / activeWeapon:GetClipSize()
-                        energyBar:SetColor(kAmmoColors[activeWeapon.kMapName])
-                    elseif player:isa("Exo") then
+                    elseif activeWeapon:isa("ExoWeaponHolder") then
                         local leftWeapon = Shared.GetEntity(activeWeapon.leftWeaponId)
                         local rightWeapon = Shared.GetEntity(activeWeapon.rightWeaponId)
                         // Exo weapons. Dual wield will just show as the averaged value for now. Maybe 2 bars eventually?
@@ -244,14 +244,13 @@ function GUIInsight_PlayerHealthbars:UpdatePlayers(deltaTime)
                         elseif rightWeapon:isa("Minigun") then
                             energyFraction = rightWeapon.heatAmount
                             if leftWeapon:isa("Minigun") then
-                                energyFraction = (energyFraction + rightWeapon.heatAmount) / 2.0
+                                energyFraction = (energyFraction + leftWeapon.heatAmount) / 2.0
                             end
-                        end    
-                        energyFraction = 1 - energyFraction
-                        energyBar:SetColor(kAmmoColors[rightWeapon.kMapName])
-                    else
-                        energyFraction = 0.0
+                            energyFraction = 1 - energyFraction
+                        end                            
+                        ammoColor = kAmmoColors[rightWeapon.kMapName]
                     end
+                    energyBar:SetColor(ammoColor)
                 end
             end
             energyBar:SetTexturePixelCoordinates(0, 0, energyFraction * kEnergyBarTextureSize.x, kEnergyBarTextureSize.y)

@@ -50,7 +50,7 @@ function Bot:UpdateTeam(joinTeam)
     local player = self:GetPlayer()
 
     // Join random team (could force join if needed but will enter respawn queue if game already started)
-    if player:GetTeamNumber() == 0 and (math.random() < .03) then
+    if player and player:GetTeamNumber() == 0 and (math.random() < .03) then
     
         if joinTeam == nil then
             joinTeam = ConditionalValue(math.random() < .5, 1, 2)

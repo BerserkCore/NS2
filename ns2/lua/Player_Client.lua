@@ -26,12 +26,17 @@ Player.screenEffects.blur = Client.CreateScreenEffect("shaders/Blur.screenfx")
 Player.screenEffects.blur:SetActive(false)
 Player.screenEffects.phase = Client.CreateScreenEffect("shaders/Phase.screenfx")
 Player.screenEffects.phase:SetActive(false)
+Player.screenEffects.gorgetunnel = Client.CreateScreenEffect("shaders/GorgeTunnel.screenfx")
+Player.screenEffects.gorgetunnel:SetActive(false)
 Player.screenEffects.cloaked = Client.CreateScreenEffect("shaders/Cloaked.screenfx")
 Player.screenEffects.cloaked:SetActive(false)
 Player.screenEffects.disorient = Client.CreateScreenEffect("shaders/Disorient.screenfx")
 Player.screenEffects.disorient:SetActive(false)
 Player.screenEffects.celerityFX = Client.CreateScreenEffect("shaders/Celerity.screenfx")
 Player.screenEffects.celerityFX:SetActive(false)
+Player.screenEffects.spectatorTint = Client.CreateScreenEffect("shaders/SpectatorTint.screenfx")
+Player.screenEffects.spectatorTint:SetActive(false)
+
 
 local kDefaultPingSound = PrecacheAsset("sound/NS2.fev/common/ping")
 local kMarinePingSound = PrecacheAsset("sound/NS2.fev/marine/commander/ping")
@@ -182,6 +187,34 @@ function PlayerUI_GetCurrentOrderType()
     
 end
 
+function GetRelevantOrdersForPlayer(player)
+
+    local orders = {}
+    
+    if player:isa("Commander") then
+    
+        for _, selectable in ipairs(player:GetSelection()) do
+        
+            local order = HasMixin(selectable, "Orders") and selectable:GetCurrentOrder()
+            if order then
+                table.insert(orders, order)
+            end
+        
+        end
+
+    else
+    
+        local order = HasMixin(player, "Orders") and player:GetCurrentOrder()
+        if order then
+            table.insert(orders, player:GetCurrentOrder())
+        end
+        
+    end
+
+    return orders
+
+end
+
 function PlayerUI_GetOrderInfo()
 
     local orderInfo = { }
@@ -190,7 +223,7 @@ function PlayerUI_GetOrderInfo()
     local player = Client.GetLocalPlayer()
     if player then
     
-        for index, order in ientitylist(Shared.GetEntitiesWithClassname("Order")) do
+        for index, order in ipairs(GetRelevantOrdersForPlayer(player)) do
         
             table.insert(orderInfo, order.orderType)
             table.insert(orderInfo, order.orderParam)
@@ -303,6 +336,14 @@ function PlayerUI_GetCanDisplayRequestMenu()
     
 end
 
+function PlayerUI_OnRequestSelected()
+
+    local player = Client.GetLocalPlayer()
+    // Prevent the player from shooting after a request is selected.
+    player.timeClosedMenu = Shared.GetTime()
+    
+end
+
 function Player:GetBuyMenuIsDisplaying()
     return self.buyMenu ~= nil
 end
@@ -392,8 +433,12 @@ function PlayerUI_GetUnitStatusInfo()
                     local armor = 0
 
                     local visibleToPlayer = true                        
-                    if HasMixin(unit, "Cloakable") and unit:GetIsCloaked() and GetAreEnemies(player, unit) then
-                        visibleToPlayer = false
+                    if HasMixin(unit, "Cloakable") and GetAreEnemies(player, unit) then
+                    
+                        if unit:GetIsCloaked() or (unit:isa("Player") and unit:GetCloakFraction() > 0.2) then                    
+                            visibleToPlayer = false
+                        end
+                        
                     end
                     
                     // Don't show tech points or nozzles if they are attached
@@ -535,7 +580,7 @@ function PlayerUI_GetFinalWaypointInScreenspace()
 
     local player = Client.GetLocalPlayer()
     
-    if not player then
+    if not player or GetIsPointInGorgeTunnel(player:GetOrigin()) then
         return nil
     end
     
@@ -544,12 +589,12 @@ function PlayerUI_GetFinalWaypointInScreenspace()
     
     if isCommander then
     
-        local orders = Shared.GetEntitiesWithClassname("Order")
-        if orders:GetSize() < 1 then
+        local orders = GetRelevantOrdersForPlayer(player)
+        if #orders == 0 then
             return nil
         end
         
-        currentOrder = orders:GetEntityAtIndex(0)
+        currentOrder = orders[1]
         
     else
     
@@ -1395,6 +1440,24 @@ function PlayerUI_GetIsNanoShielded()
 
 end
 
+function PlayerUI_GetHasMinigun()
+
+    local player = Client.GetLocalPlayer()
+    local hasMinigun = false
+    
+    if player and player:isa("Exo") then
+    
+        local weaponHolder = player:GetActiveWeapon()
+        if weaponHolder and (weaponHolder:GetLeftSlotWeapon():isa("Minigun") or weaponHolder:GetRightSlotWeapon():isa("Minigun")) then
+            hasMinigun = true
+        end
+    
+    end
+    
+    return hasMinigun
+
+end
+
 function PlayerUI_GetPlayerParasiteState()
 
     local playerParasiteState = 1
@@ -1468,6 +1531,18 @@ function PlayerUI_GetPlayerName()
 
 end
 
+function PlayerUI_GetNumClingedBabblers()
+
+    local numBabblers = 0
+    local player = Client.GetLocalPlayer()
+    if player and HasMixin(player, "BabblerCling") then
+        numBabblers = player:GetNumClingedBabblers()    
+    end
+    
+    return numBabblers
+
+end
+
 function PlayerUI_GetEnergizeLevel()
 
     local energizeLevel = 0
@@ -1490,7 +1565,7 @@ function Player:GetDrawResourceDisplay()
 end
 
 function Player:GetShowHealthFor(player)
-    return player:isa("Spectator") or ( not GetAreEnemies(self, player) and self:GetIsAlive() )
+    return ( player:isa("Spectator") or ( not GetAreEnemies(self, player) and self:GetIsAlive() ) ) and self:GetTeamType() ~= kNeutralTeamType
 end
 
 function Player:GetCrossHairTarget()
@@ -1500,7 +1575,7 @@ function Player:GetCrossHairTarget()
     local startPoint = self:GetEyePos()
     local endPoint = startPoint + viewCoords.zAxis * Player.kRangeFinderDistance
     
-    local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOne(self))
+    local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOneAndIsa(self, "Babbler"))
     return trace.entity
     
 end
@@ -1630,10 +1705,23 @@ function Player:UpdateCrossHairTarget()
     
 end
 
-// use only client side (for bringing up menus for example). Key events, and their consequences, are not send to the server
+function Player:OnShowMap(show)
+
+    self.minimapVisible = show
+    self:ShowMap(show, true)
+    
+end
+
+function Player:GetIsMinimapVisible()
+    return self.minimapVisible or false
+end
+
+/**
+ * Use only client side (for bringing up menus for example). Key events, and their consequences, are not sent to the server.
+ */
 function Player:SendKeyEvent(key, down)
 
-    // When exit hit, bring up menu
+    // When exit hit, bring up menu.
     if down and key == InputKey.Escape and (Shared.GetTime() > (self.timeLastMenu + 0.3) and not ChatUI_EnteringChatMessage()) then
     
         ExitPressed()
@@ -1642,11 +1730,46 @@ function Player:SendKeyEvent(key, down)
         
     end
     
-    if GetIsBinding(key, "RequestHealth") then
-        self.timeOfLastHealRequest = Shared.GetTime()
+    if not ChatUI_EnteringChatMessage() then
+    
+        if GetIsBinding(key, "RequestHealth") then
+            self.timeOfLastHealRequest = Shared.GetTime()
+        end
+        
+        if GetIsBinding(key, "ShowMap") then
+            self:OnShowMap(down)
+        end
+        
+        if down then
+        
+            if GetIsBinding(key, "ReadyRoom") then
+                Shared.ConsoleCommand("rr")
+            elseif GetIsBinding(key, "TextChat") then
+            
+                ChatUI_EnterChatMessage(false)
+                return true
+                
+            elseif GetIsBinding(key, "TeamChat") then
+            
+                ChatUI_EnterChatMessage(true)
+                return true
+                
+            end
+            
+        end
+        
     end
     
     return false
+    
+end
+
+// optionally return far plane distance, default value is 400
+function Player:GetCameraFarPlane()
+
+    if GetIsPointInGorgeTunnel(self:GetEyePos()) then
+        return 35
+    end
 
 end
 
@@ -1695,6 +1818,9 @@ function Player:UpdateScreenEffects(deltaTime)
     local isCommander = self:isa("Commander")
     local isEmbryo = self:isa("Embryo")
     local isExo = self:isa("Exo")
+
+    Player.screenEffects.spectatorTint:SetActive(not Client.GetIsControllingPlayer())
+    
     if self:GetHealthScalar() <= kLowHealthWarning and not isSpectator and
        not isCommander and not isEmbryo and not isExo then
     
@@ -1713,7 +1839,7 @@ function Player:UpdateScreenEffects(deltaTime)
     
         self.clientTimeOfLastPhase = self.clientTimeOfLastPhase or 0
         self.clientStartPhaseEffectTime = self.clientStartPhaseEffectTime or 0
-        if self.timeOfLastPhase and self.clientTimeOfLastPhase ~= self.timeOfLastPhase then
+        if self.timeOfLastPhase and self.clientTimeOfLastPhase ~= self.timeOfLastPhase and (Shared.GetTime() - self.timeOfLastPhase <= kPhaseEffectActiveTime) then
         
             self.clientTimeOfLastPhase = self.timeOfLastPhase
             self.clientStartPhaseEffectTime = Shared.GetTime()
@@ -1740,23 +1866,6 @@ function Player:UpdateScreenEffects(deltaTime)
     
     // Play disorient screen effect to show we're near a shade
     self:UpdateDisorientFX()
-    
-end
-
-function Player:UpdateIdleSound()
-
-    // Set idle sound parameter if playing
-    if self.idleSoundInstance then
-    
-        // 1 means inactive, 0 means active   
-        local value = ConditionalValue(Shared.GetTime() < self.timeOfIdleActive, 1, 0)
-        self.idleSoundInstance:SetParameter("idle", value, 5)
-        
-        // Set speed parameter also
-        local speedScalar = Clamp(self:GetSpeedScalar(), 0, 1)
-        self.idleSoundInstance:SetParameter("speed", speedScalar, 5)
-        
-    end
     
 end
 
@@ -1826,12 +1935,35 @@ local function UpdateDangerEffects(self)
     
 end
 
+local function UpdateIdleSound(self, isLocal)
+
+    // Set idle sound parameter if playing
+    if self.idleSoundInstance then
+    
+        if isLocal then
+        
+            // 1 means inactive, 0 means active   
+            local value = ConditionalValue(Shared.GetTime() < self.timeOfIdleActive, 1, 0)
+            self.idleSoundInstance:SetParameter("idle", value, 5)
+            
+            // Set speed parameter also
+            local speedScalar = Clamp(self:GetSpeedScalar(), 0, 1)
+            self.idleSoundInstance:SetParameter("speed", speedScalar, 5)
+            
+        elseif self.idleSoundInstance:GetIsPlaying() then
+            self.idleSoundInstance:Stop()
+        end
+        
+    end
+    
+end
+
 // Only called when not running prediction
 function Player:UpdateClientEffects(deltaTime, isLocal)
 
+    UpdateIdleSound(self, isLocal)
     if isLocal then
     
-        self:UpdateIdleSound()
         self:UpdateCommanderPingSound()
         UpdateDangerEffects(self)
         
@@ -1922,15 +2054,6 @@ function PlayerUI_GetCrossHairVerticalOffset()
 
 end
 
-function Player:SetDesiredName()
-
-    // Set default player name to one set in Steam, or one we've used and saved previously
-    local playerName = Client.GetOptionString( kNicknameOptionsKey, Client.GetUserName() )
-   
-    Shared.ConsoleCommand(string.format("name \"%s\"", playerName))
-
-end
-
 function Player:AddAlert(techId, worldX, worldZ, entityId, entityTechId)
     
     assert(worldX)
@@ -1964,26 +2087,14 @@ end
 
 function Player:GetAlertBlips()
 
-    local alertBlips = {}
-    table.copy(self.alertBlips, alertBlips)
-    return alertBlips
+    local alertBlips = { }
+    if self.alertBlips then
     
-end
-
-function Player:ClearAlertBlips()
-    table.clear(self.alertBlips)    
-end
-
-function Player:OnGUIUpdated()
-    self:ClearAlertBlips()
-end
-
-local function DisableDanger(self)
-
-    // Stop looping music.
-    if self:GetIsLocalPlayer() then
-        Client.StopMusic("danger")
+        table.copy(self.alertBlips, alertBlips)
+        table.clear(self.alertBlips)
+        
     end
+    return alertBlips
     
 end
 
@@ -2008,35 +2119,8 @@ function Player:OnInitLocalClient()
     self.alertBlips = { }
     self.alertMessages = { }
     
-    // Initialize offsets used for drawing tech ids as buttons
-    InitTechTreeMaterialOffsets()
-
-    // Only create base HUDs the first time a player is created.
-    // We only ever want one of these.
-    GetGUIManager():CreateGUIScriptSingle("GUICrosshair")
-    GetGUIManager():CreateGUIScriptSingle("GUIScoreboard")
-    GetGUIManager():CreateGUIScriptSingle("GUINotifications")
-    GetGUIManager():CreateGUIScriptSingle("GUIDamageIndicators")
-    GetGUIManager():CreateGUIScriptSingle("GUIDeathMessages")
-    GetGUIManager():CreateGUIScriptSingle("GUIChat")
-    GetGUIManager():CreateGUIScriptSingle("GUIVoiceChat")
-    self.minimapScript = GetGUIManager():CreateGUIScriptSingle("GUIMinimapFrame")
-    GetGUIManager():CreateGUIScriptSingle("GUIMapAnnotations")
-    //GetGUIManager():CreateGUIScriptSingle("GUIPlayerNameTags")
-    GetGUIManager():CreateGUIScriptSingle("GUIGameEnd")
-    GetGUIManager():CreateGUIScriptSingle("GUIWorldText")
-    GetGUIManager():CreateGUIScriptSingle("GUIPing")
-    GetGUIManager():CreateGUIScriptSingle("GUICommunicationStatusIcons")
-    
-    if self.unitStatusDisplay == nil then
-    
-        self.unitStatusDisplay = GetGUIManager():CreateGUIScriptSingle("GUIUnitStatus")
-        self.unitStatusDisplay:EnableAlienStyle()
-        
-    end
-    
     DisableScreenEffects(self)
-
+    
     // Re-enable skybox rendering after commanding
     SetSkyboxDrawState(true)
     
@@ -2045,12 +2129,6 @@ function Player:OnInitLocalClient()
     
     // Turn on sound occlusion for non-commanders
     Client.SetSoundGeometryEnabled(true)
-    
-    // Setup materials, etc. for death messages
-    InitDeathMessages(self)
-    
-    // Fix after Main/Client issue resolved
-    self:SetDesiredName()
     
     self.traceReticle = false
     
@@ -2061,12 +2139,15 @@ function Player:OnInitLocalClient()
     
     local loopingIdleSound = self:GetIdleSoundName()
     if loopingIdleSound then
+    
+        if not self.idleSoundInstance then
         
-        local soundIndex = Shared.GetSoundIndex(loopingIdleSound)
-        self.idleSoundInstance = Client.CreateSoundEffect(soundIndex)
-        self.idleSoundInstance:SetParent(self:GetId())
+            local soundIndex = Shared.GetSoundIndex(loopingIdleSound)
+            self.idleSoundInstance = Client.CreateSoundEffect(soundIndex)
+            self.idleSoundInstance:SetParent(self:GetId())
+            
+        end
         self.idleSoundInstance:Start()
-        
         self.timeOfIdleActive = Shared.GetTime()
         
     end
@@ -2078,7 +2159,7 @@ function Player:OnInitLocalClient()
     Client.SetMouseSensitivityScalar(1)
     
     // Just in case the danger music wasn't stopped already for some reason.
-    DisableDanger(self)
+    DisablePlayerDanger(self)
     
 end
 
@@ -2107,11 +2188,11 @@ function Player:OnVortexEndClient()
 end
 
 function Player:SetCloakShaderState(state)
-
+/*
     if self:GetIsLocalPlayer() and Player.screenEffects.cloaked then
         Player.screenEffects.cloaked:SetActive(state)
     end
-    
+*/ 
 end
 
 function Player:UpdateDisorientSoundLoop(state)
@@ -2161,47 +2242,6 @@ function Player:UpdateDisorientFX()
 end
 
 /**
- * Called when the player entity is destroyed.
- */
-function Player:OnDestroy()
-
-    ScriptActor.OnDestroy(self)
-    
-    if self.viewModel ~= nil then
-    
-        Client.DestroyRenderViewModel(self.viewModel)
-        self.viewModel = nil
-        
-    end
-    
-    self:UpdateCloakSoundLoop(false)
-    self:UpdateDisorientSoundLoop(false)
-    
-    self:CloseMenu()
-    
-    if self.idleSoundInstance then
-        Client.DestroySoundEffect(self.idleSoundInstance)
-    end
-    
-    if self.guiCountDownDisplay then
-    
-        GetGUIManager():DestroyGUIScript(self.guiCountDownDisplay)
-        self.guiCountDownDisplay = nil
-        
-    end
-    
-    if self.unitStatusDisplay then
-    
-        GetGUIManager():DestroyGUIScriptSingle("GUIUnitStatus")
-        self.unitStatusDisplay = nil
-        
-    end
-    
-    DisableDanger(self)
-    
-end
-
-/**
  * Clear screen effects on the player immediately upon being killed so
  * they don't have them enabled while spectating. This is required now
  * that the dead player entity exists alongside the new spectator player.
@@ -2209,7 +2249,7 @@ end
 function Player:OnKillClient()
 
     DisableScreenEffects(self)
-    DisableDanger(self)
+    DisablePlayerDanger(self)
     
     if self.unitStatusDisplay then
     
@@ -2288,9 +2328,9 @@ function Player:ShowMap(showMap, showBig, forceReset)
 
     self.minimapVisible = showMap and showBig
     
-    self.minimapScript:ShowMap(showMap)
-    self.minimapScript:SetBackgroundMode((showBig and GUIMinimapFrame.kModeBig) or GUIMinimapFrame.kModeMini, forceReset)
-
+    ClientUI.GetScript("GUIMinimapFrame"):ShowMap(showMap)
+    ClientUI.GetScript("GUIMinimapFrame"):SetBackgroundMode((showBig and GUIMinimapFrame.kModeBig) or GUIMinimapFrame.kModeMini, forceReset)
+    
 end
 
 function Player:GetWeaponAmmo()
@@ -2641,16 +2681,15 @@ function Player:SetCameraShake(amount, speed, time)
     
 end
 
+local clientIsWaitingForAutoTeamBalance = false
 function PlayerUI_GetIsWaitingForTeamBalance()
-
-    local player = Client.GetLocalPlayer()
-    if player then
-        return player:GetIsWaitingForTeamBalance()
-    end
-    
-    return false
-    
+    return clientIsWaitingForAutoTeamBalance
 end
+
+local function OnWaitingForAutoTeamBalance(message)
+    clientIsWaitingForAutoTeamBalance = message.waiting
+end
+Client.HookNetworkMessage("WaitingForAutoTeamBalance", OnWaitingForAutoTeamBalance)
 
 function PlayerUI_GetIsRepairing()
 
@@ -3120,92 +3159,90 @@ end
  * Returns a linear array of static blip data
  * X position, Y position, rotation, X texture offset, Y texture offset, kMinimapBlipType, kMinimapBlipTeam
  *
- * Eg {0.5, 0.5, 1.32, 0, 0, 3, 1}
+ * Eg { 0.5, 0.5, 1.32, 0, 0, 3, 1 }
  */
+local kMinimapBlipTeamAlien = kMinimapBlipTeam.Alien
+local kMinimapBlipTeamMarine = kMinimapBlipTeam.Marine
+local kMinimapBlipTeamFriendly = kMinimapBlipTeam.Friendly
+local kMinimapBlipTeamEnemy = kMinimapBlipTeam.Enemy
+local kMinimapBlipTeamNeutral = kMinimapBlipTeam.Neutral
 function PlayerUI_GetStaticMapBlips()
 
     PROFILE("PlayerUI_GetStaticMapBlips")
-
-    local player = Client.GetLocalPlayer()
-    local blipsData = {}
-    local numBlips = 0
     
-    local minimapBlipTeamAlien    = kMinimapBlipTeam.Alien
-    local minimapBlipTeamMarine   = kMinimapBlipTeam.Alien
-    local minimapBlipTeamFriendly = kMinimapBlipTeam.Friendly
-    local minimapBlipTeamEnemy    = kMinimapBlipTeam.Enemy
-    local minimapBlipTeamNeutral  = kMinimapBlipTeam.Neutral
+    local player = Client.GetLocalPlayer()
+    local blipsData = { }
+    local numBlips = 0
     
     if player then
     
-        local playerTeam      = player:GetTeamNumber()
-        local playerNoTeam    = playerTeam == kRandomTeamType or playerTeam == kNeutralTeamType
+        local playerTeam = player:GetTeamNumber()
+        local playerNoTeam = playerTeam == kRandomTeamType or playerTeam == kNeutralTeamType
         local playerEnemyTeam = GetEnemyTeamNumber(playerTeam)
-        local playerId        = player:GetId()
-      
+        local playerId = player:GetId()
+        
         local mapBlipList = Shared.GetEntitiesWithClassname("MapBlip")
         local GetEntityAtIndex = mapBlipList.GetEntityAtIndex
+        local GetMapBlipTeamNumber = MapBlip.GetTeamNumber
+        local GetMapBlipOrigin = MapBlip.GetOrigin
+        local GetMapBlipRotation = MapBlip.GetRotation
+        local GetMapBlipType = MapBlip.GetType
+        local GetMapBlipIsInCombat = MapBlip.GetIsInCombat
         
         for index = 0, mapBlipList:GetSize() - 1 do
         
             local blip = GetEntityAtIndex(mapBlipList, index)
             if blip ~= nil and blip.ownerEntityId ~= playerId then
             
-                local blipTeam = minimapBlipTeamNeutral
-                local blipTeamNumber = blip:GetTeamNumber()        
-            
-                if playerNoTeam then
-                    if blipTeamNumber == kMarineTeamType then
-                        blipTeam = minimapBlipTeamMarine
-                    elseif blipTeamNumber== kAlienTeamType then
-                        blipTeam = minimapBlipTeamAlien
-                    end
-                else
-                    if blipTeamNumber == playerTeam then
-                        blipTeam = minimapBlipTeamFriendly
-                    elseif blipTeamNumber == playerEnemyTeam then
-                        blipTeam = minimapBlipTeamEnemy
-                    end
-                end    
-              
+                local blipTeam = kMinimapBlipTeamNeutral
+                local blipTeamNumber = GetMapBlipTeamNumber(blip)
+                
+                if blipTeamNumber == kMarineTeamType then
+                    blipTeam = kMinimapBlipTeamMarine
+                elseif blipTeamNumber== kAlienTeamType then
+                    blipTeam = kMinimapBlipTeamAlien
+                end
+                
                 local i = numBlips * 8
-                local blipOrig = blip:GetOrigin()
+                local blipOrig = GetMapBlipOrigin(blip)
                 blipsData[i + 1] = blipOrig.x
                 blipsData[i + 2] = blipOrig.z
-                blipsData[i + 3] = blip:GetRotation()
+                blipsData[i + 3] = GetMapBlipRotation(blip)
                 blipsData[i + 4] = 0
                 blipsData[i + 5] = 0
-                blipsData[i + 6] = blip:GetType()
+                blipsData[i + 6] = GetMapBlipType(blip)
                 blipsData[i + 7] = blipTeam
-                blipsData[i + 8] = blip:GetIsInCombat() // change to "GetIsAttacked" maybe
+                blipsData[i + 8] = GetMapBlipIsInCombat(blip)
                 
                 numBlips = numBlips + 1
                 
-            end            
+            end
             
         end
         
         for index, blip in ientitylist(Shared.GetEntitiesWithClassname("SensorBlip")) do
         
             local blipOrigin = blip:GetOrigin()
-         
+            
             local i = numBlips * 8
-         
+            
             blipsData[i + 1] = blipOrigin.x
             blipsData[i + 2] = blipOrigin.z
             blipsData[i + 3] = 0
             blipsData[i + 4] = 0
             blipsData[i + 5] = 0
             blipsData[i + 6] = kMinimapBlipType.SensorBlip
-            blipsData[i + 7] = kMinimapBlipTeam.Enemy
+            blipsData[i + 7] = kMinimapBlipTeamEnemy
             blipsData[i + 8] = false
             
             numBlips = numBlips + 1
             
         end
         
-        for index, order in ientitylist(Shared.GetEntitiesWithClassname("Order")) do
-         
+        local orders = GetRelevantOrdersForPlayer(player)
+        for o = 1, #orders do
+        
+            local order = orders[o]
             local blipOrigin = order:GetLocation()
             
             local blipType = kMinimapBlipType.MoveOrder
@@ -3215,21 +3252,21 @@ function PlayerUI_GetStaticMapBlips()
             elseif orderType == kTechId.Attack then
                 blipType = kMinimapBlipType.AttackOrder
             end
-        
+            
             local i = numBlips * 8
-              
+            
             blipsData[i + 1] = blipOrigin.x
             blipsData[i + 2] = blipOrigin.z
             blipsData[i + 3] = 0
             blipsData[i + 4] = 0
             blipsData[i + 5] = 0
             blipsData[i + 6] = blipType
-            blipsData[i + 7] = kMinimapBlipTeam.Friendly
+            blipsData[i + 7] = kMinimapBlipTeamFriendly
             blipsData[i + 8] = false
             
             numBlips = numBlips + 1
             
-        end     
+        end
         
     end
     
@@ -3371,27 +3408,32 @@ function Player:GetShowDamageArrows()
     return true
 end
 
+local function TriggerFirstPersonDeathEffects(self)
+
+    local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
+    cinematic:SetCinematic(self:GetFirstPersonDeathEffect())
+    
+end
+
 function Player:AddTakeDamageIndicator(damagePosition)
 
     if self:GetShowDamageArrows() then
-    
-        // Insert triple indicating when damage was taken and from where it came 
-        local triple = {damagePosition.x, damagePosition.z, Shared.GetTime()}
-        table.insert(self.damageIndicators, triple)
-        
+        table.insert(self.damageIndicators, { damagePosition.x, damagePosition.z, Shared.GetTime() })
     end
     
     if not self:GetIsAlive() and not self.deathTriggered then
-        self:TriggerFirstPersonDeathEffects()
+    
+        TriggerFirstPersonDeathEffects(self)
         self.deathTriggered = true
+        
     end
     
-    local damageIndicatorScript = GetGUIManager():GetGUIScriptSingle("GUIDamageIndicators")
+    local damageIndicatorScript = ClientUI.GetScript("GUIDamageIndicators")
     local hitEffectType = GetDamageEffectType(self)
     
     if damageIndicatorScript and hitEffectType then
     
-        local position = Vector(0,0,0)
+        local position = Vector(0, 0, 0)
         local viewCoords = self:GetViewCoords()
         
         local hitDirection = GetNormalizedVector( viewCoords.origin - damagePosition )
@@ -3563,19 +3605,11 @@ end
 
 function Player:OnUpdatePlayer(deltaTime)
 
-    if not Shared.GetIsRunningPrediction() then
+    self:UpdateClientEffects(deltaTime, self:GetIsLocalPlayer())
     
-        if self.UpdateClientHelp then
-            self:UpdateClientHelp()
-        end
-        
-        self:UpdateClientEffects(deltaTime, self:GetIsLocalPlayer())
-        
-        self:UpdateRookieMode()
-        
-        self:UpdateCommunicationStatus()
-        
-    end
+    self:UpdateRookieMode()
+    
+    self:UpdateCommunicationStatus()
     
 end
 
@@ -3664,7 +3698,7 @@ function Player:OnUpdateRender()
     
     if self:GetIsLocalPlayer() then
     
-        local blurEnabled = self.minimapVisible
+        local blurEnabled = self:GetIsMinimapVisible()
         self:SetBlurEnabled(blurEnabled)
         
         self.lastOnUpdateRenderTime = self.lastOnUpdateRenderTime or Shared.GetTime()
@@ -3676,29 +3710,12 @@ function Player:OnUpdateRender()
     
 end
 
-function Player:UpdateChat(input)
-
-    if not Shared.GetIsRunningPrediction() then
-    
-        // Enter chat message
-        if (bit.band(input.commands, Move.TextChat) ~= 0) then
-            ChatUI_EnterChatMessage(false)
-        end
-
-        // Enter chat message
-        if (bit.band(input.commands, Move.TeamChat) ~= 0) then
-            ChatUI_EnterChatMessage(true)
-        end
-        
-    end
-    
-end
-
 function Player:GetCustomSelectionText()
+    local playerRecord = Scoreboard_GetPlayerRecord(self:GetClientIndex())
     return string.format("%s kills\n%s deaths\n%s score",
-            ToString(Scoreboard_GetPlayerData(self:GetClientIndex(), "Kills")),
-            ToString(Scoreboard_GetPlayerData(self:GetClientIndex(), "Deaths")),
-            ToString(Scoreboard_GetPlayerData(self:GetClientIndex(), "Score")))
+            ToString(playerRecord.Kills),
+            ToString(playerRecord.Deaths),
+            ToString(playerRecord.Score))
 end
 
 function Player:GetIdleSoundName()
@@ -3730,71 +3747,8 @@ function Player:SetLightShakeAmount(amount, duration, scalar)
     
 end
 
-function Player:AddBindingHint(bindingString, entId, localizableText, priority)
-
-    assert(type(bindingString) == "string")
-    assert(type(entId) == "number")
-    assert(type(localizableText) == "string")
-    assert(type(priority) == "number")
-
-    if self.hints then
-    
-        local key = BindingsUI_GetInputValue(bindingString)
-        local localizedText = string.format(Locale.ResolveString(localizableText), ToString(key))
-        self.hints:AddHint(entId, localizedText, priority)
-        
-    end
-    
-end
-
-function Player:AddHint(entId, localizableText, priority)
-
-    assert(type(entId) == "number")
-    assert(type(localizableText) == "string")
-    assert(type(priority) == "number")
-    
-    if self.hints then    
-        self.hints:AddHint(entId, Locale.ResolveString(localizableText), priority)        
-    end    
-end
-
-// Put a small information sign in the world
-/*
-function Player:AddInfoHint(entId, localizableText, priority)
-
-    assert(type(entId) == "number")
-    assert(type(localizableText) == "string")
-    assert(type(priority) == "number")
-    
-    if self.hints then    
-        self.hints:AddInfoHint(entId, Locale.ResolveString(localizableText), priority)        
-    end    
-
-end
-*/
-
-function Player:AddGlobalHint(localizableText, priority)
-
-    assert(type(localizableText) == "string")
-    assert(type(priority) == "number")
-
-    if self.hints then
-    
-        local text = TranslateHintText(Locale.ResolveString(localizableText))
-        self.hints:AddGlobalHint(text, priority)
-        
-    end
-end
-
 function Player:GetFirstPersonDeathEffect()
     return Player.kFirstPersonDeathEffect
-end
-
-function Player:TriggerFirstPersonDeathEffects()
-
-    local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
-    cinematic:SetCinematic(self:GetFirstPersonDeathEffect())
-    
 end
 
 local function GetFirstPersonHitEffectName(doer)

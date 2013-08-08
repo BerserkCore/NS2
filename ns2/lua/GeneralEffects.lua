@@ -8,6 +8,38 @@
 
 kGeneralEffectData = 
 {
+    tunnel_enter_2D =
+    {
+        tunnelEnterSound =
+        {
+            {sound = "alien/structures/tunnel/in_2D"}
+        }
+    },
+    
+    tunnel_exit_2D =
+    {
+        tunnelEnterSound =
+        {
+            {sound = "alien/structures/tunnel/out_2D"}
+        }
+    },
+    
+    tunnel_enter_3D =
+    {
+        tunnelEnterSound =
+        {
+            {sound = "alien/structures/tunnel/in"}
+        }
+    },
+    
+    tunnel_exit_3D =
+    {
+        tunnelEnterSound =
+        {
+            {sound = "alien/structures/tunnel/out"}
+        }
+    },
+
     babbler_pheromone =
     {
         babblerPheromoneEffects =
@@ -376,7 +408,7 @@ kGeneralEffectData =
         destroySoundEffects = 
         {
             // Delete all parented or looping sounds and effects associated with this object
-            {stop_effects = "", classname = "Actor"},
+            {stop_effects = "", classname = "Entity"},
         },
     },
     

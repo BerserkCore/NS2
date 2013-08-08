@@ -57,6 +57,7 @@ GUIScoreboard.kSpectatorHighlightColor = Color(0.8, 0.8, 0.8, 1)
 
 GUIScoreboard.kCommanderFontColor = Color(1, 1, 0, 1)
 GUIScoreboard.kWhiteColor = Color(1,1,1,1)
+local kDeadColor = Color(1,0,0,1)
 
 local kConnectionProblemsIcon = PrecacheAsset("ui/ethernet-connect.dds")
 
@@ -70,155 +71,42 @@ function GUIScoreboard:OnResolutionChanged(oldX, oldY, newX, newY)
     
     self:Uninitialize()
     self:Initialize()
-
-end
-
-function GUIScoreboard:Initialize()
-    
-    self.teams = { }
-    self.reusePlayerItems = { }
-    
-    self.gameTimeBackground = GUIManager:CreateGraphicItem()
-    self.gameTimeBackground:SetSize(GUIScoreboard.kGameTimeBackgroundSize)
-    //self.gameTimeBackground:SetPosition(Vector(0, -GUIScoreboard.kGameTimeBackgroundSize.y - 6, 0))
-    self.gameTimeBackground:SetAnchor(GUIItem.Middle, GUIItem.Top)
-    self.gameTimeBackground:SetPosition( Vector(- GUIScoreboard.kGameTimeBackgroundSize.x / 2, 10, 0) )
-    self.gameTimeBackground:SetIsVisible(false)
-    self.gameTimeBackground:SetColor(Color(0,0,0,0.5))
-    self.gameTimeBackground:SetLayer(kGUILayerScoreboard)
-    
-    self.gameTime = GUIManager:CreateTextItem()
-    self.gameTime:SetFontName(GUIScoreboard.kFontName)
-    self.gameTime:SetFontSize(GUIScoreboard.kGameTimeTextSize)
-    self.gameTime:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.gameTime:SetTextAlignmentX(GUIItem.Align_Center)
-    self.gameTime:SetTextAlignmentY(GUIItem.Align_Center)
-    self.gameTime:SetColor(Color(1, 1, 1, 1))
-    self.gameTime:SetText("")
-    self.gameTimeBackground:AddChild(self.gameTime)
-    
-    // Teams table format: Team GUIItems, color, player GUIItem list, get scores function.
-    // Spectator team.
-    table.insert(self.teams, { GUIs = self:CreateTeamBackground(kTeamReadyRoom), TeamName = ScoreboardUI_GetSpectatorTeamName(),
-                               Color = GUIScoreboard.kSpectatorColor, PlayerList = { }, HighlightColor = GUIScoreboard.kSpectatorHighlightColor,
-                               GetScores = ScoreboardUI_GetSpectatorScores, TeamNumber = kTeamReadyRoom })
-                               
-    // Blue team.
-    table.insert(self.teams, { GUIs = self:CreateTeamBackground(kTeam1Index), TeamName = ScoreboardUI_GetBlueTeamName(),
-                               Color = GUIScoreboard.kBlueColor, PlayerList = { }, HighlightColor = GUIScoreboard.kBlueHighlightColor,
-                               GetScores = ScoreboardUI_GetBlueScores, TeamNumber = kTeam1Index})                              
-                       
-    // Red team.
-    table.insert(self.teams, { GUIs = self:CreateTeamBackground(kTeam2Index), TeamName = ScoreboardUI_GetRedTeamName(),
-                               Color = GUIScoreboard.kRedColor, PlayerList = { }, HighlightColor = GUIScoreboard.kRedHighlightColor,
-                               GetScores = ScoreboardUI_GetRedScores, TeamNumber = kTeam2Index })
-
-    
-
-    self.playerHighlightItem = GUIManager:CreateGraphicItem()
-    self.playerHighlightItem:SetSize(Vector(self:GetTeamItemWidth() - (GUIScoreboard.kPlayerItemWidthBuffer * 2), GUIScoreboard.kPlayerItemHeight, 0))
-    self.playerHighlightItem:SetAnchor(GUIItem.Left, GUIItem.Top)
-    self.playerHighlightItem:SetColor(Color(1, 1, 1, 1))
-    self.playerHighlightItem:SetTexture("ui/hud_elements.dds")
-    self.playerHighlightItem:SetTextureCoordinates(0, 0.16, 0.558, 0.32)
-    self.playerHighlightItem:SetIsVisible(false)
-    
-    self.clickForMouseBackground = GUIManager:CreateGraphicItem()
-    self.clickForMouseBackground:SetSize(GUIScoreboard.kClickForMouseBackgroundSize)
-    self.clickForMouseBackground:SetPosition(Vector(-GUIScoreboard.kClickForMouseBackgroundSize.x / 2, -GUIScoreboard.kClickForMouseBackgroundSize.y - 5, 0))
-    self.clickForMouseBackground:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
-    self.clickForMouseBackground:SetIsVisible(false)
-    
-    self.clickForMouseIndicator = GUIManager:CreateTextItem()
-    self.clickForMouseIndicator:SetFontName(GUIScoreboard.kFontName)
-    self.clickForMouseIndicator:SetFontSize(GUIScoreboard.kClickForMouseTextSize)
-    self.clickForMouseIndicator:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.clickForMouseIndicator:SetTextAlignmentX(GUIItem.Align_Center)
-    self.clickForMouseIndicator:SetTextAlignmentY(GUIItem.Align_Center)
-    self.clickForMouseIndicator:SetColor(Color(0, 0, 0, 1))
-    self.clickForMouseIndicator:SetText(GUIScoreboard.kClickForMouseText)
-    self.clickForMouseBackground:AddChild(self.clickForMouseIndicator)
-    
-    self.centeredFrame = GUIManager:CreateGraphicItem()
-    self.centeredFrame:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.centeredFrame:SetColor(Color(0,0,0,0))
-    self.centeredFrame:SetLayer(kGUILayerScoreboard)
-    
-    self.centeredFrame:AddChild(self.teams[2].GUIs.Background)
-    self.centeredFrame:AddChild(self.teams[3].GUIs.Background)
-    
-    self.connectionProblemsIcon = GUIManager:CreateGraphicItem()
-    self.connectionProblemsIcon:SetAnchor(GUIItem.Left, GUIItem.Center)
-    self.connectionProblemsIcon:SetPosition(Vector(32, 0, 0))
-    self.connectionProblemsIcon:SetSize(Vector(64, 64, 0))
-    self.connectionProblemsIcon:SetLayer(kGUILayerScoreboard)
-    self.connectionProblemsIcon:SetTexture(kConnectionProblemsIcon)
-    self.connectionProblemsIcon:SetColor(Color(1, 0, 0, 1))
-    self.connectionProblemsIcon:SetIsVisible(false)
-    
-    self.connectionProblemsDetector = CreateTokenBucket(8, 20)
-    
-    self.mousePressed = { LMB = { Down = nil }, RMB = { Down = nil } }
-
-end
-
-function GUIScoreboard:Uninitialize()
-
-    for index, team in ipairs(self.teams) do
-        GUI.DestroyItem(team["GUIs"]["Background"])
-    end
-    self.teams = { }
-    
-    for index, playerItem in ipairs(self.reusePlayerItems) do
-        GUI.DestroyItem(playerItem["Background"])
-    end
-    self.reusePlayerItems = { }
-    
-    GUI.DestroyItem(self.clickForMouseIndicator)
-    self.clickForMouseIndicator = nil
-    GUI.DestroyItem(self.clickForMouseBackground)
-    self.clickForMouseBackground = nil
-    
-    GUI.DestroyItem(self.gameTime)
-    self.gameTime = nil
-    GUI.DestroyItem(self.gameTimeBackground)
-    self.gameTimeBackground = nil
-    
-    GUI.DestroyItem(self.connectionProblemsIcon)
-    self.connectionProblemsIcon = nil
     
 end
 
-function GUIScoreboard:GetTeamItemWidth()
+local function GetTeamItemWidth()
     return (Client.GetScreenWidth() / 2) * 0.95
-end    
+end
 
-function GUIScoreboard:CreateTeamBackground(teamNumber)
-    
-    local color
+local function CreateTeamBackground(self, teamNumber)
+
+    local color = nil
     local teamItem = GUIManager:CreateGraphicItem()
     
     // Background
-    teamItem:SetSize(Vector(self:GetTeamItemWidth(), GUIScoreboard.kTeamItemHeight, 0))
+    teamItem:SetSize(Vector(GetTeamItemWidth(), GUIScoreboard.kTeamItemHeight, 0))
     if teamNumber == kTeamReadyRoom then
+    
         color = GUIScoreboard.kSpectatorColor
         teamItem:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
-        teamItem:SetPosition(Vector(- self:GetTeamItemWidth() / 2,-35,0))
+        teamItem:SetPosition(Vector(-GetTeamItemWidth() / 2, -35, 0))
         
     elseif teamNumber == kTeam1Index then
+    
         color = GUIScoreboard.kBlueColor
         teamItem:SetAnchor(GUIItem.Middle, GUIItem.Top)
-        teamItem:SetPosition(Vector(- self:GetTeamItemWidth() - 10,GUIScoreboard.kTeamBackgroundYOffset,0))
+        teamItem:SetPosition(Vector(-GetTeamItemWidth() - 10, GUIScoreboard.kTeamBackgroundYOffset, 0))
         
     elseif teamNumber == kTeam2Index then
+    
         color = GUIScoreboard.kRedColor
         teamItem:SetAnchor(GUIItem.Middle, GUIItem.Top)
-        teamItem:SetPosition(Vector( 10,GUIScoreboard.kTeamBackgroundYOffset,0))
+        teamItem:SetPosition(Vector(10, GUIScoreboard.kTeamBackgroundYOffset, 0))
         
-    else end
+    end
     
     teamItem:SetColor(Color(0, 0, 0, 0.75))
-    teamItem:SetIsVisible(ScoreboardUI_GetVisible())
+    teamItem:SetIsVisible(false)
     teamItem:SetLayer(kGUILayerScoreboard)
     
     // Team name text item.
@@ -232,14 +120,14 @@ function GUIScoreboard:CreateTeamBackground(teamNumber)
     teamNameItem:SetColor(color)
     teamItem:AddChild(teamNameItem)
     
-    // Add team info (team resources and number of players)
+    // Add team info (team resources and number of players).
     local teamInfoItem = GUIManager:CreateTextItem()
     teamInfoItem:SetFontName(GUIScoreboard.kFontName)
     teamInfoItem:SetFontSize(GUIScoreboard.kTeamInfoFontSize)
     teamInfoItem:SetAnchor(GUIItem.Left, GUIItem.Top)
     teamInfoItem:SetTextAlignmentX(GUIItem.Align_Min)
     teamInfoItem:SetTextAlignmentY(GUIItem.Align_Min)
-    teamInfoItem:SetPosition(Vector(12, GUIScoreboard.kTeamNameFontSize+7, 0))
+    teamInfoItem:SetPosition(Vector(12, GUIScoreboard.kTeamNameFontSize + 7, 0))
     teamInfoItem:SetColor(color)
     teamItem:AddChild(teamInfoItem)
     
@@ -332,6 +220,124 @@ function GUIScoreboard:CreateTeamBackground(teamNumber)
     
 end
 
+function GUIScoreboard:Initialize()
+
+    self.visible = false
+    
+    self.teams = { }
+    self.reusePlayerItems = { }
+    
+    self.gameTimeBackground = GUIManager:CreateGraphicItem()
+    self.gameTimeBackground:SetSize(GUIScoreboard.kGameTimeBackgroundSize)
+    //self.gameTimeBackground:SetPosition(Vector(0, -GUIScoreboard.kGameTimeBackgroundSize.y - 6, 0))
+    self.gameTimeBackground:SetAnchor(GUIItem.Middle, GUIItem.Top)
+    self.gameTimeBackground:SetPosition( Vector(- GUIScoreboard.kGameTimeBackgroundSize.x / 2, 10, 0) )
+    self.gameTimeBackground:SetIsVisible(false)
+    self.gameTimeBackground:SetColor(Color(0,0,0,0.5))
+    self.gameTimeBackground:SetLayer(kGUILayerScoreboard)
+    
+    self.gameTime = GUIManager:CreateTextItem()
+    self.gameTime:SetFontName(GUIScoreboard.kFontName)
+    self.gameTime:SetFontSize(GUIScoreboard.kGameTimeTextSize)
+    self.gameTime:SetAnchor(GUIItem.Middle, GUIItem.Center)
+    self.gameTime:SetTextAlignmentX(GUIItem.Align_Center)
+    self.gameTime:SetTextAlignmentY(GUIItem.Align_Center)
+    self.gameTime:SetColor(Color(1, 1, 1, 1))
+    self.gameTime:SetText("")
+    self.gameTimeBackground:AddChild(self.gameTime)
+    
+    // Teams table format: Team GUIItems, color, player GUIItem list, get scores function.
+    // Spectator team.
+    table.insert(self.teams, { GUIs = CreateTeamBackground(self, kTeamReadyRoom), TeamName = ScoreboardUI_GetSpectatorTeamName(),
+                               Color = GUIScoreboard.kSpectatorColor, PlayerList = { }, HighlightColor = GUIScoreboard.kSpectatorHighlightColor,
+                               GetScores = ScoreboardUI_GetSpectatorScores, TeamNumber = kTeamReadyRoom })
+                               
+    // Blue team.
+    table.insert(self.teams, { GUIs = CreateTeamBackground(self, kTeam1Index), TeamName = ScoreboardUI_GetBlueTeamName(),
+                               Color = GUIScoreboard.kBlueColor, PlayerList = { }, HighlightColor = GUIScoreboard.kBlueHighlightColor,
+                               GetScores = ScoreboardUI_GetBlueScores, TeamNumber = kTeam1Index})                              
+                       
+    // Red team.
+    table.insert(self.teams, { GUIs = CreateTeamBackground(self, kTeam2Index), TeamName = ScoreboardUI_GetRedTeamName(),
+                               Color = GUIScoreboard.kRedColor, PlayerList = { }, HighlightColor = GUIScoreboard.kRedHighlightColor,
+                               GetScores = ScoreboardUI_GetRedScores, TeamNumber = kTeam2Index })
+
+    
+
+    self.playerHighlightItem = GUIManager:CreateGraphicItem()
+    self.playerHighlightItem:SetSize(Vector(GetTeamItemWidth() - (GUIScoreboard.kPlayerItemWidthBuffer * 2), GUIScoreboard.kPlayerItemHeight, 0))
+    self.playerHighlightItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    self.playerHighlightItem:SetColor(Color(1, 1, 1, 1))
+    self.playerHighlightItem:SetTexture("ui/hud_elements.dds")
+    self.playerHighlightItem:SetTextureCoordinates(0, 0.16, 0.558, 0.32)
+    self.playerHighlightItem:SetIsVisible(false)
+    
+    self.clickForMouseBackground = GUIManager:CreateGraphicItem()
+    self.clickForMouseBackground:SetSize(GUIScoreboard.kClickForMouseBackgroundSize)
+    self.clickForMouseBackground:SetPosition(Vector(-GUIScoreboard.kClickForMouseBackgroundSize.x / 2, -GUIScoreboard.kClickForMouseBackgroundSize.y - 5, 0))
+    self.clickForMouseBackground:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
+    self.clickForMouseBackground:SetIsVisible(false)
+    
+    self.clickForMouseIndicator = GUIManager:CreateTextItem()
+    self.clickForMouseIndicator:SetFontName(GUIScoreboard.kFontName)
+    self.clickForMouseIndicator:SetFontSize(GUIScoreboard.kClickForMouseTextSize)
+    self.clickForMouseIndicator:SetAnchor(GUIItem.Middle, GUIItem.Center)
+    self.clickForMouseIndicator:SetTextAlignmentX(GUIItem.Align_Center)
+    self.clickForMouseIndicator:SetTextAlignmentY(GUIItem.Align_Center)
+    self.clickForMouseIndicator:SetColor(Color(0, 0, 0, 1))
+    self.clickForMouseIndicator:SetText(GUIScoreboard.kClickForMouseText)
+    self.clickForMouseBackground:AddChild(self.clickForMouseIndicator)
+    
+    self.centeredFrame = GUIManager:CreateGraphicItem()
+    self.centeredFrame:SetAnchor(GUIItem.Middle, GUIItem.Center)
+    self.centeredFrame:SetColor(Color(0,0,0,0))
+    self.centeredFrame:SetLayer(kGUILayerScoreboard)
+    
+    self.centeredFrame:AddChild(self.teams[2].GUIs.Background)
+    self.centeredFrame:AddChild(self.teams[3].GUIs.Background)
+    
+    self.connectionProblemsIcon = GUIManager:CreateGraphicItem()
+    self.connectionProblemsIcon:SetAnchor(GUIItem.Left, GUIItem.Center)
+    self.connectionProblemsIcon:SetPosition(Vector(32, 0, 0))
+    self.connectionProblemsIcon:SetSize(Vector(64, 64, 0))
+    self.connectionProblemsIcon:SetLayer(kGUILayerScoreboard)
+    self.connectionProblemsIcon:SetTexture(kConnectionProblemsIcon)
+    self.connectionProblemsIcon:SetColor(Color(1, 0, 0, 1))
+    self.connectionProblemsIcon:SetIsVisible(false)
+    
+    self.connectionProblemsDetector = CreateTokenBucket(8, 20)
+    
+    self.mousePressed = { LMB = { Down = nil }, RMB = { Down = nil } }
+
+end
+
+function GUIScoreboard:Uninitialize()
+
+    for index, team in ipairs(self.teams) do
+        GUI.DestroyItem(team["GUIs"]["Background"])
+    end
+    self.teams = { }
+    
+    for index, playerItem in ipairs(self.reusePlayerItems) do
+        GUI.DestroyItem(playerItem["Background"])
+    end
+    self.reusePlayerItems = { }
+    
+    GUI.DestroyItem(self.clickForMouseIndicator)
+    self.clickForMouseIndicator = nil
+    GUI.DestroyItem(self.clickForMouseBackground)
+    self.clickForMouseBackground = nil
+    
+    GUI.DestroyItem(self.gameTime)
+    self.gameTime = nil
+    GUI.DestroyItem(self.gameTimeBackground)
+    self.gameTimeBackground = nil
+    
+    GUI.DestroyItem(self.connectionProblemsIcon)
+    self.connectionProblemsIcon = nil
+    
+end
+
 local function SetMouseVisible(self, setVisible)
 
     if self.mouseVisible ~= setVisible then
@@ -350,19 +356,15 @@ end
 function GUIScoreboard:Update(deltaTime)
 
     PROFILE("GUIScoreboard:Update")
-
-    local teamsVisible = ScoreboardUI_GetVisible()
     
-    ASSERT(teamsVisible ~= nil)
-    
-    if not teamsVisible then
+    if not self.visible then
         SetMouseVisible(self, false)
     end
     
     if not self.mouseVisible then
     
         // Click for mouse only visible when not a commander and when the scoreboard is visible.
-        local clickForMouseBackgroundVisible = (not PlayerUI_IsACommander()) and teamsVisible
+        local clickForMouseBackgroundVisible = (not PlayerUI_IsACommander()) and self.visible
         self.clickForMouseBackground:SetIsVisible(clickForMouseBackgroundVisible)
         local backgroundColor = PlayerUI_GetTeamColor()
         backgroundColor.a = 0.8
@@ -375,19 +377,19 @@ function GUIScoreboard:Update(deltaTime)
     
         // Don't draw if no players on team
         local numPlayers = table.count(team["GetScores"]())    
-        team["GUIs"]["Background"]:SetIsVisible(teamsVisible and (numPlayers > 0))
+        team["GUIs"]["Background"]:SetIsVisible(self.visible and (numPlayers > 0))
         
-        if teamsVisible then
+        if self.visible then
             self:UpdateTeam(team)
         end
         
     end
     
     // update game time
-    self.gameTimeBackground:SetIsVisible(teamsVisible)
-    self.gameTime:SetIsVisible(teamsVisible)
+    self.gameTimeBackground:SetIsVisible(self.visible)
+    self.gameTime:SetIsVisible(self.visible)
     
-    if teamsVisible then
+    if self.visible then
     
         local gameTime = PlayerUI_GetGameStartTime()
         
@@ -395,8 +397,8 @@ function GUIScoreboard:Update(deltaTime)
             gameTime = math.floor(Shared.GetTime()) - PlayerUI_GetGameStartTime()
         end
         
-        local minutes = math.floor(gameTime/60)
-        local seconds = gameTime - minutes*60
+        local minutes = math.floor(gameTime / 60)
+        local seconds = gameTime - minutes * 60
         local gameTimeText = string.format(Client.GetConnectedServerName() .. " - %d:%02d", minutes, seconds)
         
         self.gameTime:SetText(gameTimeText)
@@ -405,17 +407,20 @@ function GUIScoreboard:Update(deltaTime)
         
         local numTeams = table.count(self.teams)
         if numTeams > 0 then
-            
+        
             // Update Spectator Position
             for index, team in ipairs(self.teams) do
+            
                 if team.TeamNumber == kTeamReadyRoom then
+                
                     local newPosition = team["GUIs"]["Background"]:GetPosition()
                     newPosition.y = - team["GUIs"]["Background"]:GetSize().y - 35
                     team["GUIs"]["Background"]:SetPosition(newPosition)
+                    
                 end
+                
             end
-                        
-                        
+            
         end
         
         local playerCount = math.max(#ScoreboardUI_GetBlueScores(), #ScoreboardUI_GetRedScores())
@@ -499,7 +504,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
     teamInfoGUIItem:SetText(string.format("%s", teamResourcesString))
     
     // Make sure there is enough room for all players on this team GUI.
-    teamGUIItem:SetSize(Vector(self:GetTeamItemWidth(), (GUIScoreboard.kTeamItemHeight) + ((GUIScoreboard.kPlayerItemHeight + GUIScoreboard.kPlayerSpacing) * numPlayers), 0))
+    teamGUIItem:SetSize(Vector(GetTeamItemWidth(), (GUIScoreboard.kTeamItemHeight) + ((GUIScoreboard.kPlayerItemHeight + GUIScoreboard.kPlayerSpacing) * numPlayers), 0))
     
     // Resize the player list if it doesn't match.
     if table.count(playerList) ~= numPlayers then
@@ -508,6 +513,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
     
     local currentY = GUIScoreboard.kTeamNameFontSize + GUIScoreboard.kTeamInfoFontSize + 10
     local currentPlayerIndex = 1
+    local deadString = Locale.ResolveString("STATUS_DEAD")
     
     for index, player in pairs(playerList) do
     
@@ -525,6 +531,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         local currentPosition = Vector(player["Background"]:GetPosition())
         local playerStatus = playerRecord.Status
         local isSpectator = playerRecord.IsSpectator
+        local isDead = playerRecord.Status == deadString
         
         if playerRecord.IsCommander then
             score = "*"
@@ -577,6 +584,11 @@ function GUIScoreboard:UpdateTeam(updateTeam)
             player["Ping"]:SetColor(GUIScoreboard.kCommanderFontColor)    
             player["Name"]:SetColor(GUIScoreboard.kCommanderFontColor)
 
+        elseif isDead and isVisibleTeam then
+        
+            player["Name"]:SetColor(kDeadColor)
+            player["Status"]:SetColor(kDeadColor)
+            
         elseif playerRecord.IsRookie and isVisibleTeam then
         
             player["Name"]:SetColor(kNewPlayerColorFloat)
@@ -638,7 +650,7 @@ function GUIScoreboard:CreatePlayerItem()
     
     // Create background.
     local playerItem = GUIManager:CreateGraphicItem()
-    playerItem:SetSize(Vector(self:GetTeamItemWidth() - (GUIScoreboard.kPlayerItemWidthBuffer * 2), GUIScoreboard.kPlayerItemHeight, 0))
+    playerItem:SetSize(Vector(GetTeamItemWidth() - (GUIScoreboard.kPlayerItemWidthBuffer * 2), GUIScoreboard.kPlayerItemHeight, 0))
     playerItem:SetAnchor(GUIItem.Left, GUIItem.Top)
     playerItem:SetPosition(Vector(GUIScoreboard.kPlayerItemWidthBuffer, GUIScoreboard.kPlayerItemHeight / 2, 0))
     playerItem:SetColor(Color(1, 1, 1, 1))
@@ -770,8 +782,12 @@ end
 
 function GUIScoreboard:SendKeyEvent(key, down)
 
-    if not ScoreboardUI_GetVisible() then
-        return
+    if GetIsBinding(key, "Scoreboard") then
+        self.visible = down
+    end
+    
+    if not self.visible then
+        return false
     end
     
     if key == InputKey.MouseButton0 and self.mousePressed["LMB"]["Down"] ~= down then

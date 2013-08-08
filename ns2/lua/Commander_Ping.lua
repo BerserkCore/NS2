@@ -20,7 +20,7 @@ end
 
 local function CheckMouseIsInMinimapFrame(x, y)
 
-    local minimapScript = GetGUIManager():GetGUIScriptSingle("GUIMinimapFrame")
+    local minimapScript = ClientUI.GetScript("GUIMinimapFrame")
     local containsPoint, withinX, withinY = GUIItemContainsPoint(minimapScript:GetMinimapItem(), x, y)
     return containsPoint, withinX, withinY, minimapScript:GetMinimapSize()
     
@@ -42,7 +42,7 @@ end
 
 function CheckKeyEventForCommanderPing(key, down)
 
-    if down and (GetIsBinding(key, "PingLocation") or (pingEnabled and key == InputKey.MouseButton0)) then
+    if not ChatUI_EnteringChatMessage() and down and (GetIsBinding(key, "PingLocation") or (pingEnabled and key == InputKey.MouseButton0)) then
     
         local x, y = Client.GetCursorPosScreen()
         local containsPoint, withinX, withinY, minimapSize = CheckMouseIsInMinimapFrame(x, y)

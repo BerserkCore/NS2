@@ -24,7 +24,7 @@ kMarineWeaponHealth = 400
 kEggHealth = 350	kEggArmor = 0	kEggPointValue = 2
 kMatureEggHealth = 350	kMatureEggArmor = 25
 
-kBabblerHealth = 30	kBabblerArmor = 0	kBabblerPointValue = 0
+kBabblerHealth = 30	kBabblerArmor = 5	kBabblerPointValue = 0
 kBabblerEggHealth = 300	kBabblerEggArmor = 0	kBabblerEggPointValue = 0
 		
 kArmorPerUpgradeLevel = 20

@@ -1,0 +1,30 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="normalMap" type="texture" address="wrap" />
+		<input name="defIntensity" type="float">0.01</input>
+		<input name="xSpeed" type="float">1.0</input>
+		<input name="ySpeed" type="float">1.0</input>
+	</inputs>
+
+
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float4 tex = tex2D(emissiveMap, input.texCoord + (DecodeNormal( tex2D(normalMap, input.texCoord + float2(time *xSpeed, time *ySpeed)) ).xy * defIntensity) );
+					
+			material.emissive = tex.rgb * input.color.rgb;
+			material.opacity  = tex.a * input.color.a;			
+		}
+	]]>		
+	</code>
+
+</shader>

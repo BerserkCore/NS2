@@ -18,6 +18,9 @@ Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
+Script.Load("lua/BabblerClingMixin.lua")
+Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/RailgunTargetMixin.lua")
 
 class 'Onos' (Alien)
 
@@ -92,13 +95,17 @@ local networkVars =
     stooping = "boolean",
     stoopIntensity = "compensated float",
     charging = "private boolean",
-    rumbleSoundId = "entityid"
+    rumbleSoundId = "entityid",
+    // from new movement code, remove this after merge
+    timeGroundChanged = "private compensated time",
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
+AddMixinNetworkVars(BabblerClingMixin, networkVars)
+AddMixinNetworkVars(TunnelUserMixin, networkVars)
 
 function Onos:OnCreate()
 
@@ -109,6 +116,12 @@ function Onos:OnCreate()
     Alien.OnCreate(self)
     
     InitMixin(self, DissolveMixin)
+    InitMixin(self, BabblerClingMixin)
+    InitMixin(self, TunnelUserMixin)
+    
+    if Client then
+        InitMixin(self, RailgunTargetMixin)
+    end
     
     self.directionMomentum = 0
     
@@ -142,7 +155,7 @@ function Onos:OnInitialized()
     
     self:AddTimedCallback(Onos.UpdateStooping, Onos.kStoopingCheckInterval)
 
-end
+end  
 
 function Onos:GetInfestationBonus()
     return kOnosInfestationSpeedBonus
@@ -559,17 +572,14 @@ local kOnosHeadMoveAmount = 0.3
 function Onos:OnUpdateCamera(deltaTime) 
 
     local camOffsetHeight = 0
-    
-    if not self:GetIsJumping() then
-        camOffsetHeight = -self:GetMaxViewOffsetHeight() * self:GetCrouchShrinkAmount() * self:GetCrouchAmount()
-    end
-    
+    camOffsetHeight = -self:GetMaxViewOffsetHeight() * self:GetCrouchShrinkAmount() * self:GetCrouchAmount()
+
     if self:GetIsFirstPerson() then
     
         if not self:GetIsJumping() then
-        
+
             local movementScalar = Clamp((self:GetVelocity():GetLength() / self:GetMaxSpeed(true)), 0.0, 0.8)
-            local bobbing = ( math.sin(Shared.GetTime() * 7) - 1 )
+            local bobbing = ( math.cos((Shared.GetTime() - self:GetTimeGroundChanged()) * 7) - 1 )
             camOffsetHeight = camOffsetHeight + kOnosHeadMoveAmount * movementScalar * bobbing
             
         end
@@ -578,6 +588,16 @@ function Onos:OnUpdateCamera(deltaTime)
     
     self:SetCameraYOffset(camOffsetHeight)
 
+end
+
+// from new movement code, remove this after merge
+function Onos:OnJumpLand()
+    self.timeGroundChanged = Shared.GetTime()
+end
+
+// from new movement code, remove this after merge
+function Onos:GetTimeGroundChanged()
+    return self.timeGroundChanged
 end
 
 function Onos:ComputeDamageAttackerOverride(attacker, damage, damageType)

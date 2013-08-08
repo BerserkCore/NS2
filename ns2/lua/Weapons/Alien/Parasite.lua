@@ -95,7 +95,7 @@ function Parasite:PerformPrimaryAttack(player)
         local viewCoords = player:GetViewAngles():GetCoords()
         local startPoint = player:GetEyePos()
     
-        local trace = Shared.TraceRay(startPoint, startPoint + viewCoords.zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterTwo(self, player))
+        local trace = Shared.TraceRay(startPoint, startPoint + viewCoords.zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
         
         if trace.fraction < 1 then
         

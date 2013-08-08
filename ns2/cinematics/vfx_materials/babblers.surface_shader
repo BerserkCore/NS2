@@ -1,0 +1,47 @@
+<shader>
+
+	<inputs>
+
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="maskMap" type="texture" address="wrap" srgb="true"/>
+		<input name="refractMap" type="texture" address="wrap" srgb="true"/>
+		<input name="scaleFactor" type="float">1.0</input>
+
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+
+
+	</params>
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			const float3 tint = float3(40, 30, 2);
+			
+		
+			float4 dots = tex2D(emissiveMap, input.texCoord*5*scaleFactor + float2( time * -.25, time * 0.3));	
+			float4 dots2 = tex2D(emissiveMap, input.texCoord*scaleFactor*float2(6, 9) + float2( time * .15, time * .2)+ (DecodeNormal( tex2D(refractMap, input.texCoord*12 + float2(time * -0.5, time * 1)) ).xy * .1 ));	
+			float4 mask1 = tex2D(maskMap, input.texCoord*2*scaleFactor);
+
+			
+		
+
+			material.emissive 	=  ((dots.rgb +mask1.rgb) *  dots2.rgb  ) * tint   ;
+			material.opacity 	= mask1.a +0.2  ;
+			
+		}
+	]]>
+	</code>
+
+</shader>

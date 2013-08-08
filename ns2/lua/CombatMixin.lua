@@ -28,7 +28,7 @@ CombatMixin.optionalCallbacks =
 CombatMixin.networkVars =
 {
     inCombat = "boolean",
-    lastTakenDamageTime = "time",
+    lastTakenDamageTime = "time (by 0.1)",
     lastTakenDamageOrigin = "private position(by 0.1)",
     lastTakenDamageAmount = "private integer (0 to 8191)",
     lastTargetId = "private entityid"
@@ -175,7 +175,7 @@ if Server then
 
     function CombatMixin:OnTakeDamage(damage, attacker, doer, point, direction, damageType)
 
-        local notifiyTarget = not doer or not doer.GetNotifiyTarget or doer:GetNotifiyTarget()
+        local notifiyTarget = not doer or not doer.GetNotifiyTarget or doer:GetNotifiyTarget(self)
 
         if damage > 0 and notifiyTarget then
         

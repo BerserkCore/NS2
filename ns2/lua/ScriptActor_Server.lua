@@ -30,7 +30,7 @@ end
 
 function ScriptActor:OnDestroy()
 
-    Actor.OnDestroy(self)
+    Entity.OnDestroy(self)
     
     self:ClearAttached()
     

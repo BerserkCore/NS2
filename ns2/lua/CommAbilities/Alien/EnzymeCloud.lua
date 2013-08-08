@@ -21,7 +21,7 @@ EnzymeCloud.kType = CommanderAbility.kType.Repeat
 
 // duration of cinematic, increase cinematic duration and kEnzymeCloudDuration to 12 to match the old value from Crag.lua
 EnzymeCloud.kEnzymeCloudDuration = kEnzymeCloudDuration
-EnzymeCloud.kEnzymeCloudThinktime = 0.3
+local kEnzymeCloudUpdateTime = 0.3
 
 EnzymeCloud.kOnPlayerDuration = 2
 EnzymeCloud.kRadius = 6
@@ -56,8 +56,8 @@ function EnzymeCloud:GetLifeSpan()
     return EnzymeCloud.kEnzymeCloudDuration
 end
 
-function EnzymeCloud:GetThinkTime()
-    return EnzymeCloud.kEnzymeCloudThinktime
+function EnzymeCloud:GetUpdateTime()
+    return kEnzymeCloudUpdateTime
 end
 
 if Server then

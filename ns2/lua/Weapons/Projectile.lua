@@ -26,13 +26,11 @@ function Projectile:OnCreate()
     ScriptActor.OnCreate(self)
     
     self.radius = 0.1
-    self.mass   = 1.0
+    self.mass = 1.0
     self.linearDamping = 0
     self.restitution = 0.5
     
-    if Server then
-        InitMixin(self, OwnerMixin)
-    elseif Client then
+    if Client then
         self.oldModelIndex = 0
     end
     
@@ -106,6 +104,15 @@ end
  */
 function Projectile:GetPhysicsModelAllowedOverride()
     return false
+end
+
+function Projectile:SetGroupFilterMask(groupFilterMask)
+
+    self.groupFilterMask = groupFilterMask
+    if self.physicsBody then
+        return self.physicsBody:SetGroupFilterMask(groupFilterMask)
+    end
+    
 end
 
 // Dropped weapons depend on this also

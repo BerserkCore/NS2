@@ -47,6 +47,7 @@ BaseMoveMixin.networkVars =
 function BaseMoveMixin:__initmixin()
 
     self.velocity = Vector(0, 0, 0)
+    self.smoothedVelocity = Vector(0, 0, 0)
     self.velocityLength = 0
     self.velocityYaw = 0
     self.velocityPitch = 0
@@ -55,7 +56,6 @@ function BaseMoveMixin:__initmixin()
     
 end
 
-local horizontalVelocity = Vector()
 function BaseMoveMixin:SetVelocity(velocity)
 
     // Notify any other mixin that cares. They may want to modify the velocity.
@@ -74,29 +74,21 @@ function BaseMoveMixin:SetVelocity(velocity)
     
     if len > BaseMoveMixin.kMaximumVelocity then
         local frac = BaseMoveMixin.kMaximumVelocity / len
-        self.velocity:Scale(frac) 
-        // Log("%s: softlimit on velocity %s invoked -> %s", self, len, self.velocity:GetLength())
+        self.velocity:Scale(frac)
     end
-
-
-    // update the low-resolution polar coordinates
-    local v = self.velocity
-    self.velocityLength = v:GetLength()
-    self.velocityYaw  = math.atan2(v.z, v.x)
-    self.velocityPitch = self.velocityLength > 0 and math.asin(v.y / self.velocityLength) or 0
     
 end
 AddFunctionContract(BaseMoveMixin.SetVelocity, { Arguments = { "Entity", "Vector" }, Returns = { } })
 
 function BaseMoveMixin:GetVelocity()
+
     // only allowed to ask for velocity if we are on the server or if we are the local player on the client
     if Client and self:isa("Player") and self ~= Client.GetLocalPlayer() then
-        //Log("velocity is a private field!")
-        //assert(false)
         // return the reconstructed velocity
         return self:GetVelocityFromPolar()
     end
     return self.velocity
+    
 end
 AddFunctionContract(BaseMoveMixin.GetVelocity, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
@@ -122,11 +114,14 @@ AddFunctionContract(BaseMoveMixin.GetVelocityPitch, { Arguments = { "Entity" }, 
 // This function is always available, while GetVelocity() is only available on 
 // the server or the owning client.
 function BaseMoveMixin:GetVelocityFromPolar()
+
     local y = math.sin(self.velocityPitch) * self.velocityLength;
     local xzLength = math.cos(self.velocityPitch) * self.velocityLength;
     local z = math.sin(self.velocityYaw) * xzLength;
     local x = math.cos(self.velocityYaw) * xzLength;
+    
     return Vector(x,y,z)
+    
 end
 AddFunctionContract(BaseMoveMixin.GetVelocityFromPolar, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
@@ -152,3 +147,18 @@ function BaseMoveMixin:GetGravityForce(input)
     
 end
 AddFunctionContract(BaseMoveMixin.GetGravityForce, { Arguments = { "Entity", "Move" }, Returns = { "number" } })
+
+local kSmoothRate = 28
+function BaseMoveMixin:OnProcessMove(input)
+
+    self.smoothedVelocity.x = Slerp(self.smoothedVelocity.x, self.velocity.x, input.time * kSmoothRate)
+    self.smoothedVelocity.y = Slerp(self.smoothedVelocity.y, self.velocity.y, input.time * kSmoothRate)
+    self.smoothedVelocity.z = Slerp(self.smoothedVelocity.z, self.velocity.z, input.time * kSmoothRate)
+    
+    // update the low-resolution polar coordinates
+    local v = self.smoothedVelocity
+    self.velocityLength = v:GetLength()
+    self.velocityYaw  = math.atan2(v.z, v.x)
+    self.velocityPitch = self.velocityLength > 0 and math.asin(v.y / self.velocityLength) or 0
+
+end

@@ -27,20 +27,6 @@ local networkVars =
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 
-/**
- * Display the map accord to the input
- */
-local function UpdateMapDisplay(self, input)
-
-    if Client and not Shared.GetIsRunningPrediction() then
-
-        local showMapState = bit.band(input.commands, Move.ShowMap) ~= 0 
-        self:ShowMap(showMapState, true, true)
-
-    end
-
-end
-
 function FilmSpectator:OnCreate()
 
     Player.OnCreate(self)
@@ -181,10 +167,8 @@ function FilmSpectator:OnProcessMove(input)
     
     self:OnUpdatePlayer(input.time)
     
-    UpdateMapDisplay(self, input)
+    Player.UpdateMisc(self,input)
     
-    Player.UpdateMisc(self,input) 
-
 end
 
 function FilmSpectator:UpdateViewAngles(input)

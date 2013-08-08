@@ -88,3 +88,11 @@ function AmbientSound:StopPlaying()
     end
     
 end
+
+function AmbientSound:StartPlayingAgain()
+
+    if self.playing then
+        self.soundEffectInstance:Start()
+    end
+    
+end

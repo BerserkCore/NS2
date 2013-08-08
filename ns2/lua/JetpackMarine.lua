@@ -133,22 +133,9 @@ function JetpackMarine:OnInitialized()
     
 end
 
-local function DestroyFuelGUI(self)
-
-    if Client and self.guiFuelDisplay then
-    
-        GetGUIManager():DestroyGUIScript(self.guiFuelDisplay)
-        self.guiFuelDisplay = nil
-        
-    end
-    
-end
-
 function JetpackMarine:OnDestroy()
 
     Marine.OnDestroy(self)
-    
-    DestroyFuelGUI(self)
     
     self.equipmentId = Entity.invalidId
     self.jetpackLoopId = Entity.invalidId
@@ -158,14 +145,6 @@ function JetpackMarine:OnDestroy()
         self.jetpackLoop = nil
         
     end
-    
-end
-
-function JetpackMarine:OnKillClient()
-
-    Marine.OnKillClient(self)
-    
-    DestroyFuelGUI(self)
     
 end
 
@@ -188,11 +167,23 @@ end
 function JetpackMarine:GetJetpack()
 
     if Server then
-        if self.equipmentId == Entity.invalidId then
+    
+        -- There is a case where this function is called after the JetpackMarine has been
+        -- destroyed but we don't have reproduction steps.
+        if not self:GetIsDestroyed() and self.equipmentId == Entity.invalidId then
             InitEquipment(self)
         end
+        
+        -- Help us track down this problem.
+        if self:GetIsDestroyed() then
+        
+            DebugPrint("Warning - JetpackMarine:GetJetpack() was called after the JetpackMarine was destroyed")
+            DebugPrint(Script.CallStack())
+            
+        end
+        
     end
-
+    
     return Shared.GetEntity(self.equipmentId)
     
 end

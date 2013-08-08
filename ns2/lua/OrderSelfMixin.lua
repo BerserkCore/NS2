@@ -35,7 +35,6 @@ OrderSelfMixin.expectedConstants =
 
 OrderSelfMixin.expectedMixins =
 {
-    TimedCallback = "Required for updating auto orders.",
     Orders = ""
 }
 

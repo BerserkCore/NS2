@@ -285,6 +285,10 @@ if Client then
         SharedUpdate(self)
     end
     
+    function SoundEffect:OnProcessSpectate()
+        SharedUpdate(self)
+    end
+    
     function SoundEffect:SetParameter(paramName, paramValue, paramSpeed)
     
         ASSERT(type(paramName) == "string")

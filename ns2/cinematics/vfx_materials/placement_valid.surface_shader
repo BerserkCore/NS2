@@ -1,26 +1,41 @@
 <shader>
 
 	<inputs>
-		<input name="greebMap" type="texture" address="wrap" srgb="true"/>
-		<input name="circuitMap" type="texture" address="wrap" srgb="true"/>
-		<input name="noiseMap" type="texture" address="wrap" />
-
+		<input name="normalMap" type="texture" address="wrap">materials/dev/dev_normal.dds</input>
+		<input name="tint" type="float3" />
+		<input name="edge" type="float">3</input>
 	</inputs>	
 
 	<params>
-		<param name="osPosition">true</param>
-		<param name="wsNormal">true</param>
+		<param name="vsPosition">true</param>
 		<param name="vsNormal">true</param>
-		<param name="twoSided">false</param>
+		<param name="vsTangent">true</param>
+		<param name="vsBinormal">true</param>
 	</params>
 	
 	<code>
 	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}			
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 		
-			const float3 tint = float3(0, 1, 0);
-			material.emissive = tint * 0.2 ;			
+			float3 tsNormal = DecodeNormal( tex2D(normalMap, input.texCoord ) );
+							
+			float3 vsNormal = tsNormal.x * input.vsTangent +
+							  tsNormal.y * input.vsBinormal +	
+							  tsNormal.z * input.vsNormal;
+									
+			vsNormal = normalize(vsNormal);
+			float3 vsView = normalize(input.vsPosition);
+			
+			float f = 1 - saturate(dot(vsView, -vsNormal));
+			material.emissive = tint * pow(f, edge);	
+
 			
 		}
 	]]>

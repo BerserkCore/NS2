@@ -133,7 +133,7 @@ function LerkBite:OnTag(tagName)
             
             self.spiked = false
         
-            local didHit, target = PerformGradualMeleeAttack(self, player, kLerkBiteDamage, kRange)
+            local didHit, target = PerformGradualMeleeAttack(self, player, kLerkBiteDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
             
             if didHit and target then
             

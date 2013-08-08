@@ -85,7 +85,8 @@ end
 
 function HelpMixin:AddHelpWidget(setGUIName, limit)
 
-    if self == Client.GetLocalPlayer() then
+    // Do not display while spectating.
+    if self == Client.GetLocalPlayer() and Client.GetIsControllingPlayer() then
     
         // Only draw if we have hints enabled.
         if Client.GetOptionBoolean("showHints", true) then

@@ -129,7 +129,7 @@ function GUIWebView:Update(deltaTime)
     
 end
 
-function GUIWebView:SendKeyEvent(key, down)
+function GUIWebView:SendKeyEvent(key, down, amount)
 
     if not self.background then
         return false
@@ -177,7 +177,7 @@ function GUIWebView:SendKeyEvent(key, down)
         end
         
     elseif key == InputKey.MouseZ then
-        self.webView:OnMouseWheel(down and 30 or -30, 0)
+        self.webView:OnMouseWheel((amount > 0) and 30 or -30, 0)
     elseif key == InputKey.Escape then
     
         Destroy(self)

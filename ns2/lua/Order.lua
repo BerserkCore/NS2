@@ -15,6 +15,8 @@ class 'Order' (Entity)
 
 Order.kMapName = "order"
 
+kOrderStatus = enum({'None', 'InProgress', 'Cancelled', 'Completed', 'OnHold'})
+
 local networkVars =
 {
     // No need to send entId as the entity origin is updated every frame
@@ -41,23 +43,10 @@ function Order:OnCreate()
     self.orderSource = Vector(0, 0, 0)
     self.orderTime = Shared.GetTime()
     
-    self:SetPropagate(Entity.Propagate_Callback)
+    self:SetPropagate(Entity.Propagate_Mask)
+    self:SetExcludeRelevancyMask(0)       
     self:SetRelevancyDistance(Math.infinity)
     
-end
-
-function Order:OnGetIsRelevant(player)
-    
-    if player:GetIsCommander() then
-        // Send orders if they belong to a unit is selected
-        return player:GetSelectionHasOrder(self)
-    elseif player:isa("Marine") or player:isa("Exo") or player:isa("Gorge") then
-        // Send orders given to players to those players
-        return player.GetHasSpecifiedOrder and player:GetHasSpecifiedOrder(self)
-    end
-    
-    return false
-
 end
 
 function Order:Initialize(orderType, orderParam, position, orientation)
@@ -118,6 +107,9 @@ kOrderTypesUseEntityOrigin[kTechId.AutoWeld] = true
 kOrderTypesUseEntityOrigin[kTechId.Heal] = true
 kOrderTypesUseEntityOrigin[kTechId.Move] = true
 kOrderTypesUseEntityOrigin[kTechId.Construct] = true
+kOrderTypesUseEntityOrigin[kTechId.Follow] = true
+kOrderTypesUseEntityOrigin[kTechId.FollowAndWeld] = true
+kOrderTypesUseEntityOrigin[kTechId.Defend] = true
 function Order:GetLocation()
 
     local location = self.orderLocation
@@ -153,6 +145,27 @@ end
 
 function Order:GetOrderTime()
     return self.orderTime
+end
+
+if Server then
+    function Order:OnOwnerChanged(oldOwner, newOwner)
+    
+        // Set the relevancy mask so that the owner is only relevant to players
+        // on the same team as the order's owner
+        
+        local includeMask = 0
+        if newOwner ~= nil and HasMixin(newOwner, "Team") then
+            local team = newOwner:GetTeamNumber()
+            if team == 1 then
+                includeMask = kRelevantToTeam1
+            elseif team == 2 then
+                includeMask = kRelevantToTeam2
+            end
+        end     
+
+        self:SetIncludeRelevancyMask(includeMask)       
+        
+    end
 end
 
 function CreateOrder(orderType, orderParam, position, orientation)
@@ -293,7 +306,7 @@ if Server then
             DestroyEntity(self)
         end        
     end
-
+    
 end
 
 Shared.LinkClassToMap("SharedOrder", SharedOrder.kMapName, sharedNetworkVars)

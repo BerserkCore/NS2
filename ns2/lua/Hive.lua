@@ -43,6 +43,7 @@ AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(TeleportMixin, networkVars)
 AddMixinNetworkVars(HiveVisionMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
+AddMixinNetworkVars(InfestationMixin, networkVars)
 
 kResearchToHiveType =
 {
@@ -118,10 +119,10 @@ function Hive:OnInitialized()
     
     CommandStructure.OnInitialized(self)
     
-    self:SetModel(Hive.kModelName, kAnimationGraph)
-    
     // Pre-compute list of egg spawn points.
     if Server then
+        
+        self:SetModel(Hive.kModelName, kAnimationGraph)
         
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
@@ -177,6 +178,10 @@ end
 
 function Hive:GetMatureMaxArmor()
     return kMatureHiveArmor
+end
+
+function Hive:GetInfestationMaxRadius()
+    return kHiveInfestationRadius
 end
 
 function Hive:GetMatureMaxEnergy()
@@ -398,6 +403,10 @@ end
 // used for initial entry point for the commander
 function Hive:GetDefaultEntryOrigin()
     return self:GetOrigin() + Vector(2,0,2)
+end
+
+function Hive:GetInfestationBlobMultiplier()
+    return 5
 end
 
 Shared.LinkClassToMap("Hive", Hive.kMapName, networkVars)

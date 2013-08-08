@@ -9,7 +9,7 @@
 
 local _renderMask = 0x4
 local _invRenderMask = bit.bnot(_renderMask)
-local _maxDistance = 25
+local _maxDistance = 38
 local _maxDistance_Commander = 60
 local _enabled = true
 

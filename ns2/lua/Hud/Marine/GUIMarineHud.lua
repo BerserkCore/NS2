@@ -405,10 +405,6 @@ function GUIMarineHUD:UninitializeMinimap()
 
 end
 
-function GUIMarineHUD:SetIsVisible(isVisible)
-    self.background:SetIsVisible(isVisible)
-end
-
 function GUIMarineHUD:SetStatusDisplayVisible(visible)
     self.statusDisplay:SetIsVisible(visible)
 end
@@ -815,6 +811,27 @@ function GUIMarineHUD:OnAnimationCompleted(animatedItem, animationName, itemHand
 
 end
 
+function GUIMarineHUD:OnLocalPlayerChanged(newPlayer)
+
+    if newPlayer:isa("Exo") then
+    
+        self:SetStatusDisplayVisible(false)
+        self:SetFrameVisible(false)
+        self:SetInventoryDisplayVisible(false)
+        
+    else
+    
+        self:SetStatusDisplayVisible(true)
+        self:SetFrameVisible(true)
+        self:SetInventoryDisplayVisible(true)
+        if newPlayer:GetTeamNumber() ~= kTeamReadyRoom and Client.GetIsControllingPlayer() then
+            self:TriggerInitAnimations()
+        end
+        
+    end
+    
+end
+
 function GUIMarineHUD:OnResolutionChanged(oldX, oldY, newX, newY)
 
     self.scale = newY / kBaseScreenHeight 
@@ -841,10 +858,11 @@ end
 // A global function anyone can call
 function SafeRefreshMinimapZoom()
 
-    if Client and Client.GetLocalPlayer() and Client.GetLocalPlayer().marineHUD then
-        Client.GetLocalPlayer().marineHUD:RefreshMinimapZoom()
+    local marineHUDScript = ClientUI.GetScript("Hud/Marine/GUIMarineHUD")
+    if marineHUDScript then
+        marineHUDScript:RefreshMinimapZoom()
     end
-
+    
 end
 
 // Some console commands players can use
@@ -853,7 +871,7 @@ function OnCommandChangeMiniZoom(val)
     local normRoot = Client.GetOptionFloat("minimap-zoom", kDefaultZoom)
     Client.SetOptionFloat("minimap-zoom", Clamp(normRoot+val, 0, 1))
     SafeRefreshMinimapZoom()
-
+    
 end
 
 Event.Hook("Console_changeminizoom", OnCommandChangeMiniZoom)

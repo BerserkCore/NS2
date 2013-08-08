@@ -45,12 +45,12 @@ float4 BloomCurvePS(PS_DeferredPass_Input input) : COLOR0
 	// Use a piecewise curve to reduce the intensity of lower values
 	// and boost the intensity of high values.
 	
-	float lowPoint   = 2.0;
+	float lowPoint   = 1.0;
 	float lowFactor  = 0.25;
 	float highFactor = 1.5;
 	float c = lowPoint * (lowFactor - highFactor);
 
-	float intensity = dot(src, 0.33f);
+	float intensity = dot(src.rgb, 0.33f);
 	float bloomIntensity = max(intensity * lowFactor, intensity * highFactor + c);
 	
 	float exposure = 1.0f / 6.0f;

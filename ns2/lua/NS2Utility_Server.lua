@@ -425,32 +425,22 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
             local hadTwoHives = forAlien.twoHives
             // Don't lose abilities unless you die.
             forAlien.twoHives = forAlien.twoHives or hasTwoHivesNow
-            
-            // Prevent the callbacks from being called too often.
-            if hadTwoHives ~= forAlien.twoHives then
-            
-                if forAlien.twoHives then
-                    UnlockAbility(forAlien, tierTwoTechId)
-                else
-                    LockAbility(forAlien, tierTwoTechId)
-                end
-                
+
+            if forAlien.twoHives then
+                UnlockAbility(forAlien, tierTwoTechId)
+            else
+                LockAbility(forAlien, tierTwoTechId)
             end
             
             local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetHasTech(forAlien, tierThreeTechId, true))
             local hadThreeHives = forAlien.threeHives
             // Don't lose abilities unless you die.
             forAlien.threeHives = forAlien.threeHives or hasThreeHivesNow
-            
-            // Prevent the callbacks from being called too often.
-            if hadThreeHives ~= forAlien.threeHives then
-            
-                if forAlien.threeHives then
-                    UnlockAbility(forAlien, tierThreeTechId)
-                else
-                    LockAbility(forAlien, tierThreeTechId)
-                end
-                
+
+            if forAlien.threeHives then
+                UnlockAbility(forAlien, tierThreeTechId)
+            else
+                LockAbility(forAlien, tierThreeTechId)
             end
             
         end

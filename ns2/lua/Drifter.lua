@@ -83,7 +83,8 @@ local networkVars =
 {
     // 0-1 scalar used to set move_speed model parameter according to how fast we recently moved
     moveSpeed = "float",
-    moveSpeedParam = "compensated float"
+    moveSpeedParam = "compensated float",
+    camouflaged = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -113,7 +114,6 @@ function Drifter:OnCreate()
     InitMixin(self, LiveMixin)
     InitMixin(self, RagdollMixin)
     InitMixin(self, TeamMixin)
-    InitMixin(self, CloakableMixin)
     InitMixin(self, PathingMixin)
     InitMixin(self, GameEffectsMixin)
     InitMixin(self, UpgradableMixin)
@@ -123,6 +123,7 @@ function Drifter:OnCreate()
     InitMixin(self, FireMixin)
     InitMixin(self, SelectableMixin)
     InitMixin(self, EntityChangeMixin)
+    InitMixin(self, CloakableMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DamageMixin)
     InitMixin(self, AttackOrderMixin)
@@ -425,7 +426,6 @@ local function ScanForNearbyEnemy(self)
         if #GetEntitiesForTeamWithinRange("Player", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kDetectRange) > 0 then
         
             self:TriggerUncloak()
-            self:SetCloakChargeTime(kDetectInterval + 0.5)
             
         end
         self.lastDetectedTime = Shared.GetTime()

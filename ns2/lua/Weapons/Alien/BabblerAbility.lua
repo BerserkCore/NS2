@@ -37,6 +37,8 @@ function BabblerAbility:OnCreate()
     
     if Client then
         self.babblerMoveType = kBabblerMoveType.Move
+    elseif Server then
+        self.timeLastThrown = 0
     end
     
 end
@@ -94,7 +96,7 @@ function BabblerAbility:OnUpdateAnimationInput(modelMixin)
 end
 
 function BabblerAbility:GetRange()
-    return 15
+    return 8
 end
 
 local function FindTarget(self, player)
@@ -103,7 +105,7 @@ local function FindTarget(self, player)
     local direction = player:GetViewCoords().zAxis
     local extents = Vector(kPheromoneTraceWidth, kPheromoneTraceWidth, kPheromoneTraceWidth)
     
-    local trace = Shared.TraceBox(extents, startPoint, startPoint + direction * self:GetRange(), CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(player))
+    local trace = Shared.TraceBox(extents, startPoint, startPoint + direction * self:GetRange(), CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
     
     local targetEntity = trace.entity
     local endPoint = trace.fraction < 1 and (trace.endPoint + trace.normal * kPheromoneTraceWidth) or nil
@@ -113,13 +115,10 @@ local function FindTarget(self, player)
 end
 
 local function CreateBabblerPheromone(self, player)
-
-    local client = Server.GetOwner(player)    
-    local ownerClientId = client:GetUserId()
     
     // destroy at first all other pheromones
     for _, pheromone in ientitylist(Shared.GetEntitiesWithClassname("BabblerPheromone")) do
-        if pheromone:GetOwnerClientId() == ownerClientId then
+        if pheromone:GetOwner() == player then
             DestroyEntity(pheromone)
         end
     end
@@ -132,10 +131,21 @@ local function CreateBabblerPheromone(self, player)
     startPoint = startPointTrace.endPoint
     
     local babblerPheromone = CreateEntity(BabblerPheromone.kMapName, startPoint, player:GetTeamNumber())
-    babblerPheromone:SetOwnerClientId(ownerClientId)
+    babblerPheromone:SetOwner(player)
     
-    local startVelocity = viewCoords.zAxis * 10
-    babblerPheromone:Setup(player, startVelocity, true)
+    local target, endPoint = FindTarget(self, player)
+    if target and (not HasMixin(target, "Live") or target:GetIsAlive()) and ( GetAreEnemies(self, target) or    
+        (GetAreFriends(self, target) and HasMixin(target, "BabblerCling")) ) then
+    
+        babblerPheromone:SetOrigin(endPoint)
+        babblerPheromone:ProcessHit(target)
+    
+    else
+    
+        local startVelocity = viewCoords.zAxis * 10
+        babblerPheromone:Setup(player, startVelocity, true)
+    
+    end
 
 end
 
@@ -151,16 +161,21 @@ function BabblerAbility:OnTag(tagName)
 
             if Server then
                 CreateBabblerPheromone(self, player)
+                // sound plays twice otherwise
+                player:TriggerEffects("babblerability_attack")
+                self.timeLastThrown = Shared.GetTime()
             end
             
             player:DeductAbilityEnergy(self:GetEnergyCost())
-            player:TriggerEffects("babblerability_attack")
-            
             
         end
         
     end
     
+end
+
+function BabblerAbility:GetRecentlyThrown()
+    return self.timeLastThrown + 3 > Shared.GetTime()
 end
 
 if Client then

@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======    
+// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //    
 // lua\FlinchMixin.lua    
 //    
@@ -8,7 +8,7 @@
 
 Script.Load("lua/FunctionContracts.lua")
 
-FlinchMixin = CreateMixin( FlinchMixin )
+FlinchMixin = CreateMixin(FlinchMixin)
 FlinchMixin.type = "Flinch"
 
 FlinchMixin.expectedCallbacks =
@@ -32,6 +32,56 @@ FlinchMixin.networkVars =
     flinchIntensity = "compensated float (0 to 1 by 0.05)"
 }
 
+local kWorldY = Vector(0, 1, 0)
+local function UpdateDamagedEffects(self)
+
+    PROFILE("FlinchMixin:UpdateDamagedEffects")
+    
+    local updateDamagedEffects = not self:isa("Player") or (not self:GetIsLocalPlayer() or self:GetIsThirdPerson())
+    updateDamagedEffects = updateDamagedEffects and (not HasMixin(self, "Live") or self:GetIsAlive())
+    updateDamagedEffects = updateDamagedEffects and (not HasMixin(self, "Construct") or self:GetIsBuilt())
+    updateDamagedEffects = updateDamagedEffects and (not HasMixin(self, "Cloakable") or not self:GetIsCloaked())
+    updateDamagedEffects = updateDamagedEffects and self:GetIsVisible()
+    
+    if updateDamagedEffects then
+    
+        local coords = self:GetCoords()
+        if coords.yAxis:DotProduct(kWorldY) ~= 1 then
+            coords = Coords.GetTranslation(self:GetOrigin())
+        end
+        
+        local healthScalar = self:GetHealthScalar()
+        if healthScalar < 0.3 then
+            self:TriggerEffects("damaged", { flinch_severe = true, effecthostcoords = coords })
+        elseif healthScalar < 0.6 then
+            self:TriggerEffects("damaged", { flinch_severe = false, effecthostcoords = coords })
+        end
+        
+    end
+    
+    -- Continue forever.
+    return true
+    
+end
+
+local function UpdateFlinchEffects(self)
+
+    PROFILE("FlinchMixin:UpdateFlinchEffects")
+    
+    if self.flinchDamageThisFrame ~= 0 then
+    
+        local flinchParams = { flinch_severe = self.flinchDamageThisFrame > 0.35 or self.flinchIntensity > 0.35, effecthostcoords = self:GetCoords(), damagetype = self.flinchLastDamageType }
+        self:TriggerEffects("flinch", flinchParams)
+        
+        self.flinchDamageThisFrame = 0
+        
+    end
+    
+    -- Continue forever.
+    return true
+    
+end
+
 function FlinchMixin:__initmixin()
 
     self.flinchIntensity = 0
@@ -42,8 +92,12 @@ function FlinchMixin:__initmixin()
     end
     
     if Client then
+    
         self.flinchDamageThisFrame = 0
         self.flinchLastDamageType = kDamageType.Normal
+        self:AddTimedCallback(UpdateDamagedEffects, 3)
+        self:AddTimedCallback(UpdateFlinchEffects, 1)
+        
     end
     
 end
@@ -51,12 +105,12 @@ end
 if Server then
 
     function FlinchMixin:OnTakeDamage(damage, attacker, doer, point, direction)
-
+    
         // Once entity has taken this much damage in a second, it is flinching at it's maximum amount
-        local maxFlinchDamage = self:GetMaxHealth() * .20
+        local maxFlinchDamage = self:GetMaxHealth() * 0.2
         
         local flinchAmount = damage / maxFlinchDamage
-        self.flinchIntensityStored = Clamp(self.flinchIntensityStored + flinchAmount, .2, 1)
+        self.flinchIntensityStored = Clamp(self.flinchIntensityStored + flinchAmount, 0.2, 1)
         
         // Make sure new flinch intensity is big enough to be visible, but don't add too much from a bunch of small hits
         // Flamethrower make Harvester go wild
@@ -67,75 +121,37 @@ if Server then
             if doer.GetDamageType then
                 damageType = doer:GetDamageType()
             end
-   
+            
         end
         
         if doer and HasMixin(doer, "Live") and damageType == kDamageType.Flame then
             self.flinchIntensityStored = self.flinchIntensityStored + 0.1
         end
-
+        
     end
-    AddFunctionContract(FlinchMixin.OnTakeDamage, { Arguments = { "Entity", "number", "Entity", { "Entity", "nil" }, "Vector" }, Returns = { } })
     
-end
-
-local worldY = Vector(0, 1, 0)
-local function UpdateFlinch(self, deltaTime)
-
-    if Server then
+    local function UpdateFlinch(self, deltaTime)
     
         self.flinchIntensityStored = Clamp(self.flinchIntensityStored - deltaTime * kFlinchIntensityReduceRate, 0, 1)
         self.flinchIntensity = self.flinchIntensityStored
         
-    elseif Client then
-
-        if (not self:isa("Player") or (not self:GetIsLocalPlayer() or self:GetIsThirdPerson()) ) and self:GetIsVisible() and (not HasMixin(self, "Cloakable") or not self:GetIsCloaked()) and (not HasMixin(self, "Live") or self:GetIsAlive()) then
+    end
     
-            if not self.timeLastDamagedEffect or self.timeLastDamagedEffect + 3 < Shared.GetTime() then
-            
-                local healthScalar = self:GetHealthScalar()
-                
-                if not HasMixin(self, "Construct") or self:GetIsBuilt() then
-                
-                    local coords = self:GetCoords()
-                    if coords.yAxis:DotProduct(worldY) ~= 1 then
-                        coords = Coords.GetTranslation(self:GetOrigin())
-                    end
-                    
-                    if healthScalar < .3 then
-                        self:TriggerEffects("damaged", { flinch_severe = true, effecthostcoords = coords } )
-                    elseif healthScalar < .6 then
-                        self:TriggerEffects("damaged", { flinch_severe = false, effecthostcoords = coords } )
-                    end
-                    
-                end
-                
-                self.timeLastDamagedEffect = Shared.GetTime()
-                
-            end
-        
-        end
-        
-        // Don't flinch too often.
-        if self.flinchDamageThisFrame ~= 0 and ( self.lastFlinchEffectTime == nil or Shared.GetTime() > (self.lastFlinchEffectTime + 1) ) then
-            
-            local flinchParams = { flinch_severe = self.flinchDamageThisFrame > .35 or self.flinchIntensity > 0.35, effecthostcoords = self:GetCoords(), damagetype = self.flinchLastDamageType }
-            self:TriggerEffects("flinch", flinchParams)
-            self.lastFlinchEffectTime = Shared.GetTime()
-            
-            self.flinchDamageThisFrame = 0
-            
-        end
-        
+    function FlinchMixin:OnUpdate(deltaTime)
+        UpdateFlinch(self, deltaTime)
+    end
+    
+    function FlinchMixin:OnProcessMove(input)
+        UpdateFlinch(self, input.time)
     end
     
 end
 
 function FlinchMixin:OnTakeDamageClient(damage, doer, position)
 
-    // Get damage type from source
+    // Get damage type from source.
     local damageType = kDamageType.Normal
-    if doer then 
+    if doer then
     
         if doer.GetDamageType then
             damageType = doer:GetDamageType()
@@ -144,23 +160,12 @@ function FlinchMixin:OnTakeDamageClient(damage, doer, position)
         end
         
     end
-
+    
     self.flinchDamageThisFrame = self.flinchDamageThisFrame + math.abs(self.lastHealthScalar - self:GetHealthScalar())
     self.flinchLastDamageType = damageType
     self.lastHealthScalar = self:GetHealthScalar()
-            
+    
 end
-
-function FlinchMixin:OnUpdate(deltaTime)
-    UpdateFlinch(self, deltaTime)
-end
-AddFunctionContract(FlinchMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
-
-function FlinchMixin:OnProcessMove(input)
-    UpdateFlinch(self, input.time)
-end
-AddFunctionContract(FlinchMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })
-
 
 function FlinchMixin:OnUpdatePoseParameters()
 
@@ -168,6 +173,10 @@ function FlinchMixin:OnUpdatePoseParameters()
     
     self:SetPoseParam("intensity", self.flinchIntensity)
 
+end
+
+function FlinchMixin:GetFlinchIntensity()
+    return self.flinchIntensity
 end
 
 function FlinchMixin:OnUpdateAnimationInput(modelMixin)

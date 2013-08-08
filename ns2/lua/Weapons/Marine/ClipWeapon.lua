@@ -508,11 +508,7 @@ function ClipWeapon:OnHolster(player)
 end
 
 function ClipWeapon:GetEffectParams(tableParams)
-
-    Weapon.GetEffectParams(self, tableParams)
-    
-    tableParams[kEffectFilterEmpty] = (self.clip == 0)
-    
+    tableParams[kEffectFilterEmpty] = self.clip == 0
 end
 
 function ClipWeapon:OnTag(tagName)

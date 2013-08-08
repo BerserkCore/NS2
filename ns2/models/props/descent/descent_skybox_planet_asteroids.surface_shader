@@ -1,0 +1,37 @@
+<shader>
+	
+	<inputs>
+		<input name="albedoMap" type="texture" address="wrap"/>
+
+	</inputs>
+
+	<params>		
+	<param name="alphaTest">true</param>		
+	</params>	
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float3 tint= (0.2, 0.4, 1);
+			float4 albed = tex2D(albedoMap, input.texCoord*float2(45, 6)+ float2(time * .01, 0));
+			float4 albed2 = tex2D(albedoMap, input.texCoord*float2(28, 4)+ float2(time * .01, 0));
+			float4 albed3 = tex2D(albedoMap, input.texCoord*float2(268, 20)+ float2(time * .2, 0));
+			material.albedo = albed.g * albed2.g*tint ;
+
+			material.emissive =  tint* (albed.g +albed2.g  + albed3.g);
+
+			material.opacity  =  albed.b + albed2.b;
+
+
+		}
+	]]>
+	</code>
+
+</shader>

@@ -130,7 +130,7 @@ if Server then
             local pheromone = pheromones[p]
             if pheromone:GetId() ~= ignorePheromone:GetId() then
             
-                Server.DestroyEntity(pheromone)                 
+                DestroyEntity(pheromone)                
                 deleted = true
                 
             end
@@ -166,7 +166,7 @@ if Server then
                 end
                 
                 assert(oldest ~= nil)
-                Server.DestroyEntity(oldest)
+                DestroyEntity(oldest)
                 
             end
 

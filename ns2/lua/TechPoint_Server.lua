@@ -32,7 +32,13 @@ function TechPoint:Reset()
 end
 
 function TechPoint:SetAttached(structure)
+
+    if structure and structure:isa("CommandStation") then
+        self.smashed = false
+        self.smashScouted = false
+    end
     ScriptActor.SetAttached(self, structure)
+    
 end 
 
 // Spawn command station or hive on tech point

@@ -48,6 +48,7 @@ function RepositioningMixin:__initmixin()
     self.isRepositioning = false
     self.timeLeftForReposition = 0
     self.targetPos = nil
+    self.initialSpaceChecked = false
     
 end
 
@@ -117,6 +118,8 @@ function RepositioningMixin:GetIsRepositioning()
 end    
 
 function RepositioningMixin:ToggleRepositioning()
+
+    self.initialSpaceChecked = true
 
     if self.isRepositioning then
         return false
@@ -247,7 +250,7 @@ function RepositioningMixin:_GetShouldCheckPosition()
     
     end
     
-    return false
+    return not self.initialSpaceChecked
 
 end
 
@@ -257,7 +260,7 @@ function RepositioningMixin:OnUpdate(deltaTime)
     
         self:PerformRepositioning(deltaTime)
         
-    elseif HasMixin(self, "Orders") and self:GetHasOrder() then
+    elseif HasMixin(self, "Orders") and (self:GetHasOrder() or not self.initialSpaceChecked) then
         
         //self:_AdjustRepositioningHeight()
         
@@ -278,7 +281,7 @@ end
 function RepositioningMixin:OnOrderComplete(currentOrder)
 
     if HasMixin(self, "Orders") then
-    
+        /* disabled, here is not the right place for group orders
         if(currentOrder:GetType() == kTechId.Move) then
 
             local entitiesInRange = GetEntitiesWithMixinForTeamWithinRange("Repositioning", self:GetTeamNumber(), self:GetOrigin(), RepositioningMixin.kGroupOrderCompleteRange)
@@ -297,6 +300,7 @@ function RepositioningMixin:OnOrderComplete(currentOrder)
             end
         
         end
+        */
     
 	    if currentOrder then
 	        self:ToggleRepositioning()

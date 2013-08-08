@@ -36,6 +36,8 @@ function Shockwave:OnCreate()
         
     end
     
+    self:SetGroupFilterMask(PhysicsMask.NoBabblers)
+    
 end
 
 function Shockwave:TimeUp()

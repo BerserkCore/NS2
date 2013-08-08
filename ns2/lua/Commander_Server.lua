@@ -461,7 +461,7 @@ function Commander:ProcessTechTreeAction(techId, pickVec, orientation, worldCoor
             trace = GetCommanderPickTarget(self, pickVec, worldCoordsSpecified, techNode:GetIsBuild(), 
                                 LookupTechData(techNode.techId, kTechDataCollideWithWorldOnly, 0))
             
-            if trace ~= nil then
+            if trace ~= nil and trace.fraction < 1 then
             
                 local optionalAttachToMethod = LookupTechData(techNode.techId, kTechDataOptionalAttachToMethod)
                 
@@ -742,13 +742,13 @@ end
  */
 function Commander:Eject()
 
-    // Get data before we create new player
+    // Get data before we create new player.
     local teamNumber = self:GetTeamNumber()
     local userId = Server.GetOwner(self):GetUserId()
     
     self:Logout()
     
-    // Tell all players on team about this
+    // Tell all players on team about this.
     local team = GetGamerules():GetTeam(teamNumber)
     if team:GetTeamType() == kMarineTeamType then
         team:TriggerAlert(kTechId.MarineCommanderEjected, self)
@@ -756,11 +756,11 @@ function Commander:Eject()
         team:TriggerAlert(kTechId.AlienCommanderEjected, self)
     end
     
-    // Add player to list of players that can no longer command on this server (until brought down)    
+    // Add player to list of players that can no longer command on this server (until brought down).
     GetGamerules():BanPlayerFromCommand(userId)
     
     // Notify the team.
-    SendTeamMessage(self:GetTeam(), kTeamMessageTypes.Eject)
+    SendTeamMessage(team, kTeamMessageTypes.Eject)
     
 end
 

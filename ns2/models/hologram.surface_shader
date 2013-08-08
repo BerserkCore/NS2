@@ -1,0 +1,23 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="flickerMap" type="texture" address="wrap" srgb="false"/>
+		<input name="xScroll" type="float">0</input>
+		<input name="yScroll" type="float">0</input>
+		<input name="flickerSpeed" type="float">0</input>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float flicker = tex2D(flickerMap, float2(time * flickerSpeed, 0)).r;
+			float4 tex = tex2D(emissiveMap, input.texCoord + time * float2(xScroll, yScroll));
+			material.emissive = tex.rgb * input.color.rgb;
+			material.opacity  = tex.a * input.color.a * flicker;
+		}
+	]]>
+	</code>
+
+</shader>

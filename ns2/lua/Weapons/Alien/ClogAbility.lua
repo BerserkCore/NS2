@@ -10,8 +10,7 @@ Script.Load("lua/Weapons/Alien/StructureAbility.lua")
 
 class 'ClogAbility' (StructureAbility)
 
-local kMinDistance = 1.4
-local kVerticalMinDistance = 6
+local kMinDistance = 0.5
 local kClogOffset = 0.15
 
 function ClogAbility:OverrideInfestationCheck(trace)
@@ -27,20 +26,17 @@ end
 function ClogAbility:GetIsPositionValid(position, player)
 
     local valid = true
-    local entities = GetEntitiesWithinRange("ScriptActor", position, kVerticalMinDistance)
-    Shared.SortEntitiesByDistance(position, entities)
-    
+    local entities = GetEntitiesWithinRange("ScriptActor", position, 7)    
     for _, entity in ipairs(entities) do
     
-        if not entity:isa("Infestation") and not entity == player then
+        if not entity:isa("Infestation") and entity ~= player then
         
-            local closestPoint = entity:GetOrigin()
-            local fromStructure = position - closestPoint
-            local dotProduct = entity:GetCoords().yAxis:DotProduct(fromStructure)
-            
-            // check horizontal distance (don't allow build on top of the structure)
-            valid = ( math.abs( fromStructure:GetLength() ) > kMinDistance and dotProduct < kMinDistance ) or dotProduct > kVerticalMinDistance
-            break
+            local checkDistance = ConditionalValue(entity:isa("PhaseGate") or entity:isa("TunnelEntrance"), 3, kMinDistance)
+            valid = ((entity:GetCoords().yAxis * checkDistance * 0.75 + entity:GetOrigin()) - position):GetLength() > checkDistance
+
+            if not valid then
+                break
+            end
         
         end
     

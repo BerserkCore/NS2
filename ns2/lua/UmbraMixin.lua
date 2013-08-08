@@ -6,8 +6,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * UmbraMixin drags out parts of an umbra cloud to protect an alien for additional UmbraMixin.kUmbraDragTime seconds.
  */
@@ -136,12 +134,14 @@ end
 function UmbraMixin:OnUpdate(deltaTime)
     SharedUpdate(self, deltaTime)
 end
-AddFunctionContract(UmbraMixin.OnUpdate, { Arguments = { "Entity", "number" }, Returns = { } })
+
+function UmbraMixin:OnProcessSpectate(deltaTime)
+    SharedUpdate(self, deltaTime)
+end
 
 function UmbraMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
 end
-AddFunctionContract(UmbraMixin.OnProcessMove, { Arguments = { "Entity", "Move" }, Returns = { } })
 
 function UmbraMixin:UpdateUmbraBulletCount()
 

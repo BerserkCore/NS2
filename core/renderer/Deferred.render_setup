@@ -10,6 +10,7 @@ settings =
 		{ name="infestation" 		default="rich" }
 		{ name="particles" 	    	default="high" }
 		{ name="infestation_scale" }
+		{ name="reflections"		default="true" }
 	]
 	
 // The G-Buffer is stored as:
@@ -195,6 +196,22 @@ layers =
 					depthTexture 			= "depth"
 				}
 		}
+		
+		// Render the cube map reflections.
+		{ 
+			name							= "lighting_probes"
+			conditions						= { mode = "lit" reflections = "true" }
+			color_targets					= "accumulation_1"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			generator						= "light_probes"
+			shader							= "renderer/RenderDeferred.fx"
+			parameters 						= {
+					albedoTexture 			= "albedo"
+					normalTexture 			= "normal"
+					specularGlossTexture 	= "specular_gloss"
+					depthTexture 			= "depth"
+				}
+		}			
 
 		// Unlit mode
 		{ 
@@ -912,5 +929,17 @@ layers =
 			parameters 						= { infestationMask = "infestation_mask_half_skirt" }
 		}		
 		
+		// Add in the emissive pass.
+		{
+			name							= "visualize_emissive"
+			conditions						= { mode = "emissive" }
+			color_targets					= "back_buffer"
+			clear							= "color"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "WriteEmissive"
+			parameters						= { depthTexture = "depth" }
+			generator						= "objects"
+			objects_mask					= "~ decal particles"
+		}
 		
 	]

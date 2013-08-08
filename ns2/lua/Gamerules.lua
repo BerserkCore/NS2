@@ -177,7 +177,7 @@ function Gamerules:OnClientConnect(client)
     if player ~= nil then
         
         // Tell engine that player is controlling this entity
-        player:SetControllingPlayer(client)
+        player:SetControllerClient(client)
         
         player:OnClientConnect(client)
         
@@ -186,6 +186,8 @@ function Gamerules:OnClientConnect(client)
     else
         Print("Gamerules:OnClientConnect(): Couldn't create player entity of type \"%s\"", mapName)
     end
+    
+    Server.SendNetworkMessage(client, "SetClientIndex", { clientIndex = client:GetId() }, true)
     
     return player
     

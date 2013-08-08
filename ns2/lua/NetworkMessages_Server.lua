@@ -278,7 +278,7 @@ local function OnVoiceMessage(client, message)
             if team then
 
                 // send alert so a marine commander for example gets notified about players who need a medpack / ammo etc.
-                if soundData.AlertTechId and soundData.AlertTechId ~= kTechId.None then
+                if not GetIsPointInGorgeTunnel(player:GetOrigin()) and soundData.AlertTechId and soundData.AlertTechId ~= kTechId.None then
                     team:TriggerAlert(soundData.AlertTechId, player)
                 end
                 
@@ -311,6 +311,77 @@ local function OnConnectMessage(client, message)
     end
 
 end
+
+local function OnSetNameMessage(client, message)
+
+    local name = message.name
+    if client ~= nil and name ~= nil then
+    
+        local player = client:GetControllingPlayer()
+        
+        name = TrimName(name)
+        
+        // Treat "NsPlayer" as special.
+        if name ~= player:GetName() and name ~= kDefaultPlayerName and string.len(name) > 0 then
+        
+            local prevName = player:GetName()
+            player:SetName(name)
+            
+            if prevName == kDefaultPlayerName then
+                Server.Broadcast(nil, string.format("%s connected.", player:GetName()))
+            elseif prevName ~= player:GetName() then
+                Server.Broadcast(nil, string.format("%s is now known as %s.", prevName, player:GetName()))
+            end
+            
+        end
+        
+    end
+    
+end
+Server.HookNetworkMessage("SetName", OnSetNameMessage)
+
+local function onSpectatePlayer(client, message)
+
+    local spectatorPlayer = client:GetControllingPlayer()
+    if spectatorPlayer then
+
+        // This only works for players on the spectator team.
+        if spectatorPlayer:GetTeamNumber() == kSpectatorIndex then
+            client:GetControllingPlayer():SelectEntity(message.entityId)
+        end
+        
+    end
+    
+end
+Server.HookNetworkMessage("SpectatePlayer", onSpectatePlayer)
+
+local function OnSwitchFromFirstPersonSpectate(client, message)
+
+    local spectatorPlayer = client:GetControllingPlayer()
+    if client:GetSpectatingPlayer() and spectatorPlayer then
+    
+        // This only works for players on the spectator team.
+        if spectatorPlayer:GetTeamNumber() == kSpectatorIndex then
+            client:GetControllingPlayer():SetSpectatorMode(message.mode)
+        end
+        
+    end
+    
+end
+Server.HookNetworkMessage("SwitchFromFirstPersonSpectate", OnSwitchFromFirstPersonSpectate)
+
+local function OnSwitchFirstPersonSpectatePlayer(client, message)
+
+    if client:GetSpectatingPlayer() and client:GetControllingPlayer() then
+    
+        if client:GetControllingPlayer().CycleSpectatingPlayer then
+            client:GetControllingPlayer():CycleSpectatingPlayer(client:GetSpectatingPlayer(), message.forward)
+        end
+        
+    end
+    
+end
+Server.HookNetworkMessage("SwitchFirstPersonSpectatePlayer", OnSwitchFirstPersonSpectatePlayer)
 
 Server.HookNetworkMessage("SelectUnit", OnCommandSelectUnit)
 Server.HookNetworkMessage("SelectHotkeyGroup", OnCommandParseSelectHotkeyGroup)

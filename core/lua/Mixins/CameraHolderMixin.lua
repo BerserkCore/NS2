@@ -70,7 +70,7 @@ CameraHolderMixin.expectedConstants =
 
 CameraHolderMixin.networkVars =
 {
-    fov             = "integer (0 to 180)", // In degrees.
+    fov             = "private integer (0 to 180)", // In degrees.
     
     viewYaw         = "compensated interpolated angle",
     viewPitch       = "compensated interpolated angle",
@@ -101,7 +101,9 @@ CameraHolderMixin.networkVars =
     transitionStart         = "private float",
     followingTransition     = "private boolean",
     moveTransition          = "private boolean",
-    tweeningFunction        = "private enum kTweeningFunctions"
+    tweeningFunction        = "private enum kTweeningFunctions",
+    
+    resetMouse              = "private integer (0 to 15)",
 }
 
 function CameraHolderMixin:__initmixin()
@@ -125,6 +127,8 @@ function CameraHolderMixin:__initmixin()
     self.transitionTime = 0
     self.transitionDuration = 0
     self.tweeningFunction = kTweeningFunctions.linear
+    
+    self.clientResetMouse = 0
     
 end
 
@@ -287,7 +291,7 @@ function CameraHolderMixin:SetOffsetAngles(offsetAngles)
     self:SetAngles(Angles(0, offsetAngles.yaw, 0))
 
     if Server then
-        Server.SendNetworkMessage(self, "ResetMouse", {}, true)
+        self.resetMouse = (self.resetMouse + 1) % 16
     elseif Client and self == Client.GetLocalPlayer() then
         Client.SetPitch(0)
         Client.SetYaw(0)
@@ -467,11 +471,25 @@ function CameraHolderMixin:UpdateCamera(timePassed)
 end
 
 function CameraHolderMixin:OnProcessMove(input)
+
+    if Client and self.clientResetMouse ~= self.resetMouse then
+        self.clientResetMouse = self.resetMouse
+        Client.SetYaw(0)
+        Client.SetPitch(0)
+    end
+    
     self:UpdateCamera(input.time)
+    
 end
 
 function CameraHolderMixin:OnProcessIntermediate(input)
     self:UpdateCamera(input.time)
+end
+
+// This is needed, since when we are spectating a player we won't
+// get OnProcess... calls
+function CameraHolderMixin:OnProcessSpectate(deltaTime)
+    self:UpdateCamera(deltaTime)
 end
 
 function CameraHolderMixin:SetDesiredCamera(transitionDuration, mode, position, angles, distance, yOffset, callback)

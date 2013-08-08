@@ -437,8 +437,8 @@ kMarineWeaponEffects =
     {
         railgunAttackEffects =
         {
-            //{viewmodel_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
-            //{weapon_cinematic = "cinematics/marine/pistol/muzzle_flash.cinematic", attach_point = "fxnode_pistolmuzzle"},
+            //{viewmodel_cinematic = "cinematics/marine/railgun/muzzle_flash.cinematic", attach_point = "fxnode_r_railgun_muzzle"},
+            {weapon_cinematic = "cinematics/marine/railgun/muzzle_flash.cinematic", attach_point = "fxnode_rrailgunmuzzle"},
             // Sound effect
             {sound = "sound/NS2.fev/marine/heavy/railgun_fire"}
         },

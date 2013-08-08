@@ -31,7 +31,7 @@ AddMixinNetworkVars(SpikesMixin, networkVars)
 
 local function CreateUmbraCloud(self, player)
 
-    local trace = Shared.TraceRay(player:GetEyePos(), player:GetEyePos() + player:GetViewCoords().zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterTwo(self, player))
+    local trace = Shared.TraceRay(player:GetEyePos(), player:GetEyePos() + player:GetViewCoords().zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
     local destination = trace.endPoint + trace.normal * 2
     
     local umbraCloud = CreateEntity(CragUmbra.kMapName, player:GetEyePos() + player:GetViewCoords().zAxis, player:GetTeamNumber())

@@ -332,6 +332,9 @@ function GUIMarineStatus:Update(deltaTime, parameters)
     
     if currentArmor ~= self.lastArmor then
     
+        self.armorBar:DestroyAnimations()
+        self.armorText:DestroyAnimations()
+    
         local animSpeed = ConditionalValue(currentArmor < self.lastArmor, GUIMarineStatus.kAnimSpeedDown, GUIMarineStatus.kAnimSpeedUp)
         
         local armorFraction = currentArmor / maxArmor
@@ -370,11 +373,8 @@ function GUIMarineStatus:Update(deltaTime, parameters)
             
         else
         
-            self.armorBar:DestroyAnimations()
             self.armorBar:SetSize( armorBarSize, animSpeed )
             self.armorBar:SetTexturePixelCoordinates(pixelCoords[1], pixelCoords[2], pixelCoords[3], pixelCoords[4], animSpeed, "ANIM_ARMOR_TEXTURE")
-            
-            self.armorText:DestroyAnimations()
             self.armorText:SetNumberText(tostring(math.ceil(currentArmor)), animSpeed)
             
         end

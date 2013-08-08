@@ -40,8 +40,14 @@ local function JoinTeamTwo(player)
 end
 
 local function ReadyRoom(player)
-    player:SetCameraDistance(0)
-    return GetGamerules():JoinTeam(player, kTeamReadyRoom)
+
+    if not player:isa("ReadyRoomPlayer") then
+    
+        player:SetCameraDistance(0)
+        return GetGamerules():JoinTeam(player, kTeamReadyRoom)
+        
+    end
+    
 end
 
 local function Spectate(player)
@@ -49,23 +55,31 @@ local function Spectate(player)
 end
 
 local function OnCommandJoinTeamOne(client)
+
     local player = client:GetControllingPlayer()
     JoinTeamOne(player)
+    
 end
 
 local function OnCommandJoinTeamTwo(client)
+
     local player = client:GetControllingPlayer()
     JoinTeamTwo(player)
+    
 end
 
 local function OnCommandReadyRoom(client)
+
     local player = client:GetControllingPlayer()
     ReadyRoom(player)
+    
 end
 
 local function OnCommandSpectate(client)
+
     local player = client:GetControllingPlayer()
     Spectate(player)
+    
 end
 
 local function OnCommandFilm(client)
@@ -1204,6 +1218,23 @@ local function OnCommandBlackEdition(client)
 
 end
 
+local function OnCommandHell(client)
+
+    if Shared.GetCheatsEnabled() then
+    
+        local player = client:GetControllingPlayer()
+        if player then
+            
+            for _, flammable in ipairs(GetEntitiesWithMixin("Fire")) do                
+                flammable:SetOnFire(player, player)            
+            end
+    
+        end
+        
+    end  
+
+end
+
 // GC commands
 Event.Hook("Console_changegcsettingserver", OnCommandChangeGCSettingServer)
 
@@ -1259,12 +1290,8 @@ Event.Hook("Console_onos", OnCommandChangeClass("onos", kTeam2Index))
 Event.Hook("Console_marine", OnCommandChangeClass("marine", kTeam1Index))
 Event.Hook("Console_exo", OnCommandChangeClass("exo", kTeam1Index, { layout = "ClawMinigun" }))
 Event.Hook("Console_dualminigun", OnCommandChangeClass("exo", kTeam1Index, { layout = "MinigunMinigun" }))
-if kRailgunEnabled then
-
-    Event.Hook("Console_clawrailgun", OnCommandChangeClass("exo", kTeam1Index, { layout = "ClawRailgun" }))
-    Event.Hook("Console_dualrailgun", OnCommandChangeClass("exo", kTeam1Index, { layout = "RailgunRailgun" }))
-    
-end
+Event.Hook("Console_clawrailgun", OnCommandChangeClass("exo", kTeam1Index, { layout = "ClawRailgun" }))
+Event.Hook("Console_dualrailgun", OnCommandChangeClass("exo", kTeam1Index, { layout = "RailgunRailgun" }))
 
 Event.Hook("Console_command", OnCommandCommand)
 Event.Hook("Console_catpack", OnCommandCatPack)
@@ -1307,3 +1334,4 @@ Event.Hook("Console_makegreen", OnCommandGreenEdition)
 Event.Hook("Console_makeblack", OnCommandBlackEdition)
 
 Event.Hook("Console_debugcommander", OnCommandDebugCommander)
+Event.Hook("Console_hell", OnCommandHell)

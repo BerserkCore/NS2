@@ -57,9 +57,7 @@ function GUIJetpackFuel:Initialize()
 
 end
 
-function GUIJetpackFuel:SetFuel(fuelValue)
-
-    local fraction = fuelValue / 100
+function GUIJetpackFuel:SetFuel(fraction)
 
     self.fuelBar:SetSize( Vector(GUIJetpackFuel.kBarWidth, -GUIJetpackFuel.kBarHeight * fraction, 0) )
     self.fuelBar:SetColor( Color(1 - fraction * GUIJetpackFuel.kFuelBlueIntensity, 
@@ -74,8 +72,8 @@ function GUIJetpackFuel:Update(deltaTime)
 
     local player = Client.GetLocalPlayer()
     
-    if player and player:isa("JetpackMarine") then
-        self:SetFuel(math.ceil(player:GetFuel() * 100))
+    if player and player.GetFuel then
+        self:SetFuel(player:GetFuel())
     end
 
 end

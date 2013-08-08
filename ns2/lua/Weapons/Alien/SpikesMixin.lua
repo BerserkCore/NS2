@@ -39,7 +39,7 @@ local function FireSpikes(self)
     local shootCoords = viewAngles:GetCoords()
     
     // Filter ourself out of the trace so that we don't hit ourselves.
-    local filter = EntityFilterTwo(player, self)
+    local filter = EntityFilterOneAndIsa(player, "Babbler")
     local range = kSpikesRange
     
     local numSpikes = kSpikesPerShot
@@ -72,7 +72,7 @@ local function FireSpikes(self)
             local damageDistScalar = Clamp(1 - (distToTarget / kSpikeMinDamageRange), 0, 1)
             local damage = kSpikeMinDamage + damageDistScalar * (kSpikeMaxDamage - kSpikeMinDamage)
             local direction = (trace.endPoint - startPoint):GetUnit()
-            self:DoDamage(damage, trace.entity, trace.endPoint - direction * kHitEffectOffset, direction, trace.surface, true)
+            self:DoDamage(damage, trace.entity, trace.endPoint - direction * kHitEffectOffset, direction, trace.surface, true, math.random() < 0.75)
                 
         end
         
@@ -82,6 +82,17 @@ end
 
 function SpikesMixin:GetTracerEffectName()
     return kSpikeTracerEffectName
+end
+
+function SpikesMixin:GetTracerResidueEffectName()
+
+    local parent = self:GetParent()
+    if parent and parent:GetIsLocalPlayer() then
+        return kSpikeTracerFirstPersonResidueEffectName
+    else
+        return kSpikeTracerResidueEffectName
+    end 
+    
 end
 
 function SpikesMixin:OnSecondaryAttack(player)
@@ -125,9 +136,9 @@ function SpikesMixin:GetBarrelPoint()
         local barrelPoint = viewCoords.origin + viewCoords.zAxis * 2 - viewCoords.yAxis * 0.1
         
         if self.shootLeft then
-            barrelPoint = barrelPoint - viewCoords.xAxis * 0.3
+            barrelPoint = barrelPoint - viewCoords.xAxis * 0.4
         else
-            barrelPoint = barrelPoint + viewCoords.xAxis * 0.3
+            barrelPoint = barrelPoint + viewCoords.xAxis * 0.4
         end
         
         self.shootLeft = not self.shootLeft

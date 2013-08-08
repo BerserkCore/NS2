@@ -14,16 +14,6 @@ function Skulk:GetHealthbarOffset()
     return kSkulkHealthbarOffset
 end
 
-function Skulk:OnInitLocalClient()
-
-    Alien.OnInitLocalClient(self)
-    
-    if gEnableSpeedMeter then
-        self:CreateSpeedMeter()
-    end    
-
-end
-
 function Skulk:GetHeadAttachpointName()
     return "Bone_Tongue"
 end

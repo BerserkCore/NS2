@@ -1,0 +1,40 @@
+<shader>
+	
+	<inputs>
+		<input name="albedoMap" type="texture" address="wrap" />
+		<input name="normalMap" type="texture" address="wrap" />
+		<input name="cloudMap" type="texture" address="wrap" />
+		<input name="maskMap" type="texture" address="wrap" />
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+
+			float4 albedo = tex2D(albedoMap, input.texCoord);
+			float4 cloudsMask = tex2D(maskMap, input.texCoord);
+			float4 clouds = tex2D(cloudMap, input.texCoord*8 + float2(time * -.03, time * -0.01));
+			float4 clouds2 = tex2D(cloudMap, input.texCoord*5 + float2(time * -.02, time * 0.02));
+
+			float shininess  = albedo.a * 20;
+			float glossiness = 20;
+		
+			material.albedo 	= albedo.rgb;
+			material.tsNormal 	= DecodeNormal( tex2D(normalMap, input.texCoord) );
+			material.specular	= albedo.rgb * shininess;
+			material.gloss		= glossiness / 255.0;
+			material.emissive   = tex2D(emissiveMap, input.texCoord).rgb + ((clouds.rgb*clouds2.rgb) *cloudsMask.rgb) ;
+			
+		}
+	]]>		
+	</code>
+
+</shader>

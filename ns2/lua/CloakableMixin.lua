@@ -1,7 +1,10 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======    
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======    
 //    
 // lua\CloakableMixin.lua    
 //    
+// Handles both cloaking and camouflage. Effects are identical except cloaking can also hide
+// structures (camouflage is only for players).
+//
 //    Created by:   Charlie Cleveland (charlie@unknownworlds.com)    
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
@@ -11,75 +14,55 @@ Script.Load("lua/FunctionContracts.lua")
 CloakableMixin = CreateMixin( CloakableMixin )
 CloakableMixin.type = "Cloakable"
 
-CloakableMixin.kCloakRate = 1
-CloakableMixin.kUnCloakRate = 3
+// Uncloak faster than cloaking
+CloakableMixin.kCloakRate = 2
+CloakableMixin.kUncloakRate = 12
+CloakableMixin.kTriggerCloakDuration = .6
+CloakableMixin.kTriggerUncloakDuration = 2.5
+
+local kEnemyUncloakDistanceSquared = 1.5 ^ 2
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/cloaked.surface_shader")
 
-local Coords_GetTranslation = Coords.GetTranslation
 local Client_GetLocalPlayer
 
 if Client then
     Client_GetLocalPlayer = Client.GetLocalPlayer
 end
 
-local kCloakedMaxSpeed = 3
-
-// This is needed so alien structures can be cloaked, but not marine structures
-CloakableMixin.expectedCallbacks =
+CloakableMixin.expectedMixins =
 {
-    GetTeamNumber = "Gets team number",
+    EntityChange = "Required to update lastTouchedEntityId."
 }
 
 CloakableMixin.optionalCallbacks =
 {
-    GetIsCloakable = "Return true/false if this object can be cloaked.",
     OnCloak = "Called when entity becomes fully cloaked",
+    GetSpeedScalar = "Called to figure out how fast we're moving, if we can move",
+    GetIsCamouflaged = "Aliens that can evolve camouflage have this",
 }
 
 CloakableMixin.networkVars =
 {
-    cloaked = "boolean",
+    // set server side to true when cloaked fraction is 1
     fullyCloaked = "boolean",
-    cloakedFraction = "interpolated float (0 to 1 by 0.01)"
+    // so client knows in which direction to update the cloakFraction
+    cloakingDesired = "boolean"
 }
 
 function CloakableMixin:__initmixin()
 
-    self.cloaked = false
-    self.cloakedFraction = 0
-    self.timeOfCloak = nil
-    self.cloakChargeTime = 0
-    self.cloakTime = nil
-    
-end
-
-function CloakableMixin:SetIsCloaked(state, cloakTime, force)
-
-    ASSERT(type(state) == "boolean")
-    ASSERT(not state or type(cloakTime) == "number")
-    ASSERT(not state or (cloakTime > 0))
-
-    // Can't cloak if we recently attacked, unless forced
-    if not state or self:GetChargeTime() == 0 or force then
-    
-        self.cloaked = state
-        
-        if self.cloaked then
-        
-            self.timeOfCloak = Shared.GetTime()
-            if cloakTime then
-                self.cloakTime = cloakTime
-            end
-            
-        else
-        
-            self.timeOfCloak = nil
-            self.cloakTime = nil
-            
-        end
-        
+    if Server then
+        self.cloakingDesired = false
+        self.fullyCloaked = false
     end
+    
+    self.desiredCloakFraction = 0
+    self.timeCloaked = 0
+    self.timeUncloaked = 0    
+    
+    // when entity is created on client consider fully cloaked, so units wont show up for a short moment when going through a phasegate for example
+    self.cloakFraction = self.fullyCloaked and 1 or 0
     
 end
 
@@ -91,11 +74,7 @@ function CloakableMixin:GetCanCloak()
         canCloak = self:GetCanCloakOverride()
     end
     
-    if HasMixin(self, "Detectable") and self:GetIsDetected() then
-        canCloak = false
-    end
-    
-    return canCloak and self:GetChargeTime() == 0
+    return canCloak 
 
 end
 
@@ -103,76 +82,111 @@ function CloakableMixin:GetIsCloaked()
     return self.fullyCloaked
 end
 
-function CloakableMixin:GetTimeOfCloak()
-    return self.timeOfCloak
+function CloakableMixin:TriggerCloak()
+    self.timeCloaked = Shared.GetTime() + CloakableMixin.kTriggerCloakDuration
 end
 
 function CloakableMixin:TriggerUncloak()
-
-    self:SetIsCloaked(false)
-    self.fullyCloaked = false
-    
-    // Whenever we Trigger and Uncloak we are charged a little time
-    self:SetCloakChargeTime(0.5)
-    
+    self.timeUncloaked = Shared.GetTime() + CloakableMixin.kTriggerUncloakDuration
 end
 
-function CloakableMixin:GetChargeTime()
-    return self.cloakChargeTime
+function CloakableMixin:GetCloakFraction()
+    return self.cloakFraction
 end
 
-function CloakableMixin:SetCloakChargeTime(value)
-    if self.cloakChargeTime < value then
-        self.cloakChargeTime = value
+local function UpdateDesiredCloakFraction(self, deltaTime)
+
+    if Server then
+    
+        self.cloakingDesired = false
+    
+        // Animate towards uncloaked if triggered
+        if Shared.GetTime() > self.timeUncloaked and (not HasMixin(self, "Detectable") or not self:GetIsDetected()) then
+            
+            // Uncloaking takes precedence over cloaking
+            if Shared.GetTime() < self.timeCloaked or (self.GetIsCamouflaged and self:GetIsCamouflaged()) then        
+                self.cloakingDesired = true            
+            end
+            
+        end    
+    
     end
-end
-
-function CloakableMixin:GetCloakedFraction()
-    return self.cloakedFraction
+    
+    local newDesiredCloakFraction = self.cloakingDesired and 1 or 0
+    
+    // Update cloaked fraction according to our speed and max speed
+    if newDesiredCloakFraction == 1 and self.GetSpeedScalar then
+        newDesiredCloakFraction = 1 - self:GetSpeedScalar()
+    end
+    
+    if newDesiredCloakFraction ~= nil then
+        self.desiredCloakFraction = math.min(1, math.max(0, newDesiredCloakFraction))
+    end
+    
 end
 
 local function UpdateCloakState(self, deltaTime)
 
-    local currentTime = Shared.GetTime()
-    if self.cloaked and (self.cloakTime ~= nil and (currentTime > self.timeOfCloak + self.cloakTime)) then
-        self:SetIsCloaked(false)
-    end
+    // Account for trigger cloak, uncloak, camouflage speed
+    UpdateDesiredCloakFraction(self, deltaTime)
     
-    self.cloakChargeTime = math.max(0, self.cloakChargeTime - deltaTime)
+    // Animate towards desired/internal cloak fraction (so we never "snap")
+    local rate = (self.desiredCloakFraction > self.cloakFraction) and CloakableMixin.kCloakRate or CloakableMixin.kUncloakRate
+
+    local newCloak = Clamp(Slerp(self.cloakFraction, self.desiredCloakFraction, deltaTime * rate), 0, 1)
     
-    local cloakSpeedFraction = 1
+    if newCloak ~= self.cloakFraction then
     
-    if self.GetSpeedScalar then
-        cloakSpeedFraction = 1 - Clamp(self:GetSpeedScalar(), 0, 1)
-    end
-    
-    if (self.cloaked or ( self.GetIsCamouflaged and self:GetIsCamouflaged() )) and self:GetCanCloak() then
-        self.cloakedFraction = math.min(1, self.cloakedFraction + deltaTime * CloakableMixin.kCloakRate * cloakSpeedFraction )
-    else
-        self.cloakedFraction = math.max(0, self.cloakedFraction - deltaTime * CloakableMixin.kUnCloakRate )
-    end
-    
-    // for smoother movement
-    if Server then
-    
-        local newFullyCloaked = self.fullyCloaked
-        self.fullyCloaked = self.cloakedFraction == 1
-        if self.OnCloak and (newFullyCloaked ~= self.fullyCloaked) then
+        local callOnCloak = (newCloak == 1) and (self.cloakFraction ~= 1) and self.OnCloak
+        self.cloakFraction = newCloak
+        
+        if callOnCloak then
             self:OnCloak()
         end
         
-    end    
+    end
+
+    if Server then
+    
+        self.fullyCloaked = self:GetCloakFraction() == 1
+        
+        if self.lastTouchedEntityId then
+        
+            local enemyEntity = Shared.GetEntity(self.lastTouchedEntityId)
+            if enemyEntity and (self:GetOrigin() - enemyEntity:GetOrigin()):GetLengthSquared() < kEnemyUncloakDistanceSquared then
+                self:TriggerUncloak()
+            else
+                self.lastTouchedEntityId = nil
+            end
+        
+        end
+        
+    end
     
 end
 
+
+
+function CloakableMixin:OnUpdate(deltaTime)
+    UpdateCloakState(self, deltaTime)
+end
+
+function CloakableMixin:OnProcessMove(input)
+    UpdateCloakState(self, input.time)
+end
+
+function CloakableMixin:OnProcessSpectate(deltaTime)
+    UpdateCloakState(self, deltaTime)
+end    
+
 if Server then
 
-    function CloakableMixin:OnUpdate(deltaTime)
-        UpdateCloakState(self, deltaTime)
-    end
+    function CloakableMixin:OnEntityChange(oldId)
+    
+        if oldId == self.lastTouchedEntityId then
+            self.lastTouchedEntityId = nil
+        end
 
-    function CloakableMixin:OnProcessMove(input)
-        UpdateCloakState(self, input.time)
     end
     
 elseif Client then
@@ -180,81 +194,112 @@ elseif Client then
     function CloakableMixin:OnUpdateRender()
 
         PROFILE("CloakableMixin:OnUpdateRender")
-        
-        local player = Client_GetLocalPlayer()
-    
-        local newHiddenState = self:GetIsCloaked()
-        local areEnemies = GetAreEnemies(self, player)
-        if self.clientCloaked ~= newHiddenState then
-        
-            if self.clientCloaked ~= nil then
-                self:TriggerEffects("client_cloak_changed", {cloaked = newHiddenState, enemy = areEnemies})
-            end
-            self.clientCloaked = newHiddenState
 
-        end
+        self:_UpdateOpacity()
         
-        // cloaked aliens off infestation are not 100% hidden
-        local speedScalar = 0
-        
-        if self.GetVelocityLength then
-            speedScalar = self:GetVelocityLength() / kCloakedMaxSpeed
-        end
-             
-        self:SetOpacity(1-self.cloakedFraction, "cloak")
-
-        if self == player then
-        
-            local viewModelEnt = self:GetViewModelEntity()            
-            if viewModelEnt then
-                viewModelEnt:SetOpacity(1-self.cloakedFraction, "cloak")
-            end
-        
-        end
-        
-        local showMaterial = not areEnemies
         local model = self:GetRenderModel()
     
         if model then
 
-            if showMaterial then
-                
-                if not self.cloakedMaterial then
-                    self.cloakedMaterial = AddMaterial(model, "cinematics/vfx_materials/cloaked.material")
-                end
-                
-                self.cloakedMaterial:SetParameter("cloakAmount", self.cloakedFraction)   
+            local player = Client_GetLocalPlayer()
+
+            self:_UpdatePlayerModelRender(model)        
             
-            else
-            
-                if self.cloakedMaterial then
-                    RemoveMaterial(model, self.cloakedMaterial)
-                    self.cloakedMaterial = nil
-                end
-            
+            // Now process view model            
+            if self == player then                
+                self:_UpdateViewModelRender()                
             end
             
-            if self == player then
-                
-                local viewModelEnt = self:GetViewModelEntity()
-                if viewModelEnt and viewModelEnt:GetRenderModel() then
-                
-                    if not self.cloakedViewMaterial then
-                        self.cloakedViewMaterial = AddMaterial(viewModelEnt:GetRenderModel(), "cinematics/vfx_materials/cloaked.material")
-                    end
-                    
-                    self.cloakedViewMaterial:SetParameter("cloakAmount", self.cloakedFraction)
-                    
-                end
-                
-            end
-            
-        end    
+        end
  
+    end
+
+    function CloakableMixin:_UpdateOpacity()
+    
+        local player = Client_GetLocalPlayer()
+    
+        // Only draw models when mostly uncloaked
+        local albedoVisibility = 1 - Clamp(self.cloakFraction * 5, 0, 1)
+        
+        if player and ((player.GetDarkVisionEnabled and player:GetDarkVisionEnabled()) or player:isa("AlienCommander") )then
+            albedoVisibility = 1
+        end
+    
+        // cloaked aliens off infestation are not 100% hidden             
+        local opacity = albedoVisibility
+        self:SetOpacity(opacity, "cloak")
+        
+        if self == player then
+        
+            local viewModelEnt = self:GetViewModelEntity()            
+            if viewModelEnt then
+                viewModelEnt:SetOpacity(opacity, "cloak")
+            end
+        
+        end
+
+    end
+    
+    function CloakableMixin:_UpdatePlayerModelRender(model)
+    
+        local player = Client_GetLocalPlayer()
+        local hideFromEnemy = GetAreEnemies(self, player) and self:GetCloakFraction() == 1
+        
+        local useMaterial = (self.cloakingDesired or self:GetCloakFraction() ~= 0) and not hideFromEnemy
+    
+        if not self.cloakedMaterial and useMaterial then
+            self.cloakedMaterial = AddMaterial(model, "cinematics/vfx_materials/cloaked.material")
+        elseif self.cloakedMaterial and not useMaterial then
+        
+            RemoveMaterial(model, self.cloakedMaterial)
+            self.cloakedMaterial = nil
+            
+        end
+
+        if self.cloakedMaterial then
+
+            // show it animated for the alien commander. the albedo texture needs to remain visible for outline so we show cloaked in a different way here
+            local distortAmount = self.cloakFraction
+            if player and player:isa("AlienCommander") then            
+                distortAmount = distortAmount * 0.5 + math.sin(Shared.GetTime() * 0.05) * 0.05            
+            end
+            
+            // Main material parameter that affects our appearance
+            self.cloakedMaterial:SetParameter("cloakAmount", self.cloakFraction)
+            self.cloakedMaterial:SetParameter("distortAmount", distortAmount)         
+            
+            // Boost emissive for friendly units, so we can see each other
+            local friendly = not GetAreEnemies(self, player) and 1 or 0
+            // Boost is 0 to 1
+            self.cloakedMaterial:SetParameter("friendly", friendly)      
+
+        end          
+
+    end
+    
+    function CloakableMixin:_UpdateViewModelRender()
+    
+        local viewModelEnt = self:GetViewModelEntity()
+        if viewModelEnt and viewModelEnt:GetRenderModel() then
+        
+            // Show view model as enemies see us, so we know how cloaked we are
+            if not self.cloakedViewMaterial then
+                self.cloakedViewMaterial = AddMaterial(viewModelEnt:GetRenderModel(), "cinematics/vfx_materials/cloaked.material")
+            end
+            
+            self.cloakedViewMaterial:SetParameter("cloakAmount", self.cloakFraction)
+            self.cloakedViewMaterial:SetParameter("distortAmount", self.cloakFraction)
+            
+            // Don't boost emissive for view model though, so we can see what it looks like
+            self.cloakedViewMaterial:SetParameter("friendly", 0)
+            
+        end
+        
     end
     
 end
 
+// Pass negative to uncloak
 function CloakableMixin:OnScan()
 
     if self.fullyCloaked then
@@ -273,6 +318,10 @@ function CloakableMixin:PrimaryAttack()
     
     self:TriggerUncloak()
     
+end
+
+function CloakableMixin:OnGetIsSelectable(result, byTeamNumber)
+    result.selectable = result.selectable and (byTeamNumber == self:GetTeamNumber() or not self:GetIsCloaked())
 end
 
 function CloakableMixin:SecondaryAttack()
@@ -309,6 +358,7 @@ function CloakableMixin:OnCapsuleTraceHit(entity)
         end
         
         self:TriggerUncloak()
+        self.lastTouchedEntityId = entity:GetId()
         
     end
     
@@ -322,33 +372,4 @@ function CloakableMixin:OnJump()
     
     self:TriggerUncloak()
     
-end
-
-function CloakableMixin:OnClampSpeed(input, velocity)
-
-    PROFILE("CloakableMixin:OnClampSpeed")
-    
-    if self:GetIsCloaked() and not self:GetIsJumping() and (self.GetIsOnSurface and self:GetIsOnSurface()) then
-    
-        local moveSpeed = velocity:GetLength()
-        if moveSpeed > kCloakedMaxSpeed then
-            velocity:Scale(kCloakedMaxSpeed / moveSpeed)
-        end
-        
-    end
-    
-end
-
-if Client then
-
-    function CloakableMixin:OnGetIsVisible(visibleTable)
-
-        local player = Client.GetLocalPlayer()    
-
-        if self:GetIsCloaked() and GetAreEnemies(self, player) then
-            visibleTable.Visible = false
-        end    
-        
-    end
-
 end

@@ -55,6 +55,9 @@ function table.duplicate(t)
   return t2
 end
 
+/**
+ * Note, only works for array type tables.
+ */
 function table.copy(srcTable, destTable, noClear)
 
     if not noClear then

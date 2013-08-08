@@ -161,6 +161,10 @@ local function UpdateTargets(self)
         self.targets[r]:SetIsVisible(false)
     end
     
+    if not PlayerUI_GetHasMinigun() then
+        return
+    end
+    
     local trackEntities = GetEntitiesWithinRange("Alien", PlayerUI_GetOrigin(), kTrackEntityDistance)
     local closestToCrosshair = nil
     local closestDistToCrosshair = math.huge

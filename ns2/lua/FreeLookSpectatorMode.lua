@@ -15,20 +15,19 @@ FreeLookSpectatorMode.name = "FreeLook"
 function FreeLookSpectatorMode:Initialize(spectator)
 
     spectator:SetFreeLookMoveEnabled(true)
-
+    
     if Server then
-    
+
         local angles = Angles(spectator:GetViewAngles())
-        angles.pitch = 0.0
-    
+        
         // Start with a null velocity
         spectator:SetVelocity(Vector(0, 0, 0))
-
+        
         spectator:SetBaseViewAngles(Angles(0, 0, 0))
         spectator:SetViewAngles(angles)
-        
-    end
 
+    end
+    
 end
 
 function FreeLookSpectatorMode:Uninitialize(spectator)

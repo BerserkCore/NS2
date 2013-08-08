@@ -156,6 +156,12 @@ function Rifle:OnHolster(player)
     
 end
 
+function Rifle:OnHolsterClient()
+    DestroyMuzzleEffect(self)
+    ClipWeapon.OnHolsterClient(self)
+end
+
+
 function Rifle:GetAnimationGraphName()
     return kAnimationGraph
 end

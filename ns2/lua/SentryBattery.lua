@@ -24,7 +24,6 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 
 Script.Load("lua/ScriptActor.lua")
-Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/NanoShieldMixin.lua")
 Script.Load("lua/ObstacleMixin.lua")
 Script.Load("lua/WeldableMixin.lua")
@@ -88,7 +87,6 @@ function SentryBattery:OnCreate()
     InitMixin(self, ResearchMixin)
     InitMixin(self, RecycleMixin)
     InitMixin(self, CombatMixin)
-    InitMixin(self, RagdollMixin)
     InitMixin(self, ObstacleMixin)
     InitMixin(self, DissolveMixin)
     InitMixin(self, GhostStructureMixin)
@@ -166,6 +164,17 @@ function GetRoomHasNoSentryBattery(techId, origin, normal, commander)
     end
     
     return validRoom
+
+end
+
+if Server then
+
+    function SentryBattery:OnKill()
+
+        self:TriggerEffects("death")
+        DestroyEntity(self)
+
+    end
 
 end
 

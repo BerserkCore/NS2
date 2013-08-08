@@ -144,7 +144,7 @@ function Alien:ProcessBuyAction(techIds)
         local eggExtents = LookupTechData(kTechId.Embryo, kTechDataMaxExtents)
         local newLifeFormTechId = upgradeManager:GetLifeFormTechId()
         local newAlienExtents = LookupTechData(newLifeFormTechId, kTechDataMaxExtents)
-        local physicsMask = PhysicsMask.AllButPCsAndRagdolls
+        local physicsMask = PhysicsMask.Evolve
         local position = self:GetOrigin()
         
         local evolveAllowed = self:GetIsOnGround()

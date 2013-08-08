@@ -157,7 +157,7 @@ function GUIWaypoints:Initialize()
     
 end
 
-function GUIWaypoints:InitMarineTexture()
+local function InitMarineTexture(self)
 
     self.arrowModelName = kArrowModel
     self.lightColor = Color(0.2, 0.2, 1, 1)
@@ -168,12 +168,12 @@ function GUIWaypoints:InitMarineTexture()
     self.finalNameText:SetFontName(kMarineTextFontName)
     self.orderIcon:SetColor(kIconColors[kMarineTeamType])
     
-    self.waypointDirection:SetColor(Color(1,1,1,1))
+    self.waypointDirection:SetColor(Color(1, 1, 1, 1))
     self.marineWaypointLoaded = true
     
 end
 
-function GUIWaypoints:InitAlienTexture()
+local function InitAlienTexture(self)
 
     self.arrowModelName = kArrowAlienModel
     self.lightColor = Color(1, 0.2, 0.2, 1)
@@ -186,13 +186,6 @@ function GUIWaypoints:InitAlienTexture()
     
     self.waypointDirection:SetColor(kAlienTeamColorFloat)
     self.marineWaypointLoaded = false
-    
-end
-
-function GUIWaypoints:SetWaypointVisible(visible)
-
-    //self.finalWaypoint:SetIsVisible(visible)
-    //self.finalDistanceText:SetIsVisible(visible)
     
 end
 
@@ -580,5 +573,15 @@ function GUIWaypoints:Update(deltaTime)
     AnimateFinalWaypoint(self)
     
     GUIAnimatedScript.Update(self, deltaTime)
+    
+end
+
+function GUIWaypoints:OnLocalPlayerChanged(newPlayer)
+
+    if newPlayer:GetTeamNumber() == kTeam1Index then
+        InitMarineTexture(self)
+    elseif newPlayer:GetTeamNumber() == kTeam2Index then
+        InitAlienTexture(self)
+    end
     
 end

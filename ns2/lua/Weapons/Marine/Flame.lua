@@ -15,14 +15,14 @@ Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/flame_decal.surfac
 
 class 'Flame' (ScriptActor)
 
-Flame.kMapName            = "flame"
-Flame.kFireEffect         = PrecacheAsset("cinematics/marine/flamethrower/burning_surface.cinematic")
-Flame.kFireWallEffect     = PrecacheAsset("cinematics/marine/flamethrower/burning_vertical_surface.cinematic")
+Flame.kMapName = "flame"
+Flame.kFireEffect = PrecacheAsset("cinematics/marine/flamethrower/burning_surface.cinematic")
+Flame.kFireWallEffect = PrecacheAsset("cinematics/marine/flamethrower/burning_vertical_surface.cinematic")
 
-Flame.kDamageRadius       = 1.8
-Flame.kLifeTime           = 5.6
-Flame.kThinkTime          = .6
-Flame.kDamage             = 8
+Flame.kDamageRadius = 1.8
+Flame.kLifeTime = 5.6
+local kUpdateTime = 0.6
+Flame.kDamage = 8
 
 local networkVars = { }
 
@@ -37,16 +37,38 @@ function Flame:OnCreate()
     
 end
 
+local function UpdateLifetime(self)
+
+    self.lifeTime = self.lifeTime - kUpdateTime
+    
+    self:Detonate(nil)
+    
+    if self.lifeTime <= 0 then
+    
+        if Server then
+           self:Detonate(nil)
+        end
+        
+        DestroyEntity(self)
+        
+        return false
+        
+    end
+    
+    return true
+    
+end
+
 function Flame:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
-    if Server then  
+    if Server then
     
 	    // intervall of dealing damage
 	    self.lifeTime = Flame.kLifeTime - 1
-	    self:SetNextThink(1)
-
+	    self:AddTimedCallback(UpdateLifetime, kUpdateTime)
+        
     elseif Client then
     
         self.fireEffect = Client.CreateCinematic(RenderScene.Zone_Default)
@@ -73,7 +95,7 @@ end
 
 function Flame:OnDestroy()
 
-	if Client then	
+	if Client then
 	
         Client.DestroyCinematic(self.fireEffect)
         self.fireEffect = nil
@@ -81,7 +103,7 @@ function Flame:OnDestroy()
 	end
 	
 	ScriptActor.OnDestroy(self)
-
+    
 end
 
 function Flame:GetDeathIconIndex()
@@ -93,32 +115,8 @@ function Flame:GetDamageType()
 end
     
 if Server then
-    
-	function Flame:OnThink()
-	
-	    ScriptActor.OnThink(self)
-	    
-	    self.lifeTime = self.lifeTime - Flame.kThinkTime  
 
-        self:Detonate(nil)
-	    
-	    if self.lifeTime <= 0 then
-	    
-	        if Server then
-	           self:Detonate(nil)
-	        end
-	        
-	        DestroyEntity(self)
-	        
-	    else
-	    
-	       self:SetNextThink(Flame.kThinkTime)
-	       
-	    end
-	    
-	end
-	    
-    function Flame:Detonate(targetHit)    	
+    function Flame:Detonate(targetHit)
     
     	local player = self:GetOwner()
 	    local ents = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), Flame.kDamageRadius)
@@ -134,12 +132,12 @@ if Server then
                 local toEnemy = GetNormalizedVector(ent:GetModelOrigin() - self:GetOrigin())
                 self:DoDamage(Flame.kDamage, ent, ent:GetModelOrigin(), toEnemy)
                 
-            end  
+            end
             
 	    end
         
     end
-
+    
 elseif Client then
 
     function Flame:OnUpdate(deltaTime)

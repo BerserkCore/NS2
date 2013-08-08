@@ -15,7 +15,9 @@ kTechId = enum({
     'SpawnMarine', 'SpawnAlien', 'CollectResources',
     
     // General orders and actions ("Default" is right-click)
-    'Default', 'Move', 'Attack', 'Build', 'Construct', 'Cancel', 'Recycle', 'Weld', 'AutoWeld', 'Stop', 'SetRally', 'SetTarget',
+    'Default', 'Move', 'Attack', 'Build', 'Construct', 'Cancel', 'Recycle', 'Weld', 'AutoWeld', 'Stop', 'SetRally', 'SetTarget', 'Follow',
+    // special mac order (follows the target, welds the target as priority and others in range)
+    'FollowAndWeld',
     // Alien specific orders
     'AlienMove', 'AlienAttack', 'AlienConstruct', 'Heal', 'AutoHeal',
     
@@ -77,7 +79,7 @@ kTechId = enum({
     'MACEMP', 'Welding',
     
     // Weapons 
-    'Rifle', 'Pistol', 'Shotgun', 'Claw', 'Minigun', 'GrenadeLauncher', 'Flamethrower', 'Axe', 'LayMines', 'Welder',
+    'Rifle', 'Pistol', 'Shotgun', 'Claw', 'Minigun', 'Railgun', 'GrenadeLauncher', 'Flamethrower', 'Axe', 'LayMines', 'Welder',
     
     // Armor
     'Jetpack', 'JetpackFuelTech', 'JetpackArmorTech', 'Exosuit', 'ExosuitLockdownTech', 'ExosuitUpgradeTech',

@@ -94,8 +94,21 @@ function BotPlayer:UpdateName()
     
             local numNames = table.maxn(kBotNames)
             local index = Clamp(math.ceil(math.random() * numNames), 1, numNames)
-            OnCommandSetName(self.client, kBotNames[index])
             self.botSetName = true
+            
+            name = TrimName(kBotNames[index])
+            
+            // Treat "NsPlayer" as special.
+            if name ~= player:GetName() and name ~= kDefaultPlayerName and string.len(name) > 0 then
+            
+                local prevName = player:GetName()
+                player:SetName(name)
+                
+                if prevName ~= player:GetName() then
+                    Server.Broadcast(nil, string.format("%s is now known as %s.", prevName, player:GetName()))
+                end
+                
+            end
             
         end
         

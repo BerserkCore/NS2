@@ -48,10 +48,7 @@ function MainMenu_SBJoinServer(address, password, mapname)
     end
     Client.Connect(address, password)
     
-    // Connecting through the console won't specify a map name.
-    if mapname then
-        SetLastServerInfo(address, password, mapname)
-    end
+    SetLastServerInfo(address, password, mapname)
     
     local params = { steamID = "" .. Client.GetSteamId() }
     Shared.SendHTTPRequest(kCatalyzURL .. "/deregister", "GET", params)

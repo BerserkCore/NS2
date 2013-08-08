@@ -1,75 +1,64 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======    
+// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //    
-// lua\DisorientableMixin.lua    
+// lua\DisorientableMixin.lua
 //    
 //    Created by:   Charlie Cleveland (charlie@unknownworlds.com) and
 //                  Andreas Urwalek (andi@unknownworlds.com)
 //
-//    Client side mixin.  Calculates disoriented amount and provides result with GetDisorientedAmount()
+//    Client side mixin.  Calculates disoriented amount and provides result with
+//    GetDisorientedAmount()
 //    
-// ========= For more information, visit us at http://www.unknownworlds.com =====================    
+// ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/CommAbilities/Alien/ShadeInk.lua")
 
-DisorientableMixin = CreateMixin( DisorientableMixin )
+DisorientableMixin = CreateMixin(DisorientableMixin)
 DisorientableMixin.type = "Disorientable"
 
-DisorientableMixin.expectedCallbacks = {}
+DisorientableMixin.expectedCallbacks = { }
 
-// don't update too often
-DisorientableMixin.kUpdateIntervall = 0.5
-DisorientableMixin.kDisorientIntensity = 4
+// Don't update too often.
+local kUpdateInterval = 0.5
+local kDisorientIntensity = 4
 
 DisorientableMixin.expectedMixins =
 {
     Team = "For defining enemy shades."
-}    
-
-DisorientableMixin.networkVars =
-{
 }
 
-function DisorientableMixin:__initmixin()
-    self.disorientedAmount = 0
-    self.timeLastDisorientUpdate = 0
-end
+local function UpdateDisorient(self)
 
-local function SharedUpdate(self)
-
-    if self.timeLastDisorientUpdate + DisorientableMixin.kUpdateIntervall < Shared.GetTime() then
+    local fromPoint = self:GetOrigin()
+    local nearbyEnemyShades = GetEntitiesForTeamWithinRange("ShadeInk", GetEnemyTeamNumber(self:GetTeamNumber()), fromPoint, ShadeInk.kShadeInkDisorientRadius)
+    Shared.SortEntitiesByDistance(fromPoint, nearbyEnemyShades)
     
-        local fromPoint = self:GetOrigin()
-        local nearbyEnemyShades = GetEntitiesForTeamWithinRange("ShadeInk", GetEnemyTeamNumber(self:GetTeamNumber()), fromPoint, ShadeInk.kShadeInkDisorientRadius )
-        Shared.SortEntitiesByDistance(fromPoint, nearbyEnemyShades)
-        
-        local adjustedDisorient = false
-        
-        for _, shade in ipairs(nearbyEnemyShades) do
-        
-            local distanceToShade = (shade:GetOrigin() - fromPoint):GetLength()
-            self.disorientedAmount = DisorientableMixin.kDisorientIntensity - Clamp( (distanceToShade / ShadeInk.kShadeInkDisorientRadius) * DisorientableMixin.kDisorientIntensity, 0, DisorientableMixin.kDisorientIntensity)
-            adjustedDisorient = true
-            break
-        
-        end
-        
-        if not adjustedDisorient then
-            self.disorientedAmount = 0
-        end
+    local adjustedDisorient = false
     
-        self.timeLastDisorientUpdate = Shared.GetTime()
+    for s = 1, #nearbyEnemyShades do
+    
+        local shade = nearbyEnemyShades[s]
+        local distanceToShade = (shade:GetOrigin() - fromPoint):GetLength()
+        self.disorientedAmount = kDisorientIntensity - Clamp((distanceToShade / ShadeInk.kShadeInkDisorientRadius) * kDisorientIntensity, 0, kDisorientIntensity)
+        adjustedDisorient = true
+        break
         
     end
-
+    
+    if not adjustedDisorient then
+        self.disorientedAmount = 0
+    end
+    
+    return true
+    
 end
 
-function DisorientableMixin:OnProcessMove(input)
-    SharedUpdate(self)
-end
+function DisorientableMixin:__initmixin()
 
-function DisorientableMixin:OnUpdate(deltaTime)
-    SharedUpdate(self)
+    self.disorientedAmount = 0
+    
+    self:AddTimedCallback(UpdateDisorient, kUpdateInterval)
+    
 end
 
 function DisorientableMixin:GetDisorientedAmount()

@@ -298,7 +298,6 @@ function GUIMainMenu:CreateMainLink(text, className, linkNum)
     local mainLink = CreateMenuElement(self.menuBackground, "Link")
     mainLink:SetText(text)
     mainLink:SetCSSClass(className)
-    mainLink:SetTextColor(kMainMenuLinkColor)
     mainLink:SetBackgroundColor(Color(1,1,1,0))
     mainLink:EnableHighlighting()
     
@@ -1304,6 +1303,7 @@ local function InitOptions(optionElements)
     local multicoreRendering    = Client.GetOptionBoolean("graphics/multithreaded", true)
     local textureStreaming      = Client.GetOptionBoolean("graphics/texture-streaming", false)
     local ambientOcclusion      = Client.GetOptionString("graphics/display/ambient-occlusion", kAmbientOcclusionModes[1])
+    local reflections           = Client.GetOptionBoolean("graphics/reflections", false)
     local particleQuality       = Client.GetOptionString("graphics/display/particles", "low")
     local infestation           = Client.GetOptionString("graphics/infestation", "rich")
     local fovAdjustment         = Client.GetOptionFloat("graphics/display/fov-adjustment", 0)
@@ -1383,6 +1383,7 @@ local function InitOptions(optionElements)
     optionElements.MulticoreRendering:SetOptionActive( BoolToIndex(multicoreRendering) )
     optionElements.TextureStreaming:SetOptionActive( BoolToIndex(textureStreaming) )
     optionElements.AmbientOcclusion:SetOptionActive( table.find(kAmbientOcclusionModes, ambientOcclusion) )
+    optionElements.Reflections:SetOptionActive( BoolToIndex(reflections) )
     optionElements.FOVAdjustment:SetValue(fovAdjustment)
     optionElements.MinimapZoom:SetValue(minimapZoom)
     optionElements.ArmorType:SetValue(armorType)
@@ -1416,7 +1417,9 @@ local function SaveSecondaryGraphicsOptions(mainMenu)
     local anisotropicFiltering  = mainMenu.optionElements.AnisotropicFiltering:GetActiveOptionIndex() > 1
     local antiAliasing          = mainMenu.optionElements.AntiAliasing:GetActiveOptionIndex() > 1
     local particleQualityIdx    = mainMenu.optionElements.ParticleQuality:GetActiveOptionIndex()
+    local reflections           = mainMenu.optionElements.Reflections:GetActiveOptionIndex() > 1
     
+    Client.SetOptionBoolean("graphics/reflections", reflections)
     Client.SetOptionBoolean("graphics/multithreaded", multicoreRendering)
     Client.SetOptionBoolean("graphics/texture-streaming", textureStreaming)
     Client.SetOptionString("graphics/display/ambient-occlusion", kAmbientOcclusionModes[ambientOcclusionIdx] )
@@ -1436,6 +1439,7 @@ local function SyncSecondaryGraphicsOptions()
     if Infestation_SyncOptions then
         Infestation_SyncOptions()
     end
+    Input_SyncInputOptions()
 end
 
 local function OnGraphicsOptionsChanged(mainMenu)
@@ -1920,6 +1924,13 @@ function GUIMainMenu:CreateOptionWindow()
                 callback = autoApplyCallback
             },    
             {
+                name    = "Reflections",
+                label   = "REFLECTIONS",
+                type    = "select",
+                values  = { "OFF", "ON" },
+                callback = autoApplyCallback
+            },
+            {
                 name    = "Shadows",
                 label   = "SHADOWS",
                 type    = "select",
@@ -2208,26 +2219,32 @@ end
 function GUIMainMenu:OnAnimationCompleted(animatedItem, animationName, itemHandle)
 
     if animationName == "ANIMATE_LINK_BG" then
+        
+        local animBackgroundLink = {}
     
         if self.modsLink then
-            self.modsLink:ReloadCSSClass()
+            table.insert(animBackgroundLink, self.modsLink)
         end
         if self.quitLink then
-            self.quitLink:ReloadCSSClass()
+            table.insert(animBackgroundLink, self.quitLink)
         end
-        self.highlightServer:ReloadCSSClass()
+        table.insert(animBackgroundLink, self.highlightServer)
         if self.disconnectLink then
-            self.disconnectLink:ReloadCSSClass()
+            table.insert(animBackgroundLink, self.disconnectLink)
         end
         if self.resumeLink then
-            self.resumeLink:ReloadCSSClass()
+            table.insert(animBackgroundLink, self.resumeLink)
         end
         if self.readyRoomLink then
-            self.readyRoomLink:ReloadCSSClass()
+            table.insert(animBackgroundLink, self.readyRoomLink)
         end
-        self.playLink:ReloadCSSClass()
-        self.tutorialLink:ReloadCSSClass()
-        self.optionLink:ReloadCSSClass()
+        table.insert(animBackgroundLink, self.playLink)
+        table.insert(animBackgroundLink, self.tutorialLink)
+        table.insert(animBackgroundLink, self.optionLink)
+        
+        for i = 1, #animBackgroundLink do        
+            animBackgroundLink[i]:SetFrameCount(15, 1.6, AnimateLinear, "ANIMATE_LINK_BG")       
+        end
         
     elseif animationName == "ANIMATE_BLINKING_ARROW" then
     
@@ -2387,4 +2404,14 @@ function OnSoundDeviceListChanged()
 
 end
 
+// Called when the options file is changed externally
+local function OnOptionsChanged()
+
+    if gMainMenu ~= nil then
+        InitOptions(gMainMenu.optionElements)
+    end
+    
+end
+
 Event.Hook("SoundDeviceListChanged", OnSoundDeviceListChanged)
+Event.Hook("OptionsChanged", OnOptionsChanged)

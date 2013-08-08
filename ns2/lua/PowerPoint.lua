@@ -539,12 +539,11 @@ if Server then
         
     end
     
+    // send a message every kUnderAttackTeamMessageLimit seconds when a base power node is under attack
     local function CheckSendDamageTeamMessage(self)
-    
-        // Make sure this is triggered the first time a PowerPoint takes damage.
-        local lastDamageTime = self:GetTimeOfLastDamage() or -kUnderAttackTeamMessageLimit
-        if Shared.GetTime() - lastDamageTime >= kUnderAttackTeamMessageLimit then
-        
+
+        if not self.timePowerNodeAttackAlertSent or self.timePowerNodeAttackAlertSent + kUnderAttackTeamMessageLimit < Shared.GetTime() then
+
             // Check if there is a built Command Station in the same location as this PowerPoint.
             local foundStation = false
             local stations = GetEntitiesForTeam("CommandStation", self:GetTeamNumber())
@@ -560,7 +559,10 @@ if Server then
             // Only send the message if there was a CommandStation found at this same location.
             if foundStation then
                 SendTeamMessage(self:GetTeam(), kTeamMessageTypes.PowerPointUnderAttack, self:GetLocationId())
+                self:GetTeam():TriggerAlert(kTechId.MarineAlertStructureUnderAttack, self, true)
             end
+            
+            self.timePowerNodeAttackAlertSent = Shared.GetTime()
             
         end
         
@@ -761,5 +763,9 @@ function PowerPoint:GetShowUnitStatusForOverride()
     return (self:GetPowerState() ~= PowerPoint.kPowerState.unsocketed)
 end
 
+local kPowerPointTargetOffset = Vector(0, 0.3, 0)
+function PowerPoint:GetEngagementPointOverride()
+    return self:GetCoords():TransformPoint(kPowerPointTargetOffset)
+end
 
 Shared.LinkClassToMap("PowerPoint", PowerPoint.kMapName, networkVars)

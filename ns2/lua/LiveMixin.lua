@@ -65,11 +65,22 @@ LiveMixin.networkVars =
     armor = string.format("float (0 to %f by 1)", LiveMixin.kMaxArmor),
     maxArmor = string.format("float (0 to %f by 1)", LiveMixin.kMaxArmor),
     
-    timeLastHealed = "time"
+    // for heal effect
+    timeLastHealed = "time",
+    // when set to true client wont predict health/armor
+    syncHealth = "boolean"
+    
 }
 
-local function RecentlyHealed(self)
-    return self.timeLastHealed + kSynchronizeDelay > Shared.GetTime()
+local function GetSyncHealth(self)
+    return self.syncHealth or self.timeLastHealed + kSynchronizeDelay > Shared.GetTime()
+end
+
+local function SyncHealth(self)
+
+    self.syncHealth = true
+    self.timeSyncHealthEnabled = Shared.GetTime()
+
 end
 
 function LiveMixin:__initmixin()
@@ -98,6 +109,8 @@ function LiveMixin:__initmixin()
         self.lastDamageAttackerId = Entity.invalidId
         self.timeLastCombatAction = 0
         self.timeLastHealed = 0
+        self.syncHealth = false
+        self.timeSyncHealthEnabled = -kSynchronizeDelay
         
     elseif Client then
     
@@ -370,7 +383,7 @@ function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUse
         
         // set time out for synchronize to preventing sudden flipping of numbers, health display / crosshair text
         // don't do this when running prediction (otherwise client predicts* every frame the damage which results in x times (num frames) more damage applied
-        if Client and not RecentlyHealed(self) then
+        if Client and not GetSyncHealth(self) then
         
             self.timeLastClientUpdated = Shared.GetTime()
             self.healthClient = self.health
@@ -482,8 +495,14 @@ function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
         
         if total > 0 then
             
-            if Server and not hideEffect then
-                self.timeLastHealed = Shared.GetTime()
+            if Server then
+            
+                if not hideEffect then
+                    self.timeLastHealed = Shared.GetTime()
+                end
+                
+                SyncHealth(self)
+                
             end
             
         end
@@ -559,6 +578,18 @@ function LiveMixin:OnUpdateAnimationInput(modelMixin)
 end
 
 if Server then
+
+    local function SharedUpdate(self, deltaTime)
+        self.syncHealth = self.timeSyncHealthEnabled + kSynchronizeDelay > Shared.GetTime()
+    end
+    
+    function LiveMixin:OnUpdate(deltaTime)
+        SharedUpdate(self, deltaTime)
+    end
+    
+    function LiveMixin:OnProcessMove(input)
+        SharedUpdate(self, input.time)
+    end
 
     local function UpdateHealerTable(self)
 
@@ -648,7 +679,7 @@ elseif Client then
         end
         
         // only update after a specific time out in case the client modified health/armor or when someone else did damage
-        if (not self.timeLastClientUpdated or self.timeLastClientUpdated + kSynchronizeDelay < Shared.GetTime()) or ActualHealthArmorIsLower(self) or RecentlyHealed(self) then
+        if (not self.timeLastClientUpdated or self.timeLastClientUpdated + kSynchronizeDelay < Shared.GetTime()) or ActualHealthArmorIsLower(self) or GetSyncHealth(self) then
         
             self.healthClient = self.health
             self.armorClient = self.armor
@@ -765,6 +796,7 @@ function LiveMixin:OnUpdateRender()
     local localPlayer = Client.GetLocalPlayer()
     local showHeal = not HasMixin(self, "Cloakable") or not self:GetIsCloaked() or not GetAreEnemies(self, localPlayer)
     
+    // Do healing effects for the model
     if model then
     
         if self.healMaterial and self.loadedHealMaterialName ~= GetHealMaterialName(self) then
@@ -787,28 +819,34 @@ function LiveMixin:OnUpdateRender()
     
     end
     
-    local viewModel = self:isa("Player") and self:GetIsLocalPlayer() and self:GetViewModelEntity() and self:GetViewModelEntity():GetRenderModel()
-    if viewModel then
+    // Do healing effects for the view model
+    if self == localPlayer then
     
-        if self.healViewMaterial and self.loadedHealViewMaterialName ~= GetHealViewMaterialName(self) then
+        local viewModelEntity = self:GetViewModelEntity()
+        local viewModel = viewModelEntity and viewModelEntity:GetRenderModel()
+        if viewModel then
         
-            RemoveMaterial(viewModel, self.healViewMaterial)
-            self.healViewMaterial = nil
-        
-        end
-    
-        if not self.healViewMaterial then
+            if self.healViewMaterial and self.loadedHealViewMaterialName ~= GetHealViewMaterialName(self) then
             
-            self.loadedHealViewMaterialName = GetHealViewMaterialName(self)
-            if self.loadedHealViewMaterialName then
-                self.healViewMaterial = AddMaterial(viewModel, self.loadedHealViewMaterialName)
+                RemoveMaterial(viewModel, self.healViewMaterial)
+                self.healViewMaterial = nil
+            
             end
         
-        else
-            self.healViewMaterial:SetParameter("timeLastHealed", self.timeLastHealed)        
+            if not self.healViewMaterial then
+                
+                self.loadedHealViewMaterialName = GetHealViewMaterialName(self)
+                if self.loadedHealViewMaterialName then
+                    self.healViewMaterial = AddMaterial(viewModel, self.loadedHealViewMaterialName)
+                end
+            
+            else
+                self.healViewMaterial:SetParameter("timeLastHealed", self.timeLastHealed)        
+            end
+        
         end
-    
-    end
+        
+    end        
     
     if self.timeLastHealed ~= self.clientTimeLastHealed then
     

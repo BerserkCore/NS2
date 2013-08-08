@@ -115,8 +115,11 @@ PhysicsMask = enum
     DroppedWeaponFilter = CreateMaskIncludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup),
     
     BabblerMovement = CreateMaskIncludingGroups(PhysicsGroup.BabblerGroup),
+    NoBabblers = CreateMaskIncludingGroups(PhysicsGroup.BabblerGroup, PhysicsGroup.ProjectileGroup),
     
     OnlyWhip = CreateMaskIncludingGroups(PhysicsGroup.WhipGroup),
+    
+    Evolve = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.BabblerGroup),
 }
 
 PhysicsType = enum

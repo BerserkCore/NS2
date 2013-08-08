@@ -236,6 +236,10 @@ function Minigun:GetDeathIconIndex()
     return kDeathMessageIcon.Minigun
 end
 
+function Minigun:GetWeight()
+    return kMinigunWeight
+end
+
 // TODO: we should use clip weapons provided functionality here (or create a more general solution which distincts between melee, hitscan and projectile only)!
 local function Shoot(self, leftSide)
 
@@ -258,11 +262,16 @@ local function Shoot(self, leftSide)
         
         local spreadDirection = CalculateSpread(shootCoords, kMinigunSpread, NetworkRandom)
         
-        local endPoint = startPoint + spreadDirection * kMinigunRange
+        local range = kMinigunRange
+        if GetIsVortexed(player) then
+            range = 5
+        end
+        
+        local endPoint = startPoint + spreadDirection * range
         
         local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
         
-        if trace.fraction < 1 then
+        if trace.fraction < 1 or GetIsVortexed(player) then
         
             local direction = (trace.endPoint - startPoint):GetUnit()
             local impactPoint = trace.endPoint - direction * kHitEffectOffset

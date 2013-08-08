@@ -20,8 +20,6 @@ class 'GhostModel'
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/placement_valid.surface_shader")
 local kMaterialValid = "cinematics/vfx_materials/placement_valid.material"
-
-Shared.PrecacheSurfaceShader("cinematics/vfx_materials/placement_invalid.surface_shader")
 local kMaterialInvalid = "cinematics/vfx_materials/placement_invalid.material"
 
 local kArrowTexture = "ui/marinewaypoint_arrow.dds"
@@ -93,6 +91,12 @@ end
 function GhostModel:Update()
 
     self.attachArrow:SetIsVisible(false)
+    
+    if Client.GetLocalPlayer():isa("Commander") then
+        self.renderMaterial:SetParameter("edge", 0)
+    else
+        self.renderMaterial:SetParameter("edge", 3)
+    end
     
     local modelName = GhostModelUI_GetModelName()
     if not modelName then

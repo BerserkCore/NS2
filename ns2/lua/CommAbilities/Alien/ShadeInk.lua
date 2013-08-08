@@ -21,12 +21,12 @@ ShadeInk.kFakeShadeAlienEffect = PrecacheAsset("cinematics/alien/Shade/fake_shad
 ShadeInk.kStartEffect = PrecacheAsset("cinematics/alien/Shade/shade_ink_start.cinematic")
 ShadeInk.kNumFakeShades = 3
 
-ShadeInk.kThinkTime = 2
+local kUpdateTime = 2
 
 ShadeInk.kType = CommanderAbility.kType.Repeat
 
 // duration of cinematic
-ShadeInk.kShadeInkDuration = 11
+local kShadeInkDuration = 11
 ShadeInk.kShadeInkDisorientRadius = 16
 
 local networkVars =
@@ -251,11 +251,11 @@ function ShadeInk:GetType()
 end
     
 function ShadeInk:GetLifeSpan()
-    return ShadeInk.kShadeInkDuration
+    return kShadeInkDuration
 end
 
-function ShadeInk:GetThinkTime()
-    return ShadeInk.kThinkTime
+function ShadeInk:GetUpdateTime()
+    return kUpdateTime
 end
 
 Shared.LinkClassToMap("ShadeInk", ShadeInk.kMapName, networkVars)

@@ -203,7 +203,7 @@ function Scoreboard_SetLocalPlayerData(playerName, index, data)
     
 end
 
-function Scoreboard_GetPlayerData(clientIndex, dataType)
+function Scoreboard_GetPlayerRecord(clientIndex)
 
     for i = 1, table.maxn(playerData) do
     
@@ -211,7 +211,7 @@ function Scoreboard_GetPlayerData(clientIndex, dataType)
         
         if playerRecord.ClientIndex == clientIndex then
 
-            return playerRecord[dataType]
+            return playerRecord
             
         end
 
@@ -221,12 +221,18 @@ function Scoreboard_GetPlayerData(clientIndex, dataType)
     
 end
 
-/**
- * Determine if scoreboard is visible
- */
-function ScoreboardUI_GetVisible()
-    local player = Client.GetLocalPlayer()
-    return (player ~= nil) and player.showScoreboard
+function Scoreboard_GetPlayerData(clientIndex, dataType)
+
+    local playerRecord = Scoreboard_GetPlayerRecord(clientIndex)
+    
+    if playerRecord then
+    
+        return playerRecord[dataType]
+        
+    end
+    
+    return nil    
+    
 end
 
 /**

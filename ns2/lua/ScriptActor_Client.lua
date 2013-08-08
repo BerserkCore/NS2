@@ -9,10 +9,12 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+local Client_GetLocalPlayer = Client.GetLocalPlayer
+
 function ScriptActor:OnInitialized()
 
     PROFILE("ScriptActor:OnInitialized")
-    Actor.OnInitialized(self)
+    Entity.OnInitialized(self)
     
     self:OnInitialized()
     
@@ -22,7 +24,7 @@ function ScriptActor:OnDestroy()
     
     self:DestroyAttachedEffects() 
 
-    Actor.OnDestroy(self)
+    Entity.OnDestroy(self)
     
 end
 
@@ -169,8 +171,6 @@ end
 function ScriptActor:OnUpdate(deltaTime)
 
     PROFILE("ScriptActor_Client:OnUpdate")
-
-    Actor.OnUpdate(self, deltaTime)
     
     UpdateAttachedEffects(self)
     
@@ -199,7 +199,7 @@ function ScriptActor:OnProcessMove(input)
 
     PROFILE("ScriptActor_Client:OnProcessMove")
     
-    Actor.OnProcessMove(self, input)
+    Entity.OnProcessMove(self, input)
     
     UpdateAttachedEffects(self)
 
@@ -207,13 +207,15 @@ end
 
 function ScriptActor:GetIsVisible()
 
-    local visible = Actor.GetIsVisible(self)
-    local localPlayer = Client.GetLocalPlayer()
+    local visible = Entity.GetIsVisible(self)
+    local localPlayer = Client_GetLocalPlayer()
     
-    if self.OnGetIsVisible and localPlayer ~= nil then    
+    local self_OnGetIsVisible = self.OnGetIsVisible
+    
+    if self_OnGetIsVisible and localPlayer ~= nil then    
         
         local visibleTable = {Visible = visible}    
-        self:OnGetIsVisible(visibleTable, localPlayer:GetTeamNumber())
+        self_OnGetIsVisible(self, visibleTable, localPlayer:GetTeamNumber())
         return visibleTable.Visible
         
     end

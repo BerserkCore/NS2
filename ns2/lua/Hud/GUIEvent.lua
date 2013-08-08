@@ -75,6 +75,7 @@ local function GetUnlockIconParams(unlockId)
         kUnlockIconParams[kTechId.Xenocide] = { description = "EVT_XENOCIDE_RESEARCHED" }
         kUnlockIconParams[kTechId.Umbra] = { description = "EVT_UMBRA_RESEARCHED" }
         kUnlockIconParams[kTechId.Vortex] = { description = "EVT_VORTEX_RESEARCHED" }
+        kUnlockIconParams[kTechId.GorgeTunnelTech] = { description = "EVT_GORGETUNNEL_RESEARCHED" }
         
     end
     

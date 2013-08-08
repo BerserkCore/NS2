@@ -62,6 +62,7 @@ function Window:Initialize()
         
         OnEscape = function (self)
             self:SetIsVisible(not self:GetIsVisible())
+            return true
         end,
         
         OnScrollUp = function (self)

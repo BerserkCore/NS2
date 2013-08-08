@@ -9,7 +9,6 @@
 class 'VoteManager'
 
 local kMinVotesNeeded = 2
-local kTeamVotePercentage = 0.5
 
 // Seconds that a vote lasts before expiring
 local kVoteDuration = 120
@@ -19,6 +18,7 @@ function VoteManager:Initialize()
 
     self.playersVoted = {}
     self:SetNumPlayers(0)
+    self.teamPercentNeeded = 0.5;
     
 end
 
@@ -68,10 +68,17 @@ end
 
 function VoteManager:GetVotePassed()
 
-    // Round to nearest number of players (3.4 = 3, 3.5 = 4).
-    local votesNeeded = math.max(kMinVotesNeeded, math.floor((self.numPlayers * kTeamVotePercentage) + 0.5))
-    return table.count(self.playersVoted) >= votesNeeded
+    return table.count(self.playersVoted) >= self:GetNumVotesNeeded()
     
+end
+
+function VoteManager:GetNumVotesNeeded()
+    // Round to nearest number of players (3.4 = 3, 3.5 = 4).
+    return math.max(kMinVotesNeeded, math.floor((self.numPlayers * self.teamPercentNeeded) + 0.5))
+end
+
+function VoteManager:GetNumVotesCast()
+    return table.count( self.playersVoted )
 end
 
 function VoteManager:GetTarget()
@@ -109,5 +116,11 @@ function VoteManager:GetVoteElapsed(time)
     end
     
     return false
+    
+end
+
+function VoteManager:SetTeamPercentNeeded(val)
+
+    self.teamPercentNeeded = val
     
 end

@@ -1,6 +1,6 @@
 // ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
-// lua\GUIReadyRoomOrders.lua
+// lua\CommanderHelp.lua
 //
 // Created by: Andreas Urwalek (a_urwa@sbox.tugraz.at)
 //
@@ -523,7 +523,7 @@ function CommanderHelp_GetShowWorldButtons()
     local commander = Client.GetLocalPlayer()
     local showButtons = false
     
-    if commander and commander:isa("Commander") then    
+    if commander and commander:isa("Commander") and commander:GetGameStarted() then    
         showButtons = not commander:GetShowGhostModel() and GetShowCommanderWidget(commander) and 
                       commander:GetTimeLastTargetedAction() + 1 < Shared.GetTime()
     end
@@ -536,7 +536,7 @@ function CommanderHelp_ProccessTechIdAction(techId, entity)
 
     local commander = Client.GetLocalPlayer()
     
-    if commander and commander:isa("Commander") then
+    if commander and commander:isa("Commander") and commander:GetGameStarted() then
     
         local menuTechId = commander:GetMenuTechIdFor(techId) or kTechId.RootMenu
         local buttonTable = nil

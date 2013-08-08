@@ -274,7 +274,6 @@ end
 
 local function LoadReflectionProbe(className, groupName, values)
 
-    /*
     local renderReflectionProbe = Client.CreateRenderReflectionProbe()
     
     if values.strength == nil then
@@ -290,7 +289,6 @@ local function LoadReflectionProbe(className, groupName, values)
         Client.reflectionProbeList = { }
     end
     table.insert(Client.reflectionProbeList, renderReflectionProbe)
-    */
     
     return true
         

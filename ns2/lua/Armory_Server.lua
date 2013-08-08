@@ -215,25 +215,6 @@ function Armory:OnResearchComplete(researchId)
     
 end
 
-// Check if friendly players are nearby and facing armory and heal/resupply them
-function Armory:OnThink()
-
-    ScriptActor.OnThink(self)
-
-    self:UpdateLoggedIn()
-    
-    // Make sure players are still close enough, alive, marines, etc.
-    if GetIsUnitActive(self) then
-    
-        // Give health and ammo to logged in players
-        self:ResupplyPlayers()
-        
-    end
-    
-    self:SetNextThink(Armory.kThinkTime)
-    
-end
-
 function Armory:UpdateLoggedIn()
 
     local players = GetEntitiesForTeamWithinRange("Marine", self:GetTeamNumber(), self:GetOrigin(), 2 * Armory.kResupplyUseRange)

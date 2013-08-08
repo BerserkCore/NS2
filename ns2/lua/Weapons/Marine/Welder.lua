@@ -28,7 +28,8 @@ local kWelderTraceExtents = Vector(0.4, 0.4, 0.4)
 local networkVars =
 {
     welding = "boolean",
-    loopingSoundEntId = "entityid"
+    loopingSoundEntId = "entityid",
+    deployed = "boolean"
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -48,6 +49,7 @@ function Welder:OnCreate()
     Weapon.OnCreate(self)
     
     self.welding = false
+    self.deployed = false
     
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
@@ -111,6 +113,7 @@ function Welder:OnHolster(player)
     Weapon.OnHolster(self, player)
     
     self.welding = false
+    self.deployed = false
     // cancel muzzle effect
     self:TriggerEffects("welder_holster")
     
@@ -122,6 +125,7 @@ function Welder:OnDraw(player, previousWeaponMapName)
     
     self:SetAttachPoint(Weapon.kHumanAttachPoint)
     self.welding = false
+    self.deployed = false
     
 end
 
@@ -130,10 +134,18 @@ function Welder:OverrideWeaponName()
     return "builder"
 end
 
+function Welder:OnTag(tagName)
+
+    if tagName == "deploy_end" then
+        self.deployed = true
+    end
+
+end
+
 // don't play 'welder_attack' and 'welder_attack_end' too often, would become annoying with the sound effects and also client fps
 function Welder:OnPrimaryAttack(player)
 
-    if GetIsVortexed(player) then
+    if GetIsVortexed(player) or not self.deployed then
         return
     end
     
@@ -194,6 +206,9 @@ function Welder:Dropped(prevOwner)
     if Server then
         self.loopingFireSound:Stop()
     end
+    
+    self.welding = false
+    self.deployed = false
     
 end
 

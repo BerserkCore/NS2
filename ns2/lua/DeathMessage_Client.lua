@@ -9,7 +9,7 @@
 local kSubImageWidth = 128
 local kSubImageHeight = 64
 
-local queuedDeathMessages = {}
+local queuedDeathMessages = { }
 
 local resLostMarine = 0
 local resLostAlien = 0
@@ -63,12 +63,6 @@ end
 
 function DeathMsgUI_GetTechHeight(doerId)
     return kSubImageHeight
-end
-
-function InitDeathMessages(player)
-
-    queuedDeathMessages = {}
-    
 end
 
 // Pass 1 for isPlayer if coming from a player (look it up from scoreboard data), otherwise it's a tech id

@@ -53,12 +53,9 @@ function CommanderGlowMixin:UpdateHighlight()
                     EquipmentOutline_AddModel( model )
                 end
             else
-                if isAlien then
-                    HiveVision_RemoveModel( model )
-                else
-                    EquipmentOutline_RemoveModel( model )
-                end
-            end           
+                HiveVision_RemoveModel( model )
+                EquipmentOutline_RemoveModel( model )
+            end
          
             self.commanderGlowOutline = visible    
             

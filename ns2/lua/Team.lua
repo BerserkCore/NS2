@@ -139,6 +139,8 @@ function Team:RemovePlayer(player)
     
     self:RemovePlayerFromRespawnQueue(player)
     
+    player:SetTeamNumber(kTeamInvalid)
+    
 end
 
 function Team:GetNumPlayers()
@@ -542,44 +544,40 @@ end
 
 function Team:RespawnPlayer(player, origin, angles)
 
-    if self:GetIsPlayerOnTeam(player) then
+    assert(self:GetIsPlayerOnTeam(player), "Player isn't on team!")
     
-        if origin == nil or angles == nil then
+    if origin == nil or angles == nil then
+    
+        // Randomly choose unobstructed spawn points to respawn the player
+        local spawnPoint = nil
+        local spawnPoints = Server.readyRoomSpawnList
+        local numSpawnPoints = table.maxn(spawnPoints)
         
-            // Randomly choose unobstructed spawn points to respawn the player
-            local spawnPoint = nil
-            local spawnPoints = Server.readyRoomSpawnList
-            local numSpawnPoints = table.maxn(spawnPoints)
+        if numSpawnPoints > 0 then
+        
+            local spawnPoint = GetRandomClearSpawnPoint(player, spawnPoints)
+            if spawnPoint ~= nil then
             
-            if numSpawnPoints > 0 then
-            
-                local spawnPoint = GetRandomClearSpawnPoint(player, spawnPoints)
-                if spawnPoint ~= nil then
-                
-                    origin = spawnPoint:GetOrigin()
-                    angles = spawnPoint:GetAngles()
-                    
-                end
+                origin = spawnPoint:GetOrigin()
+                angles = spawnPoint:GetAngles()
                 
             end
             
         end
         
-        // Move origin up and drop it to floor to prevent stuck issues with floating errors or slightly misplaced spawns
-        if origin ~= nil then
+    end
+    
+    // Move origin up and drop it to floor to prevent stuck issues with floating errors or slightly misplaced spawns
+    if origin ~= nil then
+    
+        SpawnPlayerAtPoint(player, origin, angles)
         
-            SpawnPlayerAtPoint(player, origin, angles)
-            
-            player:ClearEffects()
-            
-            return true
-            
-        else
-            Print("Team:RespawnPlayer(player, %s, %s) - Must specify origin.", ToString(origin), ToString(angles))
-        end
+        player:ClearEffects()
+        
+        return true
         
     else
-        Print("Team:RespawnPlayer(player) - Player isn't on team.")
+        Print("Team:RespawnPlayer(player, %s, %s) - Must specify origin.", ToString(origin), ToString(angles))
     end
     
     return false

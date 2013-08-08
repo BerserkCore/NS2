@@ -7,8 +7,6 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 Script.Load("lua/Utility.lua")
 
-kRailgunEnabled = true
-
 kDecalMaxLifetime = 60
 
 // All the layouts are based around this screen height.
@@ -21,7 +19,8 @@ kAlienTeamType = 2
 kRandomTeamType = 3
 
 // after 5 minutes players are allowed to give up a round
-kTimeGiveupPossible = 5 * 60
+kMinTimeBeforeConcede = 10 * 60
+kPercentNeededForVoteConcede = 0.75
 
 // Team colors
 kMarineFontName = "fonts/AgencyFB_large.fnt"
@@ -125,6 +124,7 @@ kMainMenuFlash = "ui/main_menu.swf"
 
 kPlayerStatus = enum( { "Hidden", "Dead", "Evolving", "Embryo", "Commander", "Exo", "GrenadeLauncher", "Rifle", "Shotgun", "Flamethrower", "Void", "Spectator", "Skulk", "Gorge", "Fade", "Lerk", "Onos" } )
 kPlayerCommunicationStatus = enum( {'None', 'Voice', 'Typing', 'Menu'} )
+kSpectatorMode = enum( { 'FreeLook', 'Overhead', 'Following', 'FirstPerson' } )
 
 kMaxAlienAbilities = 3
 
@@ -146,14 +146,14 @@ kDeathMessageIcon = enum( { 'None',
                             'Mine', 'Gore', 'Spit', 'Jetpack', 'Claw',
                             'Minigun', 'Vortex', 'LerkBite', 'Umbra', 
                             'Xenocide', 'Blink', 'Leap', 'Stomp',
-                            'Consumed', 'GL', 'Recycled', 'Babbler', 'Railgun'
+                            'Consumed', 'GL', 'Recycled', 'Babbler', 'Railgun', 'BabblerAbility', 'GorgeTunnel',
                             } )
 
 kMinimapBlipType = enum( { 'Undefined', 'TechPoint', 'ResourcePoint', 'Scan',
                            'Sentry', 'CommandStation', 'CommandStationL2', 'CommandStationL3',
                            'Extractor', 'InfantryPortal', 'Armory', 'PhaseGate', 'Observatory',
                            'RoboticsFactory', 'ArmsLab', 'PrototypeLab', 'PowerPack',
-                           'Hive', 'Harvester', 'Hydra', 'Egg', 'Crag', 'Whip', 'Shade', 'Shift',
+                           'Hive', 'Harvester', 'Hydra', 'Egg', 'Embryo', 'Crag', 'Whip', 'Shade', 'Shift', 'Shell', 'Veil', 'Spur', 'TunnelEntrance',
                            'Marine', 'JetpackMarine', 'Exo', 'Jetpack', 'Skulk', 'Lerk', 'Onos', 'Fade', 'Gorge',
                            'Door', 'PowerPoint', 'DestroyedPowerPoint',
                            'ARC', 'Drifter', 'MAC', 'Infestation', 'InfestationDying', 'MoveOrder', 'AttackOrder', 'BuildOrder', 'SensorBlip' } )
@@ -170,7 +170,7 @@ kAlertExpireTime = 20
 
 // Bit mask table for non-stackable game effects. OnInfestation is set if we're on ANY infestation (regardless of team).
 // Always keep "Max" as last element.
-kGameEffect = CreateBitMask( {"InUmbra", "Fury", "Cloaked", "Parasite", "NearDeath", "OnFire", "OnInfestation", "Beacon", "Energize", "Max"} )
+kGameEffect = CreateBitMask( {"InUmbra", "Fury", "Cloaked", "Parasite", "NearDeath", "OnFire", "OnInfestation", "Beacon", "Energize" } )
 kGameEffectMax = bit.lshift( 1, GetBitMaskNumBits(kGameEffect) )
 
 // Stackable game effects (more than one can be active, server-side only)

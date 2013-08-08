@@ -14,20 +14,15 @@ Script.Load("lua/Mixins/ModelMixin.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/MinimapConnectionMixin.lua")
 
+kTunnelExitSide = enum({'A', 'B'})
+
 class 'Tunnel' (Entity)
 
-local function CreateEntranceLight()
+local kTunnelLoopingSound = PrecacheAsset("sound/NS2.fev/alien/structures/tunnel/loop")
+local kTunnelCinematic = PrecacheAsset("cinematics/alien/tunnel/tunnel_ambient.cinematic")
 
-    local entranceLight = Client.CreateRenderLight()
-    entranceLight:SetType( RenderLight.Type_Point )
-    entranceLight:SetColor( Color(1, .7, .2) )
-    entranceLight:SetIntensity( 3 )
-    entranceLight:SetRadius( 10 ) 
-    entranceLight:SetIsVisible(false)
-    
-    return entranceLight
-
-end
+local kTunnelLightA = PrecacheAsset("cinematics/alien/tunnel/tunnel_ambient_a.cinematic")
+local kTunnelLightB = PrecacheAsset("cinematics/alien/tunnel/tunnel_ambient_b.cinematic")
 
 local gNumTunnels = 0
 
@@ -36,16 +31,14 @@ local kTunnelStart = Vector(-1600, 200, -1600)
 
 local kTunnelLength = 27
 
-local kEntranceAPos = Vector(3, 0.5, -8)
-local kEntranceBPos = Vector(3, 0.5, 8)
+local kEntranceAPos = Vector(3, 0.5, -11)
+local kEntranceBPos = Vector(3, 0.5, 11)
 
-local kExitAPos = Vector(3, 0.25, -13.5)
-local kExitBPos = Vector(3, 0.25, 13.5)
+local kExitAPos = Vector(3.75, 0.15, -15)
+local kExitBPos = Vector(3.75, 0.15, 15)
 
 Tunnel.kModelName = PrecacheAsset("models/alien/tunnel/tunnel.model")
 local kAnimationGraph = PrecacheAsset("models/alien/tunnel/tunnel.animation_graph")
-
-local kTunnelCinematic = PrecacheAsset("cinematics/alien/tunnel/tunnel_ambient.cinematic")
 
 local kTunnelPropAttachPoints =
 {
@@ -89,6 +82,10 @@ local networkVars =
     exitBConnected = "boolean",
     exitAEntityPosition = "vector",
     exitBEntityPosition = "vector",
+    exitAUsed = "boolean",
+    exitBUsed = "boolean",
+    flinchAAmount = "float (0 to 1 by 0.05)",
+    flinchBAmount = "float (0 to 1 by 0.05)"    
 }
 
 Tunnel.kMapName = "tunnel"
@@ -96,6 +93,19 @@ Tunnel.kMapName = "tunnel"
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
+
+local function CreateEntranceLight()
+
+    local entranceLight = Client.CreateRenderLight()
+    entranceLight:SetType( RenderLight.Type_Point )
+    entranceLight:SetColor( Color(1, .7, .2) )
+    entranceLight:SetIntensity( 3 )
+    entranceLight:SetRadius( 10 ) 
+    entranceLight:SetIsVisible(false)
+    
+    return entranceLight
+
+end
 
 function Tunnel:OnCreate()
 
@@ -119,6 +129,18 @@ function Tunnel:OnCreate()
         
         self:SetPropagate(Entity.Propagate_Mask)
         self:SetRelevancyDistance(kMaxRelevancyDistance)
+        
+        self.collapsing = false
+        
+        self.loopingSound = Server.CreateEntity(SoundEffect.kMapName)
+        self.loopingSound:SetAsset(kTunnelLoopingSound)
+        self.loopingSound:SetParent(self)
+        
+        self.timeExitAUsed = 0
+        self.timeExitBUsed = 0
+        
+        self.flinchAAmount = 0
+        self.flinchBAmount = 0
     
     end
     
@@ -137,7 +159,7 @@ local function CreateRandomTunnelProps(self)
         
             local tunnelProp = CreateEntity(TunnelProp.kMapName, attachPointPosition)
             tunnelProp:SetParent(self)
-            tunnelProp:SetTunnelPropType(attachPointEntry[2])
+            tunnelProp:SetTunnelPropType(attachPointEntry[2], math.max(0, i - 12))
             tunnelProp:SetAttachPoint(attachPointEntry[1])
             
         end
@@ -156,20 +178,36 @@ function Tunnel:OnInitialized()
         CreateRandomTunnelProps(self)
         
         InitMixin(self, MinimapConnectionMixin)
+        self.loopingSound:Start()
+        
+        self:SetPhysicsType(PhysicsType.Kinematic)
       
     elseif Client then
+    
+        self.tunnelLightCinematicA = Client.CreateCinematic(RenderScene.Zone_Default)
+        self.tunnelLightCinematicA:SetCinematic(kTunnelLightA)
+        self.tunnelLightCinematicA:SetRepeatStyle(Cinematic.Repeat_Endless)
+        self.tunnelLightCinematicA:SetCoords(self:GetCoords())        
+        self.tunnelLightCinematicA:SetIsVisible(self.exitAConnected)
         
-        self.entranceLightA = CreateEntranceLight()
-        self.entranceLightB = CreateEntranceLight()
-        
-        self.entranceLightA:SetCoords(Coords.GetLookIn(self:GetEntranceAPosition(), self:GetCoords().zAxis))
-        self.entranceLightB:SetCoords(Coords.GetLookIn(self:GetEntranceBPosition(), -self:GetCoords().zAxis))
+        self.tunnelLightCinematicB = Client.CreateCinematic(RenderScene.Zone_Default)
+        self.tunnelLightCinematicB:SetCinematic(kTunnelLightB)
+        self.tunnelLightCinematicB:SetRepeatStyle(Cinematic.Repeat_Endless)
+        self.tunnelLightCinematicB:SetCoords(self:GetCoords())        
+        self.tunnelLightCinematicB:SetIsVisible(self.exitAConnected)
         
         self.tunnelCinematic = Client.CreateCinematic(RenderScene.Zone_Default)
         self.tunnelCinematic:SetCinematic(kTunnelCinematic)
         self.tunnelCinematic:SetRepeatStyle(Cinematic.Repeat_Endless)
         self.tunnelCinematic:SetCoords(self:GetCoords())
-    
+        /*
+        self.tunnelReverb = Reverb()
+        self.tunnelReverb:SetOrigin(self:GetOrigin())
+        self.tunnelReverb.minRadius = 27
+        self.tunnelReverb.maxRadius = 30
+        self.tunnelReverb.reverbType = kReverbNames.hallway
+        self.tunnelReverb:OnLoad()
+        */
     end
 
 end
@@ -178,29 +216,24 @@ function Tunnel:OnDestroy()
 
     Entity.OnDestroy(self)
     
-    if Server then    
+    if Server then 
+   
         gNumTunnels = gNumTunnels - 1    
-    elseif Client then
-    
-        if self.entranceLightA then
+        self.loopingSound = nil
         
-            Client.DestroyRenderLight(self.entranceLightA)
-            self.entranceLightA = nil
-            
-        end  
-
-        if self.entranceLightB then
+    elseif Client then 
         
-            Client.DestroyRenderLight(self.entranceLightB)
-            self.entranceLightB = nil
-            
-        end  
-        
-        if self.tunnelCinematic then
-            
+        if self.tunnelLightCinematicA then            
+            Client.DestroyCinematic(self.tunnelLightCinematicA)
+            self.tunnelLightCinematicA = nil            
+        end
+        if self.tunnelLightCinematicB then            
+            Client.DestroyCinematic(self.tunnelLightCinematicB)
+            self.tunnelLightCinematicB = nil            
+        end
+        if self.tunnelCinematic then            
             Client.DestroyCinematic(self.tunnelCinematic)
-            self.tunnelCinematic = nil
-            
+            self.tunnelCinematic = nil            
         end
 
     end 
@@ -249,12 +282,20 @@ if Server then
             self.exitAId = exit:GetId()
             self.exitAEntityPosition = exit:GetOrigin()
             self.timeExitAChanged = Shared.GetTime()
+            
+            if self.exitBId == Entity.invalidId then
+                self.exitBEntityPosition = Vector(self.exitAEntityPosition)
+            end
         
         elseif self.exitBId == Entity.invalidId then
         
             self.exitBId = exit:GetId()
             self.exitBEntityPosition = exit:GetOrigin()
             self.timeExitBChanged = Shared.GetTime()
+            
+            if self.exitAId == Entity.invalidId then
+                self.exitAEntityPosition = Vector(self.exitBEntityPosition)
+            end
         
         else
         
@@ -296,10 +337,12 @@ if Server then
     
         if self.exitAId == oldId then
             self.exitAId = Entity.invalidId
+            self.exitAEntityPosition = Vector(self.exitBEntityPosition)
         end
         
         if self.exitBId == oldId then
             self.exitBId = Entity.invalidId
+            self.exitBEntityPosition = Vector(self.exitAEntityPosition)
         end
     
     end
@@ -307,28 +350,77 @@ if Server then
     local kExitRadius = 4
     local kExitOffset = Vector(0, 0.2, 0)
     
-    local function UpdateExit(self, exit, position)
+    function Tunnel:UseExit(entity, exit, exitSide)
     
-        for _, player in ipairs(GetEntitiesWithinRange("Player", position, kExitRadius)) do
-   
-            player:SetOrigin(exit:GetOrigin() + kExitOffset)
+        entity:SetOrigin(exit:GetOrigin() + kExitOffset)
 
-            local newAngles = player:GetViewAngles()
+        if entity:isa("Player") then
+        
+            local newAngles = entity:GetViewAngles()
             newAngles.pitch = 0
             newAngles.roll = 0
             newAngles.yaw = newAngles.yaw + self:GetMinimapYawOffset()
+            entity:SetOffsetAngles(newAngles)
             
-            player:SetOffsetAngles(newAngles)
-            exit:OnPlayerExited(player)
-    
+        end    
+
+        exit:OnEntityExited(entity)
+        
+        if entity.OnUseGorgeTunnel then
+            entity:OnUseGorgeTunnel()
         end
+        
+        if entity.TriggerEffects then
+            entity:TriggerEffects("tunnel_exit_3D")
+        end
+        
+        if exitSide == kTunnelExitSide.A then
+            self.timeExitAUsed = Shared.GetTime()
+        elseif exitSide == kTunnelExitSide.B then
+            self.timeExitBUsed = Shared.GetTime()
+        end
+        
+    end
     
+    function Tunnel:TriggerCollapse()
+        self.collapsing = true
+    end
+    
+    function Tunnel:GetExitA()
+        return self.exitAId ~= Entity.invalidId and Shared.GetEntity(self.exitAId)
+    end
+    
+    function Tunnel:GetExitB()
+        return self.exitBId ~= Entity.invalidId and Shared.GetEntity(self.exitBId)
+    end
+    
+    function Tunnel:UpdateFlinchAmount()
+
+        local exitA = self:GetExitA()
+        local exitB = self:GetExitB()
+        
+        self.flinchAAmount = exitA and exitA:GetFlinchIntensity() or 0
+        self.flinchBAmount = exitB and exitB:GetFlinchIntensity() or 0
+
     end
     
     function Tunnel:OnUpdate(deltaTime)
     
-        self.exitAConnected = self.exitAId ~= Entity.invalidId and Shared.GetEntity(self.exitAId) and Shared.GetEntity(self.exitAId):GetIsAlive()
-        self.exitBConnected = self.exitBId ~= Entity.invalidId and Shared.GetEntity(self.exitBId) and Shared.GetEntity(self.exitBId):GetIsAlive()
+        local exitA = self:GetExitA()
+        local exitB = self:GetExitB()
+
+        self.exitAConnected = exitA and exitA:GetIsAlive()
+        self.exitBConnected = exitB and exitB:GetIsAlive()
+        self.exitAUsed = self.timeExitAUsed + 0.2 > Shared.GetTime()
+        self.exitBUsed = self.timeExitBUsed + 0.2 > Shared.GetTime()
+        
+        if exitA then
+            exitA.allowDigest = self.exitAConnected and self.exitBConnected
+        end
+        
+        if exitB then
+            exitB.allowDigest = self.exitAConnected and self.exitBConnected
+        end
 
         // collapse when no exist has been found. free clientId for possible reuse later
         if not self.exitAConnected and not self.exitBConnected then
@@ -336,17 +428,11 @@ if Server then
             DestroyAllUnitsInside(self)
             self.ownerClientId = nil
             
-        else
-        
-            if self.exitAConnected then       
-                UpdateExit(self, Shared.GetEntity(self.exitAId), self:GetExitAPosition())                
-            end
-            
-            if self.exitBConnected then            
-                UpdateExit(self, Shared.GetEntity(self.exitBId), self:GetExitBPosition())                
-            end
+            self.collapsing = true
         
         end
+        
+        self:UpdateFlinchAmount()
         
     end
     
@@ -374,12 +460,16 @@ if Server then
             player:SetOrigin(self:GetEntranceAPosition())
             newAngles.yaw = GetYawFromVector(self:GetCoords().zAxis)
             player:SetOffsetAngles(newAngles)
+            player:TriggerEffects("tunnel_enter_3D")
+            self.timeExitAUsed = Shared.GetTime()       
             
         elseif entranceId == self.exitBId then
         
             player:SetOrigin(self:GetEntranceBPosition())
             newAngles.yaw = GetYawFromVector(-self:GetCoords().zAxis)
             player:SetOffsetAngles(newAngles)
+            player:TriggerEffects("tunnel_enter_3D")  
+            self.timeExitBUsed = Shared.GetTime()
             
         end
     
@@ -390,14 +480,13 @@ else
     
     function Tunnel:OnUpdateRender()
     
-        self.entranceLightA:SetIsVisible(self.exitAConnected)
-        self.entranceLightB:SetIsVisible(self.exitBConnected)
+        self.tunnelLightCinematicA:SetIsVisible(self.exitAConnected)
+        self.tunnelLightCinematicB:SetIsVisible(self.exitBConnected)
     
     end
 
 end
 
-// TODO: use attach points?
 function Tunnel:GetExitAPosition()
     return self:GetOrigin() + self:GetCoords():TransformVector(kExitAPos)
 end
@@ -423,9 +512,32 @@ end
 
 function Tunnel:GetMinimapYawOffset()
 
+    if self.exitAEntityPosition == self.exitBEntityPosition then
+        return 0
+    end
+
     local tunnelDirection = GetNormalizedVector( self.exitBEntityPosition - self.exitAEntityPosition )
     return math.atan2(tunnelDirection.x, tunnelDirection.z)
 
 end
+
+function Tunnel:OnUpdatePoseParameters()
+
+    self:SetPoseParam("intensity_yn", self.flinchAAmount)
+    self:SetPoseParam("intensity_yp", self.flinchBAmount)
+
+end
+
+function Tunnel:OnUpdateAnimationInput(modelMixin)
+
+    PROFILE("Tunnel:OnUpdateAnimationInput")
+
+    modelMixin:SetAnimationInput("entrance_A_opened", self.exitAConnected)
+    modelMixin:SetAnimationInput("entrance_B_opened", self.exitBConnected)
+    
+    modelMixin:SetAnimationInput("exit_A", self.exitAUsed)
+    modelMixin:SetAnimationInput("exit_B", self.exitBUsed)
+    
+end    
 
 Shared.LinkClassToMap("Tunnel", Tunnel.kMapName, networkVars)

@@ -26,6 +26,7 @@ local kHealthIconTextureCoordinates = {0, 0, 32, 32}
 local kArmorIconTextureCoordinates = {32, 32, 64, 64}
 
 local kBackgroundNoiseTexture = PrecacheAsset("ui/alien_commander_bg_smoke.dds")
+local kBabblerTexture = PrecacheAsset("ui/babbler.dds")
 
 local kHealthFontName = "fonts/Stamp_large.fnt"
 local kArmorFontName = "fonts/Stamp_medium.fnt"
@@ -51,6 +52,9 @@ local kArmorTextureX1 = 128
 local kArmorTextureY1 = 0
 local kArmorTextureX2 = 256
 local kArmorTextureY2 = 128
+
+local kBabblerIndicatorPosition = GUIScale(Vector(200, -120, 0))
+local kBabblerIconSize = GUIScale(42)
 
 local kBarMoveRate = 1.1
 
@@ -149,7 +153,11 @@ function GUIAlienHUD:Initialize()
     self.resourceDisplay.background:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
     self.resourceDisplay.background:SetFloatParameter("correctionX", 1)
     self.resourceDisplay.background:SetFloatParameter("correctionY", 0.3)
-
+    
+    self.babblerIndicationFrame = GetGUIManager():CreateGraphicItem()
+    self.babblerIndicationFrame:SetColor(Color(0,0,0,0))
+    self.babblerIndicationFrame:SetPosition(kBabblerIndicatorPosition)
+    self.babblerIndicationFrame:SetAnchor(GUIItem.Left, GUIItem.Bottom)
     
     self:Reset()
     
@@ -477,6 +485,13 @@ function GUIAlienHUD:Uninitialize()
         self.inventoryDisplay = nil
     end
     
+    if self.babblerIndicationFrame then
+        GUI.DestroyItem(self.babblerIndicationFrame)
+        self.babblerIndicationFrame = nil
+    end
+    
+    self.babblerIcons = nil
+    
 end
 
 local function UpdateHealthBall(self, deltaTime)
@@ -602,12 +617,52 @@ local function UpdateNotifications(self, deltaTime)
     
 end
 
+local function UpdateBabblerIndication(self, delatTime)
+
+    local numBabblers = PlayerUI_GetNumClingedBabblers()
+    
+    if not self.babblerIcons then
+        self.babblerIcons = {}
+    end
+
+    local displayedNumBabblers = #self.babblerIcons
+    if displayedNumBabblers < numBabblers then
+        
+        for i = 1, numBabblers - displayedNumBabblers do
+        
+            local icon = GetGUIManager():CreateGraphicItem()
+            icon:SetSize(Vector(kBabblerIconSize, kBabblerIconSize, 0))
+            icon:SetPosition(Vector(#self.babblerIcons * kBabblerIconSize, 0, 0))
+            icon:SetTexture(kBabblerTexture)
+            self.babblerIndicationFrame:AddChild(icon)
+            table.insert(self.babblerIcons, icon)
+            
+        end
+        
+    elseif numBabblers < displayedNumBabblers then
+    
+        for i = 1, displayedNumBabblers - numBabblers do
+        
+            GUI.DestroyItem(self.babblerIcons[#self.babblerIcons])
+            table.remove(self.babblerIcons, #self.babblerIcons)    
+    
+        end
+    
+    end
+    
+    local size = Vector(kBabblerIconSize * numBabblers, kBabblerIconSize, 0)
+    self.babblerIndicationFrame:SetSize(size)
+    
+
+end
+
 function GUIAlienHUD:Update(deltaTime)
 
     PROFILE("GUIAlienHUD:Update")
     
     UpdateHealthBall(self, deltaTime)
     UpdateEnergyBall(self, deltaTime)
+    UpdateBabblerIndication(self, deltaTime)
     
     // update resource display
     self.resourceDisplay:Update(deltaTime, { PlayerUI_GetTeamResources(), PlayerUI_GetPersonalResources(), CommanderUI_GetTeamHarvesterCount() } )

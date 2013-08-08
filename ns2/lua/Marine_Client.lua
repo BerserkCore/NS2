@@ -126,114 +126,8 @@ local function GetIsCloseToMenuStructure(self)
 
 end
 
-function Marine:OnInitLocalClient()
-
-    Player.OnInitLocalClient(self)
-    
-    self.notifications = {}
-    self.timeLastSpitHitEffect = 0
-    
-    if self:GetTeamNumber() ~= kTeamReadyRoom then
-
-        if self.marineHUD == nil then
-            self.marineHUD = GetGUIManager():CreateGUIScript("Hud/Marine/GUIMarineHUD")
-        end
-        
-        if self.poisonedGUI == nil then
-            self.poisonedGUI = GetGUIManager():CreateGUIScript("GUIPoisonedFeedback")
-        end
-        
-        self:TriggerHudInitEffects()
-        
-        if self.waypoints == nil then
-            self.waypoints = GetGUIManager():CreateGUIScript("GUIWaypoints")
-            self.waypoints:InitMarineTexture()
-        end
-        
-        if self.pickups == nil then
-            self.pickups = GetGUIManager():CreateGUIScript("GUIPickups")
-        end
-
-        if self.hints == nil then
-            //self.hints = GetGUIManager():CreateGUIScript("GUIHints")
-        end
-        
-        if self.guiOrders == nil then
-            self.guiOrders = GetGUIManager():CreateGUIScript("GUIOrders")
-        end
-        
-        if self.sensorBlips == nil then
-            self.sensorBlips = GetGUIManager():CreateGUIScript("GUISensorBlips")
-        end
-        
-        if self.objectiveDisplay == nil then
-            self.objectiveDisplay = GetGUIManager():CreateGUIScript("GUIObjectiveDisplay")
-        end 
-        
-        if self.progressDisplay == nil then
-            self.progressDisplay = GetGUIManager():CreateGUIScript("GUIProgressBar")
-        end
-        
-        if self.requestMenu == nil then
-            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-        end
-        
-    end
-    
-end
-
-function Marine:TriggerHudInitEffects()
-    self.marineHUD:TriggerInitAnimations()
-end
-
 function Marine:UnitStatusPercentage()
     return self.unitStatusPercentage
-end
-
-function Marine:ShowMap(showMap, showBig, forceReset)
-
-    Player.ShowMap(self, showMap, showBig, forceReset)
-    
-    if showMap ~= self.mapState then
-    
-        self.mapState = showMap
-        
-        if not self.timeLastMapStateChange then
-            self.timeLastMapStateChange = 0
-        end
-    
-        if self.mapState and self.timeLastMapStateChange + 3 < Shared.GetTime() then
-            
-            self.timeLastMapStateChange = Shared.GetTime()
-        
-            local hudParams = self:GetHudParams()
-            hudParams.initProjectingCinematic = true    
-            self:SetHudParams(hudParams)
-        end
-    
-    end
-
-end
-
-function Marine:GetHudParams()
-
-    if self.hudParams == nil then
-    
-        self.hudParams = {}
-        self.hudParams.timeDamageTaken = nil
-        // scalar 0-1        
-        self.hudParams.damageIntensity = 0
-        // boolean to check if a hud cinematic should be played,  init with true so respawning / ejecting from CS / joining team will trigger it
-        self.hudParams.initProjectingCinematic = true
-    
-    end
-    
-    return self.hudParams
-
-end
-
-function Marine:SetHudParams(hudParams)
-    self.hudParams = hudParams
 end
 
 local function TriggerSpitHitEffect(coords)
@@ -245,30 +139,11 @@ local function TriggerSpitHitEffect(coords)
     
 end
 
-function Marine:OnKillClient()
+local function UpdatePoisonedEffect(self)
 
-    Player.OnKillClient(self)
-    
-    if self.requestMenu then
-        
-        GetGUIManager():DestroyGUIScript(self.requestMenu)
-        self.requestMenu = nil
-            
-    end
-    
-    if self.marineHUD then
-    
-        GetGUIManager():DestroyGUIScript(self.marineHUD)
-        self.marineHUD = nil
-        
-    end
-
-end
-
-function Marine:UpdatePoisonedEffect()
-
-    if self.poisoned and self:GetIsAlive() and not self.poisonedGUI:GetIsAnimating() then    
-        self.poisonedGUI:TriggerPoisonEffect()        
+    local feedbackUI = ClientUI.GetScript("GUIPoisonedFeedback")
+    if self.poisoned and self:GetIsAlive() and feedbackUI and not feedbackUI:GetIsAnimating() then
+        feedbackUI:TriggerPoisonEffect()
     end
     
 end
@@ -283,16 +158,19 @@ function Marine:UpdateClientEffects(deltaTime, isLocal)
         
         self:UpdateGhostModel()
         
-        self:UpdatePoisonedEffect()
+        UpdatePoisonedEffect(self)
         
-        if self.marineHUD then
-            self.marineHUD:SetIsVisible(self:GetIsAlive())
+        local marineHUD = ClientUI.GetScript("Hud/Marine/GUIMarineHUD")
+        if marineHUD then
+            marineHUD:SetIsVisible(self:GetIsAlive())
         end
         
         if self.buyMenu then
+        
             if not self:GetIsAlive() or not GetIsCloseToMenuStructure(self) then
                 self:CloseMenu()
             end
+            
         end    
         
         if Player.screenEffects.disorient then
@@ -300,7 +178,7 @@ function Marine:UpdateClientEffects(deltaTime, isLocal)
         end
         
         local stunned = HasMixin(self, "Stun") and self:GetIsStunned()
-        local blurEnabled = self.buyMenu ~= nil or stunned or self.minimapVisible
+        local blurEnabled = self.buyMenu ~= nil or stunned or self:GetIsMinimapVisible()
         self:SetBlurEnabled(blurEnabled)
         
         // update spit hit effect
@@ -393,17 +271,6 @@ function Marine:OnUpdateRender()
         
     end
     
-    // Don't draw waypoint if we have hints displaying (to avoid the screen telling the player
-    // about too many things to do)
-    local waypointVisible = true
-    if self.hints and self.hints:GetIsDisplayingHint() then
-        waypointVisible = false
-    end
-    
-    if self.waypoints then
-        self.waypoints:SetWaypointVisible(waypointVisible)
-    end
-    
 end
 
 function Marine:CloseMenu()
@@ -413,6 +280,10 @@ function Marine:CloseMenu()
         GetGUIManager():DestroyGUIScript(self.buyMenu)
         self.buyMenu = nil
         MouseTracker_SetIsVisible(false)
+        
+        // Quick work-around to not fire weapon when closing menu.
+        self.timeClosedMenu = Shared.GetTime()
+        
         return true
         
     end
@@ -447,74 +318,6 @@ function Marine:GetAndClearNotification()
     
     return notification
 
-end
-
-function Marine:UpdateClientHelp()
-
-    local kDefaultScanRange = 10
-    local teamNumber = self:GetTeamNumber()
-    
-    // Look for structure that needs to be built
-    function isBuildStructure(ent)
-        return ent:GetCanConstruct(self)
-    end
-    
-    local origin = self:GetModelOrigin()
-
-    local structures = Shared.GetEntitiesWithTagInRange("class:Structure", origin, kDefaultScanRange, isBuildStructure)
-    Shared.SortEntitiesByDistance(origin, structures)
-    
-    for index = 1, #structures do
-        local structure = structures[index]
-        local localizedStructureName = Locale.ResolveString(LookupTechData(structure:GetTechId(), kTechDataDisplayName))
-        local buildStructureText = Locale.ResolveString("BUILD_STRUCTURE") .. localizedStructureName
-        self:AddBindingHint("Use", structure:GetId(), buildStructureText, 3)
-    end
-    
-    // Look for unattached resource nozzles
-    /*
-    function isFreeResourcePoint(ent)
-        return (ent:GetAttached() == nil)
-    end
-    for index, nozzle in ipairs( GetSortedByFunctor("ResourcePoint", self:GetModelOrigin(), kDefaultScanRange, isFreeResourcePoint) ) do
-        self:AddInfoHint(nozzle:GetId(), "UNATTACHED_NOZZLE", 1)
-    end
-
-    // Look for unbuilt resource nozzles
-    function isFreeTechPoint(ent)
-        return (ent:GetAttached() == nil)
-    end
-    for index, nozzle in ipairs( GetSortedByFunctor("TechPoint", self:GetModelOrigin(), kDefaultScanRange, isFreeTechPoint) ) do
-        self:AddInfoHint(nozzle:GetId(), "UNATTACHED_TECH_POINT", 1)
-    end
-    */
-    
-    // Look for power nodes
-    function isPowerPoint(ent)
-        return true
-    end
-    
-    local powerNodes = Shared.GetEntitiesWithTagInRange("class:PowerPoint", origin, kDefaultScanRange, isPowerPoint)
-    Shared.SortEntitiesByDistance(origin, powerNodes)
-    
-    for index = 1, #powerNodes do
-        local powerNode = powerNodes[index]
-        local state = powerNode:GetPowerState()
-        if powerNode:GetIsSocketed() and not powerNode:GetIsBuilt() then
-            // Override BUILD_STRUCTURE above
-            self:AddBindingHint("Use", powerNode:GetId(), "UNBUILT_POWER_NODE", 4)
-        elseif state == powerNode:GetIsDisabled() then
-            // If being repaired, tell marine to guard it
-            if powerNode:GetRecentlyRepaired() then
-                self:AddHint(powerNode:GetId(), "GUARD_POWER_NODE", 2)
-            else
-                // If we have a welder, show us a hint
-                // otherwise a info hint
-//                player:AddInfoHint(powerNode:GetId(), "DESTROYED_POWER_NODE", 2)
-            end
-        end
-    end
-       
 end
 
 function Marine:TriggerFootstep()
@@ -614,21 +417,17 @@ function Marine:OnCountDown()
 
     Player.OnCountDown(self)
     
-    if self.marineHUD then
-        self.marineHUD:SetIsVisible(false)
-    end
-
+    ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):SetIsVisible(false)
+    
 end
 
 function Marine:OnCountDownEnd()
 
     Player.OnCountDownEnd(self)
     
-    if self.marineHUD then
-        self.marineHUD:SetIsVisible(true)
-        self:TriggerHudInitEffects()
-    end
-
+    ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):SetIsVisible(true)
+    ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):TriggerInitAnimations()
+    
 end
 
 function Marine:OnOrderSelfComplete(orderType)

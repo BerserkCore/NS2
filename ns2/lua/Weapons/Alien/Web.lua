@@ -15,7 +15,7 @@ Script.Load("lua/OwnerMixin.lua")
 Script.Load("lua/Mixins/BaseModelMixin.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
 
-class 'Web' (Actor)
+class 'Web' (Entity)
 
 Web.kMapName = "web"
 
@@ -48,6 +48,7 @@ function Web:OnCreate()
 
     Entity.OnCreate(self)
     
+    InitMixin(self, EffectsMixin)
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
     InitMixin(self, TechMixin)
@@ -55,6 +56,7 @@ function Web:OnCreate()
     
     if Server then
     
+        InitMixin(self, InvalidOriginMixin)
         InitMixin(self, EntityChangeMixin)
         InitMixin(self, TriggerMixin, {kPhysicsGroup = PhysicsGroup.TriggerGroup, kFilterMask = PhysicsMask.AllButTriggers} )
         InitMixin(self, OwnerMixin)
@@ -65,6 +67,8 @@ function Web:OnCreate()
     end
     
     self:SetUpdates(false)
+    self:SetPropagate(Entity.Propagate_Mask)
+    self:SetRelevancyDistance(kMaxRelevancyDistance)
     
 end
 

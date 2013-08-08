@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======    
+// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //    
 // lua\DetectableMixin.lua    
 //    
@@ -6,9 +6,8 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-DetectableMixin = CreateMixin( DetectableMixin )
+DetectableMixin = CreateMixin(DetectableMixin)
 DetectableMixin.type = "Detectable"
-
 
 // What entities have become dirty.
 // Flushed in the UpdateServer hook by DetectableMixin.OnUpdateServer
@@ -16,18 +15,55 @@ local DetectableMixinDirtyTable = { }
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/detected.surface_shader")
 local kDetectedMaterialName = "cinematics/vfx_materials/detected.material"
-local kDetecEffectInterval = 3
+local kDetectEffectInterval = 3
+
+local function UpdateSensorBlip(self)
+
+    local blip = nil
+    if self.sensorBlipId ~= Entity.invalidId then
+        blip = Shared.GetEntity(self.sensorBlipId)
+    end
+    
+    // Ignore alive if self doesn't have the Live mixin.
+    local alive = true
+    if HasMixin(self, "Live") then
+        alive = self:GetIsAlive()
+    end
+    
+    if not self:GetIsDetected() or not alive then
+    
+        if blip then
+        
+            DestroyEntity(blip)
+            self.sensorBlipId = Entity.invalidId
+            
+        end
+        
+    else
+    
+        if not blip then
+        
+            blip = CreateEntity(SensorBlip.kMapName)
+            self.sensorBlipId = blip:GetId()
+            
+        end
+        
+        blip:Update(self)
+        
+    end
+    
+end
 
 //
 // Call all dirty sensorblips
 //
 local gLastUpdate = 0
-local kSensorUpdateIntervall = 0
+local kSensorUpdateInterval = 0
 local function DetectableMixinOnUpdateServer()
 
     PROFILE("DetectableMixin:OnUpdateServer")
     
-    if gLastUpdate + kSensorUpdateIntervall > Shared.GetTime() then
+    if gLastUpdate + kSensorUpdateInterval > Shared.GetTime() then
         return
     end
 
@@ -37,7 +73,7 @@ local function DetectableMixinOnUpdateServer()
         
             local entity = Shared.GetEntity(entityId)
             if entity then
-                entity:_UpdateSensorBlip()
+                UpdateSensorBlip(entity)
             end
             
         end
@@ -48,6 +84,7 @@ local function DetectableMixinOnUpdateServer()
     gLastUpdate = Shared.GetTime()
     
 end
+Event.Hook("UpdateServer", DetectableMixinOnUpdateServer)
 
 DetectableMixin.expectedCallbacks =
 {
@@ -63,25 +100,36 @@ DetectableMixin.optionalCallbacks =
     OnDetectedChange = "Called when self.detected changes."
 }
 
-// Should be bigger then DetectorMixin:kUpdateDetectionInterval
-DetectableMixin.kResetDetectionInterval = 1.5
+local kResetDetectionInterval = 1.5
 
 DetectableMixin.networkVars =
 {
-    detected = "private boolean"
+    detected = "boolean"
 }
+
+local function DisableDetected(self)
+
+    if self.timeWasDetected and (Shared.GetTime() - self.timeWasDetected) >= kResetDetectionInterval then
+        self:SetDetected(false)
+    end
+    
+    return true
+    
+end
 
 function DetectableMixin:__initmixin()
 
     self.detected = false
-    self.timeSinceDetection = nil
+    self.timeWasDetected = nil
     self.sensorBlipId = Entity.invalidId
     
-    if Client then
+    if Server then
+        self:AddTimedCallback(DisableDetected, kResetDetectionInterval)
+    elseif Client then
     
         self.timeLastDetectEffect = 0
         self.clientDetected = false
-    
+        
     end
     
 end
@@ -89,8 +137,8 @@ end
 function DetectableMixin:OnDestroy()
 
     DetectableMixinDirtyTable[self:GetId()] = nil
-
-    if (self.sensorBlipId ~= Entity.invalidId) and Shared.GetEntity(self.sensorBlipId) then
+    
+    if self.sensorBlipId ~= Entity.invalidId and Shared.GetEntity(self.sensorBlipId) then
     
         DestroyEntity(Shared.GetEntity(self.sensorBlipId))
         self.sensorBlipId = Entity.invalidId
@@ -130,70 +178,9 @@ function DetectableMixin:SetDetected(state)
     end
     
     if state then
-        self.timeSinceDetection = 0
-    end
-    
-end
-
-local function SharedUpdate(self, deltaTime)
-
-    if self.timeSinceDetection then
-    
-        self.timeSinceDetection = self.timeSinceDetection + deltaTime
-        
-        if self.timeSinceDetection >= DetectableMixin.kResetDetectionInterval then
-            self:SetDetected(false)
-        end
-        
-    end
-    
-end
-
-if Server then
-
-    function DetectableMixin:OnUpdate(deltaTime)
-        SharedUpdate(self, deltaTime)
-    end
-    
-    function DetectableMixin:OnProcessMove(input)
-        SharedUpdate(self, input.time)
-    end
-    
-    function DetectableMixin:_UpdateSensorBlip()
-    
-        local blip = nil
-        if self.sensorBlipId ~= Entity.invalidId then
-            blip = Shared.GetEntity(self.sensorBlipId)
-        end
-        
-        // Ignore alive if self doesn't have the Live mixin.
-        local alive = true
-        if HasMixin(self, "Live") then
-            alive = self:GetIsAlive()
-        end
-        
-        if not self:GetIsDetected() or not alive then
-        
-            if blip then
-            
-                DestroyEntity(blip)
-                self.sensorBlipId = Entity.invalidId
-                
-            end
-            
-        else
-        
-            if not blip then
-            
-                blip = CreateEntity(SensorBlip.kMapName)
-                self.sensorBlipId = blip:GetId()
-                
-            end
-            
-            blip:Update(self)
-            
-        end
-        
+        self.timeWasDetected = Shared.GetTime()
+    else
+        self.timeWasDetected = nil
     end
     
 end
@@ -201,7 +188,7 @@ end
 function DetectableMixin:OnUpdateRender()
 
     PROFILE("DetectableMixin:OnUpdateRender")
-
+    
     if self:isa("Player") and self:GetIsLocalPlayer() then
     
         local viewModelEnt = self:GetViewModelEntity()
@@ -212,7 +199,7 @@ function DetectableMixin:OnUpdateRender()
             if not self.detectedMaterial then
                 self.detectedMaterial = AddMaterial(viewModel, kDetectedMaterialName)
             end
-    
+            
             if self.clientDetected ~= self:GetIsDetected() then
             
                 self.clientDetected = self:GetIsDetected()
@@ -220,19 +207,17 @@ function DetectableMixin:OnUpdateRender()
                 if self.clientDetected then
                     self.timeLastDetectEffect = Shared.GetTime()
                 end
-            
+                
             end
             
-            if self:GetIsDetected() and self.timeLastDetectEffect + kDetecEffectInterval < Shared.GetTime() then            
+            if self:GetIsDetected() and self.timeLastDetectEffect + kDetectEffectInterval < Shared.GetTime() then
                 self.timeLastDetectEffect = Shared.GetTime()
             end
             
             self.detectedMaterial:SetParameter("timeDetected", self.timeLastDetectEffect)
-        
+            
         end
-    
+        
     end
-
+    
 end
-
-Event.Hook("UpdateServer", DetectableMixinOnUpdateServer)

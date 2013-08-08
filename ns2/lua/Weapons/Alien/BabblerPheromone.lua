@@ -19,7 +19,7 @@ BabblerPheromone.kModelName = PrecacheAsset("models/alien/babbler/babbler_ball.m
 Shared.PrecacheSurfaceShader("models/alien/babbler/babbler_ball.surface_shader")
 
 local kBabblerSearchRange = 20
-local kBabblerPheromoneDuration = 10
+local kBabblerPheromoneDuration = 5
 local kPheromoneEffectInterval = 0.15
 
 local networkVars =
@@ -45,7 +45,7 @@ function BabblerPheromone:OnCreate()
         InitMixin(self, EntityChangeMixin)
         InitMixin(self, TeamMixin)
         
-        self.timeDestroy = Shared.GetTime() + kBabblerPheromoneDuration
+        self:AddTimedCallback(BabblerPheromone.TimeUp, kBabblerPheromoneDuration)
         self.impact = false
         
     end  
@@ -54,6 +54,7 @@ function BabblerPheromone:OnCreate()
     self.mass = 1
     self.linearDamping = 0
     self.restitution = 0.95
+    self:SetGroupFilterMask(PhysicsMask.NoBabblers)
 
 end
 
@@ -100,10 +101,33 @@ end
 
 if Server then
 
-    local kUp = Vector(0, 1, 0)
-    function BabblerPheromone:ProcessHit(entity, surface, normal)
+    function BabblerPheromone:OnUpdate(deltaTime)
+
+        Projectile.OnUpdate(self, deltaTime)
+
+        if not self.firstUpdate then
         
-        if entity and (GetAreEnemies(self, entity) or HasMixin(entity, "BabblerCling")) and HasMixin(entity, "Live") and entity:GetIsAlive() then
+            self.firstUpdate = true
+        
+            for _, babbler in ipairs(GetEntitiesForTeamWithinRange("Babbler", self:GetTeamNumber(), self:GetOrigin(), kBabblerSearchRange )) do
+            
+                if babbler:GetOwner() == self:GetOwner() then
+                    
+                    if babbler:GetIsClinged() then
+                        babbler:Detach()
+                    end
+
+                end
+                    
+            end
+            
+        end
+    
+    end
+
+    function BabblerPheromone:ProcessHit(entity)
+        
+        if entity and (GetAreEnemies(self, entity) or HasMixin(entity, "BabblerCling")) and HasMixin(entity, "Live") and entity:GetIsAlive() and entity:GetCanTakeDamage() then
         
             self.impact = true
             self.destinationEntityId = entity:GetId()
@@ -111,92 +135,57 @@ if Server then
             self:TriggerEffects("babbler_pheromone_puff")
             self.triggeredPuff = true
 
+            for _, babbler in ipairs(GetEntitiesForTeamWithinRange("Babbler", self:GetTeamNumber(), self:GetOrigin(), kBabblerSearchRange )) do
+            
+                if babbler:GetOwner() == self:GetOwner() then
+                    
+                    // adjust babblers move type
+                    local moveType = kBabblerMoveType.Move
+                    local position = self:GetOrigin()
+                    local giveOrder = true
+
+                    if GetAreFriends(self, entity) and HasMixin(entity, "BabblerCling") then
+                        moveType = kBabblerMoveType.Cling
+                    elseif GetAreEnemies(self, entity) and HasMixin(entity, "Live") and entity:GetIsAlive() and entity:GetCanTakeDamage() then
+                        moveType = kBabblerMoveType.Attack
+                    end
+                    
+                    position = HasMixin(entity, "Target") and entity:GetEngagementPoint() or entity:GetOrigin()                    
+
+                    if giveOrder then
+                    
+                        if babbler:GetIsClinged() then
+                            babbler:Detach()
+                        end
+                        
+                        babbler:SetMoveType(moveType, entity, position, true)
+
+                    end
+
+                end
+                    
+            end
+            
+            DestroyEntity(self)
+
         end   
         
-    end
-
-    function BabblerPheromone:SetOwnerClientId(ownerId)  
-        self.ownerClientId = ownerId
-    end
-    
-    function BabblerPheromone:GetOwnerClientId()
-        return self.ownerClientId
     end
 
     function BabblerPheromone:OnEntityChange(oldId)
 
         if oldId == self.destinationEntityId then
             DestroyEntity(self)
-        end   
+        end
          
     end
 
     function BabblerPheromone:GetIsAttached()
         return self.destinationEntityId ~= Entity.invalidId
     end
-
-    function BabblerPheromone:OnUpdate(deltaTime)
     
-        Projectile.OnUpdate(self, deltaTime)
-    
-        if self.impact or self:GetVelocity():GetLength() > 0.2 then
-        
-            if self:GetIsAttached() then
-                local target = Shared.GetEntity(self.destinationEntityId)
-                self:SetOrigin(target:GetOrigin())
-            end
-            
-            if self.timeDestroy < Shared.GetTime() then
-                DestroyEntity(self)
-            end
-            
-            // update just once in a while, there could be a lot of babblers around :)
-            if not self.timeLastUpdate or self.timeLastUpdate + 0.3 < Shared.GetTime() then
-            
-                self.timeLastUpdate = Shared.GetTime()
-                for _, babbler in ipairs(GetEntitiesForTeamWithinRange("Babbler", self:GetTeamNumber(), self:GetOrigin(), kBabblerSearchRange )) do
-            
-                    if babbler:GetOwnerClientId() == self:GetOwnerClientId() then
-                        
-                        // adjust babblers move type
-                        local moveType = kBabblerMoveType.Move
-                        local target = nil
-                        local position = self:GetOrigin()
-                        local giveOrder = true
-                        
-                        if self:GetIsAttached() then
-                        
-                            target = Shared.GetEntity(self.destinationEntityId)
-                            if GetAreFriends(self, target) and HasMixin(target, "BabblerCling") then
-                                moveType = kBabblerMoveType.Cling
-                            elseif GetAreEnemies(self, target) and HasMixin(target, "Live") and target:GetIsAlive() and target:GetCanTakeDamage() then
-                                moveType = kBabblerMoveType.Attack
-                            end
-                        
-                        end
-                        
-                        if target then
-                            position = HasMixin(target, "Target") and target:GetEngagementPoint() or target:GetOrigin()
-                        else
-                        
-                            if (babbler:GetOrigin() - position):GetLength() < 2 then
-                                giveOrder = false
-                            end
-                        
-                        end
-                        
-                        if giveOrder then
-                            babbler:SetMoveType(moveType, target, position)
-                        end
-                        
-                    end
-            
-                end
-                
-            end 
-
-        end   
-    
+    function BabblerPheromone:TimeUp()
+        DestroyEntity(self)
     end
 
 end

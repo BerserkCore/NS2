@@ -19,7 +19,11 @@ local kFontScale = GUIScale(Vector(1, 0.8, 0))
 
 local showHints
 
+local isFollowing
+
 function GUIInsight_Overhead:Initialize()
+
+    isFollowing = false
 
     mouseoverBackground = GUIManager:CreateGraphicItem()
     mouseoverBackground:SetAnchor(GUIItem.Left, GUIItem.Top)
@@ -48,6 +52,7 @@ function GUIInsight_Overhead:Initialize()
     if showHints then
         GetGUIManager():CreateGUIScriptSingle("GUIInsight_Logout")
     end
+    //GetGUIManager():CreateGUIScriptSingle("GUIMarqueeSelection")
     
 end
 
@@ -58,15 +63,64 @@ function GUIInsight_Overhead:Uninitialize()
     if self.playerHealthbars then
         GetGUIManager():DestroyGUIScriptSingle("GUIInsight_PlayerHealthbars")
         self.playerHealthbars = nil
-	end
+    end
     if self.otherHealthbars then
         GetGUIManager():DestroyGUIScriptSingle("GUIInsight_OtherHealthbars")
         self.otherHealthbars = nil
-	end
+    end
     if showHints then
         GetGUIManager():DestroyGUIScriptSingle("GUIInsight_Logout")
     end
+    //GetGUIManager():DestroyGUIScriptSingle("GUIMarqueeSelection")
     
+end
+
+local function GetEntityUnderCursor(player)
+
+    local xScalar, yScalar = Client.GetCursorPos()
+    local x = xScalar * Client.GetScreenWidth()
+    local y = yScalar * Client.GetScreenHeight()
+    local pickVec = CreatePickRay(player, x, y)
+    
+    local origin = player:GetOrigin()
+    local trace = Shared.TraceRay(origin, origin + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
+    local recastCount = 0
+    while trace.entity == nil and trace.fraction < 1 and trace.normal:DotProduct(Vector(0, 1, 0)) < 0 and recastCount < 3 do
+        // We've hit static geometry with the normal pointing down (ceiling). Re-cast from the point of impact.
+        local recastFrom = 1000 * trace.fraction + 0.1
+        trace = Shared.TraceRay(origin + pickVec*recastFrom, origin + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
+        recastCount = recastCount + 1
+    end
+    
+    return trace.entity
+    
+end
+
+function GUIInsight_Overhead:SendKeyEvent(key, down)
+
+    local previous = isFollowing
+    isFollowing = down and GetIsBinding(key, "Weapon2")
+    
+    // Attempt to teleport to the mapblip with the same entityId
+    // this will prevent issues where the entity is not available on the client due to range
+    if not previous and isFollowing then
+        local player = Client.GetLocalPlayer()
+        local entityId = player.selectedId
+        if entityId then 
+            
+            for _, blip in ientitylist(Shared.GetEntitiesWithClassname("MapBlip")) do
+
+                if blip.ownerEntityId == entityId then
+                
+                    local player = Client.GetLocalPlayer()
+                    local blipOrig = blip:GetOrigin()
+                    player:SetWorldScrollPosition(blipOrig.x-5, blipOrig.z)
+                    
+                end            
+            end
+        end 
+    end
+
 end
 
 function GUIInsight_Overhead:Update(deltaTime)
@@ -86,7 +140,16 @@ function GUIInsight_Overhead:Update(deltaTime)
         if self.otherHealthbars == nil then
             self.otherHealthbars = GetGUIManager():CreateGUIScriptSingle("GUIInsight_OtherHealthbars")
         end
-    
+        
+        // Follow selected player
+        if isFollowing and player.selectedId then
+            local entity = Shared.GetEntity(player.selectedId)
+            if entity then
+                local origin = entity:GetOrigin()
+                player:SetWorldScrollPosition(origin.x-5, origin.z)
+            end     
+        end
+            
     end
     
     -- Store entity under cursor
@@ -126,27 +189,5 @@ function GUIInsight_Overhead:Update(deltaTime)
         mouseoverBackground:SetIsVisible(false)
 
     end
-    
-end
-
-
-function GetEntityUnderCursor(player)
-
-    local xScalar, yScalar = Client.GetCursorPos()
-    local x = xScalar * Client.GetScreenWidth()
-    local y = yScalar * Client.GetScreenHeight()
-    local pickVec = CreatePickRay(player, x, y)
-    
-    local origin = player:GetOrigin()
-    local trace = Shared.TraceRay(origin, origin + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
-    local recastCount = 0
-    while trace.entity == nil and trace.fraction < 1 and trace.normal:DotProduct(Vector(0, 1, 0)) < 0 and recastCount < 3 do
-        // We've hit static geometry with the normal pointing down (ceiling). Re-cast from the point of impact.
-        local recastFrom = 1000 * trace.fraction + 0.1
-        trace = Shared.TraceRay(origin + pickVec*recastFrom, origin + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
-        recastCount = recastCount + 1
-    end
-    
-    return trace.entity
     
 end

@@ -50,13 +50,12 @@ function BabblerEgg:OnCreate()
     if Server then
         
         InitMixin(self, EntityChangeMixin)
-        InitMixin(self, OwnerMixin)
-    
-        self.trackingBabblerId = {}
+        
+        self.trackingBabblerId = { }
         self.silenced = false
-    
+        
     end
-
+    
 end
 
 function BabblerEgg:OnInitialized()
@@ -124,7 +123,7 @@ if Server then
     
     function BabblerEgg:OnEntityChange(oldId)
     
-        if table.removevalue(self.trackingBabblerId, oldId) then
+        if not self.preventEntityChangeCallback and table.removevalue(self.trackingBabblerId, oldId) then
         
             if #self.trackingBabblerId == 0 then
                 DestroyEntity(self)
@@ -134,15 +133,34 @@ if Server then
     
     end
     
-end   
+    function BabblerEgg:OnDestroy()
+    
+        ScriptActor.OnDestroy(self)
+        
+        self.preventEntityChangeCallback = true
+        if self.trackingBabblerId and #self.trackingBabblerId > 0 then
+        
+            for _, babblerId in ipairs(self.trackingBabblerId) do
+            
+                local babbler = Shared.GetEntity(babblerId)
+                if babbler then
+                    babbler:Kill()
+                end
+                
+            end
+            
+        end
+        
+    end
+    
+end
 
 function BabblerEgg:GetEffectParams(tableParams)
-
-    ScriptActor.GetEffectParams(self, tableParams)
-
     tableParams[kEffectFilterSilenceUpgrade] = self.silenced
-    
-end 
+end
 
- Shared.LinkClassToMap("BabblerEgg", BabblerEgg.kMapName, networkVars)
-    
+function BabblerEgg:GetCanBeUsed(player, useSuccessTable)
+    useSuccessTable.useSuccess = false
+end
+
+Shared.LinkClassToMap("BabblerEgg", BabblerEgg.kMapName, networkVars)

@@ -61,7 +61,7 @@ InfantryPortal.kLoopSound = PrecacheAsset("sound/NS2.fev/marine/structures/infan
 InfantryPortal.kIdleLightEffect = PrecacheAsset("cinematics/marine/infantryportal/idle_light.cinematic")
 
 InfantryPortal.kTransponderUseTime = .5
-InfantryPortal.kThinkInterval = 0.25
+local kUpdateRate = 0.25
 InfantryPortal.kTransponderPointValue = 15
 InfantryPortal.kLoginAttachPoint = "keypad"
 
@@ -187,20 +187,47 @@ function InfantryPortal:OnCreate()
     
 end
 
+local function StopSpinning(self)
+
+    self:TriggerEffects("infantry_portal_stop_spin")
+    self.timeSpinUpStarted = nil
+    
+end
+
+local function InfantryPortalUpdate(self)
+
+    self:FillQueueIfFree()
+    
+    if GetIsUnitActive(self) then
+    
+        if self:SpawnTimeElapsed() then
+            self:FinishSpawn()
+        end
+        
+        // Stop spinning if player left server, switched teams, etc.
+        if self.timeSpinUpStarted and self.queuedPlayerId == Entity.invalidId then
+            StopSpinning(self)
+        end
+        
+    end
+    
+    return true
+    
+end
+
 function InfantryPortal:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
-    InitMixin(self, WeldableMixin)    
+    InitMixin(self, WeldableMixin)
     InitMixin(self, NanoShieldMixin)
-    
-    // For both client and server
-    self:SetNextThink(InfantryPortal.kThinkInterval)
     
     self:SetModel(InfantryPortal.kModelName, kAnimationGraph)
     
     if Server then
     
+        self:AddTimedCallback(InfantryPortalUpdate, kUpdateRate)
+        
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
@@ -208,11 +235,9 @@ function InfantryPortal:OnInitialized()
         
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, InfestationTrackerMixin)
-    
-    elseif Client then
-    
-        InitMixin(self, UnitStatusMixin)
         
+    elseif Client then
+        InitMixin(self, UnitStatusMixin)
     end
     
 end
@@ -225,6 +250,7 @@ function InfantryPortal:OnDestroy()
     if Server then
         self:RequeuePlayer()
     elseif Client then
+    
         DestroySpinEffect(self)
         
         if self.fakeMarineModel then
@@ -232,11 +258,11 @@ function InfantryPortal:OnDestroy()
             Client.DestroyRenderModel(self.fakeMarineModel)
             self.fakeMarineModel = nil
             self.fakeMarineMaterial = nil
-        
+            
         end
         
     end
-
+    
 end
 
 function InfantryPortal:GetNanoShieldOffset()
@@ -261,7 +287,7 @@ local function QueueWaitingPlayer(self)
 
         if playerToSpawn ~= nil then
             
-            playerToSpawn:SetIsRespawning(true, self:GetId())
+            playerToSpawn:SetIsRespawning(true)
             team:RemovePlayerFromRespawnQueue(playerToSpawn)
             
             self.queuedPlayerId = playerToSpawn:GetId()
@@ -274,7 +300,7 @@ local function QueueWaitingPlayer(self)
             if Server then
                 
                 if playerToSpawn.SetSpectatorMode then
-                    playerToSpawn:SetSpectatorMode(Spectator.kSpectatorMode.Following)
+                    playerToSpawn:SetSpectatorMode(kSpectatorMode.Following)
                 end
                 
                 playerToSpawn:SetFollowTarget(self)
@@ -296,10 +322,7 @@ function InfantryPortal:GetSpawnTime()
 end
 
 function InfantryPortal:OnReplace(newStructure)
-
-    newStructure.queuedPlayerId = self.queuedPlayerId    
-    newStructure:SetNextThink(InfantryPortal.kThinkInterval)
-    
+    newStructure.queuedPlayerId = self.queuedPlayerId
 end
 
 function InfantryPortal:SpawnTimeElapsed()
@@ -374,8 +397,8 @@ function InfantryPortal:RequeuePlayer()
         if team then
             team:PutPlayerInRespawnQueue(Shared.GetEntity(self.queuedPlayerId))
         end
-        player:SetIsRespawning(false, Entity.invalidId)
-        player:SetSpectatorMode(Spectator.kSpectatorMode.Following)
+        player:SetIsRespawning(false)
+        player:SetSpectatorMode(kSpectatorMode.Following)
         
     end
     
@@ -383,13 +406,6 @@ function InfantryPortal:RequeuePlayer()
     self.queuedPlayerId = Entity.invalidId
     self.queuedPlayerStartTime = nil
 
-end
-
-local function StopSpinning(self)
-
-    self:TriggerEffects("infantry_portal_stop_spin")
-    self.timeSpinUpStarted = nil
-    
 end
 
 if Server then
@@ -420,15 +436,6 @@ if Server then
     
 end
 
-function InfantryPortal:FinishSpawn()
-
-    SpawnPlayer(self)
-    StopSpinning(self)
-    self.timeSpinUpStarted = nil
-    
-end
-
-// If built and active 
 if Server then
 
     function InfantryPortal:FillQueueIfFree()
@@ -438,32 +445,16 @@ if Server then
             if self.queuedPlayerId == Entity.invalidId then
                 QueueWaitingPlayer(self)
             end
-
+            
         end
-
-    end
-
-    function InfantryPortal:OnThink()
-    
-        self:FillQueueIfFree()    
         
-        if GetIsUnitActive(self) then
-
-            if self:SpawnTimeElapsed() then
-            
-                self:FinishSpawn()
-                //PushPlayersInRange(self:GetOrigin(), kPushRange, kPushImpulseStrength, GetEnemyTeamNumber(self:GetTeamNumber()))
-                
-            end
-            
-            // Stop spinning if player left server, switched teams, etc.            
-            if self.timeSpinUpStarted and self.queuedPlayerId == Entity.invalidId then            
-                StopSpinning(self)
-            end
-            
-        end
-            
-        self:SetNextThink(InfantryPortal.kThinkInterval)
+    end
+    
+    function InfantryPortal:FinishSpawn()
+    
+        SpawnPlayer(self)
+        StopSpinning(self)
+        self.timeSpinUpStarted = nil
         
     end
     
@@ -556,18 +547,33 @@ function GetCommandStationIsBuilt(techId, origin, normal, commander)
 
 end
 
-function InfantryPortal:OnUpdateRender()
+if Client then
 
-    PROFILE("InfantryPortal:OnUpdateRender")
-
-    local shouldSpin = GetIsUnitActive(self) and self.queuedPlayerId ~= Entity.invalidId
-    
-    if shouldSpin then
-        CreateSpinEffect(self)
-    else
+    function InfantryPortal:PreventSpinEffect(duration)
+        self.preventSpinDuration = duration
         DestroySpinEffect(self)
     end
-    
+
+    function InfantryPortal:OnUpdate(deltaTime)
+
+        PROFILE("InfantryPortal:OnUpdate")
+        
+        ScriptActor.OnUpdate(self, deltaTime)
+        
+        if self.preventSpinDuration then            
+            self.preventSpinDuration = math.max(0, self.preventSpinDuration - deltaTime)         
+        end
+
+        local shouldSpin = GetIsUnitActive(self) and self.queuedPlayerId ~= Entity.invalidId and (self.preventSpinDuration == nil or self.preventSpinDuration == 0)
+        
+        if shouldSpin then
+            CreateSpinEffect(self)
+        else
+            DestroySpinEffect(self)
+        end
+        
+    end
+
 end
 
 function InfantryPortal:GetTechButtons()

@@ -58,23 +58,7 @@ function AiSlapAttackType:OnHit()
     // If we havea target, hit it  
     if target then
         self.aiEntity:DoDamage(Whip.kDamage, target, hitPosition, hitDirection, nil, true)
-    end
-    
-    // Try to hit other targets close by the hit position
-    local nearbyEnts = self.targetSelector:AcquireTargets(1000, Whip.kAreaEffectRadius, hitPosition)
-    local didDamage = false
-    for index, ent in ipairs(nearbyEnts) do
-    
-        if ent ~= target then
-        
-            local direction = ent:GetModelOrigin() - hitPosition
-            direction:Normalize()
-            
-            self.aiEntity:DoDamage(Whip.kDamage, ent, hitPosition, direction, nil, true)
-            didDamage = true
-            
-        end
-        
+        didDamage = true
     end
     
     if didDamage then

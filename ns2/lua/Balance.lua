@@ -203,6 +203,8 @@ kRifleMeleeDamageType = kDamageType.Normal
 kPistolDamage = 25
 kPistolDamageType = kDamageType.Light
 kPistolClipSize = 10
+// not used yet
+kPistolMinFireDelay = 0.1
 
 kPistolAltDamage = 40
 
@@ -244,12 +246,16 @@ kMinigunDamage = 25
 kMinigunDamageType = kDamageType.Heavy
 kMinigunClipSize = 250
 
-kClawDamage = 75
+kClawWeight = 0.05
+kMinigunWeight = 0.15
+kRailgunWeight = 0.0
+
+kClawDamage = 60
 kClawDamageType = kDamageType.Structural
 
 kRailgunDamage = 50
 kRailgunChargeDamage = 150
-kRailgunDamageType = kDamageType.Puncture
+kRailgunDamageType = kDamageType.Structural
 
 kMACAttackDamage = 5
 kMACAttackDamageType = kDamageType.Normal
@@ -301,7 +307,7 @@ kSpitDamageType = kDamageType.Normal
 kSpitEnergyCost = 7
 
 kBabblerPheromoneEnergyCost = 7
-kBabblerDamage = 5
+kBabblerDamage = 10
 
 kBabblerCost = 1
 kBabblerEggBuildTime = 8
@@ -320,7 +326,7 @@ kBileBombDamageType = kDamageType.Corrode
 kBileBombEnergyCost = 20
 kBileBombDuration = 5
 // 200 inches in NS1 = 5 meters
-kBileBombSplashRadius = 7
+kBileBombSplashRadius = 6
 
 kWebBuildCost = 1
 kWebbedDuration = 1
@@ -530,7 +536,7 @@ kLeapResearchCost = 25
 kLeapResearchTime = 60
 kBileBombResearchCost = 20
 kBileBombResearchTime = 60
-kGorgeTunnelResearchCost = 20
+kGorgeTunnelResearchCost = 30
 kGorgeTunnelResearchTime = 60
 kWebResearchCost = 20
 kWebResearchTime = 60

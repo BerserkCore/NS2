@@ -110,8 +110,8 @@ function Hydra:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, PointGiverMixin)
     InitMixin(self, SelectableMixin)
-    InitMixin(self, CloakableMixin)
     InitMixin(self, EntityChangeMixin)
+    InitMixin(self, CloakableMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DetectableMixin)
     InitMixin(self, ConstructMixin)
@@ -172,9 +172,6 @@ function Hydra:OnInitialized()
         InitMixin(self, UnitStatusMixin)
         InitMixin(self, HiveVisionMixin)
         
-        self.decal = Client.CreateRenderDecal()
-        self.decal:SetMaterial("materials/infestation/infestation_decal.material")     
-        
     end
     
 end
@@ -230,6 +227,9 @@ function Hydra:GetTracerEffectName()
     return kSpikeTracerEffectName
 end
 
+function Hydra:GetTracerResidueEffectName()
+    return kSpikeTracerResidueEffectName
+end
 function Hydra:GetMaturityRate()
     return kHydraMaturationTime
 end
@@ -310,28 +310,21 @@ function Hydra:OnUpdateAnimationInput(modelMixin)
     
 end
 
-if Client then
-
-    function Hydra:OnUpdateRender()
-    
-        PROFILE("Hydra:OnUpdateRender")
-
-        if self.decal then
-        
-            self.decal:SetCoords(self:GetCoords())
-            local radiusMod = math.sin(Shared.GetTime() + (self:GetId() % 10)) * 0.04
-
-            local clientRadius = 0.95 + radiusMod
-            self.decal:SetExtents(Vector(clientRadius, 0.7, clientRadius))
-            
-        end
-        
-    end
-
-end
-
 function Hydra:GetEngagementPointOverride()
     return self:GetOrigin() + Vector(0, 0.4, 0)
+end
+
+function Hydra:OnUpdateRender()
+
+    local showDecal = self:GetIsVisible() and not self:GetIsCloaked()
+
+    if not self.decal and showDecal then
+        self.decal = CreateSimpleInfestationDecal(0.9, self:GetCoords())
+    elseif self.decal and not showDecal then
+        Client.DestroyRenderDecal(self.decal)
+        self.decal = nil
+    end
+
 end
 
 Shared.LinkClassToMap("Hydra", Hydra.kMapName, networkVars)

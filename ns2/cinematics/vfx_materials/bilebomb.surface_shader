@@ -44,6 +44,8 @@
 		
 		 	material.gloss    = 100;
 			
+			material.id = 1;
+			
 			
 		}
 	]]>

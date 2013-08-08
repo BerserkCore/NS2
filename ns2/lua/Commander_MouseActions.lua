@@ -8,6 +8,8 @@
 
 assert(Client)
 
+kCommanderLeftClickDelay = 0.4
+
 local function ClickSelect(commander, x, y, controlSelect, shiftSelect)
 
     local success = false

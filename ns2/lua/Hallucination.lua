@@ -43,7 +43,6 @@ local networkVars =
     moving = "boolean",
     attacking = "boolean",
     hallucinationIsVisible = "boolean",
-    isStructure = "boolean"
 }
 
 AddMixinNetworkVars(EnergyMixin, networkVars)
@@ -71,17 +70,6 @@ local function GetTechIdAttacks(techId)
     
     return gTechIdAttacking[techId]
     
-end
-
-local function GetTechIdIsStructure(techId)
-
-    local className = EnumToString(kTechId, techId)
-    if classisa(className, "Structure") or classisa(className, "CommandStructure") then
-        return true
-    end
-
-    return false    
-
 end
 
 local ghallucinateIdToTechId = nil
@@ -272,8 +260,6 @@ local function SetAssignedAttributes(self, hallucinationTechId)
     self:SetMaxArmor(armor)
     self:SetArmor(armor)
     
-    self.isStructure = GetTechIdIsStructure(self.assignedTechId)
-    
     if self.assignedTechId == kTechId.Hive then
     
         local attachedTechPoint = self:GetAttached()
@@ -306,7 +292,6 @@ function Hallucination:OnCreate()
     if Server then
     
         self.hallucinationIsVisible = true
-        self.isStructure = false
         self.attacking = false
         self.moving = false
         self.assignedTechId = kTechId.Skulk

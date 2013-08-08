@@ -20,6 +20,7 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
+Script.Load("lua/TunnelUserMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
@@ -34,6 +35,7 @@ local networkVars =
     timeThrustersEnded = "private compensated time",
     timeThrustersStarted = "private compensated time",
     weaponUpgradeLevel = "integer (0 to 3)",
+    inventoryWeight = "float"
 }
 
 Exo.kMapName = "exo"
@@ -67,6 +69,7 @@ local kHealthCritical = PrecacheAsset("sound/NS2.fev/marine/heavy/critical")
 local kHealthCriticalTrigger = 0.2
 
 local kWalkMaxSpeed = 3.7
+local kMaxSpeed = 5
 local kViewOffsetHeight = 2.3
 local kAcceleration = 40
 
@@ -109,6 +112,7 @@ AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+AddMixinNetworkVars(TunnelUserMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
@@ -129,7 +133,6 @@ function Exo:OnCreate()
     InitMixin(self, BaseMoveMixin, { kGravity = Player.kGravity })
     InitMixin(self, GroundMoveMixin)
     InitMixin(self, VortexAbleMixin)
-    InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kExoFov })
     InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
@@ -137,6 +140,7 @@ function Exo:OnCreate()
     InitMixin(self, CombatMixin)
     InitMixin(self, SelectableMixin)
     InitMixin(self, CorrodeMixin)
+    InitMixin(self, TunnelUserMixin)
     
     self:SetIgnoreHealth(true)
     
@@ -149,6 +153,7 @@ function Exo:OnCreate()
     self.idleSound2DId = Entity.invalidId
     self.timeThrustersEnded = 0
     self.timeThrustersStarted = 0
+    self.inventoryWeight = 0
     
     if Server then
     
@@ -263,6 +268,27 @@ function Exo:OnInitialized()
     
 end
 
+local function ShowHUD(self, show)
+
+    assert(Client)
+    
+    if ClientUI.GetScript("Hud/Marine/GUIMarineHUD") then
+        ClientUI.GetScript("Hud/Marine/GUIMarineHUD"):SetIsVisible(show)
+    end
+    if ClientUI.GetScript("Hud/Marine/GUIExoHUD") then
+        ClientUI.GetScript("Hud/Marine/GUIExoHUD"):SetIsVisible(show)
+    end
+    
+end
+
+function Exo:OnInitLocalClient()
+
+    Player.OnInitLocalClient(self)
+    
+    ShowHUD(self, false)
+    
+end
+
 function Exo:GetCrouchShrinkAmount()
     return kCrouchShrinkAmount
 end
@@ -298,46 +324,18 @@ function Exo:InitWeapons()
     end
     
     weaponHolder:TriggerEffects("exo_login")
+    self.inventoryWeight = weaponHolder:GetInventoryWeight(self)
     self:SetActiveWeapon(ExoWeaponHolder.kMapName)
     StartSoundEffectForPlayer(kDeploy2DSound, self)
     
 end
 
+function Exo:GetMaxBackwardSpeedScalar()
+    return 1
+end    
+
 function Exo:OnDestroy()
 
-    if self.marineHUD then
-    
-        GetGUIManager():DestroyGUIScript(self.marineHUD)
-        self.marineHUD = nil
-        
-    end
-    
-    if self.exoHUD then
-    
-        GetGUIManager():DestroyGUIScript(self.exoHUD)
-        self.exoHUD = nil
-        
-    end
-    
-    if self.progressDisplay then
-    
-        GetGUIManager():DestroyGUIScript(self.progressDisplay)
-        self.progressDisplay = nil
-        
-    end
-    
-    if self.waypoints then
-        GetGUIManager():DestroyGUIScript(self.waypoints)
-        self.waypoints = nil
-    end
-    
-    if self.requestMenu then
-    
-        GetGUIManager():DestroyGUIScript(self.requestMenu)
-        self.requestMenu = nil
-        
-    end
-        
     if self.flashlight ~= nil then
         Client.DestroyRenderLight(self.flashlight)
     end
@@ -370,11 +368,17 @@ function Exo:GetMaxViewOffsetHeight()
 end
 
 function Exo:GetAcceleration()
-    return ConditionalValue(self:GetIsOnSurface(), kAcceleration, kThrusterHorizontalAcceleration)
+    return ConditionalValue(self:GetIsOnSurface(), kAcceleration, kThrusterHorizontalAcceleration) * self:GetInventorySpeedScalar()
 end
 
 function Exo:GetMaxSpeed(possible)
-    return kWalkMaxSpeed
+
+    if possible then
+        return kWalkMaxSpeed
+    end    
+    
+    return kMaxSpeed * self:GetInventorySpeedScalar()
+    
 end
 
 function Exo:MakeSpecialEdition()
@@ -477,6 +481,10 @@ end
  */
 function Exo:GetIsAbleToUse()
     return false
+end
+
+function Exo:GetInventorySpeedScalar(player)
+    return 1 - self.inventoryWeight
 end
 
 local function UpdateIdle2DSound(self, yaw, pitch, dt)
@@ -591,64 +599,6 @@ end
 
 if Client then
 
-    function Exo:OnKillClient()
-
-        Player.OnKillClient(self)
-        
-        if self.requestMenu then
-            
-            GetGUIManager():DestroyGUIScript(self.requestMenu)
-            self.requestMenu = nil
-                
-        end
-
-    end
-
-    local function ShowHUD(self, show)
-    
-        self.marineHUD:SetIsVisible(show)
-        self.exoHUD:SetIsVisible(show)
-        
-    end
-    
-    function Exo:OnInitLocalClient()
-    
-        Player.OnInitLocalClient(self)
-        
-        if self.marineHUD == nil then
-        
-            self.marineHUD = GetGUIManager():CreateGUIScript("Hud/Marine/GUIMarineHUD")
-            self.marineHUD:SetStatusDisplayVisible(false)
-            self.marineHUD:SetFrameVisible(false)
-            self.marineHUD:SetInventoryDisplayVisible(false)
-            
-        end
-        
-        if self.exoHUD == nil then
-            self.exoHUD = GetGUIManager():CreateGUIScript("Hud/Marine/GUIExoHUD")
-        end
-        
-        if self:GetTeamNumber() ~= kTeamReadyRoom then
-        
-            if self.waypoints == nil then
-                self.waypoints = GetGUIManager():CreateGUIScript("GUIWaypoints")
-                self.waypoints:InitMarineTexture()
-            end
-                
-            if self.progressDisplay == nil then
-                self.progressDisplay = GetGUIManager():CreateGUIScript("GUIProgressBar")
-            end
-        
-        end
-        
-        if self.requestMenu == nil then
-            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-        end
-        
-        ShowHUD(self, false)  
-        
-    end
-    
     // The Exo overrides the default trigger for footsteps.
     // They are triggered by the view model for the local player but
     // still uses the default behavior for other players viewing the Exo.
@@ -835,6 +785,19 @@ end
 
 function Exo:GetIsOnGround()
     return Player.GetIsOnGround(self) and not self.thrustersActive
+end
+
+// for jetpack fuel display
+function Exo:GetFuel()
+
+    if self.thrustersActive then
+        self.fuelFraction = 1 - Clamp((Shared.GetTime() - self.timeThrustersStarted) / kThrusterDuration, 0, 1)
+    else
+        self.fuelFraction = Clamp((Shared.GetTime() - self.timeThrustersEnded) / kThrustersCooldownTime, 0, 1)
+    end
+    
+    return self.fuelFraction
+        
 end
 
 local kUpVector = Vector(0, 1, 0)

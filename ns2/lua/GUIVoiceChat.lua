@@ -153,3 +153,17 @@ function GUIVoiceChat:Update(deltaTime)
     end
 
 end
+
+function GUIVoiceChat:SendKeyEvent(key, down, amount)
+
+    if GetIsBinding(key, "VoiceChat") then
+    
+        if down and not ChatUI_EnteringChatMessage() then
+            Client.VoiceRecordStart()
+        else
+            Client.VoiceRecordStop()
+        end
+        
+    end
+    
+end

@@ -275,11 +275,10 @@ function InitMixin(classInstance, theMixin, optionalMixinData)
             classInstance.__mixinlist = { }
         end
         
-        assert(classInstance.__mixinlist[theMixin.type] == nil or
-               classInstance.__mixinlist[theMixin.type] == theMixin,
+        assert(classInstance.__mixinlist[theMixin.type] == nil,
                "Different Mixin with the same type name already exists in table!")
         
-        classInstance.__mixinlist[theMixin.type] = theMixin
+        classInstance.__mixinlist[theMixin.type] = true
         
         // Add the static mixin data to this class instance.
         if classInstance.__mixindata == nil then
@@ -332,15 +331,13 @@ end
  */
 function HasMixin(classInstance, mixinTypeName)
 
-    // Note: The check for a non-nil classInstance was added as a temporarily fix for Mantis report: 3003.
-    if classInstance and classInstance.__mixinlist then
-    
-        if classInstance.__mixinlist[mixinTypeName] ~= nil then
-            return true
-        end
-        
-    end
-    return false
+	// Note: The check for a non-nil classInstance was added as a temporarily fix for Mantis report: 3003.
+	if not classInstance then
+		return false
+	end
+
+    local mixinlist = classInstance.__mixinlist
+	return (mixinlist and mixinlist[mixinTypeName]) or false
     
 end
 

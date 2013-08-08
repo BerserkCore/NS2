@@ -39,7 +39,8 @@ function GUICommunicationStatusIcons:Initialize()
     PROFILE("GUICommunicationStatusIcons:Initialize")
     
     GUIAnimatedScript.Initialize(self)
-    self.statusIcons = {}
+    
+    self.statusIcons = { }
     
 end
 
@@ -57,12 +58,12 @@ function GUICommunicationStatusIcons:Uninitialize()
     
 end
 
-function GUICommunicationStatusIcons:CreateIcon(player)
+local function CreateIcon(self, player)
 
     PROFILE("GUICommunicationStatusIcons:CreateIcon")
-
+    
     local newIcon = GUIManager:CreateGraphicItem()
-
+    
     newIcon:SetTexture("ui/communication_status.dds")
     newIcon:SetSize(GUICommunicationStatusIcons.kMaxSize)
     
@@ -76,8 +77,8 @@ function GUICommunicationStatusIcons:CreateIcon(player)
     
 end
 
-function GUICommunicationStatusIcons:GetIconForPlayer(player)
-    
+local function GetIconForPlayer(self, player)
+
     PROFILE("GUICommunicationStatusIcons:GetIconForPlayer")
     
     for index, icon in ipairs(self.statusIcons) do
@@ -92,71 +93,73 @@ function GUICommunicationStatusIcons:GetIconForPlayer(player)
     
 end
 
-// Add remove GUI icons to match up with players 
-function GUICommunicationStatusIcons:UpdateAddRemoveIcons(deltaTime)
+// Add remove GUI icons to match up with players .
+local function UpdateAddRemoveIcons(self)
 
     PROFILE("GUICommunicationStatusIcons:UpdateAddRemoveIcons")
-
+    
     // Scan for nearby eligible players to display this for. Only need to do this a few times a second.
-    if (self.timeOfLastCommStatusUpdate == nil) or (Shared.GetTime() > self.timeOfLastCommStatusUpdate + .3) then
+    if (self.timeOfLastCommStatusUpdate == nil) or (Shared.GetTime() > self.timeOfLastCommStatusUpdate + 0.3) then
     
         local localPlayer = Client.GetLocalPlayer()
         
         for index, player in ipairs(GetEntitiesForTeamWithinRange("Player", localPlayer:GetTeamNumber(), localPlayer:GetEyePos(), GUICommunicationStatusIcons.kDisplayRange)) do
-            
+        
             // Skip local player
             if player:GetId() ~= Client.GetLocalPlayer():GetId() then
             
-                // Get player voice status
+                // Get player voice status.
                 local status = player:GetCommunicationStatus()
                 
-                // If player has voice status 
+                // If player has voice status.
                 if status ~= kPlayerCommunicationStatus.None then
-
-                    // Get icon associated with player
-                    local icon = self:GetIconForPlayer(player)
                 
+                    // Get icon associated with player
+                    local icon = GetIconForPlayer(self, player)
+                    
                     // We have no icon, create icon and set new status
                     if icon == nil then
                     
-                        local newIcon = self:CreateIcon(player)
+                        local newIcon = CreateIcon(self, player)
                         table.insert(self.statusIcons, newIcon)
-                   
+                        
                     end
-                   
+                    
                 end
                 
             end
             
         end
         
-        self.timeOfLastCommStatusUpdate = Shared.GetTime()    
+        self.timeOfLastCommStatusUpdate = Shared.GetTime()
         
     end
     
 end
 
-function GUICommunicationStatusIcons:UpdateIconsFromPlayers()
+local function UpdateIconsFromPlayers(self)
 
     PROFILE("GUICommunicationStatusIcons:UpdateIconsFromPlayers")
     
     local localPlayer = Client.GetLocalPlayer()
     local viewZAxis = localPlayer:GetViewAngles():GetCoords().zAxis
-
+    
     // Update icon positions and status' for players every tick
     for index, icon in pairs(self.statusIcons) do
     
-        local player = Shared.GetEntity(icon.playerId)        
+        local player = Shared.GetEntity(icon.playerId)
         assert(player ~= nil)
         assert(player:isa("Player"))
         
         local newStatus = player:GetCommunicationStatus()
         if newStatus ~= icon.playerStatus and (newStatus ~= kPlayerCommunicationStatus.None) then
+        
             icon.playerStatus = newStatus
             icon:SetTexturePixelCoordinates(GetTextureCoordinates(newStatus))
+            
         end
         
-        // Only draw if it's in front of us
+        // Only draw if it's in front of us.
         local toTarget = player:GetModelOrigin() - localPlayer:GetEyePos()
         local toTargetNorm = GetNormalizedVector(toTarget)
         local visible = (toTargetNorm:DotProduct(viewZAxis) > 0)
@@ -179,32 +182,24 @@ function GUICommunicationStatusIcons:UpdateIconsFromPlayers()
         icon:SetIsVisible(visible)
         
     end
-
+    
 end
 
-function GUICommunicationStatusIcons:RemoveOrphaned(deltaTime)
+local function RemoveOrphanedIcon(icon)
 
-    PROFILE("GUICommunicationStatusIcons:RemoveOrphaned")
-    
     local localPlayer = Client.GetLocalPlayer()
-
-    // Remove all icons no longer have a player for them
-    function removeOrphanedIcon(icon)
+    local player = Shared.GetEntity(icon.playerId)
+    local dist = 0
+    if player ~= nil then
+        dist = (localPlayer:GetEyePos() - player:GetOrigin()):GetLength()
+    end
     
-        local player = Shared.GetEntity(icon.playerId)
-        local dist = 0
-        if player ~= nil then
-            dist = (localPlayer:GetEyePos() - player:GetOrigin()):GetLength()
-        end
-        
-        local delete = (player == nil) or (not player:isa("Player")) or (icon.playerStatus ~= player:GetCommunicationStatus()) or (dist > GUICommunicationStatusIcons.kDisplayRange)
-        if delete then
-            GUI.DestroyItem(icon)
-        end
-        
-        return delete
-    end    
-    table.removeConditional(self.statusIcons, removeOrphanedIcon)
+    local delete = (player == nil) or (not player:isa("Player")) or (icon.playerStatus ~= player:GetCommunicationStatus()) or (dist > GUICommunicationStatusIcons.kDisplayRange)
+    if delete then
+        GUI.DestroyItem(icon)
+    end
+    
+    return delete
     
 end
 
@@ -214,11 +209,10 @@ function GUICommunicationStatusIcons:Update(deltaTime)
     
     GUIAnimatedScript.Update(self, deltaTime)
     
-    self:RemoveOrphaned(deltaTime)
+    table.removeConditional(self.statusIcons, RemoveOrphanedIcon)
     
-    self:UpdateAddRemoveIcons(deltaTime)
+    UpdateAddRemoveIcons(self)
     
-    self:UpdateIconsFromPlayers()
+    UpdateIconsFromPlayers(self)
     
 end
-

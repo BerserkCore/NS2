@@ -66,7 +66,7 @@ local kCloakTriggered2D = PrecacheAsset("sound/NS2.fev/alien/structures/shade/cl
 
 Shade.kCloakRadius = 14
 
-Shade.kCloakUpdateRate = 0.5
+Shade.kCloakUpdateRate = 0.2
 
 local networkVars = { }
 
@@ -106,8 +106,8 @@ function Shade:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, PointGiverMixin)
     InitMixin(self, SelectableMixin)
-    InitMixin(self, CloakableMixin)
     InitMixin(self, EntityChangeMixin)
+    InitMixin(self, CloakableMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DetectableMixin)
     InitMixin(self, ConstructMixin)
@@ -290,6 +290,25 @@ function Shade:TriggerInk()
 
 end
 
+if Server then
+
+    local function OnConsoleInk()
+    
+        if Shared.GetCheatsEnabled() or Shared.GetDevMode() then
+        
+            local shades = Shared.GetEntitiesWithClassname("Shade")
+            for i, shade in ientitylist(shades) do
+                shade:TriggerInk()
+            end
+            
+        end
+        
+    end
+    
+    Event.Hook("Console_ink", OnConsoleInk)
+    
+end
+
 function Shade:PerformActivation(techId, position, normal, commander)
 
     local success = false
@@ -371,9 +390,7 @@ if Server then
     function Shade:UpdateCloaking()
     
         for _, cloakable in ipairs( GetEntitiesWithMixinForTeamWithinRange("Cloakable", self:GetTeamNumber(), self:GetOrigin(), Shade.kCloakRadius) ) do
-        
-            cloakable:SetIsCloaked(true, 1, false)
-        
+            cloakable:TriggerCloak()
         end
         
         return self:GetIsAlive()

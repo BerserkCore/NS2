@@ -93,7 +93,7 @@ function StompMixin:OnTag(tagName)
             
         end
         
-        if player:GetEnergy() < kStompEnergyCost or player:GetVelocityLength() > kMaxPlayerVelocityToStomp then
+        if player:GetEnergy() < kStompEnergyCost then
             self.stomping = false
         end    
         

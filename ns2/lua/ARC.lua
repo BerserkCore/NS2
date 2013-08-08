@@ -314,15 +314,12 @@ function ARC:GetFov()
     return ARC.kFov
 end
 
-function ARC:OnOverrideDoorInteraction(inEntity)   
+function ARC:OnOverrideDoorInteraction(inEntity)
     return true, 4
 end
 
 function ARC:GetEffectParams(tableParams)
-
-    ScriptActor.GetEffectParams(self, tableParams)    
-    tableParams[kEffectFilterDeployed] = self:GetInAttackMode() 
-    
+    tableParams[kEffectFilterDeployed] = self:GetInAttackMode()
 end
 
 function ARC:FilterTarget()

@@ -220,16 +220,22 @@ kDamageEffects =
             {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Shotgun", done = true},        
             {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Pistol", done = true}, 
             {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.3, doer = "Minigun", done = true},
-            {decal = "cinematics/vfx_materials/decals/railgun_hole_01.material", scale = 0.3, doer = "Railgun", done = true},
-            // For shooting through walls.
             {decal = "cinematics/vfx_materials/decals/railgun_hole_02.material", scale = 0.3, doer = "Railgun", done = true},
             
-            // surface alien weapons   
+            // surface alien weapons
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_02.material", scale = 0.25, doer = "LerkBite", alt_mode = true, done = true}, 
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_02.material", scale = 0.25, doer = "Spores", alt_mode = true, done = true}, 
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_02.material", scale = 0.25, doer = "LerkUmbra", alt_mode = true, done = true}, 
+            
             {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.5, doer = "BiteLeap", done = true}, 
-            {decal = "", scale = 0.5, doer = "LerkBite", alt_mode = true, done = true}, 
-            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.5, doer = "LerkBite", done = true}, 
-            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.75, doer = "SwipeBlink", done = true}, 
-            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 1, doer = "Gore", done = true}, 
+            {decal = "cinematics/vfx_materials/decals/bite_02.material", scale = 0.5, doer = "LerkBite", done = true}, 
+            
+            {decal = {{.25, "cinematics/vfx_materials/decals/clawmark_01.material"},
+                      {.25, "cinematics/vfx_materials/decals/clawmark_02.material"},
+                      {.25, "cinematics/vfx_materials/decals/clawmark_03.material"},
+                      {.25, "cinematics/vfx_materials/decals/clawmark_04.material"}}, scale = 0.25, doer = "SwipeBlink", done = true}, 
+                      
+            {decal = "cinematics/vfx_materials/decals/bash_01.material", scale = 1, doer = "Gore", done = true}, 
         },    
     },
 
@@ -240,14 +246,15 @@ kDamageEffects =
         damageEffects =
         {
             {player_cinematic = "cinematics/materials/deflect/marine.cinematic", surface = "nanoshield", done = true},
-            {player_cinematic = "cinematics/materials/flame/flame.cinematic", surface = "flame", done = true},
+            
+            {player_cinematic = "cinematics/materials/flame/claw_bash.cinematic", doer = "Claw", surface = "flame", done = true},
+            {player_cinematic = "cinematics/materials/flame/flame.cinematic", surface = "flame", done = true},            
         
             // marine effects:
             {player_cinematic = "cinematics/materials/ethereal/ethereal.cinematic", surface = "ethereal", done = true},
             {player_cinematic = "cinematics/materials/hallucination/hallucination.cinematic", surface = "hallucination", done = true},
             
             {player_cinematic = "cinematics/materials/%s/bash.cinematic", doer = "Rifle", alt_mode = true, done = true},
-            {player_cinematic = "cinematics/materials/flame/flame.cinematic", doer = "Flamethrower", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochetHeavy.cinematic", doer = "Shotgun", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochetMinigun.cinematic", doer = "Minigun", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochetRailgun.cinematic", doer = "Railgun", done = true},

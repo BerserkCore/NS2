@@ -190,15 +190,8 @@ if Server then
         if self.sighted then
             mask = bit.bor(mask, kRelevantToTeam1Commander, kRelevantToTeam2Commander)
         elseif self:GetTeamNumber() == 1 then
-        
-            local location = self.GetLocationEntity and self:GetLocationEntity()
-            
-            if not location or location:GetWasVisitedByTeam(GetEnemyTeamNumber(self:GetTeamNumber())) then
-                mask = bit.bor(mask, kRelevantToTeam1Commander, kRelevantToTeam2Commander)
-            else
-                mask = bit.bor(mask, kRelevantToTeam1Commander)
-            end
-            
+            mask = bit.bor(mask, kRelevantToTeam1Commander)
+
         elseif self:GetTeamNumber() == 2 then
             mask = bit.bor(mask, kRelevantToTeam2Commander)
         end

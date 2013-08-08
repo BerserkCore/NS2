@@ -144,6 +144,14 @@ function TriggerMixin:GetEntityIdsInTrigger()
     
 end
 
+function TriggerMixin:ForEachEntityInTrigger(callFunc)
+
+    for e = 1, #self.insideTriggerEntities do
+        callFunc(Shared.GetEntity(self.insideTriggerEntities[e]))
+    end
+    
+end
+
 function TriggerMixin:OnEntityChange(oldId, newId)
 
     table.removevalue(self.insideTriggerEntities, oldId)

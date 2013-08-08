@@ -16,7 +16,6 @@ NutrientMist.kNutrientMistEffect = PrecacheAsset("cinematics/alien/nutrientmist.
 
 NutrientMist.kType = CommanderAbility.kType.Repeat
 NutrientMist.kSearchRange = 10
-NutrientMist.kDuration = kNutrientMistDuration
 
 local netWorkVars =
 {
@@ -56,13 +55,12 @@ function NutrientMist:GetType()
     return NutrientMist.kType
 end
 
-function NutrientMist:GetThinkTime()
+function NutrientMist:GetUpdateTime()
     return 1.5
-end 
-
-function NutrientMist:GetLifeSpan()
-    return NutrientMist.kDuration
 end
 
-Shared.LinkClassToMap("NutrientMist", NutrientMist.kMapName, netWorkVars )
+function NutrientMist:GetLifeSpan()
+    return kNutrientMistDuration
+end
 
+Shared.LinkClassToMap("NutrientMist", NutrientMist.kMapName, netWorkVars)

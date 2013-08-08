@@ -40,6 +40,7 @@ function Bomb:OnCreate()
     InitMixin(self, TeamMixin)
 
     self.radius = 0.2
+    self:SetGroupFilterMask(PhysicsMask.NoBabblers)
 
 end
 
@@ -68,13 +69,13 @@ if Server then
         return math.cos(piFraction + math.pi) + 1 
     end
 
-    function Bomb:ProcessHit(targetHit, surface)
+    function Bomb:ProcessHit(targetHit, surface, normal)
 
         if (not self:GetOwner() or targetHit ~= self:GetOwner()) and not self.detonated then
     
             self:TriggerEffects("bilebomb_hit")
             
-            local dotMarker = CreateEntity(DotMarker.kMapName, self:GetOrigin() + Vector(0, 0.2, 0), self:GetTeamNumber())
+            local dotMarker = CreateEntity(DotMarker.kMapName, self:GetOrigin() + normal * 0.2, self:GetTeamNumber())
             dotMarker:SetDamageType(kBileBombDamageType)
             dotMarker:SetLifeTime(kBileBombDuration)
             dotMarker:SetDamage(kBileBombDamage)

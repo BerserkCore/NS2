@@ -183,6 +183,30 @@ function TeamInfo:OnCreate()
     
 end
 
+if Server then
+
+    function TeamInfo:Reset()
+    
+        self.teamResources = 0
+        self.personalResources = 0
+        self.numResourceTowers = 0
+        self.latestResearchId = 0
+        self.researchDisplayTime = 0
+        self.lastTechPriority = 0
+        self.lastCommPingTime = 0
+        self.lastCommPingPosition = 0
+        self.totalTeamResources = 0
+        self.techActiveMask = 0
+        self.techOwnedMask = 0
+        self.playerCount = 0
+        self.workerCount = 0
+        self.kills = 0
+    
+    end
+
+
+end
+
 local function GetWorkerClassName(self)
 
     if self:GetTeamType() == kMarineTeamType then

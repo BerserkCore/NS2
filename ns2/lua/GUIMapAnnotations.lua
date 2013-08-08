@@ -17,7 +17,7 @@ GUIMapAnnotations.kMaxDisplayDistance = 30
 
 GUIMapAnnotations.kNumberOfDataFields = 6
 
-GUIMapAnnotations.kAfterPostGetAnnotationsTime = 0.5
+local kAfterPostGetAnnotationsTime = 0.5
 
 function GUIMapAnnotations:Initialize()
 
@@ -127,7 +127,7 @@ local function ParseAnnotations(data)
     else
     
         for k, v in pairs(obj) do
-            GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):AddAnnotation(v.message, Vector(v.x, v.y, v.z))
+            ClientUI.GetScript("GUIMapAnnotations"):AddAnnotation(v.message, Vector(v.x, v.y, v.z))
         end
         
     end
@@ -178,7 +178,7 @@ function OnCommandAnnotate(...)
     Shared.SendHTTPRequest(kStatisticsURL .. "/location", "POST", params, function(data) Shared.Message(data) end)
     
     // Automatically update the annotations in a little bit so the user sees this new one.
-    GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):GetLatestAnnotationsLater(GUIMapAnnotations.kAfterPostGetAnnotationsTime)
+    ClientUI.GetScript("GUIMapAnnotations"):GetLatestAnnotationsLater(kAfterPostGetAnnotationsTime)
     
     Shared.Message("Annotation sent! Thank you!")
     
@@ -186,14 +186,14 @@ end
 
 function OnCommandDisplayAnnotations(versionNum, mapName)
 
-    local visible = GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):GetIsVisible()
-    GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):SetIsVisible(not visible)
+    local visible = ClientUI.GetScript("GUIMapAnnotations"):GetIsVisible()
+    ClientUI.GetScript("GUIMapAnnotations"):SetIsVisible(not visible)
     if not visible then
     
         Shared.Message("Annotations are visible.")
         
-        GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):GetLatestAnnotations(versionNum, mapName)
-        GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):SetIsVisible(true)
+        ClientUI.GetScript("GUIMapAnnotations"):GetLatestAnnotations(versionNum, mapName)
+        ClientUI.GetScript("GUIMapAnnotations"):SetIsVisible(true)
         
     else
         Shared.Message("Annotations are invisible.")

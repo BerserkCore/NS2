@@ -101,8 +101,10 @@ end
 function GUIUnitStatus:Initialize()
 
     GUIAnimatedScript.Initialize(self)
-
+    
     self.activeBlipList = { }
+    
+    self.useMarineStyle = false
     
 end
 

@@ -42,6 +42,10 @@ function Projectile:CreatePhysics()
         self.physicsBody:SetLinearDamping(self.linearDamping)
         self.physicsBody:SetRestitution(self.restitution)
         
+        if self.groupFilterMask then
+            self.physicsBody:SetGroupFilterMask(self.groupFilterMask)
+        end
+        
     end
     
 end

@@ -10,20 +10,23 @@
 assert(Server == nil)
 
 kGUILayerDebugText = 0
-kGUILayerPlayerNameTags = 1
-kGUILayerPlayerHUDBackground = 2
-kGUILayerPlayerHUD = 3
-kGUILayerPlayerHUDForeground1 = 4
-kGUILayerPlayerHUDForeground2 = 5
-kGUILayerPlayerHUDForeground3 = 6
-kGUILayerPlayerHUDForeground4 = 7
-kGUILayerCommanderAlerts = 8
-kGUILayerCommanderHUD = 9
-kGUILayerLocationText = 10
-kGUILayerMinimap = 11
-kGUILayerScoreboard = 12
-kGUILayerCountDown = 13
-kGUILayerTestEvents = 14
+kGUILayerDeathScreen = 1
+kGUILayerTipVideos = 2
+kGUILayerChat = 3
+kGUILayerPlayerNameTags = 4
+kGUILayerPlayerHUDBackground = 5
+kGUILayerPlayerHUD = 6
+kGUILayerPlayerHUDForeground1 = 7
+kGUILayerPlayerHUDForeground2 = 8
+kGUILayerPlayerHUDForeground3 = 9
+kGUILayerPlayerHUDForeground4 = 10
+kGUILayerCommanderAlerts = 11
+kGUILayerCommanderHUD = 12
+kGUILayerLocationText = 13
+kGUILayerMinimap = 14
+kGUILayerScoreboard = 15
+kGUILayerCountDown = 16
+kGUILayerTestEvents = 17
 kGUILayerMainMenu = 20
 // The Web layer must be much higher than the MainMenu layer
 // because the MainMenu layer inserts items above
@@ -219,28 +222,29 @@ end
 function GUIManager:Update(deltaTime)
 
     PROFILE("GUIManager:Update")
-
+    
     if gDebugGUI then
         Client.ScreenMessage(gDebugGUIMessage)
     end
-
-    for index, script in ipairs(self.scripts) do
-        script:Update(deltaTime)
+    
+    // Backwards iteration in case Update() causes a script to be removed.
+    for s = #self.scripts, 1, -1 do
+        self.scripts[s]:Update(deltaTime)
     end
     
-    for index, script in ipairs(self.scriptsSingle) do
-        script[1]:Update(deltaTime)
+    for s = #self.scriptsSingle, 1, -1 do
+        self.scriptsSingle[s][1]:Update(deltaTime)
     end
     
 end
 
-function GUIManager:SendKeyEvent(key, down)
+function GUIManager:SendKeyEvent(key, down, amount)
 
     if not Shared.GetIsRunningPrediction() then
 
         for index, script in ipairs(self.scripts) do
         
-            if script:SendKeyEvent(key, down) then
+            if script:SendKeyEvent(key, down, amount) then
                 return true
             end
             
@@ -248,7 +252,7 @@ function GUIManager:SendKeyEvent(key, down)
         
         for index, script in ipairs(self.scriptsSingle) do
         
-            if script[1]:SendKeyEvent(key, down) then
+            if script[1]:SendKeyEvent(key, down, amount) then
                 return true
             end
             
@@ -324,12 +328,6 @@ local function OnUpdateGUIManager(deltaTime)
 
     if gGUIManager then
         gGUIManager:Update(deltaTime)
-    end
-    
-    // not the best place to hook this, find maybe a better place?
-    local player = Client.GetLocalPlayer()
-    if player and player.OnGUIUpdated then
-        player:OnGUIUpdated()    
     end
     
 end

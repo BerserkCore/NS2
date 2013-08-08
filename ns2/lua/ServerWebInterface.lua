@@ -128,19 +128,6 @@ local function DecToHex(id)
     return string.format("%x", tonumber(id))
 end
 
-local function URLEncodeChats(chatTable)
-
-    for t = 1, #chatTable do
-    
-        chatTable[t].message = url_encode(chatTable[t].message)
-        chatTable[t].player = url_encode(chatTable[t].player)
-        
-    end
-    
-    return chatTable
-    
-end
-
 local function OnWebRequest(actions)
 
     if actions.request == "getbanlist" then
@@ -148,7 +135,7 @@ local function OnWebRequest(actions)
     elseif actions.request == "getperfdata" then
         return "application/json", json.encode(perfDataBuffer:ToTable())
     elseif actions.request == "getchatlist" then
-        return "application/json", json.encode(URLEncodeChats(Server.recentChatMessages:ToTable()))
+        return "application/json", json.encode(Server.recentChatMessages:ToTable())
     elseif actions.request == "getinstalledmodslist" then
         return "application/json", json.encode(GetModList())
     elseif actions.request == "getmaplist" then
@@ -164,6 +151,10 @@ local function OnWebRequest(actions)
     elseif actions.request == "getmods" then
     
         local url = "http://www.unknownworlds.com/spark/browse_workshop.php?appid=4920"
+        local searchtext = actions.searchtext
+        if type(searchtext) == "string" then
+            url = url .. "&searchtext=" .. url_encode(searchtext)
+        end
         local page = tostring(actions.p)
         if type(page) == "string" then
             url = url .. "&p=" .. page

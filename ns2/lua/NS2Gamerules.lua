@@ -236,6 +236,8 @@ if Server then
                 team:RemovePlayer(player)
             end
             
+            player:RemoveSpectators(nil)
+            
             self.disconnectedPlayerResources[client:GetUserId()] = player:GetResources()
             
         end
@@ -401,7 +403,7 @@ if Server then
             // at the start of the next game, including the NS2Gamerules. This is how a map transition would have to work anyway.
             // Do not destroy any entity that has a parent. The entity will be destroyed when the parent is destroyed or
             // when the owner manually destroyes the entity.
-            local shieldTypes = { "TeamInfo", "GameInfo", "MapBlip", "NS2Gamerules" }
+            local shieldTypes = { "GameInfo", "MapBlip", "NS2Gamerules" }
             local allowDestruction = true
             for i = 1, #shieldTypes do
                 allowDestruction = allowDestruction and not entity:isa(shieldTypes[i])
@@ -413,7 +415,7 @@ if Server then
                 local mapName = entity:GetMapName()
                 
                 // Reset all map entities and all player's that have a valid Client (not ragdolled players for example).
-                local resetEntity = entity:GetIsMapEntity() or (entity:isa("Player") and entity:GetClient() ~= nil)
+                local resetEntity = entity:isa("TeamInfo") or entity:GetIsMapEntity() or (entity:isa("Player") and entity:GetClient() ~= nil)
                 if resetEntity then
                 
                     if entity.Reset then
@@ -698,7 +700,7 @@ if Server then
     
         if voteTechId == kTechId.VoteConcedeRound then
         
-            if self.timeSinceGameStateChanged > kTimeGiveupPossible and self:GetGameStarted() then
+            if self.timeSinceGameStateChanged > kMinTimeBeforeConcede and self:GetGameStarted() then
             
                 local team = player:GetTeam()
                 team:VoteToGiveUp(player)
@@ -1119,6 +1121,13 @@ if Server then
     function NS2Gamerules:JoinTeam(player, newTeamNumber, force)
     
         local success = false
+        local oldPlayerWasSpectating = false
+        if player then
+        
+            local ownerClient = Server.GetOwner(player)
+            oldPlayerWasSpectating = ownerClient ~= nil and ownerClient:GetSpectatingPlayer() ~= nil
+            
+        end
         
         // Join new team
         if player and player:GetTeamNumber() ~= newTeamNumber or force then
@@ -1169,8 +1178,8 @@ if Server then
                 
             end
             
-            local client = Server.GetOwner(newPlayer)
-            local clientUserId = client and client:GetUserId() or 0
+            local newPlayerClient = Server.GetOwner(newPlayer)
+            local clientUserId = newPlayerClient and newPlayerClient:GetUserId() or 0
             local disconnectedPlayerRes = self.disconnectedPlayerResources[clientUserId]
             if disconnectedPlayerRes then
             
@@ -1193,15 +1202,23 @@ if Server then
             end
             
             newPlayer:TriggerEffects("join_team")
-
+            
             if success then
-                self.sponitor:OnJoinTeam( newPlayer, team )
+            
+                self.sponitor:OnJoinTeam(newPlayer, team)
+                
+                if oldPlayerWasSpectating then
+                    newPlayerClient:SetSpectatingPlayer(nil)
+                end
+                
+                Server.SendNetworkMessage(newPlayerClient, "SetClientTeamNumber", { teamNumber = newPlayer:GetTeamNumber() }, true)
+                
             end
 
 			return success, newPlayer
             
         end
-
+        
         // Return old player
         return success, player
         
@@ -1301,12 +1318,22 @@ if Server then
         return self:GetGameState() == kGameState.Countdown
     end
     
+    local function ResetPlayerScores()
+    
+        for _, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do            
+            if player.ResetScores then
+                player:ResetScores()
+            end            
+        end
+    
+    end
+    
     local function StartCountdown(self)
     
         self:ResetGame()
         
         self:SetGameState(kGameState.Countdown)
-        
+        ResetPlayerScores()
         self.countdownTime = kCountDownLength
         
         self.lastCountdownPlayed = nil
@@ -1452,10 +1479,12 @@ if Server then
             canHear = true
         end
         
+        // NOTE: SCRIPT ERROR CAUSED IN THIS FUNCTION WHEN FP SPEC WAS ADDED.
+        // This functionality never really worked anyway.
         // If we're spectating a player, we can hear their team (but not in tournamentmode, once that's in)
-        if self:GetIsPlayerFollowingTeamNumber(listenerPlayer, speakerPlayer:GetTeamNumber()) then
-            canHear = true
-        end
+        //if self:GetIsPlayerFollowingTeamNumber(listenerPlayer, speakerPlayer:GetTeamNumber()) then
+        //    canHear = true
+        //end
         
         return canHear
         

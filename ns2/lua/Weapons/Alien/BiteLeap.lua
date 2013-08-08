@@ -114,7 +114,7 @@ function BiteLeap:OnTag(tagName)
         
         if player then  
         
-            local didHit, target, endPoint = PerformGradualMeleeAttack(self, player, kBiteDamage, kRange, nil, false)
+            local didHit, target, endPoint = PerformGradualMeleeAttack(self, player, kBiteDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
             
             if Client and didHit then
                 self:TriggerFirstPersonHitEffects(player, target)  
@@ -122,22 +122,14 @@ function BiteLeap:OnTag(tagName)
             
             if target and HasMixin(target, "Live") and not target:GetIsAlive() then
                 self:TriggerEffects("bite_kill")
-            elseif Server and target and target.TriggerEffects and GetReceivesStructuralDamage(target) then
-                target:TriggerEffects("bite_structure", {effecthostcoords = Coords.GetTranslation(endPoint)})
+            elseif Server and target and target.TriggerEffects and GetReceivesStructuralDamage(target) and (not HasMixin(target, "Live") or target:GetCanTakeDamage()) then
+                target:TriggerEffects("bite_structure", {effecthostcoords = Coords.GetTranslation(endPoint), isalien = GetIsAlienUnit(target)})
             end
             
-        end
-        
-    end
-    
-    if self.primaryAttacking and tagName == "start" then
-    
-        local player = self:GetParent()
-        if player then
             player:DeductAbilityEnergy(self:GetEnergyCost())
+            self:TriggerEffects("bite_attack")
+            
         end
-        
-        self:TriggerEffects("bite_attack")
         
     end
     

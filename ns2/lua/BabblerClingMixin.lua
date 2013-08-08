@@ -32,7 +32,7 @@ local kBabblerAttachPoints =
 
 BabblerClingMixin.networkVars =
 {
-    hasBabblers = "boolean"
+    numBabblers = "integer (0 to 6)"
 }
 
 function BabblerClingMixin:__initmixin()
@@ -43,16 +43,18 @@ function BabblerClingMixin:__initmixin()
 
 end
 
+function BabblerClingMixin:GetNumClingedBabblers()
+    return self.numBabblers
+end
+
 if Server then
 
-    local function UpdateHasBabblers(self)
+    local function UpdateNumBabblers(self)
 
-        local hasBabblers = false
+        self.numBabblers = 0
         for babblerId, attachPointName in pairs(self.attachedBabblers) do
-            hasBabblers = true
+            self.numBabblers = math.min(6, self.numBabblers + 1)
         end
-        
-        self.hasBabblers = hasBabblers
 
     end
 
@@ -70,7 +72,7 @@ if Server then
 
         end
         
-        UpdateHasBabblers(self)        
+        UpdateNumBabblers(self)        
         return success
     
     end
@@ -78,11 +80,20 @@ if Server then
     function BabblerClingMixin:DetachBabbler(babbler)
     
         local usedAttachPoint = self.attachedBabblers[babbler:GetId()]
+        
         if usedAttachPoint then
+        
             table.insertunique(self.freeAttachPoints, usedAttachPoint)
+            local origin, success = self:GetAttachPointOrigin(usedAttachPoint)
+            if origin then
+                babbler:SetOrigin(origin)
+            end
+            
         end
+        
         self.attachedBabblers[babbler:GetId()] = nil
-        UpdateHasBabblers(self)
+        babbler:SetParent(nil)
+        UpdateNumBabblers(self)
     
     end
     
@@ -101,7 +112,7 @@ if Server then
         
             table.insertunique(self.freeAttachPoints, self.attachedBabblers[oldId])
             self.attachedBabblers[oldId] = nil
-            UpdateHasBabblers(self) 
+            UpdateNumBabblers(self) 
             
         end
 
@@ -118,7 +129,7 @@ if Server then
         end
         
         self.attachedBabblers = {}
-        self.hasBabblers = false
+        self.numBabblers = 0
     
     end
 
@@ -137,34 +148,6 @@ if Server then
             return self:GetAttachPointOrigin(freeAttachPoint)
         end
     
-    end
-
-end
-
-// show an effect on the local players viewmodel
-function BabblerClingMixin:OnUpdateRender()
-
-    if self.GetIsLocalPlayer and self:GetIsLocalPlayer() then
-    
-        local viewModelEnt = self:GetViewModelEntity()
-        local viewModel = viewModelEnt ~= nil and viewModelEnt:GetRenderModel() or nil
-        
-        if viewModel then
-        
-            if not self.babblerClingMaterial and self.hasBabblers then            
-                self.babblerClingMaterial = AddMaterial(viewModel, kMaterialName)
-                
-            elseif self.babblerClingMaterial and not self.hasBabblers then   
-         
-                RemoveMaterial(viewModel, self.babblerClingMaterial)
-                self.babblerClingMaterial = nil
-            
-            end
-        
-        else
-            self.babblerClingMaterial = nil
-        end
-
     end
 
 end

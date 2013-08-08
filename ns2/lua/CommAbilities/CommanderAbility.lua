@@ -25,7 +25,7 @@ CommanderAbility.kMapName = "commanderability"
 CommanderAbility.kType = enum({ 'Instant', 'OverTime', 'Repeat' })
 
 CommanderAbility.kDefaultLifeSpan = 2
-CommanderAbility.kDefaultThinkTime = .5
+local kDefaultUpdateTime = 0.5
 CommanderAbility.kDefaultType = CommanderAbility.kType.Instant
 
 local networkVars =
@@ -41,38 +41,61 @@ function CommanderAbility:OnCreate()
     
     InitMixin(self, TeamMixin)
     
-    if Server then
-        self.timeCreated = Shared.GetTime()
-    end
+end
 
+local function CommanderAbilityUpdate(self)
+
+    self:CreateRepeatEffect()
+    
+    local abilityType = self:GetType()
+    // Instant types have already been performed in OnInitialized.
+    if abilityType ~= CommanderAbility.kType.Instant then
+        self:Perform()
+    end
+    
+    local lifeSpanEnded = not self:GetLifeSpan() or (self:GetLifeSpan() + self.timeCreated) <= Shared.GetTime()
+    if Server and (lifeSpanEnded or self:GetAbilityEndConditionsMet() or abilityType == CommanderAbility.kType.OverTime or abilityType == CommanderAbility.kType.Instant) then
+        DestroyEntity(self)
+    elseif abilityType == CommanderAbility.kType.Repeat then
+        return true
+    end
+    
+    return false
+    
 end
 
 function CommanderAbility:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
-    if self.timeCreated + CommanderAbility.kDefaultThinkTime > Shared.GetTime() then
+    if Server then
+        self.timeCreated = Shared.GetTime()
+    end
+    
+    if self.timeCreated + kDefaultUpdateTime > Shared.GetTime() then
         self:CreateStartEffect()
     end
     
     self:CreateRepeatEffect()
     
+    local callbackRate = nil
+    
     if self:GetType() == CommanderAbility.kType.Repeat then
-    
-        self:SetNextThink(self:GetThinkTime())
-        
+        callbackRate = self:GetUpdateTime()
     elseif self:GetType() == CommanderAbility.kType.OverTime then
-    
-        self:SetNextThink(self:GetLifeSpan())
-        
+        callbackRate = self:GetLifeSpan()
     elseif self:GetType() == CommanderAbility.kType.Instant then
     
         self:Perform()
         // give some time to ensure propagation of the entity
-        self:SetNextThink(0.1)
+        callbackRate = 0.1
         
     end
-
+    
+    if callbackRate then
+        self:AddTimedCallback(CommanderAbilityUpdate, callbackRate)
+    end
+    
 end
 
 function CommanderAbility:OnDestroy()
@@ -86,31 +109,6 @@ end
 
 function CommanderAbility:GetTimeCreated()
     return self.timeCreated
-end
-
-function CommanderAbility:OnThink()
-
-    self:CreateRepeatEffect()
-
-    // Instant types have already been performed above.
-    if self:GetType() ~= CommanderAbility.kType.Instant then
-        self:Perform()
-    end
-    
-    if not self:GetLifeSpan() or (self:GetLifeSpan() + self.timeCreated <= Shared.GetTime()) or self:GetAbilityEndConditionsMet() then
-        if Server then
-            DestroyEntity(self)
-        end
-        
-    elseif self:GetType() == CommanderAbility.kType.Repeat then
-        self:SetNextThink(self:GetThinkTime())
-        
-    elseif self:GetType() == CommanderAbility.kType.Instant then
-        if Server then
-            DestroyEntity(self)
-        end
-    end
-    
 end
 
 function CommanderAbility:CreateRepeatEffect()
@@ -212,8 +210,8 @@ end
 function CommanderAbility:Perform()
 end
 
-function CommanderAbility:GetThinkTime()
-    return CommanderAbility.kDefaultThinkTime
+function CommanderAbility:GetUpdateTime()
+    return kDefaultUpdateTime
 end
 
 function CommanderAbility:GetType()

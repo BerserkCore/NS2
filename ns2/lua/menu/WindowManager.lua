@@ -224,7 +224,7 @@ local function HandleKeyEventCallbacks(key, down, item)
 end
 
 // Return true if the event should be stopped here.
-function WindowManager:SendKeyEvent(key, down)
+function WindowManager:SendKeyEvent(key, down, amount)
 
     if not Shared.GetIsRunningPrediction() then
         
@@ -238,7 +238,7 @@ function WindowManager:SendKeyEvent(key, down)
         if self.lastActiveElement then
             stop = HandleKeyEventCallbacks(key, down, self.lastActiveElement)            
             if not stop and self.lastActiveElement.OnSendKey then
-                stop = self.lastActiveElement:OnSendKey(key, down)
+                stop = self.lastActiveElement:OnSendKey(key, down, amount)
             end
             
         end
@@ -246,7 +246,7 @@ function WindowManager:SendKeyEvent(key, down)
         if not stop then
             stop = HandleKeyEventCallbacks(key, down, activeWindow)
             if not stop and activeWindow.OnSendKey then
-                stop = activeWindow:OnSendKey(key, down)
+                stop = activeWindow:OnSendKey(key, down, amount)
             end
         end
         

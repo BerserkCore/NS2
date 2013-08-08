@@ -182,6 +182,8 @@ function RoboticsFactory:GetTechAllowed(techId, techNode, player)
         allowed = allowed and self:GetTechId() == kTechId.ARCRoboticsFactory
     elseif techId == kTechId.MAC then
         allowed = allowed and GetIsWorkerConstructionAllowed(self:GetTeamNumber())
+    elseif techId == kTechId.Cancel then
+        allowed = self:GetResearchProgress() < 1
     end
     
     return allowed, canAfford

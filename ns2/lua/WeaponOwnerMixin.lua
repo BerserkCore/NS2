@@ -43,6 +43,7 @@ function WeaponOwnerMixin:__initmixin()
     self.activeWeaponId = Entity.invalidId
     self.timeOfLastWeaponSwitch = 0
     self.weaponsWeight = 0
+    self.prevHudSlot = 1
     
 end
 
@@ -165,6 +166,10 @@ function WeaponOwnerMixin:SetActiveWeapon(weaponMapName)
                 activeWeapon:OnHolster(self)
                 activeWeapon:SetIsVisible(false)
                 previousWeaponName = activeWeapon:GetMapName()
+                local hudSlot = activeWeapon:GetHUDSlot()
+                if hudSlot > 0 then
+                    self.prevHudSlot = hudSlot
+                end
                 
             end
             
@@ -199,6 +204,10 @@ function WeaponOwnerMixin:SetActiveWeapon(weaponMapName)
 
 end
 AddFunctionContract(WeaponOwnerMixin.SetActiveWeapon, { Arguments = { "Entity", "string" }, Returns = { "boolean" } })
+
+function WeaponOwnerMixin:PreviousWeapon()
+    self:SwitchWeapon(self.prevHudSlot)
+end
 
 function WeaponOwnerMixin:GetActiveWeapon()
     return Shared.GetEntity(self.activeWeaponId)
@@ -286,16 +295,7 @@ end
 AddFunctionContract(WeaponOwnerMixin.GetActiveWeaponName, { Arguments = { "Entity" }, Returns = { "string" } })
 
 function WeaponOwnerMixin:GetActiveWeaponId()
-
-    local activeWeaponId = nil
-    local activeWeapon = self:GetActiveWeapon()
-    
-    if activeWeapon ~= nil then
-        activeWeaponId = activeWeapon:GetId()
-    end
-    
-    return activeWeaponId
-    
+    return self.activeWeaponId
 end
 AddFunctionContract(WeaponOwnerMixin.GetActiveWeaponId, { Arguments = { "Entity" }, Returns = { "number" } })
 
@@ -390,6 +390,8 @@ function WeaponOwnerMixin:AddWeapon(weapon, setActive)
         self:OnWeaponAdded(weapon)
     end
     
+    return hasWeapon
+    
 end
 AddFunctionContract(WeaponOwnerMixin.AddWeapon, { Arguments = { "Entity", "Weapon", "boolean" }, Returns = { } })
 
@@ -451,7 +453,10 @@ function WeaponOwnerMixin:UpdateClientEffects(deltaTime, isLocal)
                 weapon:OnHolsterClient(self)
             end
             
-            self:GetActiveWeapon():OnDrawClient()
+            local activeWeapon = self:GetActiveWeapon()
+            if activeWeapon then
+                activeWeapon:OnDrawClient()
+            end    
             
         end
         

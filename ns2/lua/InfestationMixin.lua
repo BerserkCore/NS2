@@ -17,35 +17,14 @@ InfestationMixin.expectedCallbacks =
     GetInfestationRadius = "How far infestation should spread from entity." 
 }
 
-local function TriggerInfestationReceed(self)
+InfestationMixin.networkVars =
+{
+    desiredInfestationRadius = "float",
+    infestationRadius = "float",
+    infestationChangeTime = "time",
+    growthRate = "float"
 
-    for key, id in pairs(self.infestationIds) do
-    
-        local infestation = Shared.GetEntity(id)
-        if infestation then
-        
-            assert(infestation:isa("Infestation"))
-            infestation:OnHostKilled()
-            
-        end
-        
-        self.infestationIds[key] = Entity.invalidId
-        
-    end
-    
-end
-
-function InfestationMixin:__initmixin()
-
-    self.infestationIds = { }
-    self.infestationIds.bottom = Entity.invalidId
-    self.infestationIds.left = Entity.invalidId
-    self.infestationIds.right = Entity.invalidId
-    self.infestationIds.front = Entity.invalidId
-    self.infestationIds.top = Entity.invalidId
-    self.infestationIds.back = Entity.invalidId
-    
-end
+}
 
 local function GenerateInfestationCoords(origin, normal)
 
@@ -59,38 +38,13 @@ local function GenerateInfestationCoords(origin, normal)
     
 end
 
-local function OverrideSpawnInfestation(self, infestation)
+local function CreateInfestation(self)
 
-    if self.OnOverrideSpawnInfestation then
-        self:OnOverrideSpawnInfestation(infestation)    
-    end
-    
-end
-
-function InfestationMixin:SetAttached(structure)
-
-    if structure and self.infestationIds.bottom then
-
-        local coords = self:GetCoords()
-        coords = structure:GetCoords()
-        coords.origin = coords.origin + Vector(0.1, 0, 0.1)
-        local infestation = Shared.GetEntity(self.infestationIds.bottom)
-        
-        if infestation then
-            infestation:SetCoords(coords)
-        end
-    
-    end
-    
-end
-
-function InfestationMixin:SpawnInfestation(percent)
-
-    // Let old infestation starve.
-    TriggerInfestationReceed(self)
-    
+    self.infestationPatches = {}
     local coords = self:GetCoords()
     local attached = self:GetAttached()
+    local blobMultiplier = self.GetInfestationBlobMultiplier and self.GetInfestationBlobMultiplier() or 1
+    
     if attached then
     
         // Add a small offset, otherwise we are not able to track the infested state of the techpoint.
@@ -101,115 +55,188 @@ function InfestationMixin:SpawnInfestation(percent)
     
     // Floor.
     local radius = self:GetInfestationRadius()
-    local infestation = CreateStructureInfestation(self, coords, self:GetTeamNumber(), radius, percent)
-    self.infestationIds.bottom = infestation:GetId()
-    OverrideSpawnInfestation(self, infestation)
+    table.insert(self.infestationPatches, CreateStructureInfestation(self, coords, self:GetTeamNumber(), radius, blobMultiplier))    
     
     // Ceiling.
     local trace = Shared.TraceRay(self:GetOrigin() + coords.yAxis * 0.1, self:GetOrigin() + coords.yAxis * radius,  CollisionRep.Default,  PhysicsMask.Bullets, EntityFilterAll())
     local roomMiddlePoint = self:GetOrigin() + coords.yAxis * 0.1
     if trace.fraction ~= 1 then
         
-        infestation = CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, percent)
-        self.infestationIds.top = infestation:GetId()
-        OverrideSpawnInfestation(self, infestation)
+        table.insert(self.infestationPatches, CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, blobMultiplier))
         roomMiddlePoint = (trace.endPoint - self:GetOrigin()) * 0.5 + self:GetOrigin()
         
     end
     
     // Front wall.
     trace = Shared.TraceRay(roomMiddlePoint, roomMiddlePoint + coords.zAxis * radius, CollisionRep.Default,  PhysicsMask.Bullets, EntityFilterAll())
-    if trace.fraction ~= 1 then
-    
-        infestation = CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, percent)
-        self.infestationIds.front = infestation:GetId()
-        OverrideSpawnInfestation(self, infestation)
-        
+    if trace.fraction ~= 1 then    
+        table.insert(self.infestationPatches, CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, blobMultiplier))        
     end
     
     // Back wall.
     trace = Shared.TraceRay(roomMiddlePoint, roomMiddlePoint - coords.zAxis * radius, CollisionRep.Default,  PhysicsMask.Bullets, EntityFilterAll())
-    if trace.fraction ~= 1 then
-    
-        infestation = CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, percent)
-        self.infestationIds.back = infestation:GetId()
-        OverrideSpawnInfestation(self, infestation)
-        
+    if trace.fraction ~= 1 then    
+        table.insert(self.infestationPatches, CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, blobMultiplier))        
     end
     
     // Left wall.
     trace = Shared.TraceRay(roomMiddlePoint, roomMiddlePoint + coords.xAxis * radius, CollisionRep.Default,  PhysicsMask.Bullets, EntityFilterAll())
-    if trace.fraction ~= 1 then
-    
-        infestation = CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, percent)
-        self.infestationIds.left = infestation:GetId()
-        OverrideSpawnInfestation(self, infestation)
-        
+    if trace.fraction ~= 1 then    
+        table.insert(self.infestationPatches, CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, blobMultiplier))        
     end
     
     // Right wall.
     trace = Shared.TraceRay(roomMiddlePoint, roomMiddlePoint - coords.xAxis * radius, CollisionRep.Default,  PhysicsMask.Bullets, EntityFilterAll())
     if trace.fraction ~= 1 then
-    
-        infestation = CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, percent)
-        self.infestationIds.right = infestation:GetId()
-        OverrideSpawnInfestation(self, infestation)
-        
+        table.insert(self.infestationPatches, CreateStructureInfestation(self, GenerateInfestationCoords(trace.endPoint, trace.normal), self:GetTeamNumber(), radius, blobMultiplier))
+    end
+
+    if self.startGrown or GetAndCheckBoolean(self.startsBuilt, "startsBuilt", false) then    
+        self:SetInfestationFullyGrown()
+    else
+        // start growing from this point in time
+        self:SetInfestationRadius(0)
     end
     
-    if GetAndCheckBoolean(self.startsBuilt, "startsBuilt", false) then    
-        self:SetInfestationFullyGrown()    
+    self.infestationGenerated = true
+
+end
+
+local function DestroyInfestation(self)
+
+    for i = 1, #self.infestationPatches do
+    
+        local infestation = self.infestationPatches[i]
+        infestation:Uninitialize()
+    
+    end
+
+    self.infestationPatches = {}    
+    self.infestationGenerated = false
+
+end
+
+function InfestationMixin:__initmixin()
+    
+    self.growthRate = self:GetInfestationGrowthRate()
+    self.desiredInfestationRadius = self:GetInfestationMaxRadius()
+    self.infestationPatches = {}
+    
+    if Server then
+        self.infestationRadius = 0
+        self.infestationChangeTime = Shared.GetTime()
     end
     
 end
 
-function InfestationMixin:SetInfestationFullyGrown()
+function InfestationMixin:GetIsPointOnInfestation(point)
 
-    for _, id in pairs(self.infestationIds) do
+    local onInfestation = false
+
+    for i = 1, #self.infestationPatches do
     
-        local infestation = Shared.GetEntity(id)
-        
-        // It is possible for there to not be infestation on some of the sides.
-        if infestation then
-        
-            assert(infestation:isa("Infestation"))
-            infestation:SetFullyGrown()
-            
+        local infestation = self.infestationPatches[i]
+        if infestation:GetIsPointOnInfestation(point) then
+            onInfestation = true
+            break
         end
-        
+    
     end
-    
+
+    return onInfestation
+
 end
 
-function InfestationMixin:OnConstructionComplete()
-    self:SpawnInfestation()
+function InfestationMixin:GetInfestationGrowthRate()
+    return 0.25
 end
 
-function InfestationMixin:SetExcludeRelevancyMask(mask)
-    
-    for _, id in pairs(self.infestationIds) do
-    
-        local infestation = Shared.GetEntity(id)
-        if infestation then
-            infestation:SetExcludeRelevancyMask(mask)            
-        end
-        
-    end
+function InfestationMixin:GetInfestationMaxRadius()
+    return 7.5
 end
 
-function InfestationMixin:OnSighted(sighted)
-
-    for _, id in pairs(self.infestationIds) do
+function InfestationMixin:OnDestroy()
     
-        local infestation = Shared.GetEntity(id)
-        if infestation then
-            infestation:SetIsSighted(sighted)
-        end
-        
+    if self.infestationGenerated then        
+        DestroyInfestation(self)        
     end
     
 end
 
 function InfestationMixin:OnKill()
-    TriggerInfestationReceed(self)
+    
+    // trigger receed
+    self:SetDesiredInfestationRadius(0)
+    
+end
+
+function InfestationMixin:SetInfestationFullyGrown()
+    self.startGrown = true
+    self:SetInfestationRadius(self.desiredInfestationRadius)
+end
+
+function InfestationMixin:SetDesiredInfestationRadius(desiredInfestationRadius)
+
+    self:SetInfestationRadius(self:GetCurrentInfestationRadius())    
+    self.desiredInfestationRadius = desiredInfestationRadius
+    
+end
+
+function InfestationMixin:SetInfestationRadius(radius)
+
+    self.infestationRadius = radius
+    self.infestationChangeTime = Shared.GetTime()
+
+end
+
+function InfestationMixin:GetCurrentInfestationRadius()
+
+    local gowth = (Shared.GetTime() - self.infestationChangeTime) * self.growthRate
+    local radius = Slerp(self.infestationRadius, self.desiredInfestationRadius, gowth)
+    return radius
+
+end
+
+function InfestationMixin:OnUpdate(deltaTime)
+    if not Predict then
+        self:UpdateInfestation(deltaTime)
+    end
+end
+
+function InfestationMixin:UpdateInfestation(deltaTime)
+
+    local hasInfestation = not HasMixin(self, "Construct") or self:GetIsBuilt()
+    
+    if hasInfestation and not self.infestationGenerated then
+        CreateInfestation(self)
+    end
+    
+    local playerIsEnemy = Client and GetAreEnemies(self, Client.GetLocalPlayer()) or false
+    local cloakFraction = (playerIsEnemy and HasMixin(self, "Cloakable")) and self:GetCloakFraction() or 0
+    local radius = self:GetCurrentInfestationRadius()
+    local isOverHead = Client and PlayerUI_IsOverhead()
+    local visible = self:GetIsVisible()
+    
+    // update infestation patches
+    for i = 1, #self.infestationPatches do
+    
+        local infestation = self.infestationPatches[i]
+
+        infestation:SetRadius(radius)
+        
+        if Client then
+            infestation:SetCloakFraction(cloakFraction)
+            infestation:SetIsVisible(visible and (not isOverHead or infestation.coords.yAxis.y > 0.5))
+        end
+    
+    end
+    
+    if not self:GetIsAlive() and self:GetCurrentInfestationRadius() == 0 then        
+        self.allowDestruction = true        
+    end
+
+end
+
+function InfestationMixin:GetDestructionAllowed(destructionAllowedTable)
+    destructionAllowedTable.allowed = destructionAllowedTable.allowed and self.allowDestruction
 end

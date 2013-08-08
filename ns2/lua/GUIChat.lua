@@ -32,6 +32,7 @@ function GUIChat:Initialize()
     self.inputModeItem:SetTextAlignmentX(GUIItem.Align_Max)
     self.inputModeItem:SetTextAlignmentY(GUIItem.Align_Center)
     self.inputModeItem:SetIsVisible(false)
+    self.inputModeItem:SetLayer(kGUILayerChat)
     
     // Input text item.
     self.inputItem = GUIManager:CreateTextItem()
@@ -40,6 +41,7 @@ function GUIChat:Initialize()
     self.inputItem:SetTextAlignmentX(GUIItem.Align_Min)
     self.inputItem:SetTextAlignmentY(GUIItem.Align_Center)
     self.inputItem:SetIsVisible(false)
+    self.inputItem:SetLayer(kGUILayerChat)
     
 end
 
@@ -161,14 +163,14 @@ end
 
 function GUIChat:SendKeyEvent(key, down)
 
-    if ChatUI_EnteringChatMessage() then
+    if ChatUI_EnteringChatMessage() and down then
     
-        if down and key == InputKey.Return then
+        if key == InputKey.Return then
         
             ChatUI_SubmitChatMessageBody(self.inputItem:GetText())
             self.inputItem:SetText("")
             
-        elseif down and key == InputKey.Back then
+        elseif key == InputKey.Back then
         
             // Only remove text if there is more to remove.
             local currentText = self.inputItem:GetWideText()
@@ -181,7 +183,7 @@ function GUIChat:SendKeyEvent(key, down)
                 
             end
             
-        elseif down and key == InputKey.Escape then
+        elseif key == InputKey.Escape then
         
             ChatUI_SubmitChatMessageBody("")
             self.inputItem:SetText("")
@@ -198,7 +200,9 @@ end
 
 function GUIChat:SendCharacterEvent(character)
 
-    if ChatUI_EnteringChatMessage() then
+    local enteringChatMessage = ChatUI_EnteringChatMessage()
+    
+    if Shared.GetTime() ~= ChatUI_GetStartedChatTime() and enteringChatMessage then
     
         local currentText = self.inputItem:GetWideText()
         if currentText:length() < kMaxChatLength then
@@ -209,6 +213,7 @@ function GUIChat:SendCharacterEvent(character)
         end
         
     end
+    
     return false
     
 end
@@ -258,6 +263,7 @@ function GUIChat:AddMessage(playerColor, playerName, messageColor, messageText)
     if insertMessage["Background"] == nil then
     
         insertMessage["Background"] = GUIManager:CreateGraphicItem()
+        insertMessage["Background"]:SetLayer(kGUILayerChat)
         insertMessage["Background"]:AddChild(insertMessage["Player"])
         insertMessage["Background"]:AddChild(insertMessage["Message"])
         

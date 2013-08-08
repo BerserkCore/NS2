@@ -81,6 +81,7 @@ float4x4    viewToNoiseMatrix;
 float       shadowFade;             // Use to smoothly fade out shadows. 0 if the shadows are completely faded out.
 
 bool        enableStencil;          // Whether or not the stencil buffer should be used when drawing light passes.
+int         stencilMask;
 bool		reverseCulling;			// True when the camera is mirrored.
 
 texture     noiseTexture;
@@ -93,7 +94,7 @@ float       atmosphereDensity;
 texture     environmentTexture;
 float3		vsProbePosition;
 float		probeRadius2;
-float		probeStrength;
+float3		probeTint;
 
 sampler noiseTextureSampler = sampler_state
     {
@@ -789,8 +790,14 @@ half4 ScatteringPS(PS_Scattering_INPUT input) : COLOR0
     
 }
 
+float4 DecodeRGBE(float4 m)
+{
+	return m * pow(2, 256 * (m.w - 0.5));
+}
+
 float4 ReflectionsPS(PS_DeferredPass_Input input) : COLOR0
 {
+
 	float3 vsNormal      = GetNormal( input.texCoord );
 	float3 vsPosition    = GetPosition( input.texCoord, input.projected.xy );
 	float4 specularGloss = tex2D( specularGlossTextureSampler, input.texCoord );
@@ -825,13 +832,12 @@ float4 ReflectionsPS(PS_DeferredPass_Input input) : COLOR0
 	// with the sphere.
 	vsReflect = vsPosition + vsReflect * t - vsProbePosition;
 	
-	const float maxBias = 3;
+	const float maxBias = 2;
 	float bias = maxBias - specularGloss.a / (255 / maxBias);
 	
 	float3 wsReflect = mul(vsReflect, cameraToWorldMatrix);
-	float3 env = texCUBEbias(environmentTextureSampler, float4(wsReflect, bias)) * attenuation;
-	
-	return float4( env * specularGloss.rgb * probeStrength, attenuation );
+	float3 env = DecodeRGBE(texCUBEbias(environmentTextureSampler, float4(wsReflect, bias))) * attenuation;
+	return float4( env * specularGloss.rgb * probeTint, attenuation );
 	
 }
 
@@ -841,8 +847,10 @@ technique StencilBackAndFront
     {
         ZWriteEnable        = False;
         ColorWriteEnable    = 0;
-        StencilZFail        = Incr;
+        StencilZFail        = Invert;
         StencilEnable       = True;
+		StencilMask         = <stencilMask>;
+		StencilWriteMask	= <stencilMask>;
 		CullMode            = (reverseCulling) ? D3DCULL_CCW : D3DCULL_CW;  
         VertexShader        = compile vs_2_0 LightVolumeVS();
 		PixelShader			= NULL;
@@ -851,8 +859,10 @@ technique StencilBackAndFront
     {
         ZWriteEnable        = False;
         ColorWriteEnable    = 0;
-        StencilZFail        = Decr;
+        StencilZFail        = Invert;
         StencilEnable       = True;
+		StencilMask         = <stencilMask>;
+		StencilWriteMask	= <stencilMask>;
 		CullMode            = (reverseCulling) ? D3DCULL_CW : D3DCULL_CCW;  
         VertexShader        = compile vs_2_0 LightVolumeVS();
 		PixelShader			= NULL;
@@ -867,9 +877,11 @@ technique StencilTwoSided
         ColorWriteEnable    = 0;
         StencilEnable       = True;
 		TwoSidedStencilMode = True;
-        StencilZFail        = Incr;
-		Ccw_StencilZFail    = Decr;
+        StencilZFail        = Invert;
+		Ccw_StencilZFail    = Invert;
         CullMode            = None;
+		StencilMask         = <stencilMask>;
+		StencilWriteMask	= <stencilMask>;
         VertexShader        = compile vs_2_0 LightVolumeVS();
 		PixelShader			= NULL;
     }
@@ -906,6 +918,8 @@ technique PointLightShadows[DepthReadTest][Specular][Gobo]
         StencilEnable       = <enableStencil>;
         StencilFunc         = Less;
         StencilPass         = Zero;
+		StencilWriteMask	= <stencilMask>;
+		StencilMask         = <stencilMask>;
     }
 }
 
@@ -925,6 +939,8 @@ technique SpotLight[Shadows, ShadowsDepthReadTest][Specular][Gobo]
         StencilEnable       = <enableStencil>;
         StencilFunc         = Less;
         StencilPass         = Zero;
+		StencilMask         = <stencilMask>;
+		StencilWriteMask	= <stencilMask>;
     }
 }
 
@@ -944,6 +960,8 @@ technique PointLight[Specular]
         StencilEnable       = <enableStencil>;
         StencilFunc         = Less;
         StencilPass         = Zero;
+		StencilMask         = <stencilMask>;
+		StencilWriteMask	= <stencilMask>;
     }
 }
 
@@ -994,7 +1012,9 @@ technique AmbientVolumeLight
         ColorWriteEnable    = Red | Green | Blue;
         StencilEnable       = <enableStencil>;
         StencilFunc         = Less;
-        StencilPass         = Zero;			
+        StencilPass         = Zero;
+		StencilMask         = <stencilMask>;	
+		StencilWriteMask	= <stencilMask>;		
     }
 }
 
@@ -1013,7 +1033,9 @@ technique Reflections
         ColorWriteEnable    = Red | Green | Blue;
         StencilEnable       = <enableStencil>;
         StencilFunc         = Less;
-        StencilPass         = Zero;		
+        StencilPass         = Zero;
+		StencilMask         = <stencilMask>;	
+		StencilWriteMask	= <stencilMask>;		
     }
 }
 

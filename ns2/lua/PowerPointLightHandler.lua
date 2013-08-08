@@ -73,6 +73,7 @@ function PowerPointLightHandler:Init(powerPoint)
 
     self.powerPoint = powerPoint
     self.lightTable = { }
+    self.probeTable = { }
     
     // all lights for this powerPoint, and filter away those that
     // shouldn't be affected by the power changes
@@ -84,6 +85,10 @@ function PowerPointLightHandler:Init(powerPoint)
         
     end
     
+    for _, probe in ipairs(GetReflectionProbesForLocation(powerPoint:GetLocationName())) do
+        self.probeTable[probe] = true
+    end
+
     self.lastWorker = nil
     self.lastTimeOfChange = nil
     
@@ -124,6 +129,7 @@ function BaseLightWorker:Init(handler, name)
     self.handler = handler
     self.name = name
     self.activeLights = {}
+    self.activeProbes = false
     
     return self
     
@@ -139,6 +145,8 @@ function BaseLightWorker:Activate()
         light.flickering = nil
         
     end
+    
+    self.activeProbes = true
     
 end
 
@@ -210,6 +218,29 @@ function NormalLightWorker:Run()
     local timeOfChange = self.handler.powerPoint:GetTimeOfLightModeChange()
     local time = Shared.GetTime()
     local timePassed = time - timeOfChange    
+
+    if self.activeProbes then
+    
+        local startFullLightTime = PowerPoint.kMinFullLightDelay
+        local fullFullLightTime = startFullLightTime + PowerPoint.kFullPowerOnTime      
+        
+        local probeTint = nil
+        
+        if timePassed < startFullLightTime then
+            // we don't change lights or color during this period        
+            probeTint = nil
+        else
+            probeTint = Color(1, 1, 1, 1)
+            self.activeProbes = false
+        end
+
+        if probeTint ~= nil then
+            for probe,_ in pairs(self.handler.probeTable) do
+                probe:SetTint( Color(1, 1, 1, 1) )
+            end
+         end
+        
+    end
 
     for renderLight,_ in pairs(self.activeLights) do
 
@@ -288,6 +319,7 @@ function DamagedLightWorker:Run()
     
     if timePassed > kDamagedCycleTime then
         self.activeLights = { }
+        self.activeProbes = false
     end
     
 end
@@ -364,6 +396,43 @@ function NoPowerLightWorker:Run()
     local timeOfChange = self.handler.powerPoint:GetTimeOfLightModeChange()
     local time = Shared.GetTime()
     local timePassed = time - timeOfChange    
+    
+    local startAuxLightTime = kPowerDownTime + kOffTime
+    local fullAuxLightTime = startAuxLightTime + kAuxPowerCycleTime
+    local startAuxLightFailTime = fullAuxLightTime + PowerPoint.kAuxLightSafeTime
+    local totalAuxLightFailTime = startAuxLightFailTime + PowerPoint.kAuxLightDyingTime
+    
+    local probeTint
+    
+    if timePassed < kPowerDownTime then
+        local intensity = math.sin(Clamp(timePassed / kPowerDownTime, 0, 1) * math.pi / 2)
+        probeTint = Color(intensity, intensity, intensity, 1)
+    elseif timePassed < startAuxLightTime then
+        probeTint = Color(0, 0, 0, 1)
+    elseif timePassed < fullAuxLightTime then
+    
+        // Fade red in smoothly. t will stay at zero during the individual delay time
+        local t = timePassed - startAuxLightTime
+        // angle goes from zero to 90 degres in one kAuxPowerCycleTime
+        local angleRad = (t / kAuxPowerCycleTime) * math.pi / 2
+        // and scalar goes 0->1
+        local scalar = math.sin(angleRad)
+
+        probeTint = Color(PowerPoint.kDisabledColor.r * scalar,
+                          PowerPoint.kDisabledColor.g * scalar,
+                          PowerPoint.kDisabledColor.b * scalar,
+                          1)
+ 
+    else
+        self.activeProbes = false
+    end
+
+    if self.activeProbes then    
+        for probe,_ in pairs(self.handler.probeTable) do
+            probe:SetTint( probeTint )
+        end
+    end
+
     
     for renderLight,_ in pairs(self.activeLights) do
         

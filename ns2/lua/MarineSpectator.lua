@@ -56,31 +56,4 @@ function MarineSpectator:GetFollowMoveCameraDistance()
     return 2.5
 end
 
-if Client then
-
-    function MarineSpectator:OnInitLocalClient()
-    
-        TeamSpectator.OnInitLocalClient(self)
-        
-        if self.requestMenu == nil then
-            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-        end
-        
-    end
-    
-    function MarineSpectator:OnDestroy()
-    
-        TeamSpectator.OnDestroy(self)
-        
-        if self.requestMenu then
-        
-            GetGUIManager():DestroyGUIScript(self.requestMenu)
-            self.requestMenu = nil
-            
-        end
-        
-    end
-    
-end
-
 Shared.LinkClassToMap("MarineSpectator", MarineSpectator.kMapName, networkVars)

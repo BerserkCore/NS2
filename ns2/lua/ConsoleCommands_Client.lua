@@ -34,21 +34,6 @@ function OnCommandSoundGeometry(enabled)
     
 end
 
-function OnCommandAnimDebug(className)
-
-    // Messages printed by server
-    if Shared.GetDevMode() then
-    
-        if className then
-            gActorAnimDebugClass = className
-        elseif gActorAnimDebugClass ~= "" then
-            gActorAnimDebugClass = ""
-        end
-        
-    end
-    
-end
-
 function OnCommandEffectDebug(className)
 
     Print("OnCommandEffectDebug(\"%s\")", ToString(className))
@@ -178,6 +163,7 @@ function OnCommandSetName(nickname)
     end
     
     Client.SetOptionString(kNicknameOptionsKey, nickname)
+    Client.SendNetworkMessage("SetName", { name = nickname }, true)
     
 end
 
@@ -250,7 +236,6 @@ Event.Hook("Console_deathmsg", OnCommandDeathMsg)
 Event.Hook("Console_clientdisconnect", OnCommandOnClientDisconnect)
 Event.Hook("Console_points", OnCommandPoints)
 Event.Hook("Console_soundgeometry", OnCommandSoundGeometry)
-Event.Hook("Console_onanimdebug", OnCommandAnimDebug)
 Event.Hook("Console_oneffectdebug", OnCommandEffectDebug)
 Event.Hook("Console_debugtext", OnCommandDebugText)
 Event.Hook("Console_locate", OnCommandLocate)

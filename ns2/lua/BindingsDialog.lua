@@ -44,6 +44,7 @@ local defaults = {
     {"RequestOrder", "H"},
     {"Taunt", "T"},
     {"PingLocation", "MouseButton2"},
+    {"Buy", "B"}
 }
 
 // Order, names, description of keys in menu
@@ -204,5 +205,9 @@ function BindingsUI_ExitDialog()
 end
 
 function GetIsBinding(key, optionKey)
-    return InputKey[BindingsUI_GetInputValue(optionKey)] == key
+    local boundKey = BindingsUI_GetInputValue(optionKey)
+    if tonumber(boundKey) then
+        boundKey = "Num" .. boundKey
+    end
+    return InputKey[boundKey] == key
 end

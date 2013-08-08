@@ -97,20 +97,17 @@ end
 function SwipeBlink:OnTag(tagName)
 
     PROFILE("SwipeBlink:OnTag")
-
-    if self.primaryAttacking and tagName == "start" then
+    
+    if tagName == "hit" then
     
         local player = self:GetParent()
         if player then
             player:DeductAbilityEnergy(self:GetEnergyCost())
         end
         
-        self:TriggerEffects("swipe_attack")
-        
-    end
-    
-    if tagName == "hit" then
+        self:TriggerEffects("swipe_attack")    
         self:PerformMeleeAttack()
+        
     end
 
 end
@@ -119,7 +116,7 @@ function SwipeBlink:PerformMeleeAttack()
 
     local player = self:GetParent()
     if player then
-        local didHit, hitObject, endPoint, surface = PerformGradualMeleeAttack(self, player, SwipeBlink.kDamage, SwipeBlink.kRange)
+        local didHit, hitObject, endPoint, surface = PerformGradualMeleeAttack(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
     end
     
 end

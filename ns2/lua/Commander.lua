@@ -107,7 +107,6 @@ function Commander:OnInitialized()
     InitMixin(self, HotkeyMoveMixin)
     
     InitMixin(self, BuildingMixin)
-    InitMixin(self, EntityChangeMixin)
     InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
     
     Player.OnInitialized(self)
@@ -171,36 +170,28 @@ function Commander:GetTechAllowed(techId, techNode, self)
 end
 
 function Commander:HandleButtons(input)
-  
+
     PROFILE("Commander:HandleButtons")
     
-    // Set Commander orientation to looking down but not straight down for visual interest
-    local yawDegrees    = 90
-    local pitchDegrees  = 70
-    local angles        = Angles((pitchDegrees/90)*math.pi/2, (yawDegrees/90)*math.pi/2, 0)   
+    // Set Commander orientation to looking down but not straight down for visual interest.
+    local yawDegrees = 90
+    local pitchDegrees = 70
+    local angles = Angles((pitchDegrees / 90) * math.pi / 2, (yawDegrees / 90) * math.pi / 2, 0)
     
     // Update to the current view angles.
     self:SetViewAngles(angles)
     
-    // Update shift order drawing/queueing
+    // Update shift order drawing/queueing.
     self.queuingOrders = (bit.band(input.commands, Move.MovementModifier) ~= 0)
-
-    // Check for commander cancel action. It is reset in the flash hook to make 
+    
+    // Check for commander cancel action. It is reset in the flash hook to make
     // sure it's recognized.
-    if(bit.band(input.commands, Move.Exit) ~= 0) then
-        // TODO: If we have nothing to cancel, bring up menu
-        //ShowInGameMenu()
+    if bit.band(input.commands, Move.Exit) ~= 0 then
         self.commanderCancel = true
     end
-
-    if Client and not Shared.GetIsRunningPrediction() then    
     
+    if Client and not Shared.GetIsRunningPrediction() then
         self:HandleCommanderHotkeys(input)
-        
-    end
-    
-    if Client then
-        self:ShowMap(true, bit.band(input.commands, Move.ShowMap) ~= 0)
     end
     
 end
@@ -243,13 +234,9 @@ end
 function Commander:UpdateMisc(input)
 
     PROFILE("Commander:UpdateMisc")
-
+    
     if Server then
         self:UpdateNumIdleWorkers()
-    end
-    
-    if Client then
-        self:UpdateChat(input)
     end
     
 end

@@ -119,7 +119,7 @@ end
  * If inputBlocked is true, the key event will not be processed. Only
  * the movement internally will be processed in this case.
  */
-function MouseTracker_SendKeyEvent(key, down, inputBlocked)
+function MouseTracker_SendKeyEvent(key, down, amount, inputBlocked)
 
     if not Shared.GetIsRunningPrediction() and #gCursorStack > 0 then
     
@@ -127,7 +127,7 @@ function MouseTracker_SendKeyEvent(key, down, inputBlocked)
         
             // Notify about mouse wheel movement.
             for index, listener in ipairs(gMouseWheelMovementListeners) do
-                listener:OnMouseWheel(down)
+                listener:OnMouseWheel(amount > 0)
             end
             
             return true

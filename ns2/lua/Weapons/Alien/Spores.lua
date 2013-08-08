@@ -80,8 +80,6 @@ function Spores:OnCreate()
     self.primaryAttacking = false
     
     if Server then
-    
-        InitMixin(self, OwnerMixin)
         
         self.loopingSporesSound = Server.CreateEntity(SoundEffect.kMapName)
         self.loopingSporesSound:SetAsset(kLoopingDustSound)

@@ -10,6 +10,7 @@
 
 Script.Load("lua/GUIBorderBackground.lua")
 Script.Load("lua/GUICommanderTooltip.lua")
+Script.Load("lua/GUIDial.lua")
 
 class 'GUICommanderButtons' (GUIScript)
 

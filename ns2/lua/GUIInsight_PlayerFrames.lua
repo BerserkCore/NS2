@@ -285,6 +285,12 @@ function GUIInsight_PlayerFrames:UpdatePlayer(player, playerRecord, team, yPosit
     
     player.EntityId = playerRecord.EntityId
     
+    if player.EntityId == Client.GetLocalPlayer().selectedId then
+        player.Frame:SetColor(Color(1,1,0,1))
+    else
+        player.Frame:SetColor(Color(1,1,1,1))    
+    end
+    
     local resourcesStr = string.format("%d Res", playerRecord.Resources)
     local KDRStr = string.format("%s / %s", playerRecord.Kills, playerRecord.Deaths)
     local currentPosition = Vector(player["Background"]:GetPosition())
@@ -392,30 +398,30 @@ end
 
 function GUIInsight_PlayerFrames:SendKeyEvent( key, down )
 
-    if GUIInsight_Overhead then
+    if isVisible and key == InputKey.MouseButton0 then
+            
+        local cursor = MouseTracker_GetCursorPos()
+        
+        for index, team in ipairs(self.teams) do
 
-        if isVisible and key == InputKey.MouseButton0 and down then
-
-            local time = Shared.GetTime()
-            local timeSinceLastPress = time - self.timeLastMouseOne
-            if timeSinceLastPress < 0.3 then
-                
-                local cursor = MouseTracker_GetCursorPos()
-                
-                for index, team in ipairs(self.teams) do
-
-                    local inside, posX, posY = GUIItemContainsPoint( team.Background, cursor.x, cursor.y )
-                    if inside then
-
-                        local index = math.floor( posY / (kPlayersPanelSize.y + kFrameYSpacing) ) + 1
-                        local entityId = team.PlayerList[index].EntityId
-                        GUIInsight_Overhead:FollowEntityId(entityId)
-                        return true
-                        
-                    end
+            local inside, posX, posY = GUIItemContainsPoint( team.Background, cursor.x, cursor.y )
+            if inside then
+                local player = Client.GetLocalPlayer()
+                local index = math.floor( posY / (kPlayersPanelSize.y + kFrameYSpacing) ) + 1
+                local entityId = team.PlayerList[index].EntityId
+        
+                local time = Shared.GetTime()
+                local timeSinceLastPress = time - self.timeLastMouseOne
+                // TODO this should make you follow player in overhead
+                if timeSinceLastPress < 0.3 then
+                    return true
                 end
+                
+                if down and player.selectedId ~= entityId then
+                    Client.SendNetworkMessage("SpectatePlayer", {entityId = entityId}, true)
+                end
+                self.timeLastMouseOne = time
             end
-            self.timeLastMouseOne = time
         end
     end
     return false

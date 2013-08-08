@@ -107,11 +107,9 @@ function HudModel_AnimateBobbing(player, deltaTime)
     // update model and cinematics positions
     gRenderModel:SetCoords(coords)
     
-    local hudParams = Client.GetLocalPlayer():GetHudParams() 
-        
     // store for next frame
     gBobbingVars.lastPlayerAngles = player:GetViewAngles()
-
+    
 end
 
 // simple follow

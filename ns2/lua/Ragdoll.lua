@@ -10,7 +10,6 @@
 
 Script.Load("lua/Entity.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
-Script.Load("lua/TimedCallbackMixin.lua")
 
 function CreateRagdoll(fromEntity)
 
@@ -53,8 +52,6 @@ AddMixinNetworkVars(ModelMixin, networkVars)
 function Ragdoll:OnCreate()
 
     Entity.OnCreate(self)
-    
-    InitMixin(self, TimedCallbackMixin)
     
     self.creationTime = Shared.GetTime()
     

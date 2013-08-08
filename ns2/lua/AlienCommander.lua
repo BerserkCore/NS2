@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //
 // lua\AlienCommander.lua
 //
@@ -14,9 +14,8 @@ class 'AlienCommander' (Commander)
 
 AlienCommander.kMapName = "alien_commander"
 
-local networkVars = 
+local networkVars =
 {
-    allowForesight = "boolean",
 }
 
 AlienCommander.kOrderClickedEffect = PrecacheAsset("cinematics/alien/order.cinematic")
@@ -45,9 +44,25 @@ AlienCommander.kHealTarget = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_
 AlienCommander.kSpendResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_nanites")
 AlienCommander.kSpendTeamResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_metal")
 
-AlienCommander.kForesightUpdateRate = 0.5
-
 local kHoverSound = PrecacheAsset("sound/NS2.fev/alien/commander/hover")
+
+if Client then
+
+    local function CreateCursorLight(forPlayer)
+
+        local cursorLight = Client.CreateRenderLight()
+        cursorLight:SetType(RenderLight.Type_Point)
+        cursorLight:SetCastsShadows(true)
+        cursorLight:SetRadius(8)
+        cursorLight:SetIntensity(3)
+        cursorLight:SetColor(Color(1, 0.2, 0, 1))
+        return cursorLight
+        
+    end
+    
+    ClientResources.AddResource("CursorLight", "AlienCommander", CreateCursorLight, Client.DestroyRenderLight)
+    
+end
 
 function AlienCommander:GetSelectionSound()
     return AlienCommander.kSelectSound
@@ -71,128 +86,6 @@ end
 
 function AlienCommander:GetSpendTeamResourcesSoundName()
     return AlienCommander.kSpendTeamResourcesSoundName
-end
-
-if Server then
-    
-    function AlienCommander:OnCreate()
-    
-        Commander.OnCreate(self)
-        
-        self.allowForesight = false
-        
-    end
-    
-elseif Client then
-
-    function AlienCommander:OnInitLocalClient()
-    
-        Commander.OnInitLocalClient(self)
-        
-        if self.waypoints == nil then
-        
-            self.waypoints = GetGUIManager():CreateGUIScript("GUIWaypoints")
-            self.waypoints:InitAlienTexture()
-            
-        end
-        
-        if self.eggInfo == nil then
-            self.eggInfo = GetGUIManager():CreateGUIScript("GUIEggDisplay")
-        end
-        
-        if self.pheromoneDisplay == nil then
-            self.pheromoneDisplay = GetGUIManager():CreateGUIScript("GUICommanderPheromoneDisplay")
-        end
-        
-        if not self.cursorLight then
-        
-            self.cursorLight = Client.CreateRenderLight()
-            self.cursorLight:SetType(RenderLight.Type_Point)
-            self.cursorLight:SetCastsShadows(true)
-            self.cursorLight:SetRadius(8)
-            self.cursorLight:SetIntensity(3) 
-            self.cursorLight:SetColor(Color(1, 0.2, 0, 1))
-            
-        end
-        
-    end
-    
-    function AlienCommander:UpdateForesight()
-    
-        PROFILE("AlienCommander:UpdateForesight")
-        
-        // get mouse target and create a dark cloud effect in case it's an enemy
-        local mouseX, mouseY = Client.GetCursorPosScreen()
-        local pickVec = CreatePickRay(self, mouseX, mouseY)
-        local trace = Shared.TraceRay(self:GetOrigin(), self:GetOrigin() + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
-        
-        self.cursorLight:SetCoords(Coords.GetTranslation(trace.endPoint + trace.normal * 0.5))
-        
-        local lightVisible = false
-        
-        local cursorLocation = GetLocationForPoint(trace.endPoint)
-        if cursorLocation and cursorLocation:GetWasVisitedByTeam(self:GetTeamNumber()) then
-            lightVisible = true
-        end
-        
-        self.cursorLight:SetIsVisible(lightVisible)
-        
-        // update foresight twice per second
-        if lightVisible and (not self.timeLastForesight or self.timeLastForesight + AlienCommander.kForesightUpdateRate < Shared.GetTime()) then
-        
-            for index, target in ipairs(GetEntitiesWithMixinForTeamWithinRange("Team", GetEnemyTeamNumber(self:GetTeamNumber()), trace.endPoint, 8)) do
-            
-                if GetIsUnitActive(target) and target.TriggerEffects then
-                
-                    target:TriggerEffects("foresight")
-                    self.timeLastForesight = Shared.GetTime()
-                    
-                end
-                
-            end
-            
-        end
-        
-    end
-    
-end
-
-function AlienCommander:OnDestroy()
-
-    if Client then
-    
-        if self.waypoints then
-        
-            GetGUIManager():DestroyGUIScript(self.waypoints)
-            self.waypoints = nil
-            
-        end
-        
-        if self.cursorLight then
-        
-            Client.DestroyRenderLight(self.cursorLight)
-            self.cursorLight = nil
-            
-        end
-        
-        if self.eggInfo then
-        
-            GetGUIManager():DestroyGUIScript(self.eggInfo)
-            self.eggInfo = nil
-            
-        end
-        
-        if self.pheromoneDisplay then
-        
-            GetGUIManager():DestroyGUIScript(self.pheromoneDisplay)
-            self.pheromoneDisplay = nil
-            
-        end
-        
-    end
-    
-    Commander.OnDestroy(self)
-    
 end
 
 function AlienCommander:SetSelectionCircleMaterial(entity)
@@ -226,14 +119,27 @@ end
 function AlienCommander:OnProcessMove(input)
 
     Commander.OnProcessMove(self, input)
-
+    
     if Server then
         UpdateAbilityAvailability(self, self.tierTwoTechId, self.tierThreeTechId)
-
-    elseif Client then    
-        self:UpdateForesight()    
     end
+    
+end
 
+function AlienCommander:OnUpdateRender()
+
+    if self:GetIsLocalPlayer() then
+    
+        // get mouse target and create a dark cloud effect in case it's an enemy
+        local mouseX, mouseY = Client.GetCursorPosScreen()
+        local pickVec = CreatePickRay(self, mouseX, mouseY)
+        local trace = Shared.TraceRay(self:GetOrigin(), self:GetOrigin() + pickVec * 1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
+        
+        local cursorLight = ClientResources.GetResource("CursorLight")
+        cursorLight:SetCoords(Coords.GetTranslation(trace.endPoint + trace.normal * 0.5))
+        
+    end
+    
 end
 
 if Server then

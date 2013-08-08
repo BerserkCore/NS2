@@ -22,11 +22,11 @@ BoneWall.kMapName = "bonewall"
 BoneWall.kModelName = PrecacheAsset("models/alien/infestationspike/infestationspike.model")
 local kAnimationGraph = PrecacheAsset("models/alien/infestationspike/infestationspike.animation_graph")
 
-BoneWall.kType = CommanderAbility.kType.OverTime
-BoneWall.kLifeSpan = 6
+local kCommanderAbilityType = CommanderAbility.kType.OverTime
+local kLifeSpan = 6
 
-BoneWall.kMoveOffset = 4
-BoneWall.kMoveDuration = 0.4
+local kMoveOffset = 4
+local kMoveDuration = 0.4
 
 local networkVars =
 {
@@ -85,8 +85,6 @@ function BoneWall:OnCreate()
     InitMixin(self, LOSMixin)
     InitMixin(self, ObstacleMixin)
     
-    self.forcedEndLifespan = nil
-
 end
 
 function BoneWall:OnInitialized()
@@ -116,7 +114,7 @@ function BoneWall:GetSurfaceOverride()
 end    
 
 function BoneWall:GetType()
-    return BoneWall.kType
+    return kCommanderAbilityType
 end
 
 function BoneWall:GetResetsPathing()
@@ -124,11 +122,7 @@ function BoneWall:GetResetsPathing()
 end
 
 function BoneWall:GetLifeSpan()
-    local lifespan = BoneWall.kLifeSpan
-    if self.forcedEndLifespan ~= nil then
-        lifespan = self.forcedEndLifespan - self:GetTimeCreated() + BoneWall.kMoveDuration
-    end
-    return lifespan    
+    return kLifeSpan
 end
 
 function BoneWall:OnUpdate(deltaTime)
@@ -143,12 +137,12 @@ function BoneWall:OnUpdate(deltaTime)
         local moveFraction = 0
 
         if remainingTime <= 1 then
-            moveFraction = 1 - Clamp(remainingTime / BoneWall.kMoveDuration, 0, 1)
+            moveFraction = 1 - Clamp(remainingTime / kMoveDuration, 0, 1)
         end
         
         local piFraction = moveFraction * (math.pi / 2)
 
-        self:SetOrigin(self.spawnPoint - Vector(0, math.sin(piFraction) * BoneWall.kMoveOffset, 0))
+        self:SetOrigin(self.spawnPoint - Vector(0, math.sin(piFraction) * kMoveOffset, 0))
     
     end
 

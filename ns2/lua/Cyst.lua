@@ -15,7 +15,6 @@ Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
 Script.Load("lua/GameEffectsMixin.lua")
 Script.Load("lua/CatalystMixin.lua")
-Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/Mixins/ClientModelMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/CombatMixin.lua")
@@ -64,6 +63,16 @@ Cyst.kInfestationGrowthDuration = Cyst.kInfestationRadius / kCystInfestDuration
 
 local networkVars =
 {
+
+    // Since cysts don't move, we don't need the fields to be lag compensated
+    // or delta encoded
+    m_origin = "position (by 0.05 [], by 0.05 [], by 0.05 [])",
+    m_angles = "angles (by 0.1 [], by 10 [], by 0.1 [])",
+    
+    // Cysts are never attached to anything, so remove the fields inherited from Entity
+    m_attachPoint = "integer (-1 to 0)",
+    m_parentId = "integer (-1 to 0)",
+    
     // Track our parentId
     parentId = "entityid",
     hasChild = "boolean",
@@ -96,6 +105,7 @@ AddMixinNetworkVars(CloakableMixin, networkVars)
 AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(InfestationMixin, networkVars)
 
 //
 // To avoid problems with minicysts on walls connection to each other through solid rock,
@@ -255,11 +265,6 @@ function Cyst:OnInitialized()
         InitMixin(self, StaticTargetMixin)
         
         self:SetModel(Cyst.kModelName, Cyst.kAnimationGraph)
-        
-        // This Mixin must be inited inside this OnInitialized() function.
-        if not HasMixin(self, "MapBlip") then
-            InitMixin(self, MapBlipMixin)
-        end
         
     elseif Client then    
     
@@ -433,6 +438,10 @@ function Cyst:GetIsConnected()
     return self.connected
 end
 
+function Cyst:GetIsConnectedAndAlive()
+    return self.connected and self:GetIsAlive()
+end
+
 function Cyst:GetDescription()
 
     local prePendText = ConditionalValue(self:GetIsConnected(), "", "Unconnected ")
@@ -540,68 +549,83 @@ function Cyst:OnUpdate(deltaTime)
     
     ScriptActor.OnUpdate(self, deltaTime)
     
-    local point = nil
-    local now = Shared.GetTime()
+    if self:GetIsAlive() then
     
-    // Make a connect to the parent so we can do the visual whatevers
-    // the client and server could differ in these paths but to be honest
-    // the server is always the authority the client is just for visuals
-    // which could be out of sync
-    if self.points == nil then
-    
-        local parent = self:GetCystParent()
-        if parent ~= nil then
+        local point = nil
+        local now = Shared.GetTime()
         
-            // Create the connect between me and my parent
-            local parentOrigin = parent:GetOrigin()
-            local myOrigin = self:GetOrigin()
+        // Make a connect to the parent so we can do the visual whatevers
+        // the client and server could differ in these paths but to be honest
+        // the server is always the authority the client is just for visuals
+        // which could be out of sync
+        if self.points == nil then
+        
+            local parent = self:GetCystParent()
+            if parent ~= nil then
             
-            self.points = CreateBetweenEntities(self, parent)
-            if self.points and #self.points > 0 then
+                // Create the connect between me and my parent
+                local parentOrigin = parent:GetOrigin()
+                local myOrigin = self:GetOrigin()
+                
+                self.points = CreateBetweenEntities(self, parent)
+                if self.points and #self.points > 0 then
+                    self:Restart(self.impulseStartTime)
+                end
+                
+            end
+            
+        elseif #self.points > 0 then
+        
+            // if we have a tracker, check if we need to restart it
+            if self.impulseStartTime ~= self.startTime then
                 self:Restart(self.impulseStartTime)
             end
             
-        end
-        
-    elseif #self.points > 0 then
-    
-        // if we have a tracker, check if we need to restart it
-        if self.impulseStartTime ~= self.startTime then
-            self:Restart(self.impulseStartTime)
-        end
-        
-        // Advanced the point on the timeline
-        point = AdvanceTo(self, now)
-        
-    end
-    
-    if Server then
-    
-        ServerUpdate(self, point, deltaTime)
-        self.hasChild = #self.children > 0
-        
-    elseif Client then
-    
-        self.light:SetIsVisible(point ~= nil and not self:GetIsCloaked())
-        
-        if point then
-        
-            self.lightCoords.origin = point
-            self.light:SetCoords(self.lightCoords)
+            // Advanced the point on the timeline
+            point = AdvanceTo(self, now)
             
         end
         
-        if not self.connectedFraction then
-            self.connectedFraction = self.connected and 1 or 0
-        end
+        if Server then
         
-        local animate = 1
-        if not self.connected then
-            animate = -1
-        end
+            ServerUpdate(self, point, deltaTime)
+            self.hasChild = #self.children > 0
+            
+        elseif Client then
+        
+            self.light:SetIsVisible(point ~= nil and not self:GetIsCloaked())
+            
+            if point then
+            
+                self.lightCoords.origin = point
+                self.light:SetCoords(self.lightCoords)
+                
+            end
+            
+            if not self.connectedFraction then
+                self.connectedFraction = self.connected and 1 or 0
+            end
+            
+            local animate = 1
+            if not self.connected then
+                animate = -1
+            end
 
-        self.connectedFraction = Clamp(self.connectedFraction + animate * deltaTime, 0, 1)
+            self.connectedFraction = Clamp(self.connectedFraction + animate * deltaTime, 0, 1)
+            
+        end
+    
+    elseif Server then
+    
+        local destructionAllowedTable = { allowed = true }
+        if self.GetDestructionAllowed then
+            self:GetDestructionAllowed(destructionAllowedTable)
+        end
         
+        if destructionAllowedTable.allowed then
+            DestroyEntity(self)
+        end
+    
     end
     
 end
@@ -687,7 +711,7 @@ end
  */
 function GetCystParentAvailable(techId, origin, normal, commander)
 
-    local parent, path = GetCystParentFromPoint(origin, normal, "GetIsConnected")
+    local parent, path = GetCystParentFromPoint(origin, normal, "GetIsConnectedAndAlive")
     return parent ~= nil
     
 end

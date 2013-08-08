@@ -15,41 +15,45 @@
 InfestationTrackerMixin = CreateMixin( InfestationTrackerMixin )
 InfestationTrackerMixin.type = "InfestationTracker"
 
-
-//
 // Listen on the state that infested state depends on - ie where we are
-//
 InfestationTrackerMixin.expectedCallbacks = {
     SetOrigin = "Sets the location of an entity",
     SetCoords = "Sets both both location and angles",
+}
+
+InfestationTrackerMixin.expectedMixins =
+{
+    GameEffects = "Required for on infestation state."
 }
 
 // What entities have become dirty.
 // Flushed in the UpdateServer hook by InfestationTrackerMixin.OnUpdateServer
 InfestationTrackerMixin.dirtyTable = {}
 
-//
 // Call all dirty entities
-//
 function InfestationTrackerMixin.OnUpdateServer()
+
     PROFILE("InfestationTrackerMixin:OnUpdateServer")
     for entityId, _ in pairs(InfestationTrackerMixin.dirtyTable) do
+    
         local entity = Shared.GetEntity(entityId)
         if entity then
+        
             if not entity.UpdateInfestedState then
                 Print("waning: %s has no implementation of UpdateInfestedState()", entity:GetClassName())
             else
                 entity:UpdateInfestedState()
             end
+            
         end
+        
     end
+    
     InfestationTrackerMixin.dirtyTable = {}
+    
 end
 
-
-//
 // Intercept the functions that changes the state the mapblip depends on
-//
 function InfestationTrackerMixin:SetOrigin(origin)
     InfestationTrackerMixin.dirtyTable[self:GetId()] = true
 end
@@ -60,34 +64,39 @@ end
 function InfestationTrackerMixin:__initmixin()
 
     assert(Server)
-    self.checkUntilTime = 0
 
 end
 
-function InfestationTrackerMixin:UpdateInfestedState()
+function InfestationTrackerMixin:UpdateInfestedState(onInfestation)
 
-    UpdateInfestationMask(self)    
+    // no need to check here, since we already know that this place is infested
+    if onInfestation then
+        self:SetInfestationState(true)
+    else
+        UpdateInfestationMask(self)    
+    end
     
 end
 
-function InfestationTrackerMixin:OnUpdate(deltaTime)
+function InfestationTrackerMixin:SetInfestationState(onInfestation)
 
-    if self.checkUntilTime ~= 0 then
-        if self.checkUntilTime > Shared.GetTime() then
-            self:UpdateInfestedState()
-        else
-            self.checkUntilTime = 0
+    if self:GetGameEffectMask(kGameEffect.OnInfestation) ~= onInfestation then
+
+        self:SetGameEffectMask(kGameEffect.OnInfestation, onInfestation)
+        
+        if onInfestation and self.OnTouchInfestation then
+            self:OnTouchInfestation()
         end
+        
+        if not onInfestation and self.OnLeaveInfestation then
+            self:OnLeaveInfestation()
+        end
+        
     end
 
-end
-
-function InfestationTrackerMixin:EnableCheckUntil(time)
-    self.checkUntilTime = time
-end
+end    
 
 function InfestationTrackerMixin:InfestationNeedsUpdate()
-    //Log("%s: inf update", self)
     InfestationTrackerMixin.dirtyTable[self:GetId()] = true
 end
 

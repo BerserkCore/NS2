@@ -77,6 +77,13 @@ if Server then
         
     end
     
+    function GhostStructureMixin:OnKill()
+    
+        self:TriggerEffects("ghoststructure_destroy")
+        DestroyEntity(self)
+    
+    end
+    
 	// If we start constructing, make us no longer a ghost
     function GhostStructureMixin:OnConstruct(builder, buildPercentage)
         CheckGhostState(self, builder)

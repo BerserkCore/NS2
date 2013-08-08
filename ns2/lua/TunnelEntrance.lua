@@ -33,6 +33,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/ObstacleMixin.lua")
+Script.Load("lua/DigestMixin.lua")
 
 Script.Load("lua/Tunnel.lua")
 
@@ -40,12 +41,19 @@ class 'TunnelEntrance' (ScriptActor)
 
 TunnelEntrance.kMapName = "tunnelentrance"
 
+local kDigestDuration = 1.5
+
+
 TunnelEntrance.kModelName = PrecacheAsset("models/alien/tunnel/mouth.model") PrecacheAsset("models/props/generic/generic_crate_01.model")
 local kAnimationGraph = PrecacheAsset("models/alien/tunnel/mouth.animation_graph")
 
 local networkVars = { 
     connected = "boolean",
-    timeLastInteraction = "time"
+    beingUsed = "boolean",
+    timeLastExited = "time",
+    ownerId = "entityid",
+    allowDigest = "boolean",
+    destLocationId = "entityid"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -78,8 +86,8 @@ function TunnelEntrance:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, PointGiverMixin)
     InitMixin(self, SelectableMixin)
-    InitMixin(self, CloakableMixin)
     InitMixin(self, EntityChangeMixin)
+    InitMixin(self, CloakableMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DetectableMixin)
     InitMixin(self, ConstructMixin)
@@ -89,21 +97,22 @@ function TunnelEntrance:OnCreate()
     InitMixin(self, UmbraMixin)
     InitMixin(self, MaturityMixin)
     InitMixin(self, CombatMixin)
-    
-    InitMixin(self, ObstacleMixin)
+    InitMixin(self, DigestMixin)
     
     if Server then
         InitMixin(self, InfestationTrackerMixin)
         self.connected = false
     elseif Client then
-        InitMixin(self, CommanderGlowMixin)    
+        InitMixin(self, CommanderGlowMixin)     
     end
     
     self:SetLagCompensated(false)
     self:SetPhysicsType(PhysicsType.Kinematic)
-    self:SetPhysicsGroup(PhysicsGroup.MediumStructuresGroup)
+    self:SetPhysicsGroup(PhysicsGroup.BigStructuresGroup)
     
     self.timeLastInteraction = 0
+    self.timeLastExited = 0
+    self.destLocationId = Entity.invalidId
     
 end
 
@@ -132,12 +141,35 @@ function TunnelEntrance:OnInitialized()
 
 end
 
-local function GetRecentlyUsed(self)    
-    return self.timeLastInteraction + 0.2 > Shared.GetTime()    
+function TunnelEntrance:OnDestroy()
+
+    ScriptActor.OnDestroy(self)
+    
+    if Client then
+    
+        Client.DestroyRenderDecal(self.decal)
+        self.decal = nil
+        
+    end
+    
+end
+
+if not Server then
+    function TunnelEntrance:GetOwner()
+        return self.ownerId ~= nil and Shared.GetEntity(self.ownerId)
+    end
 end
 
 function TunnelEntrance:GetOwnerClientId()
     return self.ownerClientId
+end
+
+function TunnelEntrance:GetDigestDuration()
+    return kDigestDuration
+end
+
+function TunnelEntrance:GetCanDigest(player)
+    return self.allowDigest and player == self:GetOwner() and player:isa("Gorge") and (not HasMixin(self, "Live") or self:GetIsAlive())
 end
 
 function TunnelEntrance:SetOwner(owner)
@@ -156,6 +188,10 @@ function TunnelEntrance:SetOwner(owner)
 
     end
     
+end
+
+function TunnelEntrance:GetCanAutoBuild()
+    return self:GetGameEffectMask(kGameEffect.OnInfestation)
 end
 
 function TunnelEntrance:GetReceivesStructuralDamage()
@@ -190,12 +226,74 @@ function TunnelEntrance:GetTechButtons(techId)
     return {}
 end
 
+function TunnelEntrance:GetIsConnected()
+    return self.connected
+end
+
+function TunnelEntrance:Interact()
+
+    self.beingUsed = true
+    self.timeLastInteraction = Shared.GetTime()
+    
+end
+
 if Server then
+
+    local function ComputeDestinationLocationId(self)
+    
+        local destLocationId = Entity.invalidId
+        
+        if self.connected then
+        
+            local tunnel = Shared.GetEntity(self.tunnelId)
+            local exitA = tunnel:GetExitA()
+            local exitB = tunnel:GetExitB()
+            local oppositeExit = ((exitA and exitA ~= self) and exitA) or ((exitB and exitB ~= self) and exitB)
+            
+            if oppositeExit then
+                local location = GetLocationForPoint(oppositeExit:GetOrigin())
+                if location then
+                    destLocationId = location:GetId()
+                end       
+            end
+        
+        end
+        
+        return destLocationId
+    
+    end
 
     function TunnelEntrance:OnUpdate(deltaTime)
     
         ScriptActor.OnUpdate(self, deltaTime)        
         self.connected = self.tunnelId ~= nil and self.tunnelId ~= Entity.invalidId and Shared.GetEntity(self.tunnelId) ~= nil
+        self.beingUsed = self.timeLastInteraction + 0.1 > Shared.GetTime()  
+        self.destLocationId = ComputeDestinationLocationId(self)
+        
+        // temp fix: push AI units away to prevent players getting stuck
+        if not self.timeLastAIPushUpdate or self.timeLastAIPushUpdate + 1.4 < Shared.GetTime() then
+        
+            local baseYaw = 0
+            self.timeLastAIPushUpdate = Shared.GetTime()
+
+            for i, entity in ipairs(GetEntitiesWithMixinWithinRange("Repositioning", self:GetOrigin(), 1.4)) do
+            
+                if entity:GetCanReposition() then
+                
+                    entity.isRepositioning = true
+                    entity.timeLeftForReposition = 1
+                    
+                    baseYaw = entity:FindBetterPosition( GetYawFromVector(entity:GetOrigin() - self:GetOrigin()), baseYaw, 0 )
+                    
+                    if entity.RemoveFromMesh ~= nil then
+                        entity:RemoveFromMesh()
+                    end
+                    
+                end
+            
+            end
+        
+        end
 
     end
 
@@ -248,33 +346,39 @@ function TunnelEntrance:GetHealthbarOffset()
     return kTunnelEntranceHealthbarOffset
 end
 
-function TunnelEntrance:GetCanAlwaysBeUsed()
-    return self.connected
+function TunnelEntrance:GetCanBeUsed(player, useSuccessTable)
+    useSuccessTable.useSuccess = self.connected and useSuccessTable.useSuccess and self:GetCanDigest(player)  
 end
 
-function TunnelEntrance:GetCanBeUsed(player, useSuccessTable)
-    useSuccessTable.useSuccess = self.connected
+function TunnelEntrance:GetCanBeUsedConstructed()
+    return true
 end
 
 if Server then
 
-    function TunnelEntrance:OnUse(player, elapsedTime, useAttachPoint, usePoint, useSuccessTable)
-
-        if not player:isa("Exo") and not player:isa("Onos") and self.connected then
+    function TunnelEntrance:SuckinEntity(entity)
+    
+        if entity and HasMixin(entity, "TunnelUser") and self.tunnelId then
         
             local tunnelEntity = Shared.GetEntity(self.tunnelId)
-            if tunnelEntity then    
-                tunnelEntity:MovePlayerToTunnel(player, self)
-                self.timeLastInteraction = Shared.GetTime()
-                player:SetVelocity(Vector(0, 0, 0))
-            end
-        
-        end
+            if tunnelEntity then
+            
+                tunnelEntity:MovePlayerToTunnel(entity, self)
+                entity:SetVelocity(Vector(0, 0, 0))
+                
+                if entity.OnUseGorgeTunnel then
+                    entity:OnUseGorgeTunnel()
+                end
 
+            end
+            
+        end
+    
     end
     
-    function TunnelEntrance:OnPlayerExited(player)
-        self.timeLastInteraction = Shared.GetTime()
+    function TunnelEntrance:OnEntityExited(entity)
+        self.timeLastExited = Shared.GetTime()
+        self:TriggerEffects("tunnel_exit_3D")
     end
 
 end   
@@ -282,7 +386,8 @@ end
 function TunnelEntrance:OnUpdateAnimationInput(modelMixin)
 
     modelMixin:SetAnimationInput("open", self.connected)
-    modelMixin:SetAnimationInput("player_out", GetRecentlyUsed(self))
+    modelMixin:SetAnimationInput("player_in", self.beingUsed)
+    modelMixin:SetAnimationInput("player_out", self.timeLastExited + 0.2 > Shared.GetTime())
     
 end
 
@@ -290,5 +395,44 @@ function TunnelEntrance:GetEngagementPointOverride()
     return self:GetOrigin() + Vector(0, 0.25, 0)
 end
 
+function TunnelEntrance:OnUpdateRender()
+
+    local showDecal = self:GetIsVisible() and not self:GetIsCloaked()
+
+    if not self.decal and showDecal then
+        self.decal = CreateSimpleInfestationDecal(1.9, self:GetCoords())
+    elseif self.decal and not showDecal then
+        Client.DestroyRenderDecal(self.decal)
+        self.decal = nil
+    end
+
+end
+
+local function GetDestinationLocationName(self)
+
+    local location = Shared.GetEntity(self.destLocationId)
+    
+    if location then
+        return location:GetName()
+    end
+
+end
+
+
+function TunnelEntrance:GetUnitNameOverride(viewer)
+
+    local unitName = GetDisplayName(self)
+    if not GetAreEnemies(self, viewer) then
+    
+        local destinationName = GetDestinationLocationName(self)        
+        if destinationName then
+            unitName = unitName .. " to " .. destinationName
+        end
+
+    end
+
+    return unitName
+
+end
 
 Shared.LinkClassToMap("TunnelEntrance", TunnelEntrance.kMapName, networkVars)

@@ -23,7 +23,7 @@ GameEffectsMixin.optionalCallbacks =
 GameEffectsMixin.networkVars =
 {
     // kGameEffectMax comes from Globals file.
-    gameEffectsFlags = "integer (0 to " .. kGameEffectMax .. ")"
+    gameEffectsFlags = "integer (0 to " .. (kGameEffectMax - 1) .. ")"
 }
 
 function GameEffectsMixin:__initmixin()

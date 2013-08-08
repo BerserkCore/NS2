@@ -43,6 +43,7 @@
 			material.gloss		= specularGloss.a;
 			material.emissive   = emissive * closeAmount * 2 + (light * albedo + specular) * closeFraction;
 			
+			material.id = 1;
 			
 		}
 	]]>		

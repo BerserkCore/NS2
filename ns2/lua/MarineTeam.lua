@@ -344,13 +344,9 @@ function MarineTeam:InitTechTree()
     self.techTree:AddTargetedActivation(kTechId.DropExosuit,     kTechId.ExosuitTech, kTechId.TwoCommandStations)
     self.techTree:AddResearchNode(kTechId.DualMinigunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
     self.techTree:AddResearchNode(kTechId.DualMinigunExosuit,    kTechId.DualMinigunTech, kTechId.TwoCommandStations)
-    if kRailgunEnabled then
-    
-        self.techTree:AddResearchNode(kTechId.ClawRailgunExosuit,    kTechId.ExosuitTech, kTechId.TwoCommandStations)
+    self.techTree:AddResearchNode(kTechId.ClawRailgunExosuit,    kTechId.ExosuitTech, kTechId.TwoCommandStations)
         //self.techTree:AddResearchNode(kTechId.DualRailgunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
         //self.techTree:AddResearchNode(kTechId.DualRailgunExosuit,    kTechId.DualRailgunTech, kTechId.TwoCommandStations)
-        
-    end
     
     self.techTree:AddResearchNode(kTechId.ExosuitLockdownTech,   kTechId.ExosuitTech, kTechId.TwoCommandStations)
     self.techTree:AddResearchNode(kTechId.ExosuitUpgradeTech,    kTechId.ExosuitTech, kTechId.TwoCommandStations)   

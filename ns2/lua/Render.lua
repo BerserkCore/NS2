@@ -10,6 +10,7 @@ function Render_SyncRenderOptions()
     local antiAliasing      = Client.GetOptionBoolean("graphics/display/anti-aliasing", true)
     local fog               = Client.GetOptionBoolean("graphics/display/fog", false)
     local particleQuality   = Client.GetOptionString("graphics/display/particles", "low")
+    local reflections       = Client.GetOptionBoolean("graphics/reflections", false)
 
     Client.SetRenderSetting("mode", "lit")
     Client.SetRenderSetting("ambient_occlusion", ambientOcclusion)
@@ -19,6 +20,7 @@ function Render_SyncRenderOptions()
     Client.SetRenderSetting("anti_aliasing", ToString(antiAliasing))
     Client.SetRenderSetting("fog", ToString(fog))
     Client.SetRenderSetting("particles", particleQuality)
+    Client.SetRenderSetting("reflections", ToString(reflections))
 
 end
 
@@ -51,6 +53,15 @@ Event.Hook("Console_r_atmospherics",    RenderConsoleHandler("atmospherics", "gr
 Event.Hook("Console_r_aa",              RenderConsoleHandler("anti_aliasing", "graphics/display/anti-aliasing") )
 Event.Hook("Console_r_bloom",           RenderConsoleHandler("bloom", "graphics/display/bloom") )
 Event.Hook("Console_r_fog",             RenderConsoleHandler("fog", "graphics/display/fog") )
-Event.Hook("Console_r_pq",				RenderConsoleHandler("particles", "graphics/display/particles") )
 
+Event.Hook("Console_r_pq",
+function(arg)
+    if arg == "high" then
+        Client.SetRenderSetting("particles", "high")
+        Client.SetOptionString("graphics/display/particles", "high")
+    else
+        Client.SetRenderSetting("particles", "low")
+        Client.SetOptionString("graphics/display/particles", "low")
+    end
+end)
 

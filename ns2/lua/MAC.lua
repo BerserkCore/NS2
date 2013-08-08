@@ -37,6 +37,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/CombatMixin.lua")
+Script.Load("lua/CorrodeMixin.lua")
 
 class 'MAC' (ScriptActor)
 
@@ -112,6 +113,7 @@ AddMixinNetworkVars(AttackOrderMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(CorrodeMixin, networkVars)
 
 function MAC:OnCreate()
 
@@ -137,6 +139,7 @@ function MAC:OnCreate()
     InitMixin(self, AttackOrderMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, CorrodeMixin)
     
     if Server then
     
@@ -204,6 +207,81 @@ function MAC:OnInitialized()
     
 end
 
+function MAC:OnEntityChange(oldId)
+
+    if oldId == self.secondaryTargetId then
+        self.secondaryOrderType = nil
+        self.secondaryTargetId = nil
+    end
+
+end
+
+local function GetAutomaticOrder(self)
+
+    local target = nil
+    local orderType = nil
+
+    if self.timeOfLastFindSomethingTime == nil or Shared.GetTime() > self.timeOfLastFindSomethingTime + 1 then
+
+        local currentOrder = self:GetCurrentOrder()
+        local primaryTarget = nil
+        if currentOrder and currentOrder:GetType() == kTechId.FollowAndWeld then
+            primaryTarget = Shared.GetEntity(currentOrder:GetParam())
+        end
+
+        if primaryTarget and (HasMixin(primaryTarget, "Weldable") and primaryTarget:GetWeldPercentage() < 0.95) then
+            
+            target = primaryTarget
+            orderType = kTechId.Weld
+                    
+        else
+
+            // If there's a friendly entity nearby that needs constructing, constuct it.
+            local constructables = GetEntitiesWithMixinForTeamWithinRange("Construct", self:GetTeamNumber(), self:GetOrigin(), kOrderScanRadius)
+            for c = 1, #constructables do
+            
+                local constructable = constructables[c]
+                if constructable:GetCanConstruct(self) then
+                
+                    target = constructable
+                    orderType = kTechId.Construct
+                    break
+                    
+                end
+                
+            end
+            
+            if not target then
+            
+                // Look for entities to heal with weld.
+                local weldables = GetEntitiesWithMixinForTeamWithinRange("Weldable", self:GetTeamNumber(), self:GetOrigin(), kOrderScanRadius)
+                for w = 1, #weldables do
+                
+                    local weldable = weldables[w]
+                    // There are cases where the weldable's weld percentage is very close to
+                    // 100% but not exactly 100%. This second check prevents the MAC from being so pedantic.
+                    if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 0.95 then
+                    
+                        target = weldable
+                        orderType = kTechId.Weld
+                        break
+
+                    end
+                    
+                end
+            
+            end
+        
+        end
+
+        self.timeOfLastFindSomethingTime = Shared.GetTime()
+
+    end
+    
+    return target, orderType
+
+end
+
 function MAC:GetTurnSpeedOverride()
     return MAC.kTurnSpeed
 end
@@ -261,26 +339,23 @@ function MAC:OnOverrideOrder(order)
         orderTarget = Shared.GetEntity(order:GetParam())
     end
     
+    local isSelfOrder = orderTarget == self
+    
     // Default orders to unbuilt friendly structures should be construct orders
-    if(order:GetType() == kTechId.Default and GetOrderTargetIsConstructTarget(order, self:GetTeamNumber())) then
+    if order:GetType() == kTechId.Default and GetOrderTargetIsConstructTarget(order, self:GetTeamNumber()) and not isSelfOrder then
     
         order:SetType(kTechId.Construct)
 
-    elseif(order:GetType() == kTechId.Default and GetOrderTargetIsWeldTarget(order, self:GetTeamNumber())) then
+    elseif order:GetType() == kTechId.Default and GetOrderTargetIsWeldTarget(order, self:GetTeamNumber()) and not isSelfOrder then
     
-        order:SetType(kTechId.Weld)
-        
-    elseif(order:GetType() == kTechId.Weld and not GetOrderTargetIsWeldTarget(order, self:GetTeamNumber())) then
-
-        // Not valid, cancel order
-        order:SetType(kTechId.None)
+        order:SetType(kTechId.FollowAndWeld)
         
     // If target is enemy, attack it
     elseif (order:GetType() == kTechId.Default) and orderTarget ~= nil and HasMixin(orderTarget, "Live") and GetEnemyTeamNumber(self:GetTeamNumber()) == orderTarget:GetTeamNumber() and orderTarget:GetIsAlive() and (not HasMixin(orderTarget, "LOS") or orderTarget:GetIsSighted()) then
     
         order:SetType(kTechId.Attack)
 
-    elseif((order:GetType() == kTechId.Default or order:GetType() == kTechId.Move) and (order:GetParam() ~= nil)) then
+    elseif (order:GetType() == kTechId.Default or order:GetType() == kTechId.Move) and (order:GetParam() ~= nil) then
         
         // Convert default order (right-click) to move order
         order:SetType(kTechId.Move)
@@ -311,9 +386,11 @@ function MAC:GetIsOrderHelpingOtherMAC(order)
     end
     
     return false
+    
 end
 
 function MAC:OnOrderChanged()
+
     local order = self:GetCurrentOrder()    
     if order then
     
@@ -372,30 +449,6 @@ function MAC:OnDestroyCurrentOrder(currentOrder)
 
 end
 
-function MAC:OverrideTechTreeAction(techNode, position, orientation, commander)
-
-    local success = false
-    local keepProcessing = true
-    
-    // Convert build tech actions into build orders for selected MACs
-    if techNode:GetIsBuild() then
-    
-        self:GiveOrder(kTechId.Build, techNode:GetTechId(), position, orientation, not commander.queuingOrders, false, commander)
-        
-        // If MAC was orphaned by commander that has left chair or server, take control
-        if self:GetOwner() == nil then
-            self:SetOwner(commander)
-        end
-        
-        success = true
-        keepProcessing = false
-        
-    end
-    
-    return success, keepProcessing
-    
-end
-
 function MAC:GetMoveSpeed()
 
     local moveSpeed = GetDevScalar(MAC.kMoveSpeed, 8)
@@ -409,92 +462,91 @@ function MAC:GetMoveSpeed()
     
 end
 
-function MAC:ProcessWeldOrder(deltaTime)
+function MAC:ProcessWeldOrder(deltaTime, orderTarget, orderLocation)
 
     local time = Shared.GetTime()
-    
-    local order = self:GetCurrentOrder()
-    local targetId = order:GetParam()
-    local target = Shared.GetEntity(targetId)
     local canBeWeldedNow = false
+    local orderStatus = kOrderStatus.InProgress
 
-    // Not allowed to weld after taking damage recently.
-    if Shared.GetTime() - self:GetTimeLastDamageTaken() <= 1.0 then
-    
-        TEST_EVENT("MAC cannot weld after taking damage")
-        return
-        
-    end
-    
     if self.timeOfLastWeld == 0 or time > self.timeOfLastWeld + kWeldRate then
+    
+        // Not allowed to weld after taking damage recently.
+        if Shared.GetTime() - self:GetTimeLastDamageTaken() <= 1.0 then
+        
+            TEST_EVENT("MAC cannot weld after taking damage")
+            return kOrderStatus.InProgress
+            
+        end
     
         // It is possible for the target to not be weldable at this point.
         // This can happen if a damaged Marine becomes Commander for example.
         // The Commander is not Weldable but the Order correctly updated to the
         // new entity Id of the Commander. In this case, the order will simply be completed.
-        if target ~= nil and HasMixin(target, "Weldable") then
-        
-            local targetPosition = Vector(target:GetOrigin())
-            local toTarget = (targetPosition - Vector(self:GetOrigin()))
+        if orderTarget and HasMixin(orderTarget, "Weldable") then
+
+            local toTarget = (orderLocation - Vector(self:GetOrigin()))
             local distanceToTarget = toTarget:GetLength()
-            canBeWeldedNow = target:GetCanBeWelded(self)
+            canBeWeldedNow = orderTarget:GetCanBeWelded(self)
             
             local obstacleSize = 0
-            if HasMixin(target, "Extents") then
-                obstacleSize = target:GetExtents():GetLengthXZ()
+            if HasMixin(orderTarget, "Extents") then
+                obstacleSize = orderTarget:GetExtents():GetLengthXZ()
             end
             
-            // If we're close enough to weld, weld
-            if distanceToTarget - obstacleSize < MAC.kWeldDistance and not GetIsVortexed(self) then
-            
-                if canBeWeldedNow then
-                
-                    target:OnWeld(self, kWeldRate)
-                    self.timeOfLastWeld = time
-                                        
-                elseif not canBeWeldedNow then
-                    self:CompletedCurrentOrder()
-                end
-                
+            if not canBeWeldedNow then
+                orderStatus = kOrderStatus.Completed
             else
             
-                // otherwise move towards it
-                local hoverAdjustedLocation = GetHoverAt(self, target:GetEngagementPoint())
-                local doneMoving = self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime)
-                self.moving = not doneMoving
+                // If we're close enough to weld, weld
+                if distanceToTarget - obstacleSize < MAC.kWeldDistance and not GetIsVortexed(self) then
+ 
+                    orderTarget:OnWeld(self, kWeldRate)
+                    self.timeOfLastWeld = time
+                    self.moving = false
+                    
+                else
                 
-            end
+                    // otherwise move towards it
+                    local hoverAdjustedLocation = GetHoverAt(self, orderTarget:GetOrigin())
+                    local doneMoving = self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime)
+                    self.moving = not doneMoving
+                    
+                end
+                
+            end    
             
-        end
-        
-        // If door or structure is welded, complete order
-        if target == nil or not canBeWeldedNow then
-            self:CompletedCurrentOrder()
+        else
+            orderStatus = kOrderStatus.Cancelled
         end
         
     end
     
     // Continuously turn towards the target. But don't mess with path finding movement if it was done.
-    if not self.moving then
-        local toOrder = (order:GetLocation() - Vector(self:GetOrigin()))
+    if not self.moving and orderPosition then
+        local toOrder = (orderPosition - Vector(self:GetOrigin()))
         self:SmoothTurn(deltaTime, GetNormalizedVector(toOrder), 0)
     end
     
+    return orderStatus
+    
 end
 
-function MAC:ProcessMove(deltaTime)
+function MAC:ProcessMove(deltaTime, target, targetPosition)
 
-    local currentOrder = self:GetCurrentOrder()
-    local hoverAdjustedLocation = GetHoverAt(self, currentOrder:GetLocation())
+    local hoverAdjustedLocation = GetHoverAt(self, targetPosition)
+    local orderStatus = kOrderStatus.None
 
     if self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime) then
 
-        self:CompletedCurrentOrder()
+        orderStatus = kOrderStatus.Completed
         self.moving = false
 
     else
+        orderStatus = kOrderStatus.InProgress
         self.moving = true
     end
+    
+    return orderStatus
     
 end
 
@@ -552,136 +604,141 @@ function MAC:GetEngagementPointOverride()
     return self:GetOrigin()
 end
 
-function MAC:ProcessBuildConstruct(deltaTime)
+local function GetCanConstructTarget(self, target)
+    return target ~= nil and HasMixin(target, "Construct") and GetAreFriends(self, target)
+end
+
+function MAC:ProcessConstruct(deltaTime, orderTarget, orderLocation)
 
     local time = Shared.GetTime()
     
-    local currentOrder = self:GetCurrentOrder()
-    local toTarget = (currentOrder:GetLocation() - self:GetOrigin());
+    local toTarget = (orderLocation - self:GetOrigin())
     local distToTarget = toTarget:GetLengthXZ()
+    local orderStatus = kOrderStatus.InProgress
+    local canConstructTarget = GetCanConstructTarget(self, orderTarget)   
     
     if self.timeOfLastConstruct == 0 or (time > (self.timeOfLastConstruct + kConstructRate)) then
-    
-        local engagementDist = ConditionalValue(currentOrder:GetType() == kTechId.Build, GetEngagementDistance(currentOrder:GetParam(), true), GetEngagementDistance(currentOrder:GetParam()))
-        if distToTarget < engagementDist then
+
+        if canConstructTarget then
         
-            // Create structure here
-            if currentOrder:GetType() == kTechId.Build then
-            
-                local commander = self:GetOwner()
-                if commander then
-                
-                    local techId = currentOrder:GetParam()
-                    assert(techId ~= 0)
-                    
-                    local techNode = commander:GetTechTree():GetTechNode(techId)
-                    local cost = (techNode and techNode:GetCost()) or nil
-                    assert(cost ~= nil)
-                    local team = commander:GetTeam()
-                    
-                    if team:GetTeamResources() >= cost then
-                    
-                        local success, createdStructureId = self:AttemptToBuild(techId, currentOrder:GetLocation(), Vector(0, 1, 0), currentOrder:GetOrientation(), nil, nil, self, currentOrder:GetOwner())
-                        
-                        // Now construct it
-                        if success then
-                        
-                            self:CompletedCurrentOrder()
-                            team:AddTeamResources(-cost)
-                            self:GiveOrder(kTechId.Construct, createdStructureId, nil, nil, false, true)
-                            
-                        else
-                        
-                            // Issue alert to commander that way was blocked?
-                            self:GetTeam():TriggerAlert(kTechId.MarineAlertMACBlocked, self)
-                            
-                        end
-                        
-                    else
-                    
-                        self:GetTeam():TriggerAlert(kTechId.MarineAlertNotEnoughResources, self)
-                        
-                        // Cancel build bots orders so he doesn't move away
-                        self:ClearOrders()
-                        
-                    end
-                    
+            local engagementDist = GetEngagementDistance(orderTarget:GetId()) 
+            if distToTarget < engagementDist then
+        
+                if orderTarget:GetIsBuilt() then   
+                    orderStatus = kOrderStatus.Completed
                 else
-                    self:ClearOrders()
+            
+                    // Otherwise, add build time to structure
+                    if not self:GetIsVortexed() and not GetIsVortexed(orderTarget) then
+                        orderTarget:Construct(kConstructRate * kMACConstructEfficacy, self)
+                        self.timeOfLastConstruct = time
+                    end
+                
                 end
                 
             else
             
-                // Construct structure
-                local constructTarget = GetOrderTargetIsConstructTarget(self:GetCurrentOrder(), self:GetTeamNumber())
-                if constructTarget then
-                
-                    // Otherwise, add build time to structure
-                    if not self:GetIsVortexed() and not GetIsVortexed(constructTarget) then
-                        constructTarget:Construct(kConstructRate * kMACConstructEfficacy, self)
-                        self.timeOfLastConstruct = time
-                    end
-                    
-                else
-                    self:CompletedCurrentOrder()
-                end
-                
-            end
-            
-        else
+                local hoverAdjustedLocation = GetHoverAt(self, orderLocation)
+                local doneMoving = self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime)
+                self.moving = not doneMoving
+
+            end    
         
-            local hoverAdjustedLocation = GetHoverAt(self, currentOrder:GetLocation())
-            local doneMoving = self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, self:GetMoveSpeed(), deltaTime)
-            self.moving = not doneMoving
-            
+        
+        else
+            orderStatus = kOrderStatus.Cancelled
         end
+
         
     end
     
     // Continuously turn towards the target. But don't mess with path finding movement if it was done.
-    if not self.moving then
+    if not self.moving and toTarget then
         self:SmoothTurn(deltaTime, GetNormalizedVector(toTarget), 0)
     end
+    
+    return orderStatus
     
 end
 
 local function FindSomethingToDo(self)
 
-    if self.timeOfLastFindSomethingTime == nil or Shared.GetTime() > self.timeOfLastFindSomethingTime + 1 then
-    
-        self.timeOfLastFindSomethingTime = Shared.GetTime()
-        
-        // If there's a friendly entity nearby that needs constructing, constuct it.
-        local constructables = GetEntitiesWithMixinForTeamWithinRange("Construct", self:GetTeamNumber(), self:GetOrigin(), kOrderScanRadius)
-        for c = 1, #constructables do
-        
-            local constructable = constructables[c]
-            if constructable:GetCanConstruct(self) then
-            
-                local acceptedOrder = self:GiveOrder(kTechId.Construct, constructable:GetId(), constructable:GetOrigin(), nil, false, false) ~= kTechId.None
-                return acceptedOrder
-                
-            end
-            
-        end
-        
-        // Look for entities to heal with weld.
-        local weldables = GetEntitiesWithMixinForTeamWithinRange("Weldable", self:GetTeamNumber(), self:GetOrigin(), kOrderScanRadius)
-        for w = 1, #weldables do
-        
-            local weldable = weldables[w]
-            // There are cases where the weldable's weld percentage is very close to
-            // 100% but not exactly 100%. This second check prevents the MAC from being so pedantic.
-            if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 0.95 then
-                return self:GiveOrder(kTechId.Weld, weldable:GetId(), weldable:GetOrigin(), nil, false, false) ~= kTechId.None
-            end
-            
-        end
-        
+    local target, orderType = GetAutomaticOrder(self)
+    if target and orderType then
+        return self:GiveOrder(orderType, target:GetId(), target:GetOrigin(), nil, false, false) ~= kTechId.None    
     end
     
     return false
     
+end
+
+function MAC:ProcessFollowAndWeldOrder(deltaTime, orderTarget, targetPosition)
+
+    local currentOrder = self:GetCurrentOrder()
+    local orderStatus = kOrderStatus.InProgress
+    
+    if orderTarget and orderTarget:GetIsAlive() then
+        
+        local distance = (self:GetOrigin() - targetPosition):GetLengthXZ()
+        local target, orderType = GetAutomaticOrder(self)
+        
+        if target and orderType then
+        
+            self.secondaryOrderType = orderType
+            self.secondaryTargetId = target:GetId()
+            
+        end
+        
+        target = target ~= nil and target or ( self.secondaryTargetId ~= nil and Shared.GetEntity(self.secondaryTargetId) )
+        orderType = orderType ~= nil and orderType or self. secondaryOrderType
+        
+        local triggerMoveDistance = (self.welding or self.constructing or orderType) and 15 or 6
+        
+        if distance > triggerMoveDistance or self.moveToPrimary then
+        
+            if self:ProcessMove(deltaTime, target, targetPosition) == kOrderStatus.InProgress and (self:GetOrigin() - targetPosition):GetLengthXZ() > 3 then
+                self.moveToPrimary = true
+                self.secondaryTarget = nil
+                self.secondaryOrderType = nil
+            else
+                self.moveToPrimary = false
+            end
+            
+        else
+            self.moving = false
+        end
+        
+        // when we attempt to follow the primary target, dont interrupt with auto orders
+        if not self.moveToPrimary then
+        
+            if target and orderType then
+            
+                local secondaryOrderStatus = nil
+            
+                if orderType == kTechId.Weld then            
+                    secondaryOrderStatus = self:ProcessWeldOrder(deltaTime, target, target:GetOrigin())        
+                elseif orderType == kTechId.Construct then
+                    secondaryOrderStatus = self:ProcessConstruct(deltaTime, target, target:GetOrigin())
+                end
+                
+                if secondaryOrderStatus == kOrderStatus.Completed or secondaryOrderStatus == kOrderStatus.Cancelled then
+                
+                    self.secondaryTarget = nil
+                    self.secondaryOrderType = nil
+                    
+                end
+            
+            end
+        
+        end
+        
+    else
+        self.moveToPrimary = false
+        orderStatus = kOrderStatus.Cancelled
+    end
+    
+    return orderStatus
+
 end
 
 local function UpdateOrders(self, deltaTime)
@@ -689,17 +746,29 @@ local function UpdateOrders(self, deltaTime)
     local currentOrder = self:GetCurrentOrder()
     if currentOrder ~= nil then
     
-        if currentOrder:GetType() == kTechId.Move then
+        local orderStatus = kOrderStatus.None        
+        local orderTarget = Shared.GetEntity(currentOrder:GetParam())
+        local orderLocation = currentOrder:GetLocation()
+    
+        if currentOrder:GetType() == kTechId.FollowAndWeld then
+            orderStatus = self:ProcessFollowAndWeldOrder(deltaTime, orderTarget, orderLocation)    
+        elseif currentOrder:GetType() == kTechId.Move then
         
-            self:ProcessMove(deltaTime)
+            orderStatus = self:ProcessMove(deltaTime, orderTarget, orderLocation)
             self:UpdateGreetings()
             
         elseif currentOrder:GetType() == kTechId.Attack then
-            self:ProcessAttackOrder(1, GetDevScalar(MAC.kMoveSpeed, 8), deltaTime)
+            orderStatus = self:ProcessAttackOrder(1, GetDevScalar(MAC.kMoveSpeed, 8), deltaTime, orderTarget, orderLocation)
         elseif currentOrder:GetType() == kTechId.Weld then
-            self:ProcessWeldOrder(deltaTime)
+            orderStatus = self:ProcessWeldOrder(deltaTime, orderTarget, orderLocation)
         elseif currentOrder:GetType() == kTechId.Build or currentOrder:GetType() == kTechId.Construct then
-            self:ProcessBuildConstruct(deltaTime)
+            orderStatus = self:ProcessConstruct(deltaTime, orderTarget, orderLocation)
+        end
+        
+        if orderStatus == kOrderStatus.Cancelled then
+            self:ClearCurrentOrder()
+        elseif orderStatus == kOrderStatus.Completed then
+            self:CompletedCurrentOrder()
         end
         
     end
@@ -839,7 +908,7 @@ if Server then
 	end
 	
 	function MAC:OverrideRepositioningSpeed()
-	    return MAC.kMoveSpeed *.3
+	    return MAC.kMoveSpeed *.4
 	end	
 	
 	function MAC:OverrideRepositioningDistance()
@@ -915,3 +984,22 @@ function MAC:OnDestroy()
 end
 
 Shared.LinkClassToMap("MAC", MAC.kMapName, networkVars, true)
+
+if Server then
+
+    local function OnCommandFollowAndWeld(client)
+
+        if client ~= nil and Shared.GetCheatsEnabled() then
+        
+            local player = client:GetControllingPlayer()
+            for _, mac in ipairs(GetEntitiesForTeamWithinRange("MAC", player:GetTeamNumber(), player:GetOrigin(), 10)) do
+                mac:GiveOrder(kTechId.FollowAndWeld, player:GetId(), player:GetOrigin(), nil, false, false)
+            end
+            
+        end
+
+    end
+
+    Event.Hook("Console_followandweld", OnCommandFollowAndWeld)
+
+end

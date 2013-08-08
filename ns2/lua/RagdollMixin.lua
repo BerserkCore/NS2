@@ -79,7 +79,7 @@ if Server then
         end
         
         // Server does not process any tags when the model is client side animated. assume death animation takes 0.5 seconds and switch then to ragdoll mode.
-        if self.GetHasClientModel and self:GetHasClientModel() then
+        if self.GetHasClientModel and self:GetHasClientModel() and (not HasMixin(self, "GhostStructure") or not self:GetIsGhostStructure()) then
         
             CreateRagdoll(self)
             DestroyEntity(self)
@@ -94,12 +94,22 @@ local function UpdateTimeToDestroy(self, deltaTime)
 
     if self.timeToDestroy then
     
-        self.timeToDestroy = self.timeToDestroy - deltaTime
-        
+        self.timeToDestroy = self.timeToDestroy - deltaTime  
         if self.timeToDestroy <= 0 then
         
-            DestroyEntitySafe(self)
-            self.timeToDestroy = nil
+            self:SetModel(nil)
+            
+            local destructionAllowedTable = { allowed = true }
+            if self.GetDestructionAllowed then
+                self:GetDestructionAllowed(destructionAllowedTable)
+            end
+        
+            if destructionAllowedTable.allowed then
+            
+                DestroyEntitySafe(self)
+                self.timeToDestroy = nil
+            
+            end
             
         end
         

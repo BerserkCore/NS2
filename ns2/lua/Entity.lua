@@ -77,21 +77,36 @@ function GetEntitiesWithFilter(entityList, filterFunction)
     assert(entityList ~= nil)
     assert(type(filterFunction) == "function")
     
-    local filteredEntities = { }
+    local numEntities = entityList:GetSize()
+    local result = table.array(numEntities)
+    local numDstEntities = 0
     
-    for index, entity in ientitylist(entityList) do
+    for entityIndex = 1, numEntities do
+        local entity = entityList:GetEntityAtIndex(entityIndex - 1)
         if filterFunction(entity) then
-            table.insert(filteredEntities, entity)
+            numDstEntities = numDstEntities + 1
+            result[numDstEntities] = entity
         end
     end
     
-    return filteredEntities
+    return result
 
 end
 
 function EntityListToTable(entityList)
 
-    return GetEntitiesWithFilter(entityList, function(entity) return true end)
+    PROFILE("EntityListToTable")
+
+    assert(entityList ~= nil)
+    
+    local numEntities = entityList:GetSize()
+    local result  = { }
+    
+    for entityIndex = 1, numEntities do
+        result[entityIndex] = entityList:GetEntityAtIndex(entityIndex - 1)
+    end
+    
+    return result
 
 end
 

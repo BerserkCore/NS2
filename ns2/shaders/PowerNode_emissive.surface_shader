@@ -67,6 +67,8 @@
 				material.emissive   = 0;
 			}
 			
+			material.id = 1;
+			
 		}
 	]]>
 	</code>

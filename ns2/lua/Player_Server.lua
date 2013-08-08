@@ -26,13 +26,16 @@ function Player:Reset()
 
     ScriptActor.Reset(self)
     
-    self.kills = 0
-    self.deaths = 0
-    
-    self:SetScoreboardChanged(true)
-    
     self:SetCameraDistance(0)
     
+end
+
+function Player:ResetScores()
+
+    self.kills = 0
+    self.deaths = 0    
+    self:SetScoreboardChanged(true)
+
 end
 
 function Player:ClearEffects()
@@ -193,17 +196,14 @@ function Player:OnKill(killer, doer, point, direction)
     
     self:AddDeaths()
     
-    // Fade out screen
+    // Fade out screen.
     self.timeOfDeath = Shared.GetTime()
     
     DestroyViewModel(self)
     
-    // Set next think to 0 to disable
-    self:SetNextThink(0)
-        
 end
 
-function Player:SetControllingPlayer(client)
+function Player:SetControllerClient(client)
 
     if client ~= nil then
     
@@ -305,7 +305,7 @@ local function UpdateChangeToSpectator(self)
         if self.timeOfDeath ~= nil and (time - self.timeOfDeath > kFadeToBlackTime) then
         
             // Destroy the existing player and create a spectator in their place (but only if it has an owner, ie not a body left behind by Phantom use)
-            local owner  = Server.GetOwner(self)
+            local owner = Server.GetOwner(self)
             if owner then
             
                 // Queue up the spectator for respawn.
@@ -386,8 +386,6 @@ function Player:CopyPlayerDataFrom(player)
     self.frozen = player.frozen
     
     // Don't copy alive, health, maxhealth, armor, maxArmor - they are set in Spawn()
-    
-    self.showScoreboard = player.showScoreboard
     self.score = player.score or 0
     self.kills = player.kills
     self.deaths = player.deaths
@@ -428,6 +426,43 @@ function Player:CopyPlayerDataFrom(player)
     
     // Remember this player's muted clients.
     self.mutedClients = player.mutedClients
+    self.hotGroupNumber = player.hotGroupNumber
+    
+end
+
+/**
+ * Check if there were any spectators watching them. Make these
+ * spectators follow the new player unless the new player is also
+ * a spectator (in which case, make the spectating players follow a new target).
+ */
+function Player:RemoveSpectators(newPlayer)
+
+    local spectators = Shared.GetEntitiesWithClassname("Spectator")
+    for e = 0, spectators:GetSize() - 1 do
+    
+        local spectatorEntity = spectators:GetEntityAtIndex(e)
+        if spectatorEntity ~= newPlayer then
+        
+            local spectatorClient = Server.GetOwner(spectatorEntity)
+            if spectatorClient and spectatorClient:GetSpectatingPlayer() == self then
+            
+                local allowedToFollowNewPlayer = newPlayer and not newPlayer:isa("Spectator") and not newPlayer:isa("Commander") and newPlayer:GetIsOnPlayingTeam()
+                if not allowedToFollowNewPlayer then
+                
+                    local success = spectatorEntity:CycleSpectatingPlayer(self, true)
+                    if not success and not self:GetIsOnPlayingTeam() then
+                        spectatorEntity:SetSpectatorMode(kSpectatorMode.FreeLook)
+                    end
+                    
+                else
+                    spectatorClient:SetSpectatingPlayer(newPlayer)
+                end
+                
+            end
+            
+        end
+        
+    end
     
 end
 
@@ -446,7 +481,7 @@ function Player:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extra
     end
     
     local teamNumber = team:GetTeamNumber()
-    local owner = Server.GetOwner(self)
+    local client = Server.GetOwner(self)
     local teamChanged = newTeamNumber ~= nil and newTeamNumber ~= self:GetTeamNumber()
     
     // Add new player to new team if specified
@@ -472,7 +507,7 @@ function Player:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extra
     player:CopyPlayerDataFrom(self)
     
     // Make model look where the player is looking
-    player.standingBodyYaw = self:GetAngles().yaw
+    player.standingBodyYaw = Math.Wrap( self:GetAngles().yaw, 0, 2*math.pi )
     
     if not player:GetTeam():GetSupportsOrders() and HasMixin(player, "Orders") then
         player:ClearOrders()
@@ -502,15 +537,24 @@ function Player:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extra
     // This player is no longer controlled by a client.
     self.client = nil
     
+    // Remove any spectators currently spectating this player.
+    self:RemoveSpectators(player)
+    
     // Only destroy the old player if it is not a ragdoll.
     // Ragdolls will eventually destroy themselve.
     if not HasMixin(self, "Ragdoll") or not self:GetIsRagdoll() then
         DestroyEntity(self)
     end
     
-    player:SetControllingPlayer(owner)
+    player:SetControllerClient(client)
     
-    // Must happen after the owner has been set on the player.
+    // There are some cases where the spectating player isn't set to nil.
+    // Handle any edge cases here (like being dead when the game is reset).
+    if not player:isa("Spectator") then
+        client:SetSpectatingPlayer(nil)
+    end
+    
+    // Must happen after the client has been set on the player.
     player:InitializeBadges()
     
     // Log player spawning
@@ -592,7 +636,12 @@ function Player:GiveItem(itemMapName, setActive)
         if newItem then
 
             if newItem:isa("Weapon") then
-                self:AddWeapon(newItem, setActive)
+                local removedWeapon = self:AddWeapon(newItem, setActive)
+                
+                if removedWeapon and HasMixin(removedWeapon, "Tech") and LookupTechData(removedWeapon:GetTechId(), kTechDataCostKey, 0) == 0 then
+                    DestroyEntity(removedWeapon)
+                end
+                
             else
 
                 if newItem.OnCollision then
@@ -645,24 +694,18 @@ end
 
 function Player:UpdateMisc(input)
 
-    // Set near death mask so we can add sound/visual effects
+    // Set near death mask so we can add sound/visual effects.
     self:SetGameEffectMask(kGameEffect.NearDeath, self:GetHealth() < 0.2 * self:GetMaxHealth())
-    
-    // Check if the player wants to go to the ready room.
-    if bit.band(input.commands, Move.ReadyRoom) ~= 0 and not self:isa("ReadyRoomPlayer") then
-        self:SetCameraDistance(0)
-        GetGamerules():JoinTeam(self, kTeamReadyRoom)
-    end
     
     if self:GetTeamType() == kMarineTeamType then
     
         self.weaponUpgradeLevel = 0
-            
-        if GetHasTech(self, kTechId.Weapons3, true) then    
+        
+        if GetHasTech(self, kTechId.Weapons3, true) then
             self.weaponUpgradeLevel = 3
-        elseif GetHasTech(self, kTechId.Weapons2, true) then    
+        elseif GetHasTech(self, kTechId.Weapons2, true) then
             self.weaponUpgradeLevel = 2
-        elseif GetHasTech(self, kTechId.Weapons1, true) then    
+        elseif GetHasTech(self, kTechId.Weapons1, true) then
             self.weaponUpgradeLevel = 1
         end
         

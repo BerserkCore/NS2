@@ -52,6 +52,8 @@
 			material.tsNormal = Noisenormal;		
 		 	material.gloss = 100 * mask;
 			
+			material.id = 1;
+			
 			
 		}
 	]]>

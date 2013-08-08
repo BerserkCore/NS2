@@ -17,7 +17,7 @@ Script.Load("lua/UsableMixin.lua")
 
 local Shared_GetModel = Shared.GetModel
 
-class 'Clog' (Actor)
+class 'Clog' (Entity)
 
 Clog.kMapName = "clog"
 
@@ -38,22 +38,23 @@ AddMixinNetworkVars(FireMixin, networkVars)
 
 function Clog:OnCreate()
 
-    Actor.OnCreate(self)
+    Entity.OnCreate(self)
     
     self.boneCoords = CoordsArray()
     
+    InitMixin(self, EffectsMixin)
     InitMixin(self, TechMixin) 
     InitMixin(self, TeamMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, GameEffectsMixin)
     InitMixin(self, FireMixin)
-    InitMixin(self, TeamMixin)
     InitMixin(self, TargetMixin)
     InitMixin(self, DigestMixin)
     InitMixin(self, UsableMixin)
     
     if Server then
     
+        InitMixin(self, InvalidOriginMixin)
         InitMixin(self, OwnerMixin)
         InitMixin(self, ClogFallMixin)
         InitMixin(self, EntityChangeMixin)       
@@ -63,6 +64,9 @@ function Clog:OnCreate()
     elseif Client then
         self:SetUpdates(true)
     end
+    
+    self:SetPropagate(Entity.Propagate_Mask)
+    self:SetRelevancyDistance(kMaxRelevancyDistance)
     
 end
 
@@ -252,6 +256,7 @@ elseif Client then
         else
             self._renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)
             self._renderModel:SetModel(Shared.GetModelIndex(Clog.kModelName))
+            self._renderModel:SetCoords(self:GetCoords())  
         end
     
     end
@@ -260,8 +265,6 @@ end
 
 function Clog:OnUpdate(deltaTime)
 
-    Actor.OnUpdate(self, deltaTime)
-    
     if self.physicsModel then
     
         if Client and self:GetOrigin() ~= self.storedOrigin then

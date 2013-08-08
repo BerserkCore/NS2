@@ -121,7 +121,6 @@ function Alien:OnCreate()
     InitMixin(self, EnergizeMixin)
     InitMixin(self, FeintMixin)
     InitMixin(self, CombatMixin)
-    InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, SelectableMixin)
     InitMixin(self, AlienActionFinderMixin)
@@ -174,46 +173,11 @@ function Alien:DestroyGUI()
 
     if Client then
     
-        if self.alienHUD then
-        
-            GetGUIManager():DestroyGUIScript(self.alienHUD)
-            self.alienHUD = nil
-            
-        end
-        
-        if self.waypoints then
-        
-            GetGUIManager():DestroyGUIScript(self.waypoints)
-            self.waypoints = nil
-            
-        end
-        
-        if self.hints then
-        
-            GetGUIManager():DestroyGUIScript(self.hints)
-            self.hints = nil
-            
-        end
-        
         if self.buyMenu then
         
             GetGUIManager():DestroyGUIScript(self.buyMenu)
             MouseTracker_SetIsVisible(false)
             self.buyMenu = nil
-            
-        end
-        
-        if self.regenFeedback then
-        
-            GetGUIManager():DestroyGUIScript(self.regenFeedback)
-            self.regenFeedback = nil
-            
-        end
-        
-        if self.eggInfo then
-        
-            GetGUIManager():DestroyGUIScript(self.eggInfo)
-            self.eggInfo = nil
             
         end
         
@@ -223,28 +187,7 @@ function Alien:DestroyGUI()
             self.celerityViewCinematic = nil
             
         end
-
-        if self.objectiveDisplay then
         
-            GetGUIManager():DestroyGUIScript(self.objectiveDisplay)
-            self.objectiveDisplay = nil
-            
-        end
-        
-        if self.progressDisplay then
-        
-            GetGUIManager():DestroyGUIScript(self.progressDisplay)
-            self.progressDisplay = nil
-            
-        end 
-
-        if self.requestMenu then
-        
-            GetGUIManager():DestroyGUIScript(self.requestMenu)
-            self.requestMenu = nil
-            
-        end
-       
     end
     
 end
@@ -432,7 +375,7 @@ function Alien:GetMaxBackwardSpeedScalar()
 end
 
 function Alien:GetCelerityAllowed()
-    return not self:GetIsCloaked()
+    return true
 end
 
 local function UpdateCelerity(self, input)
@@ -701,11 +644,9 @@ end
 function Alien:GetMovementSpeedModifier()
     return self:GetCelerityScalar() * self:GetSlowSpeedModifier() + (self.infestationSpeedScalar * self:GetInfestationBonus())
 end
+
 function Alien:GetEffectParams(tableParams)
-
-    Player.GetEffectParams(self,tableParams)
     tableParams[kEffectFilterSilenceUpgrade] = GetHasSilenceUpgrade(self)
-
 end
 
 function Alien:GetIsEnzymed()

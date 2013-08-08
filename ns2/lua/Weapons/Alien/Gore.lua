@@ -208,11 +208,13 @@ function Gore:Attack(player)
         attackType = self.lastAttackType
     end    
     
+    local filter = EntityFilterOneAndIsa(player, "Babbler")
+    
     if attackType == Gore.kAttackType.Smash then
-        didHit, target, impactPoint = AttackMeleeCapsule(self, player, kSmashDamage, kAttackRange)
+        didHit, target, impactPoint = AttackMeleeCapsule(self, player, kSmashDamage, kAttackRange, nil, false, filter)
     else
     
-        didHit, target, impactPoint = AttackMeleeCapsule(self, player, 0, kAttackRange)
+        didHit, target, impactPoint = AttackMeleeCapsule(self, player, 0, kAttackRange, nil, false, filter)
         if didHit then
             didHit, impactPoint = GoreAttack(self, player, target)
         end

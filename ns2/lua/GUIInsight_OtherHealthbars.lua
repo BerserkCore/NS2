@@ -89,16 +89,6 @@ function GUIInsight_OtherHealthbars:SetisVisible(bool)
 
 end
 
-function GUIInsight_OtherHealthbars:SendKeyEvent(key, down)
-
-    if key == InputKey.LeftControl and down then
-    
-        self:SetisVisible(not isVisible)
-    
-    end
-
-end
-
 function GUIInsight_OtherHealthbars:Update(deltaTime)
 
     local others

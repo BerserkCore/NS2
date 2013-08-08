@@ -19,6 +19,8 @@ Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
+Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/RailgunTargetMixin.lua")
 
 class 'Gorge' (Alien)
 
@@ -39,6 +41,7 @@ AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
+AddMixinNetworkVars(TunnelUserMixin, networkVars)
 
 Gorge.kMapName = "gorge"
 
@@ -81,6 +84,11 @@ function Gorge:OnCreate()
     
     InitMixin(self, DissolveMixin)
     InitMixin(self, BabblerClingMixin)
+    InitMixin(self, TunnelUserMixin)
+    
+    if Client then
+        InitMixin(self, RailgunTargetMixin)
+    end
     
     self.bellyYaw = 0
     self.timeSlideEnd = 0
@@ -131,13 +139,16 @@ if Client then
     end  
 
     function Gorge:OverrideInput(input)
-    
-        local activeWeapon = self:GetActiveWeapon()
-        if activeWeapon and activeWeapon:isa("DropStructureAbility") then
-            input = activeWeapon:OverrideInput(input)
+
+        // Always let the DropStructureAbility override input, since it handles client-side-only build menu
+
+        local buildAbility = self:GetWeapon(DropStructureAbility.kMapName)
+
+        if buildAbility then
+            input = buildAbility:OverrideInput(input)
         end
         
-        Player.OverrideInput(self, input)
+        return Player.OverrideInput(self, input)
         
     end
     
@@ -294,7 +305,9 @@ function Gorge:GetGroundFrictionForce()
 
     if self:GetIsBellySliding() then
         return ConditionalValue(self:GetGameEffectMask(kGameEffect.OnInfestation), 0.1, 0.3)
-    end
+    elseif self.crouching then
+        return 14
+    end    
 
     return Alien.GetGroundFrictionForce(self)
 end

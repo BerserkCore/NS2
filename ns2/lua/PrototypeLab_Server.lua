@@ -33,17 +33,6 @@ local indexToUseOrigin =
     Vector(-PrototypeLab.kResupplyUseRange, 0, 0)
 }
 
-// Check if friendly players are nearby and facing PrototypeLab
-function PrototypeLab:OnThink()
-
-    ScriptActor.OnThink(self)
-    
-    self:UpdateLoggedIn()   
-    
-    self:SetNextThink(PrototypeLab.kThinkTime)
-    
-end
-
 function PrototypeLab:UpdateLoggedIn()
 
     local players = GetEntitiesForTeamWithinRange("Marine", self:GetTeamNumber(), self:GetOrigin(), 2 * PrototypeLab.kResupplyUseRange)
@@ -90,5 +79,7 @@ function PrototypeLab:UpdateLoggedIn()
     self.loggedInNorth = self.loggedInArray[2]
     self.loggedInSouth = self.loggedInArray[3]
     self.loggedInEast = self.loggedInArray[4]
+    
+    return true
     
 end

@@ -108,7 +108,11 @@ local function RemoveGorgeStructureFromClient(self, techId, clientId)
         
             table.remove(structureTypeTable[techId], removeIndex)
             structure.consumed = true
-            structure:Kill()
+            if structure:GetCanDie() then
+                structure:Kill()
+            else
+                DestroyEntity(structure)
+            end
             
         end
         
@@ -123,7 +127,7 @@ function AlienTeam:AddGorgeStructure(player, structure)
         local clientId = Server.GetOwner(player):GetUserId()
         local structureId = structure:GetId()
         local techId = structure:GetTechId()
-        
+
         if not self.clientOwnedStructures[clientId] then
             self.clientOwnedStructures[clientId] = { }
         end
@@ -204,6 +208,8 @@ function AlienTeam:UpdateClientOwnedStructures(oldEntityId)
 end
 
 function AlienTeam:OnEntityChange(oldEntityId, newEntityId)
+
+    PlayingTeam.OnEntityChange(self, oldEntityId, newEntityId)
 
     // Check if the oldEntityId matches any client's built structure and
     // handle the change.
@@ -566,6 +572,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddResearchNode(kTechId.BacterialReceptors,    kTechId.ShadeHive,           kTechId.None)
     
     // Tier 1
+    self.techTree:AddResearchNode(kTechId.GorgeTunnelTech,        kTechId.None,                kTechId.None)
     self.techTree:AddBuildNode(kTechId.Harvester,                 kTechId.None,                kTechId.None)
     self.techTree:AddManufactureNode(kTechId.Drifter,             kTechId.None,                kTechId.None)
     self.techTree:AddPassive(kTechId.DrifterCamouflage)
@@ -680,7 +687,6 @@ function AlienTeam:InitTechTree()
     self.techTree:AddResearchNode(kTechId.Leap,             kTechId.TwoHives,          kTechId.None)
     self.techTree:AddResearchNode(kTechId.Spores,           kTechId.TwoHives,          kTechId.None)
     self.techTree:AddResearchNode(kTechId.BileBomb,         kTechId.TwoHives,          kTechId.None)
-    self.techTree:AddResearchNode(kTechId.GorgeTunnelTech,  kTechId.TwoHives,          kTechId.None)
     self.techTree:AddResearchNode(kTechId.Blink,            kTechId.TwoHives,          kTechId.None)
     //self.techTree:AddResearchNode(kTechId.BoneShield,       kTechId.TwoHives,         kTechId.None) 
 
@@ -698,7 +704,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuildNode(kTechId.Hydra,            kTechId.None,               kTechId.None)
     self.techTree:AddBuildNode(kTechId.Clog,             kTechId.None,               kTechId.None)
     self.techTree:AddBuildNode(kTechId.BabblerEgg,       kTechId.None,               kTechId.None)
-    self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.TwoHives) 
+    self.techTree:AddBuildNode(kTechId.GorgeTunnel,      kTechId.GorgeTunnelTech,    kTechId.None) 
     //self.techTree:AddBuildNode(kTechId.Web,              kTechId.WebTech,            kTechId.ThreeHives) 
 
     // personal upgrades (all alien types)
@@ -807,9 +813,9 @@ function AlienTeam:OnUpgradeChamberDestroyed(upgradeChamber)
     local checkForLostResearch = { [kTechId.RegenerationShell] = { "Shell", kTechId.Regeneration },
                                    [kTechId.CarapaceShell] = { "Shell", kTechId.Carapace },
                                    [kTechId.CeleritySpur] = { "Spur", kTechId.Celerity },
-                                   [kTechId.HyperMutationSpur] = { "Spur", kTechId.HyperMutation },
+                                   [kTechId.AdrenalineSpur] = { "Spur", kTechId.Adrenaline },
                                    [kTechId.SilenceVeil] = { "Veil", kTechId.Silence },
-                                   [kTechId.AuraVeil] = { "Veil", kTechId.Aura } }
+                                   [kTechId.CamouflageVeil] = { "Veil", kTechId.Camouflage } }
     
     local checkTech = checkForLostResearch[upgradeChamber:GetTechId()]
     if checkTech then
@@ -842,9 +848,9 @@ function AlienTeam:OnResearchComplete(structure, researchId)
     local checkForGainedResearch = { [kTechId.UpgradeRegenerationShell] = kTechId.Regeneration,
                                      [kTechId.UpgradeCarapaceShell] = kTechId.Carapace,
                                      [kTechId.UpgradeCeleritySpur] = kTechId.Celerity,
-                                     [kTechId.UpgradeHyperMutationSpur] = kTechId.HyperMutation,
+                                     [kTechId.UpgradeAdrenalineSpur] = kTechId.Adrenaline,
                                      [kTechId.UpgradeSilenceVeil] = kTechId.Silence,
-                                     [kTechId.UpgradeAuraVeil] = kTechId.Aura }
+                                     [kTechId.UpgradeCamouflageVeil] = kTechId.Camouflage }
     
     local gainedResearch = checkForGainedResearch[researchId]
     if gainedResearch then

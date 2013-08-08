@@ -56,7 +56,6 @@ function Mine:OnCreate()
     
     if Server then
     
-        InitMixin(self, OwnerMixin)
         // init after OwnerMixin since 'OnEntityChange' is expected callback
         InitMixin(self, EntityChangeMixin)
         InitMixin(self, SleeperMixin)
@@ -71,16 +70,12 @@ function Mine:GetReceivesStructuralDamage()
     return true
 end    
 
-local function NoFallOff(distanceFraction)
-    return 0
-end
-
 local function Detonate(self, armFunc)
 
     local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kMineDetonateRange)
     
     // RadiusDamage without damage falloff. Ignore damage that goes through the world. Also hurt owner if in range.
-    RadiusDamage(hitEntities, self:GetOrigin(), kMineDetonateRange, kMineDamage, self, false, NoFallOff)
+    RadiusDamage(hitEntities, self:GetOrigin(), kMineDetonateRange, kMineDamage, self, false)
     
     // Start the timed destruction sequence for any mine within range of this exploded mine.
     local nearbyMines = GetEntitiesWithinRange("Mine", self:GetOrigin(), kMineChainDetonateRange)
@@ -139,7 +134,7 @@ local function CheckEntityExplodesMine(self, entity)
         return false
     end
     
-    if not (entity:isa("Player") or entity:isa("Whip")) then
+    if not (entity:isa("Player") or entity:isa("Whip") or entity:isa("Babbler")) then
         return false
     end
     

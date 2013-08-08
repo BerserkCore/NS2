@@ -132,7 +132,7 @@ if Server then
             end
             local distanceToTarget = (targetPosition - self:GetOrigin()):GetLength()
             // Factor in the size of the target.
-            local sizeOfTarget = target and target:GetExtents() or Vector()
+            local sizeOfTarget = (target and HasMixin(target, "Extents")) and target:GetExtents() or Vector()
             sizeOfTarget.y = 0
             distanceToTarget = distanceToTarget - sizeOfTarget:GetLength()
             local withinAttackDistance = distanceToTarget <= attackDistance

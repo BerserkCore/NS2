@@ -121,12 +121,12 @@ local function OnGameEnd(message)
         
             -- Spectators always want the 'Win' screen to appear
             -- Using the win variable to specify which team won instead
-            GetGUIManager():GetGUIScriptSingle("GUIGameEnd"):SetGameEnded(true, message.win)
+            ClientUI.GetScript("GUIGameEnd"):SetGameEnded(true, message.win)
             Client.PlayMusic("victory")
             
         else
         
-            GetGUIManager():GetGUIScriptSingle("GUIGameEnd"):SetGameEnded(message.win, localPlayer:GetTeamType() == kMarineTeamType)
+            ClientUI.GetScript("GUIGameEnd"):SetGameEnded(message.win, localPlayer:GetTeamType() == kMarineTeamType)
             Client.PlayMusic(message.win and "victory" or "loss")
             
         end

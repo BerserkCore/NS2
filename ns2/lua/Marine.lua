@@ -34,6 +34,7 @@ Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/WebableMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
+Script.Load("lua/TunnelUserMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -149,6 +150,7 @@ AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(WebableMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+AddMixinNetworkVars(TunnelUserMixin, networkVars)
 
 function Marine:OnCreate()
 
@@ -164,12 +166,12 @@ function Marine:OnCreate()
     Player.OnCreate(self)
     
     InitMixin(self, DissolveMixin)
-    InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, ParasiteMixin)
     InitMixin(self, RagdollMixin)
     InitMixin(self, WebableMixin)
     InitMixin(self, CorrodeMixin)
+    InitMixin(self, TunnelUserMixin)
     
     //self.loopingSprintSoundEntId = Entity.invalidId
     
@@ -211,6 +213,18 @@ end
 
 function Marine:OnInitialized()
 
+    // work around to prevent the spin effect at the infantry portal spawned from
+    // local player should not see the holo marine model
+    if Client and Client.GetIsControllingPlayer() then
+    
+        local ips = GetEntitiesForTeamWithinRange("InfantryPortal", self:GetTeamNumber(), self:GetOrigin(), 1)
+        if #ips > 0 then
+            Shared.SortEntitiesByDistance(self:GetOrigin(), ips)
+            ips[1]:PreventSpinEffect(0.2)
+        end
+    
+    end
+
     // These mixins must be called before SetModel because SetModel eventually
     // calls into OnUpdatePoseParameters() which calls into these mixins.
     // Yay for convoluted class hierarchies!!!
@@ -239,7 +253,14 @@ function Marine:OnInitialized()
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
         end
-       
+        
+        InitMixin(self, InfestationTrackerMixin)
+        self.timeRuptured = 0
+        self.interruptStartTime = 0
+        self.timeLastPoisonDamage = 0
+        
+        self.lastPoisonAttackerId = Entity.invalidId
+        
     elseif Client then
     
         InitMixin(self, HiveVisionMixin)
@@ -249,6 +270,9 @@ function Marine:OnInitialized()
         self:AddHelpWidget("GUIBuyShotgunHelp", 2)
         self:AddHelpWidget("GUIMarineWeldHelp", 2)
         self:AddHelpWidget("GUIMapHelp", 1)
+        
+        self.notifications = { }
+        self.timeLastSpitHitEffect = 0
         
     end
     
@@ -264,7 +288,7 @@ function Marine:OnInitialized()
     // -1 = up, +1 = down
     
     self.timeLastSpitHit = 0
-    self.lastSpitDirection = Vector(0,0,0)
+    self.lastSpitDirection = Vector(0, 0, 0)
     self.timeOfLastDrop = 0
     self.timeOfLastPickUpWeapon = 0
     self.ruptured = false
@@ -273,17 +297,6 @@ function Marine:OnInitialized()
     self.timeCatpackboost = 0
     
     self.flashlightLastFrame = false
-    
-    if Server then
-    
-        InitMixin(self, InfestationTrackerMixin)
-        self.timeRuptured = 0
-        self.interruptStartTime = 0
-        self.timeLastPoisonDamage = 0
-        
-        self.lastPoisonAttackerId = Entity.invalidId
-        
-    end
     
 end
 
@@ -374,60 +387,17 @@ function Marine:OnDestroy()
 
     Player.OnDestroy(self)
     
-    if Server then
+    if Client then
     
-        // The loopingSprintSound was already destroyed at this point, clear the reference.
-        //self.loopingSprintSound = nil
-        
-    elseif Client then
-        
         if self.ruptureMaterial then
         
             Client.DestroyRenderMaterial(self.ruptureMaterial)
             self.ruptureMaterial = nil
             
-        end  
+        end
         
         if self.flashlight ~= nil then
             Client.DestroyRenderLight(self.flashlight)
-        end
-        
-        if self.marineHUD then
-        
-            GetGUIManager():DestroyGUIScript(self.marineHUD)
-            self.marineHUD = nil
-            
-        end
-        
-        if self.poisonedGUI then
-        
-            GetGUIManager():DestroyGUIScript(self.poisonedGUI)
-            self.poisonedGUI = nil
-            
-        end
-        
-        if self.waypoints then
-            GetGUIManager():DestroyGUIScript(self.waypoints)
-            self.waypoints = nil
-        end
-        
-        if self.pickups then
-        
-            GetGUIManager():DestroyGUIScript(self.pickups)
-            self.pickups = nil
-            
-        end
-
-        if self.hints then
-        
-            GetGUIManager():DestroyGUIScript(self.hints)
-            self.hints = nil
-            
-        end        
-        
-        if self.guiOrders then
-            GetGUIManager():DestroyGUIScript(self.guiOrders)
-            self.guiOrders = nil
         end
         
         if self.buyMenu then
@@ -435,34 +405,6 @@ function Marine:OnDestroy()
             GetGUIManager():DestroyGUIScript(self.buyMenu)
             self.buyMenu = nil
             MouseTracker_SetIsVisible(false)
-            
-        end
-        
-        if self.sensorBlips then
-        
-            GetGUIManager():DestroyGUIScript(self.sensorBlips)
-            self.sensorBlips = nil
-            
-        end
-        
-        if self.objectiveDisplay then
-        
-            GetGUIManager():DestroyGUIScript(self.objectiveDisplay)
-            self.objectiveDisplay = nil
-            
-        end
-        
-        if self.progressDisplay then
-        
-            GetGUIManager():DestroyGUIScript(self.progressDisplay)
-            self.progressDisplay = nil
-            
-        end
-        
-        if self.requestMenu then
-        
-            GetGUIManager():DestroyGUIScript(self.requestMenu)
-            self.requestMenu = nil
             
         end
         
@@ -867,11 +809,8 @@ function Marine:OnUpdateAnimationInput(modelMixin)
         modelMixin:SetAnimationInput("move", "sprint")
     end
     
-   if self:GetIsStunned() then
-    
-        local move = ConditionalValue( self:GetIsOnGround(), "stun", "toss")
-        modelMixin:SetAnimationInput("move", move)
-        
+   if self:GetIsStunned() and self:GetRemainingStunTime() > 0.5 then
+        modelMixin:SetAnimationInput("move", "stun")
     end
 
     modelMixin:SetAnimationInput("attack_speed", self:GetCatalystFireModifier())

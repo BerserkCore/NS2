@@ -338,11 +338,18 @@ end
 
 function GUIRequestMenu:Update(deltaTime)
 
+    if self.playerClass ~= PlayerUI_GetPlayerClassName() then
+
+        self:Uninitialize()
+        self:Initialize()
+        
+    end
+
     if self.background:GetIsVisible() then
     
         local commanderName = PlayerUI_GetCommanderName()
         self.ejectCommButton.Background:SetIsVisible(commanderName ~= nil)
-        self.voteConcedeButton.Background:SetIsVisible(PlayerUI_GetGameStartTime() + kTimeGiveupPossible < Shared.GetTime())
+        self.voteConcedeButton.Background:SetIsVisible(PlayerUI_GetGameStartTime() + kMinTimeBeforeConcede < Shared.GetTime())
         if commanderName then
             self.ejectCommButton.CommanderName:SetText(string.format("%s %s", Locale.ResolveString("EJECT"), string.upper(commanderName)))
         end
@@ -390,11 +397,18 @@ end
 
 function GUIRequestMenu:SendKeyEvent(key, down)
 
+    // Spectators cannot use this menu.
+    if not Client.GetIsControllingPlayer() then
+        return false
+    end
+    
     local hitButton = false
     
     if ChatUI_EnteringChatMessage() then
+    
         self:SetIsVisible(false)
         return false
+        
     end
     
     if down then
@@ -473,7 +487,10 @@ function GUIRequestMenu:SendKeyEvent(key, down)
             if not self.background:GetIsVisible() and PlayerUI_GetCanDisplayRequestMenu() then
                 self:SetIsVisible(true)
             else
+            
                 self:SetIsVisible(false)
+                PlayerUI_OnRequestSelected()
+                
             end
             
         end

@@ -11,6 +11,8 @@
 
 Script.Load("lua/Bot.lua")
 
+local gFreezeBots = false
+
 class 'BotTest' (Bot)
 
 function BotTest:GenerateMove()
@@ -31,8 +33,17 @@ function BotTest:GenerateMove()
 
     move.yaw   = 0
     move.pitch = 0
-    move.move  = self.direction
+    
+    if gFreezeBots then
+        move.move  = Vector(0,0,0)
+    else
+        move.move  = self.direction
+    end
     
     return move
 
 end
+
+Event.Hook("Console_freezebots", function()
+    gFreezeBots = not gFreezeBots
+end)

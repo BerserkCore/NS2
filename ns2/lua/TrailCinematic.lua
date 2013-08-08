@@ -261,7 +261,7 @@ function TrailCinematic:Update(deltaTime)
     baseCoords = self:_GetBaseCoords(deltaTime)
     
     // apply the attach offset
-    baseCoords.origin = baseCoords.origin + baseCoords.xAxis * self.attachOffset.x + baseCoords.yAxis * self.attachOffset.y + baseCoords.zAxis * self.attachOffset.z
+    baseCoords.origin = baseCoords:TransformPoint(self.attachOffset)
     
     if self.alignAxis == TRAIL_ALIGN_Z then
         direction = baseCoords.zAxis

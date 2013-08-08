@@ -17,7 +17,7 @@ Shared.PrecacheSurfaceShader("cinematics/vfx_materials/enzyme.surface_shader")
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/enzyme_view.surface_shader")
 
 Alien.kCelerityViewCinematic = PrecacheAsset("cinematics/alien/high_speed_1p.cinematic")
-Alien.kRegenerationViewCinematic = PrecacheAsset("cinematics/alien/regeneration_1p.cinematic")
+local kRegenerationViewCinematic = PrecacheAsset("cinematics/alien/regeneration_1p.cinematic")
 Alien.kFirstPersonDeathEffect = PrecacheAsset("cinematics/alien/death_1p_alien.cinematic")
 
 local kAlienFirstPersonHitEffectName = PrecacheAsset("cinematics/alien/hit_1p.cinematic")
@@ -28,23 +28,6 @@ function PlayerUI_GetNumHives()
 
     for _, ent in ientitylist(Shared.GetEntitiesWithClassname("AlienTeamInfo")) do
         return ent:GetNumHives()
-    end
-    
-    return 0
-
-end
-
-function AlienUI_GetWaveSpawnTime()
-
-    local player = Client.GetLocalPlayer()
-    
-    if player and player:isa("AlienSpectator") then
-
-        local endTime = player:GetWaveSpawnEndTime()
-        if endTime > 0 then   
-            return endTime - Shared.GetTime()
-        end
-        
     end
     
     return 0
@@ -146,53 +129,17 @@ function AlienUI_HasSameTypeUpgrade(selectedIds, techId)
 
 end
 
-function AlienUI_GetInEgg()
-
-    local player = Client.GetLocalPlayer()
-    if player and player:isa("AlienSpectator") then
-        return player:GetHostEgg() ~= nil
-    end
-    
-    return false
-
-end
-
-function AlienUI_GetSpawnQueuePosition()
-
-    local player = Client.GetLocalPlayer()
-    if player and player:isa("AlienSpectator") then
-        return player:GetQueuePosition()
-    end
-    
-    return -1
-
-end
-
-function AlienUI_GetAutoSpawnTime()
-
-    local player = Client.GetLocalPlayer()
-    if player and player:isa("AlienSpectator") then
-        return math.max(0, player:GetAutoSpawnTime())
-    end
-    
-    return 0
-
-end
-
 function AlienUI_GetEggCount()
 
     local eggCount = 0
     
-    local player = Client.GetLocalPlayer()
-    if player then
-    
-        local teamInfo = GetTeamInfoEntity(player:GetTeamNumber())
-        eggCount = teamInfo:GetEggCount()        
-        
-    end    
+    local teamInfo = GetTeamInfoEntity(kTeam2Index)
+    if teamInfo then
+        eggCount = teamInfo:GetEggCount()
+    end
     
     return eggCount
-
+    
 end
 
 /**
@@ -295,48 +242,10 @@ function PlayerUI_GetPlayerMaxEnergy()
 end
 
 function Alien:OnKillClient()
+
     Player.OnKillClient(self)
+    
     self:DestroyGUI()
-end
-
-function Alien:OnInitLocalClient()
-
-    Player.OnInitLocalClient(self)
-    
-    if self:GetTeamNumber() ~= kTeamReadyRoom then
-    
-        if self.alienHUD == nil then
-            self.alienHUD = GetGUIManager():CreateGUIScript("GUIAlienHUD")
-        end
-        
-        if self.waypoints == nil then
-        
-            self.waypoints = GetGUIManager():CreateGUIScript("GUIWaypoints")
-            self.waypoints:InitAlienTexture()
-            
-        end
-        
-        if self.eggInfo == nil then
-            self.eggInfo = GetGUIManager():CreateGUIScript("GUIEggDisplay")
-        end
-        
-        if self.regenFeedback == nil then
-            self.regenFeedback = GetGUIManager():CreateGUIScript("GUIRegenerationFeedback")
-        end
-        
-        if self.objectiveDisplay == nil then
-            self.objectiveDisplay = GetGUIManager():CreateGUIScript("GUIObjectiveDisplay")
-        end
-        
-        if self.progressDisplay == nil then
-            self.progressDisplay = GetGUIManager():CreateGUIScript("GUIProgressBar")
-        end
-        
-        if self.requestMenu == nil then
-            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-        end
-        
-    end
     
 end
 
@@ -437,7 +346,7 @@ function Alien:UpdateClientEffects(deltaTime, isLocal)
         
         // Blur alien vision if they are using the buy menu or are stunned.
         local stunned = HasMixin(self, "Stun") and self:GetIsStunned()
-        self:SetBlurEnabled(self:GetBuyMenuIsDisplaying() or stunned or self.minimapVisible)
+        self:SetBlurEnabled(self:GetBuyMenuIsDisplaying() or stunned or self:GetIsMinimapVisible())
         
         //self:UpdateCelerityEffect()
         self:UpdateRegenerationEffect()
@@ -464,21 +373,21 @@ end
 
 function Alien:UpdateRegenerationEffect()
 
-    if not self:GetIsInCombat() and GetHasRegenerationUpgrade(self) and self.regenFeedback and not self.regenFeedback:GetIsAnimating() then
+    if not self:GetIsInCombat() and GetHasRegenerationUpgrade(self) and not ClientUI.GetScript("GUIRegenerationFeedback"):GetIsAnimating() then
     
         if self.lastHealth then
         
             if self.lastHealth < self:GetHealth() then
             
-                self.regenFeedback:TriggerRegenEffect()
+                ClientUI.GetScript("GUIRegenerationFeedback"):TriggerRegenEffect()
                 local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
-                cinematic:SetCinematic(Alien.kRegenerationViewCinematic)
+                cinematic:SetCinematic(kRegenerationViewCinematic)
                 
             end
             
         end
         
-        self.lastHealth = self:GetHealth()  
+        self.lastHealth = self:GetHealth()
         
     end
     
@@ -510,7 +419,7 @@ function Alien:CloseMenu()
         
         MouseTracker_SetIsVisible(false)
         
-        // Quick work-around to not fire weapon when closing menu
+        // Quick work-around to not fire weapon when closing menu.
         self.timeClosedMenu = Shared.GetTime()
         
         return true
@@ -566,20 +475,16 @@ function Alien:OnCountDown()
 
     Player.OnCountDown(self)
     
-    if self.alienHUD then
-        self.alienHUD:SetIsVisible(false)
-    end
-
+    ClientUI.GetScript("GUIAlienHUD"):SetIsVisible(false)
+    
 end
 
 function Alien:OnCountDownEnd()
 
     Player.OnCountDownEnd(self)
     
-    if self.alienHUD then
-        self.alienHUD:SetIsVisible(true)
-    end
-
+    ClientUI.GetScript("GUIAlienHUD"):SetIsVisible(true)
+    
 end
 
 function Alien:GetPlayFootsteps()

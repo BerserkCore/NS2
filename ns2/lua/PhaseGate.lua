@@ -105,10 +105,10 @@ PhaseGate.kMapName = "phasegate"
 
 PhaseGate.kModelName = PrecacheAsset("models/marine/phase_gate/phase_gate.model")
 
-local kUpdateInterval = 0.25
+local kUpdateInterval = 0.1
 
 // Can only teleport a player every so often
-local kDepartureRate = 0.5
+local kDepartureRate = 0.2
 
 local kPushRange = 3
 local kPushImpulseStrength = 40
@@ -239,11 +239,9 @@ end
 
 function PhaseGate:GetEffectParams(tableParams)
 
-    ScriptActor.GetEffectParams(self, tableParams)
-    
     // Override active field here to mean "linked"
     tableParams[kEffectFilterActive] = self.linked
-        
+    
 end
 
 function PhaseGate:GetReceivesStructuralDamage()

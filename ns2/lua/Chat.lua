@@ -10,18 +10,11 @@
 // color, playername, color, message
 local chatMessages = { }
 local enteringChatMessage = false
+local startedChatTime = 0
 local teamOnlyChat = false
 // Note: Nothing clears this out but it is probably safe to assume the player won't
 // mute enough clients to run out of memory.
 local mutedClients = { }
-
-/**
- * Returns true if the user is currently holding down the button to record for
- * voice chat.
- */
-function ChatUI_IsVoiceChatActive()
-    return Client.IsVoiceRecordingActive()
-end
 
 /**
  * Returns true if the passed in client is currently speaking.
@@ -29,13 +22,12 @@ end
 function ChatUI_GetIsClientSpeaking(clientIndex)
 
     // Handle the local client specially.
-    local localPlayer = Client.GetLocalPlayer()
-    if localPlayer and localPlayer:GetClientIndex() == clientIndex then
-        return ChatUI_IsVoiceChatActive()
+    if Client.GetLocalClientIndex() == clientIndex then
+        return Client.IsVoiceRecordingActive()
     end
     
     return Client.GetIsClientSpeaking(clientIndex)
-
+    
 end
 
 function ChatUI_SetClientMuted(muteClientIndex, setMute)
@@ -53,22 +45,20 @@ function ChatUI_SetClientMuted(muteClientIndex, setMute)
 end
 
 function ChatUI_GetClientMuted(clientIndex)
-
     return mutedClients[clientIndex] == true
-
 end
 
 function ChatUI_GetMessages()
 
-    local uiChatMessages = {}
+    local uiChatMessages = { }
     
-    if(table.maxn(chatMessages) > 0) then
+    if table.maxn(chatMessages) > 0 then
     
         table.copy(chatMessages, uiChatMessages)
-        chatMessages = {}
+        chatMessages = { }
         
     end
-        
+    
     return uiChatMessages
     
 end
@@ -76,6 +66,10 @@ end
 // Return true if we want the UI to take key input for chat
 function ChatUI_EnteringChatMessage()
     return enteringChatMessage
+end
+
+function ChatUI_GetStartedChatTime()
+    return startedChatTime
 end
 
 // Return string prefix to display in front of the chat input
@@ -106,6 +100,8 @@ function ChatUI_SubmitChatMessageBody(chatMessage)
     
     enteringChatMessage = false
     
+    SetMoveInputBlocked(false)
+    
 end
 
 /** 
@@ -116,7 +112,10 @@ function ChatUI_EnterChatMessage(teamOnly)
     if not enteringChatMessage then
     
         enteringChatMessage = true
+        startedChatTime = Shared.GetTime()
         teamOnlyChat = teamOnly
+        
+        SetMoveInputBlocked(true)
         
     end
     

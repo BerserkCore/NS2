@@ -14,7 +14,6 @@ PickupableMixin.type = "Pickupable"
 
 PickupableMixin.expectedMixins =
 {
-    TimedCallback = "Needed for checking for nearby players and self destruction"
 }
 
 PickupableMixin.expectedCallbacks =

@@ -42,6 +42,7 @@ function Spit:OnCreate()
     end
     
     self.creationTime = Shared.GetTime()
+    self:SetGroupFilterMask(PhysicsMask.NoBabblers)
 
 end
 
@@ -144,19 +145,7 @@ function Spit:ProcessHit(targetHit, surface, normal)
     // Don't hit owner - shooter
     elseif self:GetOwner() ~= targetHit then
     
-        self:TriggerEffects("spit_hit", { effecthostcoords = Coords.GetTranslation(self:GetOrigin()) } )
-    
-        /*self:DoDamage(Spit.kDamage, targetHit, self:GetOrigin(), nil, surface)
-        
-        if targetHit and targetHit:isa("Marine") then
-        
-            local direction = self:GetOrigin() - targetHit:GetEyePos()
-            direction:Normalize()
-            targetHit:OnSpitHit(direction)
-            
-        end
-        */
-        
+        self:TriggerEffects("spit_hit", { effecthostcoords = Coords.GetTranslation(self:GetOrigin()) } )        
         DestroyEntity(self)
         
     end    

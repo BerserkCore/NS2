@@ -15,6 +15,10 @@ function EntityFilterOne(entity)
     return function (test) return test == entity end
 end
 
+function EntityFilterOneAndIsa(entity, classname)
+    return function (test) return test == entity or test:isa(classname) end
+end
+
 function EntityFilterTwo(entity1, entity2)
     return function (test) return test == entity1 or test == entity2 end
 end
@@ -30,6 +34,10 @@ end
 
 function EntityFilterAllButIsa(classname)
     return function(test) return not test:isa(classname) end
+end
+
+function EntityFilterAllButMixin(mixinType)
+    return function(test) return not HasMixin(test, mixinType) end
 end
 
 function EntityFilterMixinAndSelf(entity, mixinType)
@@ -860,6 +868,14 @@ function GetClientServerString()
     return ConditionalValue(Client, "Client", "Server")
 end
 
+function IsNumber(var)
+    return var ~= nil and type(var) == "number"
+end
+
+function IsBoolean(var)
+    return var ~= nil and type(var) == "boolean"
+end
+
 function ToString(t)
 
     if t == nil then
@@ -1058,6 +1074,20 @@ function DrawCoords(coords)
     DebugLine(coords.origin, coords.origin + coords.zAxis, .2, 0, 0, 1, 1)
 end
 
+function DebugDrawAxes(coords, origin, length, duration, colorScale)
+    if colorScale == nil then
+        colorScale = 1.0
+    end
+    DebugLine(origin, origin + length*coords.xAxis, duration, colorScale, 0, 0, 1)
+    DebugLine(origin, origin + length*coords.yAxis, duration, 0, colorScale, 0, 1)
+    DebugLine(origin, origin + length*coords.zAxis, duration, 0, 0, colorScale, 1)
+end
+
+// Draws angles as a coordinate frame
+function DebugDrawAngles(angles, origin, length, duration, colorScale)
+    DebugDrawAxes( angles:GetCoords(), origin, length, duration, colorScale )
+end
+
 function CopyCoords(coords)
     return Coords(coords)
 end
@@ -1075,6 +1105,27 @@ function DegreesTo360(degrees, positiveOnly)
     
     return degrees
 
+end
+
+// Returns radians in [0,2*pi)
+function RadiansTo2PiRange(rads)
+
+    while rads >= 2*math.pi do
+        rads = rads - 2*math.pi
+    end
+
+    while rads < 0 do
+        rads = rads + 2*math.pi
+    end
+
+    return rads
+
+end
+
+function AnglesTo2PiRange(angles)
+    angles.yaw = RadiansTo2PiRange(angles.yaw)
+    angles.pitch = RadiansTo2PiRange(angles.pitch)
+    angles.roll = RadiansTo2PiRange(angles.roll)
 end
 
 function DebugTraceRay(p0, p1, mask, filter)
@@ -1346,7 +1397,15 @@ function IsValidValue(value)
 end
 
 function Clamp(value, min, max)
-    return math.min(math.max(value, min), max)
+    if value < min then
+        return min
+    elseif value > max then
+        return max
+    else
+        return value
+    end
+    // This is old impl. May be slow due to math derefs
+    // return math.min(math.max(value, min), max)
 end
 
 function ClampVector(vector, min, max)
@@ -1355,6 +1414,18 @@ function ClampVector(vector, min, max)
     vector.y = Clamp(vector.y, min.x, max.y)
     vector.z = Clamp(vector.z, min.x, max.z)
 
+end
+
+function Limit(x, limit1, limit2)
+
+    if limit1 == limit2 then
+        return limit1
+    elseif limit1 < limit2 then
+        return Clamp(x, limit1, limit2)
+    else
+        return Clamp(x, limit2, limit1)
+    end
+    
 end
 
 function Wrap(x, min, max)
@@ -1606,7 +1677,7 @@ function CreateEntity(mapName, origin, teamNumber, extraValues)
         GetGamerules():OnEntityCreate(entity)
         
     else
-        error("CreateEntity(%s, %s, %s) returned nil.", ToString(mapName), ToString(origin), ToString(teamNumber))
+        error(string.format("CreateEntity(%s, %s, %s) returned nil.", ToString(mapName), ToString(origin), ToString(teamNumber)))
     end
     
     return entity

@@ -151,8 +151,6 @@ end
 
 function Ability:GetEffectParams(tableParams)
 
-    Weapon.GetEffectParams(self, tableParams)
-    
     local player = self:GetParent()
     if player then
         tableParams[kEffectFilterSilenceUpgrade] = GetHasSilenceUpgrade(player)

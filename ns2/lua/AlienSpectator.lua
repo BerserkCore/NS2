@@ -24,12 +24,15 @@ local networkVars =
 {
     eggId = "private entityid",
     queuePosition = "private integer (-1 to 100)",
-    autoSpawnTime = "private float",
-    timeWaveSpawnEnd = "private time"
+    autoSpawnTime = "private float"
 }
 
 local function UpdateQueuePosition(self)
 
+    if self:GetIsDestroyed() then
+        return false
+    end
+    
     self.queuePosition = self:GetTeam():GetPlayerPositionInRespawnQueue(self)
     return true
     
@@ -37,7 +40,14 @@ end
 
 local function UpdateWaveTime(self)
 
-    self:SetWaveSpawnEndTime(self:GetTeam():GetWaveSpawnEndTime(self))
+    if self:GetIsDestroyed() then
+        return false
+    end
+    
+    self.timeWaveSpawnEnd = self:GetTeam():GetWaveSpawnEndTime(self)
+    
+    Server.SendNetworkMessage(Server.GetOwner(self), "SetTimeWaveSpawnEnds", { time = self.timeWaveSpawnEnd }, true)
+    
     return true
     
 end
@@ -76,50 +86,15 @@ function AlienSpectator:OnInitialized()
         
     end
     
-    if Client and Client.GetLocalPlayer() == self then
-        self.spawnHUD = GetGUIManager():CreateGUIScript("GUIAlienSpectatorHUD")
+end
+
+if Server then
+
+    function AlienSpectator:GetWaveSpawnEndTime()
+        return self.timeWaveSpawnEnd
     end
     
 end
-
-function AlienSpectator:OnDestroy()
-
-    TeamSpectator.OnDestroy(self)
-    
-    if Client  then
-    
-        if self.spawnHUD then
-        
-            GetGUIManager():DestroyGUIScript(self.spawnHUD)
-            self.spawnHUD = nil
-            
-        end
-        
-        if self.requestMenu then
-        
-            GetGUIManager():DestroyGUIScript(self.requestMenu)
-            self.requestMenu = nil
-            
-        end  
-        
-    end
-    
-end
-
-if Client then
-
-    function AlienSpectator:OnInitLocalClient()
-    
-        TeamSpectator.OnInitLocalClient(self)
-        
-        if self.requestMenu == nil then
-            self.requestMenu = GetGUIManager():CreateGUIScript("GUIRequestMenu")
-        end
-        
-    end
-    
-end
-
 function AlienSpectator:GetIsValidToSpawn()
     return true
 end
@@ -199,14 +174,6 @@ end
 // Same as Skulk so his view height is right when spawning in
 function AlienSpectator:GetMaxViewOffsetHeight()
     return Skulk.kViewOffsetHeight
-end
-
-function AlienSpectator:SetWaveSpawnEndTime(time)
-    self.timeWaveSpawnEnd = time
-end
-
-function AlienSpectator:GetWaveSpawnEndTime()
-    return self.timeWaveSpawnEnd
 end
 
 /**

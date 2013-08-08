@@ -14,8 +14,6 @@ kClientEffectData =
     {
         initEffects =
         {
-            {looping_cinematic = "cinematics/alien/gorge/spit.cinematic", classname = "Spit", done = true},
-            
             // Play spin for spinning infantry portal
             {looping_cinematic = "cinematics/marine/infantryportal/spin.cinematic", classname = "InfantryPortal", active = true, done = true},
             

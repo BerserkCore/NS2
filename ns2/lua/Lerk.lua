@@ -19,6 +19,9 @@ Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/WallMovementMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
+Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/BabblerClingMixin.lua")
+Script.Load("lua/RailgunTargetMixin.lua")
 
 class 'Lerk' (Alien)
 
@@ -59,6 +62,8 @@ local networkVars =
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
+AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(BabblerClingMixin, networkVars)
 
 // if the user hits a wall and holds the use key and the resulting speed is < this, grip starts
 Lerk.kWallGripMaxSpeed = 4
@@ -103,6 +108,12 @@ function Lerk:OnCreate()
     Alien.OnCreate(self)
     
     InitMixin(self, DissolveMixin)
+    InitMixin(self, TunnelUserMixin)
+    InitMixin(self, BabblerClingMixin)
+    
+    if Client then
+        InitMixin(self, RailgunTargetMixin)
+    end
     
     self.prevInputMove = false
     self.gliding = false
@@ -178,7 +189,7 @@ local kMaxGlideRoll = math.rad(60)
 function Lerk:GetDesiredAngles()
 
     if self:GetIsWallGripping() then
-        return self:GetAnglesFromWallNormal(self.wallGripNormalGoal, 1)
+        return self:GetAnglesFromWallNormal( self.wallGripNormalGoal )
     end
 
     local desiredAngles = Alien.GetDesiredAngles(self)
@@ -195,8 +206,14 @@ function Lerk:GetDesiredAngles()
 
 end
 
-function Lerk:GetSmoothAngles()
-    return not self:GetIsWallGripping()
+function Lerk:GetAngleSmoothingMode()
+
+    if self:GetIsWallGripping() then
+        return "quatlerp"
+    else
+        return "euler"
+    end
+
 end
 
 function Lerk:GetInfestationBonus()
@@ -639,7 +656,7 @@ function Lerk:HandleAttacks(input)
     local holdingJump = bit.band(input.commands, Move.Jump) ~= 0
     
     // If we're holding down jump, glide
-    self.gliding = input.move.z > 0 and self:GetVelocityLength() > kMaxSpeed *.5 and not self:GetIsOnSurface() and not turnedSharp and holdingJump
+    self.gliding = input.move.z > 0 and self:GetVelocity():GetLength() > kMaxSpeed *.5 and not self:GetIsOnSurface() and not turnedSharp and holdingJump
     
 end
 

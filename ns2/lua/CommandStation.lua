@@ -91,7 +91,7 @@ function CommandStation:OnInitialized()
 end
 
 function CommandStation:GetIsWallWalkingAllowed()
-    return self:GetIsOccupied()
+    return false
 end
 
 local kHelpArrowsCinematicName = PrecacheAsset("cinematics/marine/commander_arrow.cinematic")

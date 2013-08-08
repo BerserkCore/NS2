@@ -60,8 +60,21 @@ function Cyst:GetIsActuallyConnected()
 end
 
 function Cyst:OnKill()
+
     self:TriggerEffects("death")
-    DestroyEntity(self)
+    self.connected = false
+    self:SetModel(nil)
+    
+    for key,id in pairs(self.children) do
+    
+        local cyst = Shared.GetEntity(id)
+        if cyst then
+            cyst.parentId = Entity.invalidId
+            cyst.connected = false
+        end
+    
+    end
+    
 end   
 
 function Cyst:GetSendDeathMessageOverride()

@@ -17,7 +17,7 @@ Axe.kModelName = PrecacheAsset("models/marine/axe/axe.model")
 Axe.kViewModelName = PrecacheAsset("models/marine/axe/axe_view.model")
 local kAnimationGraph = PrecacheAsset("models/marine/axe/axe_view.animation_graph")
 
-local kRange = 0.8
+local kRange = 1
 
 local networkVars =
 {

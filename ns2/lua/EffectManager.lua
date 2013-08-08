@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =====
 //
 // lua\EffectManager.lua
 //
@@ -11,32 +11,34 @@
 
 Script.Load("lua/SharedDecal.lua")
 
-class 'EffectManager' 
+class 'EffectManager'
 
 // Set to true to use triggering entity's coords
-kEffectHostCoords           = "effecthostcoords"
-kEffectSurface              = "surface"
+kEffectHostCoords = "effecthostcoords"
+kEffectSurface = "surface"
 
 // Set to class name to display debug info for objects of that class, to "" to display everything, 
 // or nil to disable
 gEffectDebugClass = nil
 
 // Graphical debug text (table of GUIDebugText objects)
-gDebugTextList = {}
+gDebugTextList = { }
 
 //////////////////////
 // Public functions //
 //////////////////////
 function GetEffectManager()
 
-    if not gEffectManager then    
-        gEffectManager = EffectManager()   
-
+    if not gEffectManager then
+    
+        gEffectManager = EffectManager()
+        
         // speed up access to kEffectFilters
-        gEffectManager.effectFilterMap = {}
+        gEffectManager.effectFilterMap = { }
         for _,v in ipairs(kEffectFilters) do
             gEffectManager.effectFilterMap[v] = true
-        end     
+        end
+        
     end
     
     return gEffectManager
@@ -52,21 +54,17 @@ function EffectManager:GetDisplayDebug(effectTable, triggeringEntity)
 
         if (effectTable == nil or not (effectTable[kEffectParamSilent] == true)) then
     
-            if  (gEffectDebugClass == "") or (gEffectDebugClass and triggeringEntity and triggeringEntity:isa(gEffectDebugClass)) then
-            
+            if (gEffectDebugClass == "") or (gEffectDebugClass and triggeringEntity and triggeringEntity:isa(gEffectDebugClass)) then
                 debug = true
-                
             else
             
                 // Special-case view models for convenience
-                if (effectTable[kViewModelCinematicType] or effectTable[kViewModelAnimationType]) and triggeringEntity and triggeringEntity.GetViewModelEntity then
+                if effectTable[kViewModelCinematicType] and triggeringEntity and triggeringEntity.GetViewModelEntity then
                 
                     local viewModelEntity = triggeringEntity:GetViewModelEntity()
                     
                     if viewModelEntity and gEffectDebugClass and viewModelEntity:isa(gEffectDebugClass) then
-            
                         debug = true
-                        
                     end
                 
                 end
@@ -76,7 +74,7 @@ function EffectManager:GetDisplayDebug(effectTable, triggeringEntity)
         end 
        
     end
-
+    
     return debug
     
 end
@@ -125,96 +123,323 @@ end
 
 if Client then
 
-function EffectManager:AddDebugText(debugText, origin, ent)
-
-    local messageOffset = 0
-    if ent then
+    function EffectManager:AddDebugText(debugText, origin, ent)
     
-        // Count number of debug messages entity already has so we can offset
-        // message when drawing it (to avoid overlap)
-        for index, debugPair in ipairs(gDebugTextList) do
-            if debugPair[2] == ent then
-                messageOffset = messageOffset + 1
-            end
-        end
+        local messageOffset = 0
+        if ent then
         
-    end
-    
-    local debugTextObject = GetGUIManager():CreateGUIScript("GUIDebugText")
-    debugTextObject:SetDebugInfo(debugText, origin, messageOffset)            
-    table.insert(gDebugTextList, {debugTextObject, ent})
-    
-end
-
-end
-
-function EffectManager:AddEffectData(identifier, data)
-
-    ASSERT(identifier)
-    ASSERT(data)
-    
-    if data ~= nil then
-    
-        if not self.effectTables then
-            self.effectTables = {}
-        end
-        
-        if not self.queuedAnimations then
-            self.queuedAnimations = {}
-        end
-        
-        if not self.loopingSounds then
-            self.loopingSounds = {}
-        end
-        
-        if not self.decalList then
-            self.decalList = {}
-        end
-        
-        // Replace it if we've already added it (hotloading)
-        for index, effectTablePair in ipairs(self.effectTables) do
-        
-            if effectTablePair[1] == identifier then
-
-                Print("Replacing %s effect data", identifier)            
-                table.remove(self.effectTables, index)
-                break
+            // Count number of debug messages entity already has so we can offset
+            // message when drawing it (to avoid overlap)
+            for index, debugPair in ipairs(gDebugTextList) do
+            
+                if debugPair[2] == ent then
+                    messageOffset = messageOffset + 1
+                end
                 
             end
             
         end
         
-        table.insert(self.effectTables, {identifier, data})
+        local debugTextObject = GetGUIManager():CreateGUIScript("GUIDebugText")
+        debugTextObject:SetDebugInfo(debugText, origin, messageOffset)
+        table.insert(gDebugTextList, {debugTextObject, ent})
         
-    else
-        Print("EffectManager:AddEffectData() called with nil effect data.")
-    end    
+    end
+    
+end
+
+function EffectManager:AddEffectData(identifier, data)
+
+    assert(identifier)
+    assert(data)
+    
+    self.effectTables = self.effectTables or { }
+    self.loopingSounds = self.loopingSounds or { }
+    self.decalList = self.decalList or { }
+    
+    self.effectTables[identifier] = data
+    
+end
+
+local function InternalPrecacheEffectTable(self, globalEffectTable)
+
+    for currentEffectName, currentEffectTable in pairs(globalEffectTable) do
+    
+        for effectBlockDescription, effectBlockTable in pairs(currentEffectTable) do
+        
+            for effectTableIndex, effectTable in ipairs(effectBlockTable) do
+            
+                // Get asset file name from effect data
+                local assetEntry = GetAssetNameFromType(effectTable)
+                
+                // nil allowed - means we can stop processing
+                if assetEntry == nil then
+                elseif effectTable[kDecalType] then
+                    
+                    if type(assetEntry) == "table" then
+                    
+                        for index, assetNameEntry in ipairs(assetEntry) do
+                            Shared.RegisterDecalMaterial(assetNameEntry[2])
+                        end
+                        
+                    else
+                        Shared.RegisterDecalMaterial(assetEntry)
+                    end
+                    
+                elseif type(assetEntry) == "string" then
+                
+                    if string.find(assetEntry, "%%") ~= nil then
+                        PrecacheMultipleAssets(assetEntry, kSurfaceList)
+                    else
+                        PrecacheAsset(assetEntry)
+                    end
+                    
+                elseif type(assetEntry) == "table" then
+                
+                    for index, assetNameEntry in ipairs(assetEntry) do
+                        PrecacheAsset(assetNameEntry[2])
+                    end
+                    
+                elseif not effectTable[kRagdollType] then
+                    Print("No asset name found in block \"%s\"", ToString(effectTable))
+                end
+                
+            end
+            
+        end
+        
+    end
     
 end
 
 function EffectManager:PrecacheEffects()
 
-    // Loop through effect tables and precache all assets
-    for index, effectTablePair in ipairs(self.effectTables) do
-        self:InternalPrecacheEffectTable(effectTablePair[2])
+    // Loop through effect tables and precache all assets.
+    for id, data in pairs(self.effectTables) do
+        InternalPrecacheEffectTable(self, data)
     end
-        
+    
 end
 
 function EffectManager:GetQueuedText()
     return ConditionalValue(self.locked, " (queued)", "")
 end
 
-function EffectManager:TriggerEffects(effectName, tableParams, triggeringEntity)
+--[[
+- Loop through all filters specified and see if they equal ones specified.
+--]]
+local function InternalGetEffectMatches(self, triggeringEntity, assetEntry, tableParams)
 
-    if self.effectTables then
+    PROFILE("EffectManager:InternalGetEffectMatches")
     
-        for index, effectTablePair in ipairs(self.effectTables) do
-            self:InternalTriggerMatchingEffects(effectTablePair[2], triggeringEntity, effectName, tableParams)    
+    for filterName, filterValue in pairs(assetEntry) do
+    
+        if self.effectFilterMap[filterName] then
+        
+            if not tableParams then
+                return false
+            end
+            
+            local triggerFilterValue = tableParams[filterName]
+            
+            -- Check class and doer names via :isa
+            if filterName == kEffectFilterDoerName then
+            
+                -- Check the class hierarchy
+                if triggerFilterValue == nil or not classisa(triggerFilterValue, filterValue) then
+                    return false
+                end
+                
+            elseif filterName == kEffectFilterClassName then
+            
+                if triggeringEntity and triggeringEntity:isa("ViewModel") and triggeringEntity:GetWeapon() and triggeringEntity:GetWeapon():isa(filterValue) then
+                
+                    // Allow view models to trigger animations for weapons
+                    
+                elseif not triggeringEntity or ((not triggerFilterValue and not triggeringEntity:isa(filterValue)) or (triggerFilterValue and not classisa(triggerFilterValue, filterValue))) then
+                    return false
+                end
+                
+            else
+            
+                // Otherwise makes sure specified parameters match
+                if filterValue ~= triggerFilterValue then
+                    return false
+                end
+                
+            end
+            
         end
         
     end
+    
+    return true
+    
+end
 
+local function InternalTriggerEffect(self, effectTable, triggeringParams, triggeringEntity)
+
+    local success = false
+    
+    // Do not trigger certain effects when running prediction.
+    if not Shared.GetIsRunningPrediction() then
+        if effectTable[kCinematicType] or effectTable[kWeaponCinematicType] or effectTable[kViewModelCinematicType] or
+            effectTable[kPlayerCinematicType] or effectTable[kParentedCinematicType] or
+            effectTable[kLoopingCinematicType] or effectTable[kStopCinematicType] or
+            effectTable[kStopViewModelCinematicType] then
+        
+            success = self:InternalTriggerCinematic(effectTable, triggeringParams, triggeringEntity)
+            
+        elseif effectTable[kSoundType] or effectTable[kParentedSoundType] or effectTable[kLoopingSoundType] or effectTable[kPrivateSoundType] or effectTable[kStopSoundType] then
+        
+            success = self:InternalTriggerSound(effectTable, triggeringParams, triggeringEntity)
+
+        elseif effectTable[kStopEffectsType] then
+        
+            success = self:InternalStopEffects(effectTable, triggeringParams, triggeringEntity)
+            
+        elseif effectTable[kDecalType] then
+        
+            success = self:InternalTriggerDecal(effectTable, triggeringParams, triggeringEntity)
+
+        end
+    end
+    
+    if not success and self:GetDisplayDebug(effectTable, triggeringEntity) then
+        Print("InternalTriggerEffect(%s) - didn't trigger effect (%s).", ToString(effectTable), SafeClassName(triggeringEntity))
+    end
+    
+    return success
+    
+end
+
+local function GetCachedEffectTable(self, inputEffectTable, effectName)
+
+    self.cachedMatchingEffects = self.cachedMatchingEffects or { }
+    self.cachedMatchingEffects[inputEffectTable] = self.cachedMatchingEffects[inputEffectTable] or { }
+    self.cachedMatchingEffects[inputEffectTable][effectName] = self.cachedMatchingEffects[inputEffectTable][effectName] or { }
+    return self.cachedMatchingEffects[inputEffectTable][effectName]
+    
+end
+
+local function AddCachedMatchingEffect(self, inputEffectTable, effectName, cachedTableParams, triggeringEntityClassName, assetEntry)
+
+    local effectNameTable = GetCachedEffectTable(self, inputEffectTable, effectName)
+    
+    -- triggeringEntityClassName is not always used when triggering effects, default to "" as a catch all.
+    triggeringEntityClassName = triggeringEntityClassName or ""
+    effectNameTable[triggeringEntityClassName] = effectNameTable[triggeringEntityClassName] or { }
+    
+    local classNameTable = effectNameTable[triggeringEntityClassName]
+    classNameTable[cachedTableParams] = classNameTable[cachedTableParams] or { }
+    table.insert(classNameTable[cachedTableParams], assetEntry)
+    
+end
+
+--[[
+- The matching effects for an effect name are cached off based on the
+- table params and the triggering entity class name.
+--]]
+local function FindCachedMatchingEffects(self, inputEffectTable, effectName, cachedTableParams, triggeringEntityClassName)
+
+    local effectNameTable = GetCachedEffectTable(self, inputEffectTable, effectName)
+    
+    -- triggeringEntityClassName is not always used when triggering effects, default to "" as a catch all.
+    triggeringEntityClassName = triggeringEntityClassName or ""
+    effectNameTable[triggeringEntityClassName] = effectNameTable[triggeringEntityClassName] or { }
+    
+    return effectNameTable[triggeringEntityClassName][cachedTableParams]
+    
+end
+
+local function InternalTriggerMatchingEffects(self, inputEffectTable, triggeringEntity, effectName, tableParams, cachedTableParams)
+
+    PROFILE("EffectManager:InternalTriggerMatchingEffects")
+    
+    local triggeringEntityClassName = triggeringEntity and triggeringEntity:GetClassName() or nil
+    local cachedMatchingEffects = FindCachedMatchingEffects(self, inputEffectTable, effectName, cachedTableParams, triggeringEntityClassName)
+    if cachedMatchingEffects then
+    
+        for e = 1, #cachedMatchingEffects do
+            InternalTriggerEffect(self, cachedMatchingEffects[e], tableParams, triggeringEntity)
+        end
+        
+    else
+    
+        local currentEffectBlockTable = inputEffectTable[effectName]
+        
+        if currentEffectBlockTable then
+        
+            for effectTableIndex, effectTable in pairs(currentEffectBlockTable) do
+            
+                local keepProcessing = true
+                
+                for assetEntryIndex, assetEntry in ipairs(effectTable) do
+                
+                    if keepProcessing then
+                    
+                        if InternalGetEffectMatches(self, triggeringEntity, assetEntry, tableParams) then
+                        
+                            if self:GetDisplayDebug(assetEntry, triggeringEntity) then
+                                Print("Triggering effect \"%s\" on %s (%s)", effectName, SafeClassName(triggeringEntity), ToString(assetEntry))
+                            end
+                            
+                            // Trigger effect
+                            InternalTriggerEffect(self, assetEntry, tableParams, triggeringEntity)
+                            
+                            AddCachedMatchingEffect(self, inputEffectTable, effectName, cachedTableParams, triggeringEntityClassName, assetEntry)
+                            
+                            // Stop processing this block "done" specified
+                            if assetEntry[kEffectParamDone] == true then
+                                keepProcessing = false
+                            end
+                            
+                        end
+                        
+                    end
+                    
+                end
+                
+            end
+            
+        end
+        
+    end
+    
+end
+
+local function GetCachedTableParams(tableParams)
+
+    local sortedParams = { }
+    for name, value in pairs(tableParams) do
+    
+        if name ~= "effecthostcoords" then
+            table.insert(sortedParams, name .. ToString(value))
+        end
+        
+    end
+    
+    table.sort(sortedParams)
+    
+    local cachedTableParams = ""
+    for i = 1, #sortedParams do
+        cachedTableParams = cachedTableParams .. sortedParams[i]
+    end
+    
+    return cachedTableParams
+    
+end
+
+function EffectManager:TriggerEffects(effectName, tableParams, triggeringEntity)
+
+    ASSERT(self.effectTables)
+    
+    local cachedTableParams = GetCachedTableParams(tableParams)
+    
+    for id, data in pairs(self.effectTables) do
+        InternalTriggerMatchingEffects(self, data, triggeringEntity, effectName, tableParams, cachedTableParams)
+    end
+    
 end
 
 ///////////////////////
@@ -263,161 +488,6 @@ function EffectManager:ChooseAssetName(effectTable, surfaceValue, triggeringEnti
     
     return assetName
     
-end
-
-function EffectManager:InternalPrecacheEffectTable(globalEffectTable)
-
-    for currentEffectName, currentEffectTable in pairs(globalEffectTable) do
-
-        for effectBlockDescription, effectBlockTable in pairs(currentEffectTable) do
-            
-            for effectTableIndex, effectTable in ipairs(effectBlockTable) do
-
-                // Get asset file name from effect data            
-                local assetEntry = GetAssetNameFromType(effectTable)
-
-                // nil allowed - means we can stop processing
-                if assetEntry == nil then
-                
-                
-                elseif effectTable[kDecalType] then
-                    
-                    if type(assetEntry) == "table" then
-                        for index, assetNameEntry in ipairs(assetEntry) do                        
-                            Shared.RegisterDecalMaterial(assetNameEntry[2])                             
-                        end
-                    else
-                        Shared.RegisterDecalMaterial(assetEntry)
-                    end
-                    
-                elseif type(assetEntry) == "string" then
-                
-                    if string.find(assetEntry, "%%") ~= nil then
-                    
-                        PrecacheMultipleAssets(assetEntry, kSurfaceList)
-                        
-                    else
-                    
-                        PrecacheAsset(assetEntry) 
-                        
-                    end
-                    
-                elseif type(assetEntry) == "table" then
-                
-                    for index, assetNameEntry in ipairs(assetEntry) do
-                    
-                        PrecacheAsset(assetNameEntry[2]) 
-                        
-                    end
-
-                // else if not an animation
-                elseif not effectTable[kAnimationType] and not effectTable[kViewModelAnimationType] and not effectTable[kOverlayAnimationType] and not effectTable[kRagdollType] then
-                    Print("No asset name found in block \"%s\"", ToString(effectTable))                    
-                end
-                
-            end
-            
-        end
-            
-    end
-
-end
-
-function EffectManager:InternalTriggerMatchingEffects(inputEffectTable, triggeringEntity, effectName, tableParams, outputEffects)
-
-    PROFILE("EffectManager:InternalTriggerMatchingEffects")
-    
-    local currentEffectBlockTable = inputEffectTable[effectName]
-    
-    if currentEffectBlockTable then
-    
-        for effectTableIndex, effectTable in pairs(currentEffectBlockTable) do
-        
-            local keepProcessing = true
-        
-            for assetEntryIndex, assetEntry in ipairs(effectTable) do
-            
-                if keepProcessing then
-                
-                    if self:InternalGetEffectMatches(triggeringEntity, assetEntry, tableParams) then
-                    
-                        if self:GetDisplayDebug(assetEntry, triggeringEntity) then
-                            Print("Triggering effect \"%s\" on %s (%s)", effectName, SafeClassName(triggeringEntity), ToString(assetEntry))
-                        end
-                        
-                        // Trigger effect
-                        self:InternalTriggerEffect(assetEntry, tableParams, triggeringEntity)
-
-                        // Stop processing this block "done" specified
-                        if assetEntry[kEffectParamDone] == true then                    
-                    
-                            keepProcessing = false
-                            
-                        end
-                        
-                    end
-                    
-                end
-                
-            end
-            
-        end
-            
-    end
-
-end
-
-// Loop through all filters specified and see if they equal ones specified 
-function EffectManager:InternalGetEffectMatches(triggeringEntity, assetEntry, tableParams)
-
-    PROFILE("EffectManager:InternalGetEffectMatches")
-    
-    for filterName, filterValue in pairs(assetEntry) do
-    
-        if self.effectFilterMap[filterName] then
-    
-            if not tableParams then
-                return false
-            end
-            
-            local triggerFilterValue = tableParams[filterName]
-        
-            // Check class and doer names via :isa
-         
-            if filterName == kEffectFilterDoerName then
-                
-                // Check the class hierarchy
-                if triggerFilterValue == nil or not classisa(triggerFilterValue, filterValue) then
-                    return false
-                end
-                                    
-            elseif (filterName == kEffectFilterClassName) then
-
-                if triggeringEntity and triggeringEntity:isa("ViewModel") and triggeringEntity:GetWeapon() and triggeringEntity:GetWeapon():isa(filterValue) then
-                
-                    // Allow view models to trigger animations for weapons                
-                    
-                elseif not triggeringEntity or ((not triggerFilterValue and not triggeringEntity:isa(filterValue)) or (triggerFilterValue and not classisa(triggerFilterValue, filterValue))) then
-                    return false
-                end
-
-            else
-            
-                // Otherwise makes sure specified parameters match
-                if filterValue ~= triggerFilterValue then
-
-                    return false
-                    
-                end
-            
-            end
-            
-        end            
-        
-    end
-    
-    return true
-
 end
 
 function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, triggeringEntity)
@@ -738,44 +808,8 @@ function EffectManager:InternalTriggerDecal(effectTable, triggeringParams, trigg
     
 end
 
-function EffectManager:InternalTriggerEffect(effectTable, triggeringParams, triggeringEntity)
-
-    local success = false
-    
-    // Do not trigger certain effects when running prediction.
-    if not Shared.GetIsRunningPrediction() then
-        if effectTable[kCinematicType] or effectTable[kWeaponCinematicType] or effectTable[kViewModelCinematicType] or
-            effectTable[kPlayerCinematicType] or effectTable[kParentedCinematicType] or
-            effectTable[kLoopingCinematicType] or effectTable[kStopCinematicType] or
-            effectTable[kStopViewModelCinematicType] then
-        
-            success = self:InternalTriggerCinematic(effectTable, triggeringParams, triggeringEntity)
-            
-        elseif effectTable[kSoundType] or effectTable[kParentedSoundType] or effectTable[kLoopingSoundType] or effectTable[kPrivateSoundType] or effectTable[kStopSoundType] then
-        
-            success = self:InternalTriggerSound(effectTable, triggeringParams, triggeringEntity)
-
-        elseif effectTable[kStopEffectsType] then
-        
-            success = self:InternalStopEffects(effectTable, triggeringParams, triggeringEntity)
-            
-        elseif effectTable[kDecalType] then
-        
-            success = self:InternalTriggerDecal(effectTable, triggeringParams, triggeringEntity)
-
-        end
-    end
-    
-    if not success and self:GetDisplayDebug(effectTable, triggeringEntity) then
-        Print("InternalTriggerEffect(%s) - didn't trigger effect (%s).", ToString(effectTable), SafeClassName(triggeringEntity))
-    end
-    
-    return success
-    
-end
-
-// Destroy expired decals and remove from list
-function removeExpiredDecal(decalPair)
+// Destroy expired decals and remove from list.
+local function removeExpiredDecal(decalPair)
 
     if decalPair[2] < 0 then
     
@@ -793,9 +827,12 @@ function EffectManager:UpdateDecals(deltaTime)
 
     if self.decalList and Client then
     
-        // Reduce lifetime of decals
-        for index, decalPair in ipairs(self.decalList) do
+        // Reduce lifetime of decals.
+        for d = 1, #self.decalList do
+        
+            local decalPair = self.decalList[d]
             decalPair[2] = decalPair[2] - deltaTime
+            
         end
         
         table.removeConditional(self.decalList, removeExpiredDecal)

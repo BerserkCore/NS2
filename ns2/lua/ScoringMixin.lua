@@ -72,6 +72,6 @@ function ScoringMixin:AddContinuousScore(name, addAmount, amountNeededToScore, p
     
 end
 
-function ScoringMixin:Reset()
+function ScoringMixin:ResetScores()
     self.score = 0
 end

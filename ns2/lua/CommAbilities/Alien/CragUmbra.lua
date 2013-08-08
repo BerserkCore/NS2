@@ -22,7 +22,7 @@ CragUmbra.kType = CommanderAbility.kType.Repeat
 CragUmbra.kCragUmbraDuration = kUmbraDuration
 CragUmbra.kRadius = 4.0
 CragUmbra.kMaxRange = 17
-CragUmbra.kThinkTime = 0.15
+local kUpdateTime = 0.15
 CragUmbra.kTravelSpeed = 30 // meters per second
 
 local networkVars =
@@ -86,8 +86,8 @@ function CragUmbra:GetRepeatingEffectCoords()
 
 end
 
-function CragUmbra:GetThinkTime()
-    return CragUmbra.kThinkTime
+function CragUmbra:GetUpdateTime()
+    return kUpdateTime
 end
 
 if Server then

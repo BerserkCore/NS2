@@ -1,0 +1,21 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
+		<input name="cloudMap" type="texture" address="wrap" srgb="true"/>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float4 tex = tex2D(emissiveMap, input.texCoord*float2(8, 1)+ float2(time * .002, 0));
+			float4 tex2 = tex2D(cloudMap, input.texCoord*float2(20, 15)+ float2(time * .01, 0));
+			float4 tex3 = tex2D(cloudMap, input.texCoord*float2(40, 10)+ float2(time * .01, 0));
+			material.emissive =  tex.rgb + (tex3.rgb + tex2.rgb)*tex.rgb  *10;
+			material.opacity  = tex.a;
+		}
+	]]>
+	</code>
+
+</shader>

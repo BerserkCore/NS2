@@ -103,8 +103,6 @@ local function ConstructTargetEntry(origin, hitEntity, damage, radius, ignoreLos
             worldImpactPoint = hitEntity:GetOrigin()
         end
         
-        
-        
         entry.id = hitEntity:GetId()
         if radius ~= 0 then
         
@@ -141,7 +139,8 @@ local function ConstructCachedTargetList(origin, forTeam, damage, radius, fallOf
     local targetIds = {}
     
     for index, hitEntity in ipairs(hitEntities) do
-        local entry = ConstructTargetEntry(origin, hitEntity, damage, radius, fallOffFunc)
+        local entry = ConstructTargetEntry(origin, hitEntity, damage, radius, false, nil, fallOffFunc)
+        
         if entry then
             table.insert(targetList, entry)
             targetIds[hitEntity:GetId()] = true
@@ -155,10 +154,6 @@ end
 function DotMarker:OnCreate()
 
     ScriptActor.OnCreate(self)
-    
-    if Server then
-        InitMixin(self, OwnerMixin)
-    end 
     
     InitMixin(self, TeamMixin)
     InitMixin(self, EntityChangeMixin)
@@ -182,8 +177,8 @@ function DotMarker:TimeUp()
     DestroyEntity(self)
 end
 
-function DotMarker:GetNotifiyTarget()
-    return false
+function DotMarker:GetNotifiyTarget(target)
+    return not target or not target:isa("Player")
 end
 
 function DotMarker:SetLifeTime(lifeTime)

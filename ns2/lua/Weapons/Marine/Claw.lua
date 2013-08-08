@@ -62,6 +62,10 @@ end
 function Claw:ProcessMoveOnWeapon(player, input)
 end
 
+function Claw:GetWeight()
+    return kClawWeight
+end
+
 function Claw:OnTag(tagName)
 
     PROFILE("Claw:OnTag")

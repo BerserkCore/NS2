@@ -21,10 +21,12 @@ local kChargeTime = 2
 local kChargeForceShootTime = 3
 local kRailgunRange = 400
 local kRailgunSpread = Math.Radians(0)
+local kBulletSize = 0.12
 
 local kChargeSound = PrecacheAsset("sound/NS2.fev/marine/heavy/railgun_charge")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/alien_frag.surface_shader")
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/railgun_hole.surface_shader")
 
 local networkVars =
 {
@@ -60,7 +62,7 @@ function Railgun:OnCreate()
         self.chargeSound:SetParent(self:GetId())
         
     end
-    
+
 end
 
 function Railgun:OnDestroy()
@@ -87,6 +89,10 @@ function Railgun:OnPrimaryAttack(player)
         
     end
     
+end
+
+function Railgun:GetWeight()
+    return kRailgunWeight
 end
 
 function Railgun:OnPrimaryAttackEnd(player)
@@ -132,6 +138,10 @@ function Railgun:GetTracerEffectName()
     return kRailgunTracerEffectName
 end
 
+function Railgun:GetTracerResidueEffectName()
+    return kRailgunTracerResidueEffectName
+end
+
 function Railgun:GetTracerEffectFrequency()
     return 1
 end
@@ -141,7 +151,7 @@ function Railgun:GetDeathIconIndex()
 end
 
 function Railgun:GetChargeAmount()
-    return math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime)
+    return self.railgunAttacking and math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime) or 0
 end
 
 local function TriggerSteamEffect(self, player)
@@ -154,31 +164,53 @@ local function TriggerSteamEffect(self, player)
     
 end
 
+local kRailgunBulletExtents = Vector(kBulletSize, kBulletSize, kBulletSize)
 local function ExecuteShot(self, startPoint, endPoint, player)
 
     // Filter ourself out of the trace so that we don't hit ourselves.
     local filter = EntityFilterTwo(player, self)
-    local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+    local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAllButIsa("Tunnel"))
+    local hitPointOffset = trace.normal * 0.3
+    local direction = (endPoint - startPoint):GetUnit()
+    local damage = kRailgunDamage + math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime) * kRailgunChargeDamage
     
     if trace.fraction < 1 then
     
-        local direction = (trace.endPoint - startPoint):GetUnit()
+        // do a max of 10 capsule traces, should be sufficient
+        local hitEntities = {}
+        for i = 1, 20 do
         
-        local impactPoint = trace.endPoint - GetNormalizedVector(endPoint - startPoint) * kHitEffectOffset
-        local surfaceName = trace.surface
+            local capsuleTrace = Shared.TraceBox(kRailgunBulletExtents, startPoint, trace.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+            if capsuleTrace.entity then
+            
+                if not table.find(hitEntities, capsuleTrace.entity) then
+                
+                    table.insert(hitEntities, capsuleTrace.entity)
+                    self:DoDamage(damage, capsuleTrace.entity, capsuleTrace.endPoint + hitPointOffset, direction, capsuleTrace.surface, false, false)
+                
+                end
+                
+            end    
+                
+            if (capsuleTrace.endPoint - trace.endPoint):GetLength() <= kRailgunBulletExtents.x then
+                break
+            end
+            
+            // use new start point
+            startPoint = Vector(capsuleTrace.endPoint) + direction * kRailgunBulletExtents.x * 3
         
+        end
+        
+        // for tracer
         local effectFrequency = self:GetTracerEffectFrequency()
         local showTracer = ConditionalValue(GetIsVortexed(player), false, math.random() < effectFrequency)
-        
-        self:ApplyBulletGameplayEffects(player, trace.entity, trace.endPoint, direction, kRailgunDamage + (kRailgunChargeDamage * self:GetChargeAmount()), trace.surface, showTracer)
+        self:DoDamage(0, nil, trace.endPoint + hitPointOffset, direction, trace.surface, false, showTracer)
         
         if Client and showTracer then
             TriggerFirstPersonTracer(self, trace.endPoint)
         end
-        
-    end
     
-    return trace
+    end
     
 end
 
@@ -200,17 +232,7 @@ local function Shoot(self, leftSide)
         local spreadDirection = CalculateSpread(shootCoords, kRailgunSpread, NetworkRandom)
         
         local endPoint = startPoint + spreadDirection * kRailgunRange
-        local trace = ExecuteShot(self, startPoint, endPoint, player)
-        
-        // If the shot hit a wall, continue shooting through the wall.
-        if not trace.entity then
-        
-            // Start a little bit on the other side of the wall.
-            local newStartPoint = trace.endPoint + shootCoords.zAxis * 0.5
-            local newEndPoint = newStartPoint + shootCoords.zAxis * 1
-            ExecuteShot(self, newStartPoint, newEndPoint, player)
-            
-        end
+        ExecuteShot(self, startPoint, endPoint, player)
         
         if Client then
             TriggerSteamEffect(self, player)
@@ -262,7 +284,7 @@ function Railgun:OnUpdateRender()
 
     PROFILE("Railgun:OnUpdateRender")
     
-    local chargeAmount = self.railgunAttacking and self:GetChargeAmount() or 0
+    local chargeAmount = self:GetChargeAmount()
     local parent = self:GetParent()
     if parent and parent:GetIsLocalPlayer() then
     
@@ -330,7 +352,7 @@ end
 function Railgun:UpdateViewModelPoseParameters(viewModel)
 
     local chargeParam = "charge_" .. (self:GetIsLeftSlot() and "l" or "r")
-    local chargeAmount = self.railgunAttacking and self:GetChargeAmount() or 0
+    local chargeAmount = self:GetChargeAmount()
     viewModel:SetPoseParam(chargeParam, chargeAmount)
     
 end
@@ -365,6 +387,48 @@ if Client then
             CreateMuzzleCinematic(self, kMuzzleEffectName, kMuzzleEffectName, kAttachPoints[self:GetExoWeaponSlot()] , parent)
         end
         
+    end
+    
+    function Railgun:OnProcessMove(input)
+    
+        Entity.OnProcessMove(self, input)
+        
+        local player = self:GetParent()
+        
+        if player then
+    
+            // trace and highlight first target
+            local filter = EntityFilterAllButMixin("RailgunTarget")
+            local startPoint = player:GetEyePos()
+            local endPoint = startPoint + player:GetViewCoords().zAxis * kRailgunRange
+            local trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAllButIsa("Tunnel"))
+            local direction = (endPoint - startPoint):GetUnit()
+            
+            self.railgunTargetId = nil
+            
+            if trace.fraction < 1 then
+
+                for i = 1, 20 do
+                
+                    local capsuleTrace = Shared.TraceBox(kRailgunBulletExtents, startPoint, trace.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, filter)
+                    if capsuleTrace.entity then
+                    
+                        capsuleTrace.entity:SetRailgunTarget()
+                        self.railgunTargetId = capsuleTrace.entity:GetId()
+                        break
+                        
+                    end    
+                
+                end
+            
+            end
+        
+        end
+    
+    end
+    
+    function Railgun:GetTargetId()
+        return self.railgunTargetId
     end
     
 end

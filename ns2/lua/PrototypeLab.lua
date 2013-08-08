@@ -40,7 +40,7 @@ class 'PrototypeLab' (ScriptActor)
 
 PrototypeLab.kMapName = "prototypelab"
 
-PrototypeLab.kThinkTime = .3
+local kUpdateLoginTime = 0.3
 // Players can use menu and be supplied by PrototypeLab inside this range
 PrototypeLab.kResupplyUseRange = 2.5
 
@@ -145,7 +145,7 @@ function PrototypeLab:OnInitialized()
     if Server then
     
         self.loggedInArray = {false, false, false, false}
-        self:SetNextThink(PrototypeLab.kThinkTime)
+        self:AddTimedCallback(PrototypeLab.UpdateLoggedIn, kUpdateLoginTime)
         
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
@@ -162,13 +162,7 @@ function PrototypeLab:OnInitialized()
 end
 
 function PrototypeLab:GetTechButtons(techId)
-
-    if kRailgunEnabled then
-        return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.ClawRailgunTech }
-    else
-        return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech }
-    end
-    
+    return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.ClawRailgunTech }
 end
 
 function PrototypeLab:GetRequiresPower()
@@ -245,24 +239,12 @@ function PrototypeLab:OnUpdate(deltaTime)
 end
 
 function PrototypeLab:GetItemList()
-
-    if kRailgunEnabled then
-        return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.ClawRailgunExosuit }
-    else
-        return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit }
-    end
-    
+    return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.ClawRailgunExosuit }
 end
 
 // { { TechName, UpgradeList, Max number of upgrades, upgrades mutual exlusive } }
 function PrototypeLab:GetUpgradeList()
-
-    if kRailgunEnabled then
-        return { { kTechId.Exosuit, { kTechId.Minigun, kTechId.Railgun }, 2, false } }
-    else
-        return { { kTechId.Exosuit, { kTechId.Minigun }, 2, false } }
-    end
-    
+    return { { kTechId.Exosuit, { kTechId.Minigun, kTechId.Railgun }, 2, false } }
 end
 
 function PrototypeLab:GetReceivesStructuralDamage()

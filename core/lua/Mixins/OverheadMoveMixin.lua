@@ -12,12 +12,15 @@
 Script.Load("lua/FunctionContracts.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 
+local kZoomVelocity = 60
+local kMaxZoomHeight = 50
 OverheadMoveMixin = CreateMixin( OverheadMoveMixin )
 OverheadMoveMixin.type = "OverheadMove"
 
 OverheadMoveMixin.networkVars =
 {
-    overheadMoveEnabled = "private boolean"
+    overheadMoveEnabled = "private boolean",
+    --overheadModeHeight = "private float (0 to " .. kMaxZoomHeight .. " by 0.01)"
 }
 
 OverheadMoveMixin.expectedMixins =
@@ -39,6 +42,7 @@ OverheadMoveMixin.defaultConstants =
 
 function OverheadMoveMixin:__initmixin()
     self.overheadMoveEnabled = true
+    --self.overheadModeHeight = self:GetMixinConstant("kDefaultHeight")
 end
 
 function OverheadMoveMixin:SetOverheadMoveEnabled(enabled)
@@ -66,6 +70,21 @@ local function GetOverheadMove(self, input)
     end
     
     return move
+    
+end
+
+local function UpdateHeight(self, input)
+
+    local velocity = 0
+    if bit.band(input.commands, Move.NextWeapon) ~= 0 then
+        velocity = -kZoomVelocity
+    end
+    
+    if bit.band(input.commands, Move.PrevWeapon) ~= 0 then
+        velocity = kZoomVelocity
+    end
+    
+    --self.overheadModeHeight = Clamp(self.overheadModeHeight + velocity * input.time, 0, kMaxZoomHeight)
     
 end
 
@@ -105,6 +124,7 @@ function OverheadMoveMixin:UpdateMove(input)
     end
     
     local move = GetOverheadMove(self, input)
+    --UpdateHeight(self, input)
     local position = Vector()
     
     local angles = self:GetViewAngles()
@@ -124,13 +144,17 @@ end
 function OverheadMoveMixin:ConstrainToOverheadPosition(position)
     
     local heightmap = GetHeightmap()
+    // Remove this next line when enabling zoom mode.
     local height = self:GetMixinConstant("kDefaultHeight")
     
     assert(heightmap ~= nil)
     
     position.x = heightmap:ClampXToMapBounds(position.x)
     position.z = heightmap:ClampZToMapBounds(position.z)
+    // Remove this next line when enabling zoom mode.
     position.y = height + heightmap:GetElevation(position.x, position.z)
+    --local elevation = heightmap:GetElevation(position.x, position.z)
+    --position.y = self.overheadModeHeight + elevation
     
     return position
     

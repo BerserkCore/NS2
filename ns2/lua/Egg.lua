@@ -97,8 +97,8 @@ function Egg:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, PointGiverMixin)
     InitMixin(self, SelectableMixin)
-    InitMixin(self, CloakableMixin)
     InitMixin(self, EntityChangeMixin)
+    InitMixin(self, CloakableMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, DetectableMixin)
     InitMixin(self, ResearchMixin)
@@ -222,9 +222,23 @@ function Egg:OnResearchComplete(techId)
     
 end
 
-// Takes the queued player from this Egg and placed them back in the
-// respawn queue to be spawned elsewhere.
-function Egg:RequeuePlayer()
+function Egg:SetHive(hive)
+    self.hiveId = hive:GetId()
+end
+
+function Egg:GetHive()
+    return Shared.GetEntity(self.hiveId)
+end
+
+function Egg:GetReceivesStructuralDamage()
+    return true
+end
+
+/** 
+ * Takes the queued player from this Egg and placed them back in the
+ * respawn queue to be spawned elsewhere.
+ */
+local function RequeuePlayer(self)
 
     if self.queuedPlayerId then
     
@@ -239,6 +253,7 @@ function Egg:RequeuePlayer()
             end
             
             player:SetEggId(Entity.invalidId)
+            player:SetIsRespawning(false)
             team:PutPlayerInRespawnQueue(player)
             
         end
@@ -247,27 +262,15 @@ function Egg:RequeuePlayer()
     
     // Don't spawn player
     self:SetEggFree()
-
-end
-
-function Egg:SetHive(hive)
-    self.hiveId = hive:GetId()
-end
-
-function Egg:GetHive()
-    return Shared.GetEntity(self.hiveId)
-end
-
-function Egg:GetReceivesStructuralDamage()
-    return true
+    
 end
 
 if Server then
 
     function Egg:OnKill(attacker, doer, point, direction)
-
-        self:RequeuePlayer()
-        self:TriggerEffects("egg_death") 
+    
+        RequeuePlayer(self)
+        self:TriggerEffects("egg_death")
         DestroyEntity(self)
         
     end
@@ -415,11 +418,12 @@ function Egg:SetQueuedPlayerId(playerId)
     assert(playerToSpawn:isa("AlienSpectator"))
     
     playerToSpawn:SetEggId(self:GetId())
+    playerToSpawn:SetIsRespawning(true)
     
     if Server then
                 
         if playerToSpawn.SetSpectatorMode then
-            playerToSpawn:SetSpectatorMode(Spectator.kSpectatorMode.Following)
+            playerToSpawn:SetSpectatorMode(kSpectatorMode.Following)
         end
         
         playerToSpawn:SetFollowTarget(self)
@@ -502,7 +506,7 @@ if Server then
         local team = self:GetTeam()
         
         // Just in case there is a player waiting to spawn in this egg.
-        self:RequeuePlayer()
+        RequeuePlayer(self)
         
         ScriptActor.OnDestroy(self)
         
@@ -527,7 +531,7 @@ if Server then
     function Egg:OnEntityChange(entityId, newEntityId)
     
         if self.queuedPlayerId and self.queuedPlayerId == entityId then
-            self:RequeuePlayer()
+            RequeuePlayer(self)
         end
         
     end

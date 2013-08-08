@@ -22,6 +22,9 @@ Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
+Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/BabblerClingMixin.lua")
+Script.Load("lua/RailgunTargetMixin.lua")
 
 class 'Fade' (Alien)
 
@@ -93,6 +96,8 @@ AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
+AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(BabblerClingMixin, networkVars)
 
 function Fade:OnCreate()
 
@@ -103,6 +108,12 @@ function Fade:OnCreate()
     Alien.OnCreate(self)
     
     InitMixin(self, DissolveMixin)
+    InitMixin(self, TunnelUserMixin)
+    InitMixin(self, BabblerClingMixin)
+    
+    if Client then
+        InitMixin(self, RailgunTargetMixin)
+    end
     
     self.shadowStepDirection = Vector()
     

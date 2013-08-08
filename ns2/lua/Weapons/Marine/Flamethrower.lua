@@ -341,23 +341,6 @@ local function ShootFlame(self, player)
         normalCoords.origin = trace.endPoint
         range = range - 3
         
-        /*
-        if GetIsPointOnInfestation(trace.endPoint) then
-        
-            local nearbyCysts = GetEntitiesForTeamWithinRange("Cyst", GetEnemyTeamNumber(self:GetTeamNumber()), trace.endPoint, 9)
-            if table.count(nearbyCysts) ~= 0 then
-            
-                self:DoDamage(kFlamethrowerDamage, nearbyCysts[1], nearbyCysts[1]:GetOrigin(), nil)
-                
-                if HasMixin(nearbyCysts[1], "Fire") then
-                    nearbyCysts[1]:SetOnFire(player, self)
-                end
-                
-            end
-            
-        end
-        */
-        
     end
     
     ApplyConeDamage(self, player)
@@ -557,7 +540,7 @@ if Client then
             trailLengthMod = -1
         
             // set an attach function which returns the player view coords if we are the local player 
-            self.trailCinematic:AttachToFunc(self, TRAIL_ALIGN_Z, Vector(-0.09, -0.08, 0.3),
+            self.trailCinematic:AttachToFunc(self, TRAIL_ALIGN_Z, Vector(-0.09, -0.08, 0.5),
                 function (attachedEntity, deltaTime)
                 
                     local player = Client.GetLocalPlayer()

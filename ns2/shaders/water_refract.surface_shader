@@ -9,6 +9,13 @@
 		<input name="speed2"             type="float">0.1</input>
 	</inputs>
 	
+	<params>
+		<param name="vsNormal">true</param>
+		<param name="vsTangent">true</param>
+		<param name="vsBinormal">true</param>
+	</params>
+		
+	
 	<code>
 	<![CDATA[
 		float3 DecodeNormal(const float4 texNormal)
@@ -22,10 +29,14 @@
 			float2 offset = float2(time, 0);
 			material.transmissionColor = transmissionColor;
 			
-			float3 normal = scale1 * DecodeNormal( tex2D(normalMap, input.texCoord * 2 + offset * speed1) ) + 
-				            scale2 * DecodeNormal( tex2D(normalMap, input.texCoord + offset.yx * speed2) );
+			float3 tsNormal = scale1 * DecodeNormal( tex2D(normalMap, input.texCoord * 2 + offset * speed1) ) + 
+				              scale2 * DecodeNormal( tex2D(normalMap, input.texCoord + offset.yx * speed2) );
 							
-			material.ssDistortion = normal.xy;
+			float2 vsNormal;
+			vsNormal.x = tsNormal.x * input.vsTangent;
+			vsNormal.y = tsNormal.y * input.vsBinormal;							
+							
+			material.ssDistortion = vsNormal.xy;
 		}
 	]]>		
 	</code>

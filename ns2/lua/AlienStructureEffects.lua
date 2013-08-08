@@ -74,6 +74,7 @@ kAlienStructureEffects =
             {cinematic = "cinematics/alien/babbler/death.cinematic", classname = "Babbler", done = true},
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "BabblerEgg", done = true},
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Cyst", done = true},
+            {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "TunnelEntrance", done = true},
             
             {cinematic = "cinematics/alien/infestationspike/death.cinematic", classname = "BoneWall", done = true},
         },
@@ -88,6 +89,7 @@ kAlienStructureEffects =
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Structure", isalien = true, done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Clog", done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Cyst", done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_small", classname = "TunnelEntrance", done = true},
             
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Veil", done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Shell", done = true},

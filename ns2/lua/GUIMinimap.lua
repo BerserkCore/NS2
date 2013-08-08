@@ -24,10 +24,10 @@ local kOverviewColor = Color(1, 1, 1, 0.85)
 // colors are defined in the dds
 local kTeamColors = { }
 kTeamColors[kMinimapBlipTeam.Friendly] = Color(1, 1, 1, 1)
-kTeamColors[kMinimapBlipTeam.Enemy] = Color(1, 1, 1, 1)
+kTeamColors[kMinimapBlipTeam.Enemy] = Color(1, 0, 0, 1)
 kTeamColors[kMinimapBlipTeam.Neutral] = Color(1, 1, 1, 1)
-kTeamColors[kMinimapBlipTeam.Alien] = Color(1, 1, 1, 1)
-kTeamColors[kMinimapBlipTeam.Marine] = Color(1, 1, 1, 1)
+kTeamColors[kMinimapBlipTeam.Alien] = Color(1, 138/255, 0, 1)
+kTeamColors[kMinimapBlipTeam.Marine] = Color(0, 216/255, 1, 1)
 
 local kPowerNodeColor = Color(1, 1, 0.7, 1)
 local kDestroyedPowerNodeColor = Color(1, 0, 0, 1)
@@ -85,10 +85,7 @@ local kAttackBlipFadeOutTime = 1
 local kLocationFontSize = 8
 local kLocationFontName = "fonts/AgencyFB_smaller_bordered.fnt"
 
-local kPlayerFOVColor = Color(1, 1, 1, 1)
-
 local kPlayerIconSize = Vector(kBlipSize, kBlipSize, 0)
-local kPlayerFOVIconSize = Vector(kBlipSize * 2, kBlipSize, 0)
 
 local kBlipColorType = enum( { 'Team', 'Infestation', 'InfestationDying', 'Waypoint', 'PowerPoint', 'DestroyedPowerPoint', 'Scan' } )
 local kBlipSizeType = enum( { 'Normal', 'TechPoint', 'Infestation', 'Scan', 'Egg' } )
@@ -238,17 +235,6 @@ function GUIMinimap:InitializePlayerIcon()
     self.playerShrinkingArrow:SetLayer(kPlayerIconLayer)
     self.playerIcon:AddChild(self.playerShrinkingArrow)
     
-    self.playerIconFov = GUIManager:CreateGraphicItem()
-    self.playerIconFov:SetSize(kPlayerFOVIconSize)
-    self.playerIconFov:SetTexture(self.iconFileName)
-    local iconCol, iconRow = GetSpriteGridByClass('PlayerFOV', kClassToGrid)
-    local gridPosX, gridPosY, gridWidth, gridHeight = GUIGetSprite(iconCol, iconRow, kIconWidth, kIconHeight)
-    self.playerIconFov:SetTexturePixelCoordinates(gridPosX - kIconWidth, gridPosY, gridWidth, gridHeight)
-    self.playerIconFov:SetIsVisible(true)
-    self.playerIconFov:SetLayer(kBackgroundBlipsLayer)
-    self.playerIconFov:SetColor(kPlayerFOVColor)
-    self.playerIcon:AddChild(self.playerIconFov)
-    
 end
 
 local function SetupLocationTextItem(item)
@@ -366,7 +352,6 @@ local function UpdatePlayerIcon(self)
     if PlayerUI_IsOverhead() and not PlayerUI_IsCameraAnimated() then -- Handle overhead viewplane points
 
         self.playerIcon:SetIsVisible(false)
-        self.playerIconFov:SetIsVisible(false)
         self.cameraLines:SetIsVisible(true)
         
         local topLeftPoint, topRightPoint, bottomLeftPoint, bottomRightPoint = OverheadUI_ViewFarPlanePoints()
@@ -391,7 +376,6 @@ local function UpdatePlayerIcon(self)
         // No icons for ready room players.
         self.cameraLines:SetIsVisible(false)
         self.playerIcon:SetIsVisible(false)
-        self.playerIconFov:SetIsVisible(false)
 
     else
     
@@ -430,11 +414,8 @@ local function UpdatePlayerIcon(self)
         local shrinkerColor = Color(playerIconColor.r, playerIconColor.g, playerIconColor.b, 0.35)
         self.playerShrinkingArrow:SetColor(shrinkerColor)
 
-        self.playerIcon:SetSize(playerIconSize)
-        
+        self.playerIcon:SetSize(playerIconSize)        
         self.playerIcon:SetColor(playerIconColor)
-        // Disabled until rotation is correct.
-        self.playerIconFov:SetIsVisible(true)
 
         // move the background instead of the playericon in zoomed mode
         if self.moveBackgroundMode then
@@ -451,10 +432,6 @@ local function UpdatePlayerIcon(self)
         
         self.playerIcon:SetRotation(rotation)
         self.playerShrinkingArrow:SetRotation(rotation)
-        self.playerIconFov:SetRotation(rotation)
-        
-        self.playerIconFov:SetAnchor(GUIItem.Left, GUIItem.Top)
-        self.playerIconFov:SetPosition(Vector(kBlipSize * -0.5, 0, 0))
 
         local playerClass = PlayerUI_GetPlayerClass()
         if self.playerClass ~= playerClass then
@@ -469,23 +446,22 @@ local function UpdatePlayerIcon(self)
     
 end
 
-local function GetBlinkAlpha(time, color)
+local function PulseRed()
 
-    local mod = math.sin(((time % kBlinkInterval) / kBlinkInterval) * math.pi)
-    return Color(color.r, color.g, color.b, mod)
+    local anim = (math.cos(Shared.GetTime() * 10) + 1) * 0.5
+    local color = Color()
     
-end
-
-local blinkInterval = .5
-local function BlinkDark(time, color, teamType)
-
-    local anim = (time % (blinkInterval * 2)) / (blinkInterval * 2)
-    return ConditionalValue(anim < .5, Color(.3, .3, .3, 1), color)
+    color.r = 1
+    color.g = anim
+    color.b = anim
+    
+    return color
 
 end
 
-local blipPos = Vector(0, 0, 0) // Simple optimization to prevent unnecessary Vector creation inside the function.
-local blipRotation = Vector(0, 0, 0) // Simple optimization to prevent unnecessary Vector creation inside the function.
+// Simple optimization to prevent unnecessary Vector creation inside the function.
+local blipPos = Vector(0, 0, 0)
+local blipRotation = Vector(0, 0, 0)
 local function UpdateStaticBlips(self, deltaTime)
 
     PROFILE("GUIMinimap:UpdateStaticBlips")
@@ -494,14 +470,15 @@ local function UpdateStaticBlips(self, deltaTime)
     local blipItemCount = 8
     local numBlips = table.count(staticBlips) / blipItemCount
     
-    // Hide unused static blip items.
     local staticBlipItems = self.staticBlips
+    // Hide unused static blip items.
     for i = numBlips + 1, self.inUseStaticBlipCount do
         staticBlipItems[i]:SetIsVisible(false)
     end
-
+    
     // Create all of the blips we'll need.
     for i = #staticBlipItems, numBlips do
+    
         local addedBlip = GUIManager:CreateGraphicItem()
         addedBlip:SetAnchor(GUIItem.Center, GUIItem.Middle)
         addedBlip:SetLayer(kStaticBlipsLayer)
@@ -509,6 +486,7 @@ local function UpdateStaticBlips(self, deltaTime)
         addedBlip:SetTexture(self.iconFileName)
         self.minimap:AddChild(addedBlip)
         table.insert(staticBlipItems, addedBlip)
+        
     end
     
     // Make sure all blips we'll need are visible.
@@ -518,18 +496,34 @@ local function UpdateStaticBlips(self, deltaTime)
     
     // Update scan blip size and color.
     local scanAnimFraction = (Shared.GetTime() % kScanAnimDuration) / kScanAnimDuration
-    self.scanColor.a = 1 - scanAnimFraction // do not change table reference
+    // do not change table reference
+    self.scanColor.a = 1 - scanAnimFraction
     local blipSize = self.blipSizeTable[kBlipSizeType.Normal]
     local blipScale = (0.5 + scanAnimFraction) * 2
-    self.scanSize.x = blipSize.x * blipScale // do not change table reference
-    self.scanSize.y = blipSize.y * blipScale // do not change table reference
+    // do not change table reference
+    self.scanSize.x = blipSize.x * blipScale
+    // do not change table reference
+    self.scanSize.y = blipSize.y * blipScale
     
     // spectating?
     local spectating = Client.GetLocalPlayer():GetTeamNumber() == kSpectatorIndex
+    local playerTeam = Client.GetLocalPlayer():GetTeamNumber()
+    
+    if playerTeam == kMarineTeamType then
+        playerTeam = kMinimapBlipTeam.Marine
+    elseif playerTeam == kAlienTeamType then
+        playerTeam = kMinimapBlipTeam.Alien
+    end
     
     // Update each blip.
     local blipInfoTable, blipSizeTable, blipColorTable = self.blipInfoTable, self.blipSizeTable, self.blipColorTable
     local currentIndex = 1
+    local GUIItemSetLayer = GUIItem.SetLayer
+    local GUIItemSetTexturePixelCoordinates = GUIItem.SetTexturePixelCoordinates
+    local GUIItemSetSize = GUIItem.SetSize
+    local GUIItemSetPosition = GUIItem.SetPosition
+    local GUIItemSetRotation = GUIItem.SetRotation
+    local GUIItemSetColor = GUIItem.SetColor
     for i = 1, numBlips do
     
         local xPos, yPos = PlotToMap(self, staticBlips[currentIndex], staticBlips[currentIndex + 1])
@@ -545,22 +539,27 @@ local function UpdateStaticBlips(self, deltaTime)
         blipPos.x = xPos - blipSize.x * 0.5
         blipPos.y = yPos - blipSize.y * 0.5
         blipRotation.z = rotation
-
-        blip:SetLayer(blipInfo[4])
-        blip:SetTexturePixelCoordinates(blipInfo[1]())
-        blip:SetSize(blipSize)
-        blip:SetPosition(blipPos)
-        blip:SetRotation(blipRotation)
+        
+        GUIItemSetLayer(blip, blipInfo[4])
+        GUIItemSetTexturePixelCoordinates(blip, blipInfo[1]())
+        GUIItemSetSize(blip, blipSize)
+        GUIItemSetPosition(blip, blipPos)
+        GUIItemSetRotation(blip, blipRotation)
         local blipColor = blipColorTable[blipTeam][blipInfo[2]]
-        blip:SetColor(blipColor)
         
         if underAttack then
-            if spectating or blipTeam == kMinimapBlipTeam.Friendly then
-                blip:SetColor(BlinkDark(Shared.GetTime(), blipColor))
+        
+            // Copy color, dont modify constant.
+            if spectating or blipTeam == playerTeam then
+                blipColor = PulseRed()
             end
+            
         end
         
+        GUIItemSetColor(blip, blipColor)
+        
         currentIndex = currentIndex + blipItemCount
+        
     end
     self.inUseStaticBlipCount = numBlips
     
@@ -833,14 +832,21 @@ end
 function GUIMinimap:ShowMap(showMap)
 
     if self.background:GetIsVisible() ~= showMap then
-        
+    
         self.background:SetIsVisible(showMap)
         if showMap then
+        
             self.timeMapOpened = Shared.GetTime()
             self:Update(0)
+            
         end
+        
     end
     
+end
+
+function GUIMinimap:OnLocalPlayerChanged(newPlayer)
+    self:ShowMap(false)
 end
 
 function GUIMinimap:SendKeyEvent(key, down)
@@ -991,7 +997,6 @@ function GUIMinimap:SetIconFileName(fileName)
     self.iconFileName = iconFileName
     
     self.playerIcon:SetTexture(iconFileName)
-    self.playerIconFov:SetTexture(iconFileName)
     for _, blip in ipairs(self.staticBlips) do
         blip:SetTexture(iconFileName)
     end

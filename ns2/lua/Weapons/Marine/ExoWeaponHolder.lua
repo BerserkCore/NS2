@@ -139,6 +139,17 @@ function ExoWeaponHolder:OnSecondaryAttack(player)
     
 end
 
+function ExoWeaponHolder:GetInventoryWeight(player)
+
+    local leftWeapon = Shared.GetEntity(self.leftWeaponId)
+    local rightWeapon = Shared.GetEntity(self.rightWeaponId)
+    local leftWeaponWeight = leftWeapon.GetWeight and leftWeapon:GetWeight() or 0
+    local rightWeaponWeight = rightWeapon.GetWeight and rightWeapon:GetWeight() or 0    
+
+    return leftWeaponWeight + rightWeaponWeight
+
+end
+
 function ExoWeaponHolder:OnSecondaryAttackEnd(player)
 
     Weapon.OnSecondaryAttackEnd(self, player)
@@ -191,26 +202,36 @@ function ExoWeaponHolder:OnUpdateRender()
 
     PROFILE("ExoWeaponHolder:OnUpdateRender")
     
-    if self.screenDissolveStart then
+    if not Client.GetIsControllingPlayer() then
+        SetViewModelParameter(self, "dissolveAmount", 1)
+    else
     
-        local dissolveAmount = math.min(1, (Shared.GetTime() - self.screenDissolveStart) / kScreenDissolveSpeed)
-        SetViewModelParameter(self, "dissolveAmount", dissolveAmount)
+        if self.screenDissolveStart then
         
-        if dissolveAmount == 1 then
-            self.screenDissolveStart = false
+            local dissolveAmount = math.min(1, (Shared.GetTime() - self.screenDissolveStart) / kScreenDissolveSpeed)
+            SetViewModelParameter(self, "dissolveAmount", dissolveAmount)
+            
+            if dissolveAmount == 1 then
+                self.screenDissolveStart = false
+            end
+            
+        else
+            SetViewModelParameter(self, "dissolveAmount", 1)
         end
         
-    end
-    
-    if self.closeStart then
-    
-        local closeAmount = math.min(1, (Shared.GetTime() - self.closeStart) / kCloseSpeed)
-        SetViewModelParameter(self, "closeAmount", closeAmount)
+        if self.closeStart then
         
-        if closeAmount >= 1 then
-            self.closeStart = nil
+            local closeAmount = math.min(1, (Shared.GetTime() - self.closeStart) / kCloseSpeed)
+            SetViewModelParameter(self, "closeAmount", closeAmount)
+            
+            if closeAmount >= 1 then
+                self.closeStart = nil
+            end
+            
+        else
+            SetViewModelParameter(self, "closeAmount", 1)
         end
-        
+    
     end
     
 end
@@ -221,6 +242,14 @@ local function TriggerScreenDissolveEffect(self)
         self.screenDissolveStart = Shared.GetTime()
     end
     
+end
+
+function ExoWeaponHolder:GetLeftSlotWeapon()
+    return Shared.GetEntity(self.leftWeaponId)
+end
+
+function ExoWeaponHolder:GetRightSlotWeapon()
+    return Shared.GetEntity(self.rightWeaponId)
 end
 
 function ExoWeaponHolder:OnTag(tagName)

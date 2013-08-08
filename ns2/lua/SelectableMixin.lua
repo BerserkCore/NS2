@@ -49,51 +49,34 @@ local function UpdateCachedHotGroup(self)
         if not player or not player:isa("Commander") or not player:GetTeamNumber() == self:GetTeamNumber() then
             self.hotGroupNumberClient = nil
         end
-    
+        
     end
     
 end
 
-local function SharedUpdate(self, deltaTime)
+function SelectableMixin:OnSighted(sighted)
 
-    local selectedByTeamOne = bit.band(self.selectionMask, 1) ~= 0
-    local selectedByTeamTwo = bit.band(self.selectionMask, 2) ~= 0
+    if not sighted then
     
-    local clientTeamNumber = nil
-    if Client and Client.GetLocalPlayer() then
-        clientTeamNumber = Client.GetLocalPlayer():GetTeamNumber()
+        local selectedByTeamOne = bit.band(self.selectionMask, 1) ~= 0
+        local selectedByTeamTwo = bit.band(self.selectionMask, 2) ~= 0
+        
+        if self:GetTeamNumber() == 2 and selectedByTeamOne then
+        
+            if Server then
+                self:SetSelected(1, false)
+            end
+            
+        elseif self:GetTeamNumber() == 1 and selectedByTeamTwo then
+        
+            if Server then
+                self:SetSelected(2, false)
+            end
+            
+        end
+        
     end
     
-    if self:GetTeamNumber() == 2 and selectedByTeamOne and not self:GetIsSighted() then
-    
-        if clientTeamNumber == 1 then
-            self:ClearClientSelectionMask()
-        end
-        
-        if Server then
-            self:SetSelected(1, false)
-        end
-        
-    elseif self:GetTeamNumber() == 1 and selectedByTeamTwo and not self:GetIsSighted() then
-    
-        if clientTeamNumber == 2 then
-            self:ClearClientSelectionMask()
-        end    
-        
-        if Server then
-            self:SetSelected(2, false)
-        end
-    
-    end
-
-end
-
-function SelectableMixin:OnUpdate(deltaTime)
-    SharedUpdate(self, deltaTime)
-end
-
-function SelectableMixin:OnProcessMove(input)
-    SharedUpdate(self, input.time)
 end
 
 function SelectableMixin:ClearClientSelectionMask()

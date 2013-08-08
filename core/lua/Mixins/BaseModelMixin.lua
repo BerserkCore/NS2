@@ -34,6 +34,7 @@ Script.Load("lua/Utility.lua")
 local Shared_GetModel                           = Shared.GetModel
 local Shared_GetAnimationGraph                  = Shared.GetAnimationGraph
 local Shared_GetTime                            = Shared.GetTime
+local Shared_GetPreviousTime                    = Shared.GetPreviousTime
 
 local Model_GetPoseParamIndex                   = Model.GetPoseParamIndex
 local PoseParams_Set                            = PoseParams.Set
@@ -43,6 +44,9 @@ local AnimationGraphState_PrepareForGraph       = AnimationGraphState.PrepareFor
 local AnimationGraphState_SetCurrentAnimation   = AnimationGraphState.SetCurrentAnimation
 local AnimationGraphState_SetCurrentNode        = AnimationGraphState.SetCurrentNode
 local AnimationGraphState_SetTime               = AnimationGraphState.SetTime
+local AnimationGraphState_GetBoneCoords         = AnimationGraphState.GetBoneCoords
+
+local Graph_GetTagName = AnimationGraph.GetTagName
 
 local RenderModel_SetCoords
 local RenderModel_SetBoneCoords
@@ -91,23 +95,6 @@ BaseModelMixin.optionalCallbacks =
 // the sake of reducing the size of the network field.
 BaseModelMixin.kMaxAnimations = 250
 BaseModelMixin.kMaxGraphNodes = 511
-
-/**
- * Returns the index of the named pose parameter on the model. If the
- * entity doesn't have a model set or the pose parameter doesn't exist, the
- * method returns -1.
- */
-local function GetPoseParamIndex(self, name)
-
-    local model = Shared_GetModel(self.modelIndex)
-    
-    if model ~= nil then
-        return Model_GetPoseParamIndex(model, name)
-    else
-        return -1
-    end
-    
-end
 
 local function DestroyRenderModel(self)
 
@@ -178,7 +165,7 @@ end
  * UpdateAnimationState should be called at the end of OnProcessMove on the client and server.
  * If OnProcessMove is not called then OnUpdate on the client and server should do this.
  */
-local function UpdateAnimationState(self, allowedOnClient)
+local function UpdateAnimationState(self, allowedOnClient, transition)
 
     // On the server, we always updates the animation graphs to trigger OnTag events.
     // On the client, fullyUpdated models can skip its animation state because its controlled from the server, except for those that are
@@ -189,8 +176,17 @@ local function UpdateAnimationState(self, allowedOnClient)
     // Ideally this would not be necessary. It would be best if animation tags were processed in all cases but the other
     // animation work would only happen under the other conditions listed here.
     // Predict only runs animation updates for the local players OnProcessMove so it will always trigger
-    local allowed = Predict or Server or (Client and (self.limitedModel or GetEntityIsRelatedTo(Client.GetLocalPlayer(), self)
-                    or (self.GetClientSideAnimationEnabled and self:GetClientSideAnimationEnabled())))
+    local allowed = Predict
+        or Server
+        or
+        (
+            Client and
+            (
+                self.limitedModel
+                or GetEntityIsRelatedTo(Client.GetLocalPlayer(), self)
+                or (self.GetClientSideAnimationEnabled and self:GetClientSideAnimationEnabled())
+            )
+        )
     
     local model = Shared_GetModel(self.modelIndex)
     local graph = Shared_GetAnimationGraph(self.animationGraphIndex)
@@ -199,7 +195,7 @@ local function UpdateAnimationState(self, allowedOnClient)
 
         PROFILE("BaseModelMixin:UpdateAnimationState")
     
-        local prevTime = Shared.GetPreviousTime()
+        local prevTime = Shared_GetPreviousTime()
         local time = Shared_GetTime()
         
         local state = self.animationState
@@ -209,35 +205,38 @@ local function UpdateAnimationState(self, allowedOnClient)
         table.clear(self.passedTags)
         state:Update(graph, model, self.poseParams, prevTime, time, self.passedTags)
         
-        if self.OnTag then
+        if transition then
         
-            for i, tagIndex in ipairs(self.passedTags) do
-                self:OnTag(graph:GetTagName(model, tagIndex))
-            end
-            
-        end
-        
-        // Tags may have caused state to change that influences the animation input.
-        if table.count(self.passedTags) > 0 then
-        
-            UpdateAnimationInput(self, state, graph)
-            
-        end
-        
-        if allowedOnClient or Server then
-        
-            // Transition is called after tag callbacks because the tags can cause state
-            // to change within the animation graph.
-            table.clear(self.passedTags)
-            state:Transition(graph, model, self.passedTags)
-            
-            if self.OnTag then
-  
-                for i, tagIndex in ipairs(self.passedTags) do
-                    self:OnTag(graph:GetTagName(model, tagIndex))
+            local self_OnTag = self.OnTag
+            if self_OnTag then
+                for i = 1,#self.passedTags do
+                    local tagIndex = self.passedTags[i]
+                    self_OnTag(self, Graph_GetTagName(graph, model, tagIndex))
                 end
             end
             
+            // Tags may have caused state to change that influences the animation input.
+            if table.count(self.passedTags) > 0 then
+                UpdateAnimationInput(self, state, graph)
+            end
+            
+            if allowedOnClient or Server then
+            
+                // Transition is called after tag callbacks because the tags can cause state
+                // to change within the animation graph.
+                table.clear(self.passedTags)
+                state:Transition(graph, model, self.passedTags)
+                
+                if self_OnTag then
+      
+                    for i = 1,#self.passedTags do
+                        local tagIndex = self.passedTags[i]
+                        self_OnTag(self, Graph_GetTagName(graph, model, tagIndex))
+                    end
+                end
+                
+            end
+        
         end
         
         CaptureAnimationState(self)
@@ -333,14 +332,15 @@ local function UpdateBoneCoords(self, forceUpdate)
     UpdatePoseParameters(self, forceUpdate)
     
     local model = Shared_GetModel(self.modelIndex)
+    local physicsType = self.physicsType
     
-    if model ~= nil and self.physicsType ~= _dynamicPhysicsType then
-        self.animationState:GetBoneCoords(model, self.poseParams, self.boneCoords)
+    if model ~= nil and physicsType ~= _dynamicPhysicsType then
+        AnimationGraphState_GetBoneCoords(self.animationState, model, self.poseParams, self.boneCoords)
     end
     
     local modelCoords = nil
     local physicsModel = self.physicsModel
-    if self.physicsType == PhysicsType.Dynamic and physicsModel then
+    if physicsModel and physicsType == PhysicsType.Dynamic then
         modelCoords = physicsModel:GetCoords()
     else
         modelCoords = self:GetCoords()
@@ -678,7 +678,7 @@ function BaseModelMixin:OnUpdate(deltaTime)
         self:MarkPhysicsDirty()
     end
 
-    UpdateAnimationState(self, self.fullyUpdated)
+    UpdateAnimationState(self, self.fullyUpdated, true)
 
 end
 
@@ -686,33 +686,16 @@ function BaseModelMixin:OnProcessIntermediate(input)
 
     PROFILE("BaseModelMixin:OnProcessIntermediate")
 
-    // Make the animation smooth in the frames between OnProcessMove for
-    // the local player and children.
-    
-    local model = Shared_GetModel(self.modelIndex)
-    local graph = Shared_GetAnimationGraph(self.animationGraphIndex)
-    
-    if  model ~= nil and graph ~= nil then
-    
-        local prevTime = Shared.GetPreviousTime()
-        local time = Shared_GetTime()
-        local state = self.animationState
-        
-        UpdateAnimationInput(self, state, graph)
-        state:Update(graph, model, self.poseParams, prevTime, time, {})
-        CaptureAnimationState(self)
-        
-    end
- 
+    UpdateAnimationState(self, true, false)
     self:MarkPhysicsDirty()
+    
 end
 
-function BaseModelMixin:ProcessMoveOnModel(input)
+function BaseModelMixin:ProcessMoveOnModel()
 
     PROFILE("BaseModelMixin:ProcessMoveOnModel")
     
-    UpdateAnimationState(self, true)
-    
+    UpdateAnimationState(self, true, true)
     self:MarkPhysicsDirty()
     
 end
@@ -844,7 +827,15 @@ end
  * Returns the value of the pose parameter name passed in.
  */
 function BaseModelMixin:GetPoseParam(name)
-    return self.poseParams:Get(GetPoseParamIndex(self, name))
+
+    local model = Shared_GetModel(self.modelIndex)
+    local paramIndex = -1
+    if model ~= nil then
+        paramIndex = Model_GetPoseParamIndex(model, name)
+    end
+    // Note, API will properly handle -1 paramIndex value
+    return self.poseParams:Get(paramIndex)
+    
 end
 
 /**
@@ -856,9 +847,10 @@ end
  */
 function BaseModelMixin:SetPoseParam(name, value)
     
-    local paramIndex = GetPoseParamIndex(self, name)
-
-    if paramIndex ~= -1 then
+    local model = Shared_GetModel(self.modelIndex)
+    if model ~= nil then
+        local paramIndex = Model_GetPoseParamIndex(model, name)
+        // Note, API will properly handle -1 paramIndex value
         PoseParams_Set(self.poseParams, paramIndex, value)
     end
     

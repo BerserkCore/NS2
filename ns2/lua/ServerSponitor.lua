@@ -12,6 +12,12 @@ local gDebugAlwaysPost = false
 
 local kPlayerCountCheckPeriod = 60.0    // Update player count stats every N seconds
 
+local kPerfCheckPeriod = 1.0    // Every 1 second, we MIGHT report performance if the throttle-check passes
+
+//----------------------------------------
+//  Utility functions
+//----------------------------------------
+
 local function CollectActiveModIds()
 
     modIds = {}
@@ -71,6 +77,8 @@ function ServerSponitor:Initialize( game )
     self.reportDetails = false
     self.teamStats = {}
     self.sincePlayerCountCheck = 0.0
+    self.serverPerfThrottle = 0.0005
+    self.sincePerfCheck = 0.0
 
 end
 
@@ -85,6 +93,7 @@ local function ResetTeamStats(stats, team)
     stats.avgNumPlayersSum = 0
     stats.avgNumRookiesSum = 0
     stats.numPlayerCountSamples = 0
+    stats.currNumPlayers = 0
 
 end
 
@@ -135,21 +144,43 @@ end
 function ServerSponitor:OnMatchStartResponse(response)
 
     local data, pos, err = json.decode(response)
-
+    
     if err then
-        DebugPrint("Could not parse match start response. Error: "..ToString(err)..". Response: "..response)
+        Shared.Message("Could not parse match start response. Error: " .. ToString(err) .. ". Response: " .. response)
     else
-
-        if data.matchId then
+    
+        if IsNumber(data.matchId) then
             self.matchId = data.matchId
         else
             self.matchId = nil
         end
-
-        if data.reportDetails then
+        
+        if IsBoolean(data.reportDetails) then
             self.reportDetails = data.reportDetails
         else
             self.reportDetails = false
+        end
+
+        if IsNumber(data.serverPerfThrottle) then
+            self.serverPerfThrottle = data.serverPerfThrottle
+            // We don't necessarily expect this, so don't reset to default if it was not provided
+        end
+
+    end
+
+end
+
+function ServerSponitor:OnServerPerfResponse(response)
+
+    local data, pos, err = json.decode(response)
+
+    if err then
+        DebugPrint("Could not parse server perf response. Error: "..ToString(err)..". Response: "..response)
+    else
+
+        if IsNumber(data.serverPerfThrottle) then
+            self.serverPerfThrottle = data.serverPerfThrottle
+            // We don't necessarily expect this, so don't reset to default if it was not provided
         end
 
     end
@@ -174,7 +205,9 @@ function ServerSponitor:OnStartMatch()
     Shared.SendHTTPRequest( kSponitor2Url.."matchStart", "POST", {data=jsonData},
         function(response) self:OnMatchStartResponse(response) end )
 
+    // Reset check timers
     self.sincePlayerCountCheck = kPlayerCountCheckPeriod
+    self.sincePerfCheck = kPerfCheckPeriod
 
 end
 
@@ -294,10 +327,10 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
             {
                 launchId = -1,
                 time = Shared.GetGMTString(false),
-                type = "killpost",
+                type = "server killpost",
                 text = jsonError,
             })
-            Shared.SendHTTPRequest( kSponitor2Url.."kill", "POST", {data=jsonData} )
+            Shared.SendHTTPRequest( kSponitor2Url.."error", "POST", {data=jsonData} )
 
         end
 
@@ -340,9 +373,54 @@ end
 //----------------------------------------
 //  
 //----------------------------------------
+local function UpdatePerformanceReporting(self, dt)
+
+    if self.matchId or gDebugAlwaysPost then
+   
+        self.sincePerfCheck = self.sincePerfCheck + dt
+
+        if self.sincePerfCheck >= kPerfCheckPeriod then
+
+            self.sincePerfCheck = 0.0
+
+            if math.random() < self.serverPerfThrottle then
+
+                local totalNumPlayers = 0
+
+                for teamType, stats in pairs(self.teamStats) do
+                    totalNumPlayers = totalNumPlayers + stats.currNumPlayers
+                end
+
+                local jsonData = json.encode(
+                {
+                    matchId = self.matchId,
+                    time = Shared.GetGMTString(false),
+                    tickRate = Server.GetFrameRate(),
+                    numEntities = Shared.GetEntitiesWithClassname("Entity"):GetSize(),
+                    numPlayers = totalNumPlayers
+                })
+
+                Shared.SendHTTPRequest( kSponitor2Url.."serverPerformance", "POST", {data=jsonData},
+                    function(response) self:OnServerPerfResponse(response) end )
+
+            end
+
+        end
+
+    end
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
 function ServerSponitor:Update(dt)
 
     if self.matchId or gDebugAlwaysPost then
+
+        //----------------------------------------
+        //  Update player count stats
+        //----------------------------------------
 
         self.sincePlayerCountCheck = self.sincePlayerCountCheck + dt
 
@@ -352,6 +430,7 @@ function ServerSponitor:Update(dt)
 
             for teamType, stats in pairs(self.teamStats) do
                 local numPlayers, numRookies = stats.team:GetNumPlayers()   // only call this once - it does some computation
+                stats.currNumPlayers = numPlayers
                 stats.minNumPlayers = math.min( stats.minNumPlayers, numPlayers )
                 stats.maxNumPlayers = math.max( stats.maxNumPlayers, numPlayers )
                 stats.avgNumPlayersSum = stats.avgNumPlayersSum + numPlayers
@@ -359,6 +438,8 @@ function ServerSponitor:Update(dt)
                 stats.numPlayerCountSamples = stats.numPlayerCountSamples + 1
             end
         end
+
+        UpdatePerformanceReporting(self, dt)
 
     end
 

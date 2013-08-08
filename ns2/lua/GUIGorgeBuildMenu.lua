@@ -29,13 +29,14 @@ function GorgeBuild_OnMouseOver()
 end
 
 function GorgeBuild_Close()
+
     local player = Client.GetLocalPlayer()
-    
-    local activeWeapon = player:GetActiveWeapon()
-    
-    if activeWeapon.DestroyBuildMenu then
-        activeWeapon:DestroyBuildMenu()
-    end    
+    local dropStructureAbility = player:GetWeapon(DropStructureAbility.kMapName)
+
+    if dropStructureAbility then
+        dropStructureAbility:DestroyBuildMenu()
+    end
+
 end
 
 function GorgeBuild_SendSelect(index)
@@ -171,6 +172,7 @@ function GUIGorgeBuildMenu:Initialize()
     self.scale = Client.GetScreenHeight() / GUIGorgeBuildMenu.kBaseYResolution
     self.background = self:CreateAnimatedGraphicItem()
     self.background:SetAnchor(GUIItem.Middle, GUIItem.Center)
+    self.background:SetColor(Color(0,0,0,0))
     
     self.buttons = {}
     
@@ -182,6 +184,14 @@ function GUIGorgeBuildMenu:Uninitialize()
     
     GUIAnimatedScript.Uninitialize(self)
 
+end
+
+function GUIGorgeBuildMenu:GetIsVisible()
+    return self.background:GetIsVisible()
+end
+
+function GUIGorgeBuildMenu:SetIsVisible(isVisible)
+    self.background:SetIsVisible(isVisible == true)
 end
 
 function GUIGorgeBuildMenu:_HandleMouseOver(onItem)
@@ -397,43 +407,61 @@ end
 
 function GUIGorgeBuildMenu:OverrideInput(input)
 
-    local closeMenu = false
+    // Assume the user wants to switch the top-level weapons
+    if HasMoveCommand( input.commands, Move.NextWeapon )
+    or HasMoveCommand( input.commands, Move.PrevWeapon ) then
+
+        GorgeBuild_OnClose()
+        GorgeBuild_Close()
+        return input
+
+    end
 
     local weaponSwitchCommands = { Move.Weapon1, Move.Weapon2, Move.Weapon3, Move.Weapon4, Move.Weapon5 }
+
+    local selectPressed = false
+
     for index, weaponSwitchCommand in ipairs(weaponSwitchCommands) do
     
-        if bit.band(input.commands, weaponSwitchCommand) ~= 0 then
+        if HasMoveCommand( input.commands, weaponSwitchCommand ) then
 
             if GorgeBuild_GetIsAbilityAvailable(index) and GorgeBuild_GetCanAffordAbility(self.buttons[index].techId)  then
+
                 GorgeBuild_SendSelect(index)
-                local removeWeaponMask = bit.bxor(0xFFFFFFFF, weaponSwitchCommand)
-                input.commands = bit.band(input.commands, removeWeaponMask)
+                input.commands = RemoveMoveCommand( input.commands, weaponSwitchCommand )
+
             end
             
-            closeMenu = true
-            
+            selectPressed = true
             break
             
         end
         
     end  
     
-    if closeMenu then
-        self:OnClose()
+    if selectPressed then
+
+        GorgeBuild_OnClose()
         GorgeBuild_Close()
+
+    elseif HasMoveCommand( input.commands, Move.SecondaryAttack )
+        or HasMoveCommand( input.commands, Move.PrimaryAttack ) then
+
+        //DebugPrint("before override: %d",input.commands)
+
+        // close menu
+        GorgeBuild_OnClose()
+        GorgeBuild_Close()
+
+        // leave the secondary attack command so the drop-ability can handle it
+        input.commands = AddMoveCommand( input.commands, Move.SecondaryAttack )
+        input.commands = RemoveMoveCommand( input.commands, Move.PrimaryAttack )
+        //DebugPrint("after override: %d",input.commands)
+        //DebugPrint("primary = %d secondary = %d", Move.PrimaryAttack, Move.SecondaryAttack)
+
     end
 
-    // small hack: secondary attack causes switch to previous weapon. since we dont know here which was the previous weapon, we treat primary attack in this frame
-    // as a secondary to trigger the weapon switch
-    
-    if bit.band(input.commands, Move.PrimaryAttack) ~= 0 then
-        input.commands = bit.bor(input.commands, Move.SecondaryAttack)
-    end
-    
-    local removePrimaryAttackMask = bit.bxor(0xFFFFFFFF, Move.PrimaryAttack)
-    input.commands = bit.band(input.commands, removePrimaryAttackMask)
-
-    return input
+    return input, selectPressed
 
 end
 
@@ -441,12 +469,6 @@ function GUIGorgeBuildMenu:_GetIsMouseOver(overItem)
 
     return GUIItemContainsPoint(overItem, Client.GetCursorPosScreen())
     
-end
-
-function GUIGorgeBuildMenu:OnClose()
-
-    GorgeBuild_OnClose()
-
 end
 
 function GUIGorgeBuildMenu:OnAnimationCompleted(animatedItem, animationName, itemHandle)

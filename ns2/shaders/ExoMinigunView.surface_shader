@@ -53,6 +53,7 @@
 			float fresnel = pow(1 - max(-input.vsNormal.z, 0.1), 3);
 			
 			material.emissive = (fresnel*5 + (noise * noise2 *.2) + .1) * tint * mask;
+			material.id = 1;
 			
             
         }
