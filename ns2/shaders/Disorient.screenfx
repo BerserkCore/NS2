@@ -1,0 +1,11 @@
+texture output = render_target(1, 1)
+float   time
+float   amount
+
+pass p1 file "shaders/Disorient.fx" technique "SFXDisorient"
+{
+    baseTexture     = input
+	time			= time
+    amount    		= amount
+    output          = output
+}

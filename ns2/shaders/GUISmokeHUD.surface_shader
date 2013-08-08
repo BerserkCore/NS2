@@ -1,0 +1,47 @@
+<shader>
+
+    <inputs>
+        <input name="baseTexture" type="texture" address="wrap" />
+        <input name="noise" type="texture" address="wrap" />
+		<input name="correctionX" type="float" />
+		<input name="correctionY" type="float" />
+    </inputs>
+    
+    <code>
+    
+        void MaterialShader(bool textured, float2 texCoord, float4 color, inout Material material)
+        {
+			float t = 2.5 * time;
+		    const float4 tint = float4(4.1, 2.2, 1.3, 1.1);
+		const float4 tintoffset = float4(.16, .12, .05, 1);
+
+			const float2 correction = float2(correctionX, correctionY);
+			
+            float2 scrollingTexCoord = texCoord * correction * float2(0.5, 0.5);
+            scrollingTexCoord.x += ((t * 0.003));
+            scrollingTexCoord.y += (t * 0.002);
+            float4 noiseMap = tex2D(noise, scrollingTexCoord);
+
+
+		const float2 correction2 = float2(correctionX + 0.6, correctionY +0.5);
+            float2 scrollingTexCoord2 = texCoord * correction2 * float2(0.7, 0.7);
+            scrollingTexCoord2.x += ((t * -0.005));
+            scrollingTexCoord2.y += (t * 0.005);
+            float4 noiseMap2 = tex2D(noise, scrollingTexCoord2);
+            
+
+		const float2 correction3 = float2(correctionX + 0.7, correctionY +0.7);
+            float2 scrollingTexCoord3 = texCoord * correction3 * float2(.6, .8);
+            scrollingTexCoord3.x += ((t * 0.01));
+            scrollingTexCoord3.y += (t * 0.01);
+            float4 noiseMap3 = tex2D(noise, scrollingTexCoord3);
+
+            float4 maskMap = tex2D(baseTexture, texCoord);
+            material.resultColor = ( (noiseMap3 * tintoffset ) + (noiseMap * noiseMap2 * tint));
+		material.resultColor.a *= maskMap.a * color.a;
+
+        }
+        
+    </code>
+    
+</shader>

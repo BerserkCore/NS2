@@ -1,0 +1,39 @@
+<shader>
+	
+	<inputs>
+		<input name="baseTexture"   type="texture" address="wrap" />
+		<input name="wavyMask"      type="texture" address="wrap" />
+	</inputs>
+	
+	<code>
+	
+		float wave(float x, float t, float u, float y)
+		{
+			u = u * u * u;
+			float a = 6*3.14159;
+			float period = a*cos(cos(t/2));
+			float value = 4*a*x + cos(period*x)*(0.5*t+1) - 1;
+			
+			return u * value + (1 - u) * x;
+		}
+	
+		void MaterialShader(bool textured, float2 texCoord, float4 color, inout Material material)
+		{
+			float t = time * 2;
+			float amount = tex2D(wavyMask, texCoord);
+			float2 coord = texCoord;
+			float2 resultCoord;
+			/*resultCoord.x += (sin( (resultCoord.y + cos(time * 2)) * wavyAmount * 15 ) * 0.002 + 0.002) * resultCoord.y;*/
+			/*resultCoord.y += (sin( (resultCoord.x + cos((time - 0.5) * 2)) * wavyAmount * 15) * 0.002 + 0.002) * resultCoord.x;*/
+
+			resultCoord.x = wave(coord.x, cos(t), amount, coord.y) / wave(1.0, cos(t), amount,coord.y);
+			resultCoord.y = wave(coord.y, 1.2*sin(t), amount, coord.x) / wave(1.0,1.2*sin(t), amount, coord.x);
+			/*resultCoord.x = coord.x - 0.01 * cos(time);*/
+			/*resultCoord.y = coord.y;/**/
+			material.resultColor = tex2D(baseTexture, resultCoord) * color;
+
+		}
+		
+	</code>
+
+</shader>

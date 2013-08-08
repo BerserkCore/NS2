@@ -1,0 +1,8 @@
+float healthWeight	= 0.0
+
+pass p1 file "shaders/LowHealth.fx" technique "SFXLowHealth"
+{
+    baseTexture     = input
+    healthWeight    = healthWeight
+    output          = input
+}

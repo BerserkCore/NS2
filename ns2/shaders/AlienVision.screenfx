@@ -1,0 +1,15 @@
+texture output = render_target(1, 1)
+float   time
+float   startTime
+float   amount
+texture depthTexture
+
+pass p1 file "shaders/AlienVision.fx" technique "SFXAlienVision"
+{
+    baseTexture     = input
+	depthTexture	= depthTexture
+	time			= time
+	startTime		= startTime
+    amount    		= amount
+    output          = input
+}

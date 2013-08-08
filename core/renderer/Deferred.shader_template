@@ -1,0 +1,1434 @@
+<shader_template>
+
+	<material_inputs>
+		<material_input name="texCoord"   type="float2"/>
+		<material_input name="color"      type="float4"/>
+		<material_input name="wsPosition" type="float3"/>
+		<material_input name="osPosition" type="float3"/>
+		<material_input name="wsNormal"   type="float3"/>
+		<material_input name="vsNormal"   type="float3"/>
+		<material_input name="wsOrigin"   type="float3"/>
+	</material_inputs>
+
+	<material_outputs>
+		<material_output name="albedo"    type="float3"  group="albedoSpecularGloss"/>
+		<material_output name="specular"  type="float3"  group="albedoSpecularGloss"/>
+		<material_output name="gloss"     type="float"   group="albedoSpecularGloss"/>
+		<material_output name="tsNormal"  type="float3"/>
+		<material_output name="opacity"   type="float"   group="opacity"/>
+		<material_output name="emissive"  type="float3"  group="emissive"/>
+		<material_output name="wsOffset"  type="float3"/>
+		<material_output name="infestationShell"    type="float" group="infestationShell"/>
+		<material_output name="scale"  type="float"/>
+	</material_outputs>
+	
+	<techniques>
+		<technique name="WriteShadowMap[Skinned][Instanced]" group="albedoSpecularGloss"/>
+		<technique name="WriteDeferred[Skinned][Instanced]"  group="albedoSpecularGloss"/>
+		<technique name="WriteEmissive[Skinned][Instanced]"  group="emissive"/>
+		<technique name="Particle[Soft][AlignVelocity,AlignWorld]"/>
+		<technique name="Decal"                              group="albedoSpecularGloss"/>
+		<technique name="DecalEmissive"                      group="emissive"/>
+		<technique name="Background"/>
+		<technique name="WriteInfestationMask[Skinned][Instanced]" group="infestationShell"/>
+	</techniques>
+	
+	<parameters>
+		<!-- Parameters we need that will be supplied from the render_setup -->
+		<parameter name="depthTexture"/>
+		<parameter name="normalTexture"/>
+		<parameter name="albedoTexture"/>
+		<parameter name="specularGlossTexture"/>
+		<!-- Parameters that material can specify -->
+		<parameter name="alphaTest"/>
+		<parameter name="slopeScaleBias"/>
+		<parameter name="twoSided"/>
+		<parameter name="wsPosition"/>
+		<parameter name="wsNormal"/>
+		<parameter name="osPosition"/>
+		<parameter name="vsNormal"/>
+		<parameter name="unlit"/>
+		<parameter name="wsOrigin"/>
+	</parameters>
+	
+	<code>
+	<![CDATA[
+		#include "Constants.fxh"
+		#include "ReadDeferred.fxh"
+
+		struct PS_WriteDeferred_Output
+		{
+			float4 albedo			        : COLOR0;
+			float4 normal	        		: COLOR1;
+			float4 specularGloss	        : COLOR2;
+			float4 depth              		: COLOR3;
+		};
+
+		struct VS_WriteDeferred_Input
+		{
+			float3 osPosition               : POSITION;
+			float2 texCoord					: TEXCOORD0;
+			float3 osNormal					: NORMAL;
+			float3 osBinormal				: BINORMAL;
+			float3 osTangent                : TANGENT;
+			float4 color                    : COLOR;
+		};
+
+		struct VS_WriteDeferredInstanced_Input
+		{
+			float3 osPosition               : POSITION;
+			float2 texCoord					: TEXCOORD0;
+			float3 osNormal					: NORMAL;
+			float3 osBinormal				: BINORMAL;
+			float3 osTangent                : TANGENT;
+			float4 color                    : COLOR;
+			float3 matrixCol0               : TEXCOORD1;
+			float3 matrixCol1               : TEXCOORD2;
+			float3 matrixCol2               : TEXCOORD3;
+			float3 matrixCol3               : TEXCOORD4;
+			float3 invScale					: TEXCOORD5;	// 1/scale
+		};
+
+		struct VS_WriteDeferredSkinned_Input
+		{
+			float3 osPosition               : POSITION;
+			float2 texCoord					: TEXCOORD0;
+			float3 osNormal					: NORMAL;
+			float3 osBinormal				: BINORMAL;
+			float3 osTangent                : TANGENT;	
+			float4 color                    : COLOR;
+			float4 boneWeight				: BLENDWEIGHT;
+			float4 boneIndex				: BLENDINDICES;	
+		};
+		
+
+		struct VS_WriteDeferred_Output
+		{
+			float4 ssPosition               : POSITION;
+			float2 depth                    : TEXCOORD0;
+			float2 texCoord                 : TEXCOORD1;
+			float3 vsNormal                 : TEXCOORD2;
+			float3 vsTangent                : TEXCOORD3;
+			float3 vsBinormal               : TEXCOORD4;
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition				: TEXCOORD7;
+		#endif
+			float4 color                    : COLOR;
+		};
+
+		struct VS_WriteDepth_Output
+		{
+			float4 ssPosition               : POSITION;
+			float4 depth                    : TEXCOORD0;
+			float2 texCoord                 : TEXCOORD1;
+		#ifdef PARAM_vsNormal
+			float3 vsNormal					: TEXCOORD4;
+		#endif
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif	
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition				: TEXCOORD7;
+		#endif
+			float4 color                    : COLOR;
+		};
+
+		struct PS_WriteDepth_Input
+		{
+			float4 depth                    : TEXCOORD0;
+			float2 texCoord                 : TEXCOORD1;
+		#ifdef PARAM_vsNormal
+			float3 vsNormal					: TEXCOORD4;
+		#endif	
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition				: TEXCOORD7;
+		#endif	
+			float4 color                    : COLOR;
+		};
+		
+		struct PS_WriteDeferred_Input
+		{
+			float4 depth                    : TEXCOORD0;
+			float2 texCoord                 : TEXCOORD1;
+			float3 vsNormal                 : TEXCOORD2;
+			float3 vsTangent                : TEXCOORD3;
+			float3 vsBinormal               : TEXCOORD4;
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition				: TEXCOORD7;
+		#endif	
+			float4 color                    : COLOR;
+		};
+
+		struct VS_Particle_Input
+		{
+			float3 osPosition	          	: POSITION;
+			float3 osVelocity				: TEXCOORD0;
+			float2 texCoord    				: TEXCOORD1;
+			float3 misc						: TEXCOORD2;	// angle, size, frame
+			float4 color                  	: COLOR0;
+		};
+
+		struct VS_Particle_Output
+		{
+			float4 ssPosition	          	: POSITION;
+			float2 texCoord					: TEXCOORD0;
+			float4 color                  	: COLOR0;
+			float4 ssTexCoord				: TEXCOORD1;
+		#ifdef PARAM_vsNormal
+			float3 vsNormal					: TEXCOORD4;
+		#endif		
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition				: TEXCOORD7;
+		#endif
+		};
+
+		struct PS_Particle_Input
+		{
+			float4 color                  	: COLOR0;
+			float2 texCoord					: TEXCOORD0;
+			float4 ssTexCoord				: TEXCOORD1;
+		#ifdef PARAM_vsNormal
+			float3 vsNormal					: TEXCOORD4;
+		#endif	
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition				: TEXCOORD7;
+		#endif
+
+		};
+
+		struct VS_Decal_Input
+		{
+			float3 osPosition       		: POSITION;
+		};
+
+		struct VS_Decal_Output
+		{
+			float4 ssPosition       		: POSITION;
+			float4 projected        		: TEXCOORD0;
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif	
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 scale					: TEXCOORD1;
+			float3 osPosition				: TEXCOORD7;
+		#endif
+		};
+
+		struct PS_Decal_Input
+		{
+			float4 projected        		: TEXCOORD0;
+		#ifdef PARAM_wsPosition
+			float3 wsPosition				: TEXCOORD5;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal					: TEXCOORD6;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 scale					: TEXCOORD1;
+			float3 osPosition				: TEXCOORD7;
+		#endif	
+		};  
+
+		struct VS_WriteInfestation_Output
+		{
+			float4 ssPosition               : POSITION;
+			float4 projected        		: TEXCOORD0;
+			float3 vsOrigin					: TEXCOORD1;
+			float3 vsAxis0					: TEXCOORD2;	// Axes of the infestation blob transformed into view space
+			float3 vsAxis1					: TEXCOORD3;
+			float3 vsAxis2					: TEXCOORD4;
+		};
+
+		struct PS_WriteInfestation_Input
+		{
+			float4 projected        		: TEXCOORD0;
+			float3 vsOrigin					: TEXCOORD1;
+			float3 vsAxis0					: TEXCOORD2;	// Axes of the infestation blob transformed into view space
+			float3 vsAxis1					: TEXCOORD3;
+			float3 vsAxis2					: TEXCOORD4;
+		};	
+		
+		struct Material
+		{
+			float3	albedo;
+			float3	tsNormal;
+			float	opacity;
+			float3	specular;
+			float	gloss;
+			float3	emissive;
+			float3  wsOffset;
+			float   infestationShell;
+			float	scale;
+		};
+
+		struct Material_Input
+		{
+			float2	texCoord;
+			float4	color;
+		#ifdef PARAM_wsPosition
+			float3	wsPosition;
+		#endif
+		#ifdef PARAM_wsNormal
+			float3 wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			float3 vsNormal;
+		#endif
+		#ifdef PARAM_osPosition
+			float3 osPosition;
+		#endif
+		#ifdef PARAM_wsOrigin
+			float3 wsOrigin;
+		#endif
+		};
+
+		bool		wireframe 				= false;
+		bool		reverseCulling 			= false;
+		bool		anisotropicFiltering	= false;
+
+		float4x4    objectToWorldMatrix     : WORLD;
+		float4x4    worldToScreenMatrix     : VIEWPROJECTION;
+		float4x4    worldToCameraMatrix     : VIEW;
+		float4x4	viewToDecalMatrix;
+
+		float4x4    meshToObjectMatrix[60];
+
+		float 		time;
+		float2		halfPixel;
+
+		int 		blendMode;				// One of the RenderParticles::BlendMode values
+		float3		viewPoint;
+		float3		viewUp;
+		float		motionStretch = 1;
+		float		frameHeight;
+		float		frameRate;
+
+		////// Begin surface shader
+		%SURFACE_SHADER%
+		////// End surface shader
+
+		float4 ConvertNormal(float3 vsNormal)
+		{
+			return float4( vsNormal * 0.5 + 0.5, 0);
+		}
+
+		float4 SkinDirection(int4 boneIndex, float4 boneWeight, float3 direction)
+		{
+			return
+				mul(float4(direction, 0), meshToObjectMatrix[boneIndex.x]) * boneWeight.x +
+				mul(float4(direction, 0), meshToObjectMatrix[boneIndex.y]) * boneWeight.y +
+				mul(float4(direction, 0), meshToObjectMatrix[boneIndex.z]) * boneWeight.z +
+				mul(float4(direction, 0), meshToObjectMatrix[boneIndex.w]) * boneWeight.w;
+		}
+
+		Material RunMaterialShader(Material_Input input)
+		{	
+
+			Material material;
+
+			// Setup default values so that the shader can only set the values it wants to.
+			material.albedo   = float3(1, 0, 1);
+			material.tsNormal = float3(0, 0, 1);
+			material.opacity  = 1;
+			material.specular = float3(0, 0, 0);
+			material.gloss    = 0;
+			material.emissive = float3(0, 0, 0);
+			material.wsOffset = float3(0, 0, 0);
+			material.infestationShell = 0;	// Hack to make the infestation shell pass run
+			material.scale = 1;
+
+			MaterialShader(input, material);
+
+			return material;	
+			
+		}
+		
+		VS_WriteDeferred_Output WriteDeferredOutput(
+			float2 texCoord,
+			float4 color,
+			float  id,
+			float4 osPosition,
+			float3 osNormal,
+			float3 osBinormal,
+			float3 osTangent,
+			float4x4 _objectToWorldMatrix,
+			float4x4 _objectToWorldMatrixInvTrans	// Inverse transpose of the object to world matrix
+			)
+		{
+
+			float4 wsPosition = mul(osPosition, _objectToWorldMatrix);
+			float3 wsNormal   = normalize( mul(osNormal,   _objectToWorldMatrixInvTrans) );
+			float3 wsBinormal = normalize( mul(osBinormal, _objectToWorldMatrixInvTrans) );
+			float3 wsTangent  = normalize( mul(osTangent,  _objectToWorldMatrixInvTrans) );
+
+			// Run the material shader to get the vertex displacement (if any).
+
+			Material_Input materialInput;
+			materialInput.texCoord = texCoord;
+			materialInput.color    = color;
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = wsPosition.xyz;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = osPosition.xyz;
+		#endif    	    	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = mul(wsNormal, worldToCameraMatrix);
+		#endif
+		#ifdef PARAM_wsOrigin
+			materialInput.wsOrigin = mul( float4(0, 0, 0, 1), _objectToWorldMatrix).xyz;
+		#endif
+
+			Material material = RunMaterialShader(materialInput);
+			wsPosition = mul( float4(osPosition.xyz * material.scale, 1), _objectToWorldMatrix);
+			wsPosition.xyz += material.wsOffset;
+			
+			VS_WriteDeferred_Output output;
+			
+			float vsDepth = wsPosition.x * worldToCameraMatrix[0][2] +
+							wsPosition.y * worldToCameraMatrix[1][2] +
+							wsPosition.z * worldToCameraMatrix[2][2] +	
+							worldToCameraMatrix[3][2];							
+
+			output.ssPosition = mul(wsPosition, worldToScreenMatrix);
+			output.depth      = float2( vsDepth, id );
+			output.texCoord   = texCoord;
+			output.vsNormal   = mul(float4(wsNormal, 0.0),   worldToCameraMatrix);
+			output.vsBinormal = mul(float4(wsBinormal, 0.0), worldToCameraMatrix);
+			output.vsTangent  = mul(float4(wsTangent, 0.0),  worldToCameraMatrix);
+			output.color      = color;
+			
+		#ifdef PARAM_wsPosition
+			output.wsPosition = wsPosition.xyz / wsPosition.w;
+		#endif
+		#ifdef PARAM_osPosition
+			output.osPosition = osPosition.xyz;
+		#endif        
+		#ifdef PARAM_wsNormal
+			output.wsNormal = wsNormal;
+		#endif
+
+			return output;
+
+		}	
+		
+		VS_WriteDepth_Output WriteDepthOutput(
+			float2 texCoord,
+			float4 color,
+			float4 osPosition,
+			float3 osNormal,
+			float4x4 objectToWorldMatrix)
+		{
+			
+			VS_WriteDepth_Output output;
+
+			float4 wsPosition = mul(osPosition, objectToWorldMatrix);
+			
+			// Run the material shader to get the vertex displacement (if any).
+
+			Material_Input materialInput;
+			materialInput.texCoord = texCoord;
+			materialInput.color    = color;
+
+			float3 wsNormal = mul(osNormal, objectToWorldMatrix);
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = wsPosition.xyz;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = osPosition.xyz;
+		#endif                    	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			float3 vsNormal = mul(wsNormal, worldToCameraMatrix);
+			materialInput.vsNormal = vsNormal;
+		#endif
+		#ifdef PARAM_wsOrigin
+			materialInput.wsOrigin = mul( float4(0, 0, 0, 1), objectToWorldMatrix).xyz;
+		#endif
+
+			Material material = RunMaterialShader(materialInput);
+			wsPosition = mul( float4(osPosition.xyz * material.scale, 1), objectToWorldMatrix);
+			wsPosition.xyz += material.wsOffset;
+			
+			float4 vsPosition = mul(wsPosition, worldToCameraMatrix);
+			
+			output.texCoord   = texCoord;
+			output.color      = color;
+			
+		#ifdef PARAM_wsPosition
+			output.wsPosition = wsPosition.xyz / wsPosition.w;
+		#endif    
+		#ifdef PARAM_osPosition
+			output.osPosition = osPosition.xyz;
+		#endif  
+		#ifdef PARAM_wsNormal
+			output.wsNormal = wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			output.vsNormal = vsNormal;
+		#endif
+
+			output.ssPosition = mul(wsPosition, worldToScreenMatrix);
+			output.depth      = output.ssPosition;
+			output.depth.z 	  = vsPosition.z / vsPosition.w;
+			
+			return output;
+
+		}
+		
+		VS_WriteDeferred_Output WriteDeferredVS(VS_WriteDeferred_Input input)
+		{
+
+			float4 osPosition = float4(input.osPosition, 1);
+			float3 osNormal   = input.osNormal;
+			float3 osBinormal = input.osBinormal;
+			float3 osTangent  = cross(input.osNormal, input.osBinormal);
+
+			return WriteDeferredOutput(input.texCoord, input.color, 0, osPosition, osNormal, osBinormal, osTangent, objectToWorldMatrix, objectToWorldMatrix);
+
+		}
+		
+		VS_WriteDeferred_Output WriteDeferredInstancedVS(VS_WriteDeferredInstanced_Input input)
+		{
+
+			float4 osPosition = float4(input.osPosition, 1);
+			float3 osNormal   = input.osNormal;
+			float3 osBinormal = input.osBinormal;
+			float3 osTangent  = cross(input.osNormal, input.osBinormal);
+			
+			float4x4 objectToWorldMatrix;
+			
+			objectToWorldMatrix._m00 = input.matrixCol0.x;
+			objectToWorldMatrix._m01 = input.matrixCol0.y;
+			objectToWorldMatrix._m02 = input.matrixCol0.z;
+			objectToWorldMatrix._m03 = 0;
+			
+			objectToWorldMatrix._m10 = input.matrixCol1.x;
+			objectToWorldMatrix._m11 = input.matrixCol1.y;
+			objectToWorldMatrix._m12 = input.matrixCol1.z;
+			objectToWorldMatrix._m13 = 0;
+			
+			objectToWorldMatrix._m20 = input.matrixCol2.x;
+			objectToWorldMatrix._m21 = input.matrixCol2.y;
+			objectToWorldMatrix._m22 = input.matrixCol2.z;
+			objectToWorldMatrix._m23 = 0;
+			
+			objectToWorldMatrix._m30 = input.matrixCol3.x;
+			objectToWorldMatrix._m31 = input.matrixCol3.y;
+			objectToWorldMatrix._m32 = input.matrixCol3.z;
+			objectToWorldMatrix._m33 = 1;
+			
+			float4x4 objectToWorldMatrixInvTrans = objectToWorldMatrix;
+			
+			float3 invScale2 = input.invScale * input.invScale;
+		
+			objectToWorldMatrixInvTrans._m00 *= invScale2.x;
+			objectToWorldMatrixInvTrans._m01 *= invScale2.x;
+			objectToWorldMatrixInvTrans._m02 *= invScale2.x;
+
+			objectToWorldMatrixInvTrans._m10 *= invScale2.y;
+			objectToWorldMatrixInvTrans._m11 *= invScale2.y;
+			objectToWorldMatrixInvTrans._m12 *= invScale2.y;
+
+			objectToWorldMatrixInvTrans._m20 *= invScale2.z;
+			objectToWorldMatrixInvTrans._m21 *= invScale2.z;
+			objectToWorldMatrixInvTrans._m22 *= invScale2.z;
+
+			return WriteDeferredOutput(input.texCoord, input.color, 0, osPosition, osNormal, osBinormal, osTangent, objectToWorldMatrix, objectToWorldMatrixInvTrans);
+
+		}
+
+		VS_WriteDeferred_Output WriteDeferredSkinnedVS(VS_WriteDeferredSkinned_Input input)
+		{
+			
+			int4 boneIndex = D3DCOLORtoUBYTE4(input.boneIndex);
+			
+			float4 osPosition =
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.x]) * input.boneWeight.x +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.y]) * input.boneWeight.y +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.z]) * input.boneWeight.z +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.w]) * input.boneWeight.w;
+
+			float3 osNormal   = SkinDirection(boneIndex, input.boneWeight, input.osNormal);
+			float3 osBinormal = SkinDirection(boneIndex, input.boneWeight, input.osBinormal);
+			float3 osTangent  = SkinDirection(boneIndex, input.boneWeight, input.osTangent);
+
+			return WriteDeferredOutput(input.texCoord, input.color, 1, osPosition, osNormal, osBinormal, osTangent, objectToWorldMatrix, objectToWorldMatrix);
+
+		}
+
+		VS_WriteDepth_Output WriteDepthVS(VS_WriteDeferred_Input input)
+		{
+			float4 osPosition = float4(input.osPosition, 1);
+			return WriteDepthOutput(input.texCoord, input.color, osPosition, input.osNormal, objectToWorldMatrix);
+		}
+		
+		VS_WriteDepth_Output WriteDepthInstancedVS(VS_WriteDeferredInstanced_Input input)
+		{
+
+			float4 osPosition = float4(input.osPosition, 1);
+			float3 osNormal   = input.osNormal;
+			
+			float4x4 objectToWorldMatrix;
+			
+			objectToWorldMatrix._m00 = input.matrixCol0.x;
+			objectToWorldMatrix._m01 = input.matrixCol0.y;
+			objectToWorldMatrix._m02 = input.matrixCol0.z;
+			objectToWorldMatrix._m03 = 0;
+			
+			objectToWorldMatrix._m10 = input.matrixCol1.x;
+			objectToWorldMatrix._m11 = input.matrixCol1.y;
+			objectToWorldMatrix._m12 = input.matrixCol1.z;
+			objectToWorldMatrix._m13 = 0;
+			
+			objectToWorldMatrix._m20 = input.matrixCol2.x;
+			objectToWorldMatrix._m21 = input.matrixCol2.y;
+			objectToWorldMatrix._m22 = input.matrixCol2.z;
+			objectToWorldMatrix._m23 = 0;
+			
+			objectToWorldMatrix._m30 = input.matrixCol3.x;
+			objectToWorldMatrix._m31 = input.matrixCol3.y;
+			objectToWorldMatrix._m32 = input.matrixCol3.z;
+			objectToWorldMatrix._m33 = 1;
+		
+			return WriteDepthOutput(input.texCoord, input.color, osPosition, osNormal, objectToWorldMatrix);
+
+		}
+
+		VS_WriteDepth_Output WriteDepthSkinnedVS(VS_WriteDeferredSkinned_Input input)
+		{
+
+			float4 osPosition;
+
+			int4 boneIndex = D3DCOLORtoUBYTE4(input.boneIndex);
+			
+			osPosition =
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.x]) * input.boneWeight.x +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.y]) * input.boneWeight.y +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.z]) * input.boneWeight.z +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.w]) * input.boneWeight.w;
+
+			float3 osNormal = SkinDirection(boneIndex, input.boneWeight, input.osNormal);
+			
+			return WriteDepthOutput(input.texCoord, input.color, osPosition, osNormal, objectToWorldMatrix);
+
+		}
+
+		float4 WriteDepthPS(PS_WriteDepth_Input input) : COLOR0
+		{
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = input.wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = input.osPosition;
+		#endif      	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = input.wsNormal;
+		#endif    
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = input.vsNormal;
+		#endif
+
+			Material material = RunMaterialShader(materialInput);
+			return float4( input.depth.z, input.depth.z * input.depth.z, 0, material.opacity );
+		}
+		
+		
+		VS_WriteInfestation_Output WriteInfestationVS(VS_WriteDeferred_Input input)
+		{
+		
+			VS_WriteInfestation_Output output;
+		
+			float4 osPosition = float4(input.osPosition, 1);
+			float4 wsPosition = mul(osPosition, objectToWorldMatrix);
+			output.ssPosition = mul(wsPosition, worldToScreenMatrix);	
+			output.projected  = output.ssPosition;
+
+			// Compensate for texture coordinates being mapped differently than the screen
+			// y coordinate.
+			output.projected.y = -output.projected.y;
+			
+			float4 wsOrigin = objectToWorldMatrix[3];
+			output.vsOrigin = mul(wsOrigin, worldToCameraMatrix).xyz;
+
+			// Square of the lengths since we want to normalize them and then divide by the scale.			
+			float length0 = dot(objectToWorldMatrix[0].xyz, objectToWorldMatrix[0].xyz);
+			float length1 = dot(objectToWorldMatrix[1].xyz, objectToWorldMatrix[1].xyz);
+			float length2 = dot(objectToWorldMatrix[2].xyz, objectToWorldMatrix[2].xyz);
+			
+			output.vsAxis0 = mul(objectToWorldMatrix[0].xyz / length0, worldToCameraMatrix).xyz;
+			output.vsAxis1 = mul(objectToWorldMatrix[1].xyz / length1, worldToCameraMatrix).xyz;
+			output.vsAxis2 = mul(objectToWorldMatrix[2].xyz / length2, worldToCameraMatrix).xyz;
+			
+			return output;
+			
+		}
+		
+		VS_WriteInfestation_Output WriteInfestationInstancedVS(VS_WriteDeferredInstanced_Input input)
+		{
+
+			float4 osPosition = float4(input.osPosition, 1);
+			float3 osNormal   = input.osNormal;
+			
+			float4x4 objectToWorldMatrix;
+			
+			objectToWorldMatrix._m00 = input.matrixCol0.x;
+			objectToWorldMatrix._m01 = input.matrixCol0.y;
+			objectToWorldMatrix._m02 = input.matrixCol0.z;
+			objectToWorldMatrix._m03 = 0;
+			
+			objectToWorldMatrix._m10 = input.matrixCol1.x;
+			objectToWorldMatrix._m11 = input.matrixCol1.y;
+			objectToWorldMatrix._m12 = input.matrixCol1.z;
+			objectToWorldMatrix._m13 = 0;
+			
+			objectToWorldMatrix._m20 = input.matrixCol2.x;
+			objectToWorldMatrix._m21 = input.matrixCol2.y;
+			objectToWorldMatrix._m22 = input.matrixCol2.z;
+			objectToWorldMatrix._m23 = 0;
+			
+			objectToWorldMatrix._m30 = input.matrixCol3.x;
+			objectToWorldMatrix._m31 = input.matrixCol3.y;
+			objectToWorldMatrix._m32 = input.matrixCol3.z;
+			objectToWorldMatrix._m33 = 1;
+
+			float4 wsPosition = mul(osPosition, objectToWorldMatrix);
+			float3 wsNormal   = mul(osNormal, objectToWorldMatrix);
+
+			// Run the material shader to get the vertex displacement (if any).
+
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+			
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = wsPosition.xyz;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = osPosition.xyz;
+		#endif    	    	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = mul(wsNormal, worldToCameraMatrix);
+		#endif
+		#ifdef PARAM_wsOrigin
+			materialInput.wsOrigin = mul( float4(0, 0, 0, 1), objectToWorldMatrix).xyz;
+		#endif
+
+			Material material = RunMaterialShader(materialInput);
+			wsPosition = mul( float4(osPosition.xyz * material.scale, 1), objectToWorldMatrix);
+			wsPosition.xyz += material.wsOffset;
+		
+			VS_WriteInfestation_Output output;
+		
+			output.ssPosition = mul(wsPosition, worldToScreenMatrix);
+			output.projected  = output.ssPosition;			
+		
+			// Compensate for texture coordinates being mapped differently than the screen
+			// y coordinate.
+			output.projected.y = -output.projected.y;
+	
+			float4 wsOrigin = float4(input.matrixCol3, 1);
+			output.vsOrigin = mul(wsOrigin, worldToCameraMatrix).xyz;
+			
+			// Square of the lengths since we want to normalize them and then divide by the scale.
+			float length0 = dot(objectToWorldMatrix[0].xyz, objectToWorldMatrix[0].xyz) * material.scale;
+			float length1 = dot(objectToWorldMatrix[1].xyz, objectToWorldMatrix[1].xyz) * material.scale;
+			float length2 = dot(objectToWorldMatrix[2].xyz, objectToWorldMatrix[2].xyz) * material.scale;
+			
+			output.vsAxis0 = mul(objectToWorldMatrix[0].xyz / length0, worldToCameraMatrix).xyz;
+			output.vsAxis1 = mul(objectToWorldMatrix[1].xyz / length1, worldToCameraMatrix).xyz;
+			output.vsAxis2 = mul(objectToWorldMatrix[2].xyz / length2, worldToCameraMatrix).xyz;
+			
+			return output;
+			
+		}
+
+		VS_WriteInfestation_Output WriteInfestationSkinnedVS(VS_WriteDeferredSkinned_Input input)
+		{
+
+			float4 osPosition;
+
+			int4 boneIndex = D3DCOLORtoUBYTE4(input.boneIndex);
+			
+			osPosition =
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.x]) * input.boneWeight.x +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.y]) * input.boneWeight.y +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.z]) * input.boneWeight.z +
+				mul(float4(input.osPosition, 1), meshToObjectMatrix[boneIndex.w]) * input.boneWeight.w;
+
+			VS_WriteInfestation_Output output;
+		
+			float4 wsPosition = mul(osPosition, objectToWorldMatrix);
+			output.ssPosition = mul(wsPosition, worldToScreenMatrix);
+			output.projected  = output.ssPosition;			
+
+			// Compensate for texture coordinates being mapped differently than the screen
+			// y coordinate.
+			output.projected.y = -output.projected.y;
+			
+			float4 wsOrigin = objectToWorldMatrix[3];
+			output.vsOrigin = mul(wsOrigin, worldToCameraMatrix).xyz;
+
+			// Square of the lengths since we want to normalize them and then divide by the scale.
+			float length0 = dot(objectToWorldMatrix[0].xyz, objectToWorldMatrix[0].xyz);
+			float length1 = dot(objectToWorldMatrix[1].xyz, objectToWorldMatrix[1].xyz);
+			float length2 = dot(objectToWorldMatrix[2].xyz, objectToWorldMatrix[2].xyz);
+			
+			output.vsAxis0 = mul(objectToWorldMatrix[0].xyz / length0, worldToCameraMatrix).xyz;
+			output.vsAxis1 = mul(objectToWorldMatrix[1].xyz / length1, worldToCameraMatrix).xyz;
+			output.vsAxis2 = mul(objectToWorldMatrix[2].xyz / length2, worldToCameraMatrix).xyz;
+
+			return output;
+
+		}
+		
+		float4 WriteInfestationMaskPS(VS_WriteInfestation_Output input) : COLOR0
+		{
+		
+			float2 projected = (input.projected.xy / input.projected.w);
+			float2 texCoord  = projected * 0.5 + 0.5 + halfPixel;
+
+			// Don't put infestation on dynamic things.
+			clip( 0.5 - GetId(texCoord));
+			
+			float3 vsPosition = GetPosition( texCoord, projected );	
+			
+			const float shellScale = 1.25;	// scale applied to blob to get the shell
+			
+			const float maxDist = 0.98; // don't go all the way to the edge, to hide tesselation
+			const float minDist = 1.0 / shellScale;
+			
+			const float maxDist2 = maxDist * maxDist;
+			const float minDist2 = minDist * minDist;
+			
+			// For an ellipsoid, this normal isn't correct. To correct it we
+			// would need to divide by the scaling factors, but the calculation
+			// would need to be done in object space, which would require an
+			// expensive transformation.
+			float3 vsNormal = vsPosition - input.vsOrigin;
+			
+			// Transform the view space vector into object space.
+			
+			float3 osNormal;
+			osNormal.x = dot(vsNormal, input.vsAxis0);
+			osNormal.y = dot(vsNormal, input.vsAxis1);
+			osNormal.z = dot(vsNormal, input.vsAxis2);
+			
+			float dist2  = dot(osNormal, osNormal);
+			float blend  = saturate((maxDist2 - dist2) / (maxDist2 - minDist2));
+			
+			return float4( blend.rrrr );
+			
+		}
+
+		PS_WriteDeferred_Output WriteDeferredPS(PS_WriteDeferred_Input input)
+		{
+
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = input.wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = input.osPosition;
+		#endif      	    	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = input.wsNormal;
+		#endif    
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = input.vsNormal;
+		#endif	
+
+			Material material = RunMaterialShader(materialInput);
+			
+			PS_WriteDeferred_Output output;
+			
+			// Transform the normal into view space.
+			float3 vsNormal = normalize(material.tsNormal.x * input.vsTangent +
+										material.tsNormal.y * input.vsBinormal +
+										material.tsNormal.z * input.vsNormal);	
+
+			output.normal 			= ConvertNormal(vsNormal);
+			output.depth			= float4(input.depth.r, input.depth.g, 0, 0);
+			output.specularGloss	= float4( material.specular, material.gloss );
+			output.albedo 			= float4( material.albedo, material.opacity );
+			
+			return output;
+			
+		}
+
+		float4 WriteEmissivePS(PS_WriteDepth_Input input) : COLOR0
+		{
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = input.wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = input.osPosition;
+		#endif
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = input.wsNormal;
+		#endif    
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = input.vsNormal;
+		#endif	
+
+			Material material = RunMaterialShader(materialInput);
+			return float4(material.emissive, material.opacity);
+		}
+
+		/** Returns the amount that a surface should be faded out based on its proximity
+		to to avoid harsh lines where the it intersects the scene. */
+		float GetFadeFactor(float particleDepth, float sceneDepth)
+		{
+			float sharpness = 2.0;
+			float delta = sceneDepth - particleDepth;
+			return sceneDepth > 0.0 ? saturate( delta * sharpness ) : 1.0;
+		}
+				
+		/** Vertex shader used when rendering particles .*/
+		VS_Particle_Output ParticleVS(uniform bool alignWithVelocity, uniform bool alignWithWorld, VS_Particle_Input input)
+		{
+			
+			VS_Particle_Output output;
+			
+			float3 wsPosition = mul(float4(input.osPosition, 1.0), objectToWorldMatrix).xyz;
+
+			float angle = input.misc.x;
+			float size  = input.misc.y;
+			float frame = floor(input.misc.z * frameRate);
+
+			// "Billboard" the particle by moving this vertex to the appropriate spot.
+			
+			float3 xAxis, yAxis, zAxis;
+			
+			if (alignWithVelocity)
+			{
+				float3 wsVelocity = mul(float4(input.osVelocity, 0.0), objectToWorldMatrix).xyz;
+				zAxis = normalize(viewPoint - wsPosition);
+				yAxis = motionStretch * normalize(wsVelocity);
+				xAxis = normalize(cross(yAxis, zAxis));	
+			}
+			else
+			if (alignWithWorld)
+			{
+				zAxis = float3(0.0f, 1.0f, 0.0f);
+				yAxis = float3(0.0f, 0.0f, 1.0f);
+				xAxis = normalize(cross(yAxis, zAxis));
+			}
+			else
+			{
+				zAxis = normalize(viewPoint - wsPosition);
+				yAxis = viewUp;
+				xAxis = normalize(cross(yAxis, zAxis));	
+			}     
+			
+			// do 2d rotation;
+			float cx = input.texCoord.x - 0.5f;
+			float cy = 1 - input.texCoord.y - 0.5f;
+			float rx = cx * cos(angle) - cy * sin(angle);
+			float ry = cx * sin(angle) + cy * cos(angle);
+			
+			wsPosition += (xAxis * rx + yAxis * ry) * 2.0f * size;
+			
+		#ifdef PARAM_wsPosition
+			output.wsPosition = wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			output.osPosition = input.osPosition;
+		#endif    	
+		#ifdef PARAM_wsNormal
+			output.wsNormal = zAxis;
+		#endif    	
+		#ifdef PARAM_vsNormal
+			output.vsNormal = mul(zAxis, worldToCameraMatrix);
+		#endif	
+
+			output.ssPosition       = mul(float4(wsPosition, 1.0), worldToScreenMatrix);
+			output.color            = input.color;
+			
+			output.texCoord.x       = input.texCoord.x;
+			output.texCoord.y 		= (input.texCoord.y + frame) * frameHeight;
+					
+			// Comupute the information necessary to get the screen space texture coordinate
+			// for sampling the depth texture.
+
+			output.ssTexCoord.x =  (output.ssPosition.x + output.ssPosition.w) * 0.5;
+			output.ssTexCoord.y =  (output.ssPosition.w - output.ssPosition.y) * 0.5;
+			output.ssTexCoord.z =  output.ssPosition.z;
+			output.ssTexCoord.w =  output.ssPosition.w;
+			
+			return output;
+			
+		}
+
+		/** Pixel shader used when rendering particles. */
+		float4 ParticlePS(uniform bool soft, PS_Particle_Input input) : COLOR0
+		{
+
+			float fadeFactor = 1.0;
+
+			if (soft)
+			{
+				float3 ssTexCoord = input.ssTexCoord.xyz / input.ssTexCoord.w;
+				float sceneDepth = tex2D(depthTextureSampler, ssTexCoord.xy).r; 
+				float particleDepth = input.ssTexCoord.z;
+				fadeFactor = GetFadeFactor(particleDepth, sceneDepth);
+			}
+
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = input.wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = input.osPosition;
+		#endif    	    	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = input.wsNormal;
+		#endif    
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = input.vsNormal;
+		#endif	
+
+			Material material = RunMaterialShader(materialInput);
+			return float4(material.emissive, material.opacity) * fadeFactor;
+			
+		}
+
+		VS_Decal_Output DecalVS(VS_Decal_Input input)
+		{
+
+			VS_Decal_Output output;
+			
+			float4 wsPosition = mul(float4(input.osPosition, 1.0), objectToWorldMatrix);
+			float4 ssPosition = mul(wsPosition, worldToScreenMatrix);
+
+			output.ssPosition   = ssPosition;
+			output.projected    = ssPosition;
+			
+			// Compensate for texture coordinates being mapped differently than the screen
+			// y coordinate.
+			output.projected.y = -output.projected.y;
+
+		#ifdef PARAM_wsPosition
+			output.wsPosition = wsPosition.xyz;
+		#endif
+		#ifdef PARAM_osPosition
+			output.osPosition = input.osPosition;
+			output.scale.x    = length(objectToWorldMatrix[0]);
+			output.scale.y    = length(objectToWorldMatrix[1]);
+			output.scale.z    = length(objectToWorldMatrix[2]);
+		#endif    	      		
+		#ifdef PARAM_wsNormal
+			output.wsNormal = float3(0, 1, 0);
+		#endif    
+			
+			return output;
+
+		}
+
+		Material DecalMaterial(PS_Decal_Input input)
+		{
+		
+			float2 projected = (input.projected.xy / input.projected.w);
+			float2 texCoord  = projected * 0.5 + 0.5 + halfPixel;
+
+			float3 vsPosition = GetPosition( texCoord, projected );	
+
+			float4 dsPosition = mul( float4(vsPosition, 1), viewToDecalMatrix );
+				
+			// Clip to the decal box and anything that has an id < 0.5 (static objects)
+			float id = GetId( texCoord );
+			clip( float4( 1 - abs(dsPosition.xyz), 0.5 - id ) );
+			
+			float3 vsNormal = GetNormal( texCoord );
+			
+			/*
+			// Extract the geometric normal from the depth buffer (doesn't work very well)
+			float3 vsNormal = cross(ddx(vsPosition.xyz), ddy(vsPosition.xyz));
+			vsNormal.y = -vsNormal.y;
+			*/
+			
+			float3 dsNormal = normalize( mul( float4(vsNormal, 0), viewToDecalMatrix ).xyz ); 
+			
+			Material_Input materialInput;
+			materialInput.texCoord = (dsPosition.xz + 1) * 0.5;
+			materialInput.color    = float4(1, 1, 1, 1);
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = input.wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = dsPosition.xyz * input.scale;
+		#endif       	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = input.wsNormal;
+		#endif    	
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = vsNormal;
+		#endif	
+
+			Material material = RunMaterialShader(materialInput);	
+
+			// Fade out based on the normal.
+			float attenuate = max(dsNormal.y, 0);
+			// Attenuate based on the distance from the center plane of the box
+			//attenuate *= sqrt(1 - abs(dsPosition.y));
+			material.opacity *= attenuate;
+			
+			return material;
+		}
+			
+		float4 DecalPS(PS_Decal_Input input) : COLOR0
+		{
+			Material material = DecalMaterial(input);
+			return float4(material.albedo, material.opacity);
+		}
+		
+		float4 DecalEmissivePS(PS_Decal_Input input) : COLOR0
+		{
+			Material material = DecalMaterial(input);	
+			return float4(material.emissive, material.opacity);
+		}	
+
+		VS_WriteDepth_Output BackgroundVS(VS_WriteDeferred_Input input)
+		{
+			
+			float4 osPosition = float4(input.osPosition, 1);
+			
+			VS_WriteDepth_Output output;
+
+			float4 wsPosition = mul(osPosition, objectToWorldMatrix);
+			
+			// Run the material shader to get the vertex displacement (if any).
+
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+
+			float3 wsNormal = mul(input.osNormal, objectToWorldMatrix);
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = wsPosition.xyz;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = osPosition.xyz;
+		#endif                    	
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			float3 vsNormal = mul(wsNormal, worldToCameraMatrix);
+			materialInput.vsNormal = vsNormal;
+		#endif
+
+			Material material = RunMaterialShader(materialInput);
+			wsPosition.xyz += material.wsOffset;
+			
+			float4 vsPosition = mul(wsPosition, worldToCameraMatrix);
+			
+			output.texCoord   = input.texCoord;
+			output.color      = input.color;
+			
+		#ifdef PARAM_wsPosition
+			output.wsPosition = wsPosition.xyz / wsPosition.w;
+		#endif    
+		#ifdef PARAM_osPosition
+			output.osPosition = osPosition.xyz;
+		#endif  
+		#ifdef PARAM_wsNormal
+			output.wsNormal = wsNormal;
+		#endif
+		#ifdef PARAM_vsNormal
+			output.vsNormal = vsNormal;
+		#endif
+
+			output.ssPosition = mul(wsPosition, worldToScreenMatrix);
+			
+			// Make the background behind everything.
+			output.ssPosition.w = 1;
+			output.ssPosition.z = 1;
+			
+			output.depth      = output.ssPosition;
+			output.depth.z 	  = vsPosition.z / vsPosition.w;
+			
+			return output;
+
+		}
+
+
+		float4 BackgroundPS(PS_WriteDepth_Input input) : COLOR0
+		{
+			Material_Input materialInput;
+			materialInput.texCoord = input.texCoord;
+			materialInput.color    = input.color;
+			
+		#ifdef PARAM_wsPosition
+			materialInput.wsPosition = input.wsPosition;
+		#endif
+		#ifdef PARAM_osPosition
+			materialInput.osPosition = input.osPosition;
+		#endif
+		#ifdef PARAM_wsNormal
+			materialInput.wsNormal = input.wsNormal;
+		#endif    
+		#ifdef PARAM_vsNormal
+			materialInput.vsNormal = input.vsNormal;
+		#endif	
+
+			Material material = RunMaterialShader(materialInput);
+			return float4(material.emissive, material.opacity);
+		}
+
+		technique WriteShadowMap[Skinned][Instanced]
+		{
+			pass p0
+			{
+		#if Skinned	
+				VertexShader        = compile vs_2_0 WriteDepthSkinnedVS();
+		#else
+		#if Instanced
+				VertexShader        = compile vs_2_0 WriteDepthInstancedVS();
+		#else
+				VertexShader        = compile vs_2_0 WriteDepthVS();
+		#endif		
+		#endif		
+				PixelShader         = compile ps_2_0 WriteDepthPS();
+				
+		#ifdef PARAM_twoSided
+				CullMode            = None; 
+		#else		
+				CullMode            = (reverseCulling) ? D3DCULL_CW : D3DCULL_CCW;  
+		#endif
+
+				ColorWriteEnable    = 0;
+		#ifdef PARAM_alphaTest
+				AlphaTestEnable     = True;
+				AlphaFunc           = Greater;
+				AlphaRef            = 128;		        
+		#endif   	
+			}
+		}
+
+		technique WriteDeferred[Skinned][Instanced]
+		{
+			pass p0
+			{
+		#if Skinned
+				VertexShader        = compile vs_2_0 WriteDeferredSkinnedVS();
+		#else
+		#if Instanced
+				VertexShader        = compile vs_2_0 WriteDeferredInstancedVS();
+		#else
+				VertexShader        = compile vs_2_0 WriteDeferredVS();	
+		#endif
+		#endif		
+				PixelShader         = compile ps_2_0 WriteDeferredPS();
+				FillMode            = (wireframe) ? 2 : 3;
+				
+		#ifdef PARAM_twoSided
+				CullMode            = None; 
+		#else		
+				CullMode            = (reverseCulling) ? 3 : 2;
+		#endif
+
+		#ifdef PARAM_alphaTest
+				AlphaTestEnable     = True;
+				AlphaFunc           = Greater;
+				AlphaRef            = 128;		        
+		#endif        
+
+		#ifdef PARAM_slopeScaleBias
+				SlopeScaleDepthBias	= PARAM_slopeScaleBias;
+		#endif
+
+
+			}
+		}
+
+		technique WriteEmissive[Skinned][Instanced]
+		{
+			pass p0
+			{
+				ZWriteEnable		= False;
+		#if Skinned	
+				VertexShader        = compile vs_2_0 WriteDepthSkinnedVS();
+		#else
+		#if Instanced
+				VertexShader        = compile vs_2_0 WriteDepthInstancedVS();
+		#else
+				VertexShader        = compile vs_2_0 WriteDepthVS();
+		#endif			
+		#endif				
+				PixelShader         = compile ps_2_0 WriteEmissivePS();
+				FillMode            = (wireframe) ? 2 : 3;
+				
+		#ifdef PARAM_twoSided		
+				CullMode            = None;
+		#else
+				CullMode            = (reverseCulling) ? 3 : 2;
+		#endif
+
+		#ifdef PARAM_slopeScaleBias
+				SlopeScaleDepthBias	= PARAM_slopeScaleBias;
+		#endif		
+
+				AlphaBlendEnable	= True;
+				SrcBlend			= SrcAlpha;
+
+		#ifdef PARAM_unlit
+				DestBlend			= InvSrcAlpha;
+		#else
+				DestBlend			= One;
+		#endif
+				
+			}
+		}
+
+		technique Particle[Soft][AlignVelocity,AlignWorld]
+		{
+			pass p0
+			{
+				ZWriteEnable			= False;
+				VertexShader			= compile vs_2_0 ParticleVS(AlignVelocity, AlignWorld);
+				PixelShader				= compile ps_2_0 ParticlePS(Soft);
+				FillMode            	= (wireframe) ? 2 : 3;
+				CullMode            	= None;
+				AlphaBlendEnable    	= True;
+				SrcBlend            	= SrcAlpha;
+				DestBlend           	= (blendMode == 2) ? D3DBLEND_INVSRCALPHA : D3DBLEND_ONE;
+				BlendOp					= (blendMode == 1) ? D3DBLENDOP_REVSUBTRACT : D3DBLENDOP_ADD;
+			}
+		}
+
+		technique Decal
+		{
+			pass p0
+			{
+				ZFunc				= Greater;
+				ZWriteEnable        = False;
+				VertexShader        = compile vs_3_0 DecalVS();
+				PixelShader         = compile ps_3_0 DecalPS();
+				CullMode            = CW;
+				AlphaBlendEnable    = True;
+				SrcBlend            = SrcAlpha;
+				DestBlend           = InvSrcAlpha;
+			}
+		}
+
+		technique DecalEmissive
+		{
+			pass p0
+			{
+				ZFunc				= Greater;
+				ZWriteEnable        = False;
+				VertexShader        = compile vs_3_0 DecalVS();
+				PixelShader         = compile ps_3_0 DecalEmissivePS();
+				CullMode            = CW;
+				AlphaBlendEnable	= True;
+				SrcBlend			= SrcAlpha;
+			}
+		}
+	
+		technique Background
+		{
+			pass p0
+			{
+				ZWriteEnable		= False;
+				VertexShader        = compile vs_2_0 BackgroundVS();
+				PixelShader         = compile ps_2_0 BackgroundPS();
+				CullMode            = None;
+			}
+		}
+		
+		technique WriteInfestationMask[Skinned][Instanced]
+		{
+			pass p0
+			{
+		#if Skinned	
+				VertexShader        = compile vs_2_0 WriteInfestationSkinnedVS();
+		#else
+		#if Instanced
+				VertexShader        = compile vs_2_0 WriteInfestationInstancedVS();
+		#else
+				VertexShader        = compile vs_2_0 WriteInfestationVS();
+		#endif		
+		#endif		
+				PixelShader         = compile ps_2_0 WriteInfestationMaskPS();
+				// This method of culling won't produce correct results if we're inside
+				// of a shell, but it's faster.
+				CullMode            = (reverseCulling) ? 3 : 2;
+				ZWriteEnable        = False;
+				ZFunc				= Less;
+				AlphaBlendEnable    = True;
+				SrcBlend            = One;
+				DestBlend           = One;
+				BlendOp				= D3DBLENDOP_MAX;
+				StencilEnable       = True;
+				StencilPass         = Replace;
+				StencilRef			= 1;
+			}
+		}
+		
+	]]>
+	</code>
+</shader_template>	

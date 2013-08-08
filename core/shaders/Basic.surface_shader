@@ -1,0 +1,14 @@
+<shader>
+	
+	<inputs>
+		<input name="albedoMap" type="texture" address="wrap" />
+	</inputs>
+	
+	<code>
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			material.emissive = tex2D(albedoMap, input.texCoord).rgb;
+		}
+	</code>
+
+</shader>

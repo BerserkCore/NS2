@@ -1,0 +1,31 @@
+pass p1 file "shaders/Blur.fx" technique "HBlur"
+{
+    inputTexture    = input
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = input
+}
+
+pass p1 file "shaders/Blur.fx" technique "VBlur"
+{
+    inputTexture    = input
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = input
+}
+
+pass p1 file "shaders/Blur.fx" technique "HBlur"
+{
+    inputTexture    = input
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = input
+}
+
+pass p1 file "shaders/Blur.fx" technique "VBlur"
+{
+    inputTexture    = input
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = input
+}

@@ -1,0 +1,16 @@
+float   amount
+
+pass p1 file "shaders/Phase.fx" technique "Distort"
+{
+    inputTexture    = input
+	amount			= amount
+    output          = input
+}
+
+pass p1 file "shaders/Phase.fx" technique "Blur"
+{
+    inputTexture    = input
+	amount			= amount
+    output          = input
+}
+

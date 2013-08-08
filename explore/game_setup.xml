@@ -1,0 +1,8 @@
+<game>
+	<name>ns2</name>
+	<description>Natural Selection 2 Explore</description>
+	<client>lua/ExploreClient.lua</client>
+	<server>lua/ExploreServer.lua</server>
+	<predict>lua/ExplorePredict.lua</predict>
+    <soundinfo>sound/NS2.soundinfo</soundinfo>
+</game>

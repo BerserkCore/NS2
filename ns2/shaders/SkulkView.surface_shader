@@ -1,0 +1,55 @@
+<shader>
+	
+	<inputs>
+		<input name="materialAlbedoMap" type="texture" address="wrap" />
+		<input name="materialNormalMap" type="texture" address="wrap" />
+		<input name="materialSpecularMap" type="texture" address="wrap" />
+		<input name="bloodMap" type="texture" />
+		<input name="attackTime" type="float"/>
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			float4 specularGloss = tex2D(materialSpecularMap, input.texCoord);
+			
+			const float speed = 0.5;
+			const float albedoScrollSpeed = 0.1;
+			
+			const float opacityScrollSpeed1 = 0.1;
+			const float opacityScrollSpeed2 = 0.5;
+			const float maxBloodAmount = 0.75;
+			
+			float  bloodAmount = saturate(1 - (time - attackTime) * speed);
+		
+			float2 opacityTexCoord1 = input.texCoord * float2(1.1, 0.5) - float2(0, time * opacityScrollSpeed1);
+			float2 opacityTexCoord2 = input.texCoord * float2(1.8, 1.4) - float2(0, time * opacityScrollSpeed2); 
+			
+			float opacity = tex2D(bloodMap, opacityTexCoord1).a * tex2D(bloodMap, opacityTexCoord2).a;
+		
+			if (opacity > 2 - bloodAmount - maxBloodAmount)
+			{
+				float2 t1 = input.texCoord * float2(2.5, 1.8) - float2(0, time * albedoScrollSpeed);
+				material.albedo = tex2D(bloodMap, t1);
+			}
+			else
+			{
+				material.albedo = tex2D(materialAlbedoMap, input.texCoord).rgb;
+			}
+			material.specular	= specularGloss.rgb;
+			material.tsNormal 	= DecodeNormal( tex2D(materialNormalMap, input.texCoord) );
+			material.gloss		= specularGloss.a;
+			
+		}
+	]]>
+	</code>
+
+</shader>

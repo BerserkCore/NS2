@@ -1,0 +1,25 @@
+texture temporary1 = render_target(0.5, 0.5)
+texture temporary2 = render_target(0.25, 0.25)
+float amount
+texture depthTexture
+
+pass DownSample file "shaders/Celerity.fx" technique "DownSample"
+{
+    inputTexture    = input
+    output          = temporary1
+}
+
+pass DownSample file "shaders/Celerity.fx" technique "DownSample"
+{
+    inputTexture    = temporary1
+    output          = temporary2
+}
+
+pass p1 file "shaders/Celerity.fx" technique "SFXCelerity"
+{
+    baseTexture     = temporary2
+	inputTexture 	= input
+	depthTexture	= depthTexture
+    output          = input
+	amount			= amount
+}

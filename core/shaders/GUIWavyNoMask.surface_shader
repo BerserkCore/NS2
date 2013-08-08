@@ -1,0 +1,24 @@
+<shader>
+	
+	<inputs>
+		<input name="baseTexture"   type="texture" address="wrap" />
+	</inputs>
+	
+	<code>
+	
+		void MaterialShader(bool textured, float2 texCoord, float4 color, inout Material material)
+		{
+			
+			float wavyAmount = 1;
+			float2 resultCoord = texCoord;
+			resultCoord.x += ((sin((resultCoord.y + cos(time)) * wavyAmount * 10) * 0.002 + 0.002) / (1.0 + 2 * 0.002)) * resultCoord.y;
+			resultCoord.y += ((sin((resultCoord.x + cos(time - 0.5)) * wavyAmount * 10) * 0.002 + 0.002) / (1.0 + 2 * 0.002)) * resultCoord.x;
+			/*resultCoord.x += sin(texCoord.y * wavyAmount * 2 * cos(time)) * 0.02;*/
+			/*resultCoord.y += sin(texCoord.x * wavyAmount * 2 * cos(time - 3.333)) * 0.02;*/
+			material.resultColor = tex2D(baseTexture, resultCoord) * color;
+
+		}
+		
+	</code>
+
+</shader>

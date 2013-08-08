@@ -1,0 +1,25 @@
+<shader>
+	
+	<inputs>
+		<input name="baseTexture"  type="texture" address="wrap" />
+	</inputs>
+	
+	<code>
+	
+		void MaterialShader(bool textured, float2 texCoord, float4 color, inout Material material)
+		{
+			
+			if (textured)
+			{
+				material.resultColor = tex2D(baseTexture, texCoord) * color;
+			}
+			else
+			{
+				material.resultColor = color;
+			}
+
+		}
+		
+	</code>
+
+</shader>

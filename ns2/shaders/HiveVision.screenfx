@@ -1,0 +1,88 @@
+texture hiveVision = "*hive_vision"
+
+texture temporary1 = render_target(1, 1)
+texture temporary2 = render_target(0.5, 0.5)
+texture temporary2b = render_target(0.5, 0.5)
+
+float time
+float maxDistance
+
+texture depthTexture
+texture noise = "ui/ui_hive_vision_smoke.dds"
+
+pass p1 file "shaders/HiveVision.fx" technique "Mask"
+{
+    inputTexture    	= input
+	screenwidth			= screenwidth
+	screenheight		= screenheight
+	hiveVisionTexture 	= hiveVision
+	maxDistance			= maxDistance
+	depthTexture		= depthTexture
+    output          	= temporary1
+}
+
+// Downsample the screen into successive 1/4 size textures
+pass p1 file "shaders/HiveVision.fx" technique "DownSample"
+{
+    inputTexture    = temporary1
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = temporary2b
+}
+/*
+pass p1 file "shaders/HiveVision.fx" technique "DownSample"
+{
+    inputTexture    = temporary2
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = temporary3
+}
+
+/*
+// Blur and combine
+pass p1 file "shaders/Blur.fx" technique "HBlur"
+{
+    inputTexture    = temporary3
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = temporary3b
+}
+pass p1 file "shaders/Blur.fx" technique "VBlur"
+{
+    inputTexture    = temporary3b
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = temporary3
+}
+pass p1 file "shaders/Bloom.fx" technique "Composite"
+{
+	inputTexture1   = temporary3
+    inputTexture2   = temporary2
+    output          = temporary2b
+}
+*/
+
+// Blur and combine
+pass p1 file "shaders/Blur.fx" technique "HBlur"
+{
+    inputTexture    = temporary2b
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = temporary2
+}
+pass p1 file "shaders/Blur.fx" technique "VBlur"
+{
+    inputTexture    = temporary2 
+	screenwidth		= screenwidth
+	screenheight	= screenheight
+    output          = temporary2b
+}
+pass p1 file "shaders/HiveVision.fx" technique "FinalComposite"
+{
+	inputTexture	= input
+	time			= time
+	noiseTexture	= noise
+	inputTexture1   = temporary2b
+    inputTexture2   = temporary1
+    output          = input
+}

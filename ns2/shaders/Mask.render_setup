@@ -1,0 +1,45 @@
+// The G-Buffer is stored as:
+//
+//      R G     - view space depth, object ID
+//      RGB A   - albedo (alpha is unused)
+//      RGB A   - specular and gloss
+//      RGB A   - view space normal XYZ (alpha is unused)
+//
+// This leaves one 8-bit component free in the albedo map and one 2-bit
+// component free in the normal map.
+	
+resources =
+	[
+		// G-buffer
+		{ name="depth" 					format="G16R16F" 		x_scale=1 y_scale=1 }
+		{ name="albedo" 				format="A8R8G8B8" 		x_scale=1 y_scale=1 }
+		{ name="specular_gloss" 		format="A8R8G8B8" 		x_scale=1 y_scale=1 }
+		{ name="normal" 				format="A2R10G10B10" 	x_scale=1 y_scale=1 }
+	]
+	
+layers =
+	[
+	
+		// Fill in the G-buffer.
+		{
+			name							= "gbuffer"
+			color_targets					= "albedo normal specular_gloss depth"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "WriteDeferred"
+			clear							= "color depth stencil"
+			generator						= "objects"
+			objects_mask					= "~decal"
+		}
+		
+		// Visualize the depth buffer
+		{ 
+			name		  					= "visualize_depth"
+			color_targets 					= "back_buffer"
+			depth_stencil_target 			= "back_buffer_depth_stencil"
+			shader							= "renderer/DeferredVisualize.fx"
+			technique 						= "VisualizeDepth"
+			generator 						= "fullscreen"
+			parameters 						= { depthTexture = "depth" }
+		}				
+				
+	]
