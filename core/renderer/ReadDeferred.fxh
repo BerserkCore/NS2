@@ -70,6 +70,18 @@ sampler depthTextureSampler = sampler_state
         MipFilter     = None;
 		SRGBTexture   = False;
     };			
+
+// Used for AO to remove artifacts for distant glancing angles
+sampler linearDepthTextureSampler = sampler_state
+    {
+        texture       = (depthTexture);
+        AddressU      = Clamp;
+        AddressV      = Clamp;
+        MinFilter     = Linear;
+        MagFilter     = Linear;
+        MipFilter     = None;
+		SRGBTexture   = False;
+    };			
 	
 sampler normalTextureSampler = sampler_state
     {

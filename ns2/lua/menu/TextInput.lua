@@ -143,8 +143,9 @@ function TextInput:AddCharacter(character)
 end
 
 function TextInput:RemoveCharacter()
-    local currentText = self:GetValue()
-    self:SetValue(string.sub( currentText, 1, string.len(currentText) - 1) )
+    local currentText = self.text:GetWideText()
+    local length = #currentText
+    self:SetValue(currentText:sub(1, length - 1))
 end
 
 function TextInput:SetValue(value)

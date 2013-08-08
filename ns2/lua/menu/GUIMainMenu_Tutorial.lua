@@ -43,13 +43,13 @@ local function CreateTutorialPage(self)
     
     self.tutLink5 = CreateMenuElement(self.tutorial, "Link")
     self.tutLink5:SetCSSClass("tut_link_5")
-    self.tutLink5:SetText("Playing Skulk (8 mins)")
+    self.tutLink5:SetText("Playing Skulk (Basic) (9 min)")
     self.tutLink5.OnClick = function() Client.ShowWebpage("http://unknownworlds.com/spark/ns2/tutorials/tut5.html") end
     self.tutLink5:EnableHighlighting()
     
     self.tutLink6 = CreateMenuElement(self.tutorial, "Link")
     self.tutLink6:SetCSSClass("tut_link_6")
-    self.tutLink6:SetText("Skulk wall-jumping (6 mins)")
+    self.tutLink6:SetText("Playing Skulk (Advanced) (7 min)")
     self.tutLink6.OnClick = function() Client.ShowWebpage("http://unknownworlds.com/spark/ns2/tutorials/tut6.html") end
     self.tutLink6:EnableHighlighting()
     

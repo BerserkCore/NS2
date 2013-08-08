@@ -43,13 +43,19 @@ function Alien:OnProcessMove(input)
     
     Player.OnProcessMove(self, input)
     
-    // Calculate two and three hives so abilities for abilities        
-    self:UpdateNumHives()
+    // In rare cases, Player.OnProcessMove() above may cause this entity to be destroyed.
+    // The below code assumes the player is not destroyed.
+    if not self:GetIsDestroyed() then
     
-    self.enzymed = self.timeWhenEnzymeExpires > Shared.GetTime()
-    self.primalScreamBoost = self.timeWhenPrimalScreamExpires > Shared.GetTime()
-    
-    self:UpdateAutoHeal()
+        // Calculate two and three hives so abilities for abilities        
+        self:UpdateNumHives()
+        
+        self.enzymed = self.timeWhenEnzymeExpires > Shared.GetTime()
+        self.primalScreamBoost = self.timeWhenPrimalScreamExpires > Shared.GetTime()
+        
+        self:UpdateAutoHeal()
+        
+    end
     
 end
 

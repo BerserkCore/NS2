@@ -217,7 +217,7 @@ layers =
 			color_targets					= "med_ao_ao"
 			depth_stencil_target			= "back_buffer_depth_stencil"
 			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "AmbientOcclusion"
+			technique						= "ClassicAmbientOcclusion"
 			generator						= "fullscreen"
 			parameters 						= { depthTexture = "med_ao_depth" normalTexture = "normal" }
 		}
@@ -290,7 +290,7 @@ layers =
 			color_targets					= "high_ao"
 			depth_stencil_target			= "back_buffer_depth_stencil"
 			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "AmbientOcclusion"
+			technique						= "ClassicAmbientOcclusion"
 			generator						= "fullscreen"
 			parameters 						= { depthTexture = "depth" normalTexture = "normal" }
 		}
@@ -466,174 +466,175 @@ layers =
 			parameters 						= { lightingTexture = "reflections"  }
 		}
 		*/
-		
+
 		//////////////////////////////////////////////////////////////////
 		// BLOOM
-	
-		// Apply the bloom tone mapping operator.
-		{ 
-			name 							= "bloom_curve"
-			conditions						= { mode = "lit" bloom = "true" }
-			color_targets 					= "accumulation_1"
-			shader							= "renderer/Bloom.fx"
-			technique						= "BloomCurve"
-			parameters						= { inputTexture = "accumulation_1" }
-			generator						= "fullscreen"
-		}
-		
-		// Downsample into 1/2, 1/4, 1/8 and 1/16
-		{
-			name							= "bloom_downsample_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture = "accumulation_1" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_downsample_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_downsample_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_downsample_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_16"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
+        // Some tweaks courtesy of 'slime' from the forums
 
-		// Blur and combine
-		{
-			name							= "bloom_hblur_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_16"
-			parameters						= { inputTexture = "accumulation_16" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_16"
-			parameters						= { inputTexture = "accumulation_16" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "Composite"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture1 = "accumulation_16" inputTexture2 = "accumulation_8" }
-			generator						= "fullscreen"
-		}
+        // Apply the bloom tone mapping operator.
+        { 
+            name 							= "bloom_curve"
+            conditions						= { mode = "lit" bloom = "true" }
+            color_targets 					= "accumulation_1"
+            shader							= "renderer/Bloom.fx"
+            technique						= "BloomCurve"
+            parameters						= { inputTexture = "accumulation_1" }
+            generator						= "fullscreen"
+        }
 
-		// Blur and combine
-		{
-			name							= "bloom_hblur_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "Composite"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture1 = "accumulation_8" inputTexture2 = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		
-		// Blur and combine
-		{
-			name							= "bloom_hblur_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "Composite"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture1 = "accumulation_4" inputTexture2 = "accumulation_2" }
-			generator						= "fullscreen"
-		}
+        // Downsample into 1/2 and blur
+        {
+            name							= "bloom_downsample_2"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "DownSample"
+            color_targets 					= "accumulation_2"
+            parameters						= { inputTexture = "accumulation_1" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_hblur_2"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "HBlur"
+            color_targets 					= "accumulation_2"
+            parameters						= { inputTexture = "accumulation_2" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_vblur_2"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "VBlur"
+            color_targets 					= "accumulation_2"
+            parameters						= { inputTexture = "accumulation_2" }
+            generator						= "fullscreen"
+        }
 
-		// Blur and combine
-		{
-			name							= "bloom_hblur_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "FinalComposite"
-			color_targets 					= "accumulation_1"
-			parameters						= { inputTexture1 = "accumulation_2" inputTexture2 = "accumulation_1" }
-			generator						= "fullscreen"
-		}	
+        // Downsample into 1/4 and blur
+        {
+            name							= "bloom_downsample_4"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "DownSample"
+            color_targets 					= "accumulation_4"
+            parameters						= { inputTexture = "accumulation_2" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_hblur_4"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "HBlur"
+            color_targets 					= "accumulation_4"
+            parameters						= { inputTexture = "accumulation_4" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_vblur_4"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "VBlur"
+            color_targets 					= "accumulation_4"
+            parameters						= { inputTexture = "accumulation_4" }
+            generator						= "fullscreen"
+        }
+
+        // Downsample into 1/8 and blur
+        {
+            name							= "bloom_downsample_8"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "DownSample"
+            color_targets 					= "accumulation_8"
+            parameters						= { inputTexture = "accumulation_4" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_hblur_8"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "HBlur"
+            color_targets 					= "accumulation_8"
+            parameters						= { inputTexture = "accumulation_8" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_vblur_8"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "VBlur"
+            color_targets 					= "accumulation_8"
+            parameters						= { inputTexture = "accumulation_8" }
+            generator						= "fullscreen"
+        }
+
+        // Downsample into 1/16 and blur
+        {
+            name							= "bloom_downsample_16"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "DownSample"
+            color_targets 					= "accumulation_16"
+            parameters						= { inputTexture = "accumulation_8" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_hblur_16"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "HBlur"
+            color_targets 					= "accumulation_16"
+            parameters						= { inputTexture = "accumulation_16" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_vblur_16"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Blur.fx"
+            technique 						= "VBlur"
+            color_targets 					= "accumulation_16"
+            parameters						= { inputTexture = "accumulation_16" }
+            generator						= "fullscreen"
+        }
+
+        // Combine
+        {
+            name							= "bloom_composite_16"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "Composite"
+            color_targets 					= "accumulation_8"
+            parameters						= { inputTexture1 = "accumulation_16" inputTexture2 = "accumulation_8" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_composite_8"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "Composite"
+            color_targets 					= "accumulation_4"
+            parameters						= { inputTexture1 = "accumulation_8" inputTexture2 = "accumulation_4" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_composite_4"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "Composite"
+            color_targets 					= "accumulation_2"
+            parameters						= { inputTexture1 = "accumulation_4" inputTexture2 = "accumulation_2" }
+            generator						= "fullscreen"
+        }
+        {
+            name							= "bloom_composite_2"
+            conditions						= { mode = "lit" bloom = "true" }
+            shader 							= "renderer/Bloom.fx"
+            technique 						= "FinalComposite"
+            color_targets 					= "accumulation_1"
+            parameters						= { inputTexture1 = "accumulation_2" inputTexture2 = "accumulation_1" }
+            generator						= "fullscreen"
+        }
 
 		// BLOOM END
 		////////////////////////////	

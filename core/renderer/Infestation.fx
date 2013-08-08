@@ -177,6 +177,10 @@ float4 InfestationMaskPS(PS_DeferredPass_Input input) : COLOR0
 		// Transform the point from view space to screen space.
 		float4 ssPosition = mul(float4(vsTestPosition, 1), cameraToScreenMatrix);
 		ssPosition.xyz /= ssPosition.w;
+
+        // Need to un-compensate for the half-pixel offset
+        ssPosition.x += rcpFrame.x;
+        ssPosition.y -= rcpFrame.y;
 		
 		// Get the screen space texture coordinates.
 		

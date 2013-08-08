@@ -377,7 +377,7 @@ end
 
 function DebugWireSphere( center, radius, lifetime, r, g, b, a )
 
-    local numCircles = 16
+    local numCircles = 8
     for i = 1, numCircles do
     
         local rads = (i-1)*math.pi/numCircles

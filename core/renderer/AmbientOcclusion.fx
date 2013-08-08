@@ -2,7 +2,7 @@
 //
 // shaders/AmbientOcclusion.fx
 //
-// Created by Max McGuire (max@unknownworlds.com)
+// Created by Max McGuire (max@unknownworlds.com), Steven An (steve@unknownworlds.com)
 // Copyright (c) 2008-2012, Unknown Worlds Entertainment, Inc.
 //
 //=============================================================================
@@ -40,7 +40,7 @@ sampler lightingTextureSampler = sampler_state
 
 float4 ResizeDepthPS( PS_DeferredPass_Input input ) : COLOR0
 {
-    float depth = tex2D(depthTextureSampler, input.texCoord).r;
+    float depth = tex2D(linearDepthTextureSampler, input.texCoord).r;
 
     return depth;
 }
@@ -97,7 +97,7 @@ float ComputeAccessibility(float radius, float3 vsPosition, float3 vsNormal, flo
 		float2 t  = texCoord + s * scale;
 		
 		float zs = radius * sqrt(1 - dot(s, s));
-		float dr = tex2D(depthTextureSampler, t).r - vsPosition.z;
+		float dr = tex2D(linearDepthTextureSampler, t).r - vsPosition.z;
 		
 		float zMin = -zs;
 		float zMax =  zs;
@@ -162,7 +162,7 @@ half4 AngleBasedAmbientOcclusionPS( PS_DeferredPass_Input input ) : COLOR0
 	};
 
 	// Get pixel info
-	float depth = tex2D(depthTextureSampler, input.texCoord).r;
+	float depth = tex2D(linearDepthTextureSampler, input.texCoord).r;
 	float3 vsNormal = GetNormal( input.texCoord );
 
 	// Pick random reflecting angle, to de-correlate
@@ -193,7 +193,7 @@ half4 AngleBasedAmbientOcclusionPS( PS_DeferredPass_Input input ) : COLOR0
         float vsOffsetLen = length(ssOffset)*imagePlaneSize.x*0.5;
 
 		// Right side
-        float rightDepth = tex2D( depthTextureSampler, input.texCoord+uvOffset );
+        float rightDepth = tex2D( linearDepthTextureSampler, input.texCoord+uvOffset );
         float rightDiff = -(rightDepth - depth);
 
 		if( doMaxDepthCheck && (rightDiff > ABAO_MaxDepthDelta) ) {
@@ -204,7 +204,7 @@ half4 AngleBasedAmbientOcclusionPS( PS_DeferredPass_Input input ) : COLOR0
 		float rightAngle = atan2( rightDiff, vsOffsetLen*rightDepth );
 
 		// Left side
-        float leftDepth = tex2D( depthTextureSampler, input.texCoord-uvOffset );
+        float leftDepth = tex2D( linearDepthTextureSampler, input.texCoord-uvOffset );
         float leftDiff = -(leftDepth - depth);
 
 		if( doMaxDepthCheck && (leftDiff > ABAO_MaxDepthDelta) ) {
@@ -233,7 +233,7 @@ half4 AngleBasedAmbientOcclusionPS( PS_DeferredPass_Input input ) : COLOR0
 	return half4( pow(averageAccess, contrast), depth, 1, 1 );
 }
 
-half4 AmbientOcclusionPS(PS_DeferredPass_Input input) : COLOR0
+half4 ClassicAmbientOcclusionPS(PS_DeferredPass_Input input ) : COLOR0
 {
 
 	// Random offset vectors in view space.
@@ -302,12 +302,21 @@ half4 AmbientOcclusionPS(PS_DeferredPass_Input input) : COLOR0
 		{
 			offset = -offset;
 		}
-	
+
+        // limit how far apart samples can be to avoid slow down when up-close to walls
+        const float OffsetClampDepth = 2.0;
+        if( vsPosition.z < OffsetClampDepth )
+            offset *= vsPosition.z / OffsetClampDepth;
+
 		half3 vsTestPosition = vsPosition + offset;
 		
 		// Transform the point from view space to screen space.
 		half4 ssPosition = mul(half4(vsTestPosition, 1), cameraToScreenMatrix);
 		ssPosition.xyz /= ssPosition.w;
+
+        // Need to un-compensate for the half-pixel offset
+        ssPosition.x += rcpFrame.x;
+        ssPosition.y -= rcpFrame.y;
 		
 		// Get the screen space texture coordinates.
 		
@@ -315,20 +324,19 @@ half4 AmbientOcclusionPS(PS_DeferredPass_Input input) : COLOR0
 		texCoord.x = ssPosition.x * 0.5 + 0.5;
 		texCoord.y = 1.0 - (ssPosition.y * 0.5 + 0.5);
 
-		half testDepth = tex2D(depthTextureSampler, texCoord).r;
+		half testDepth = tex2D(linearDepthTextureSampler, texCoord).r;
 
 		float delta = vsTestPosition.z - testDepth;
 		if (delta >= minO)
 		{
 			float d = 1 - min((delta - minO) / (maxO - minO), 1);
-			obscurance += pow(d, obscuranceFalloff);
-		}
+            obscurance += pow(d, obscuranceFalloff);
+        }
 	
 	}
 
 	float accessibility = 1 - (obscurance / (numSamples + 1));
-	float depth = tex2D(depthTextureSampler, input.texCoord).r;	
-	return half4( pow(accessibility.r, contrast), depth, 0, 1);
+	return half4( pow(accessibility.r, contrast), vsPosition.z, 0, 1);
 }
 
 float4 BilateralBlur(PS_DeferredPass_Input input, float2 step)
@@ -431,14 +439,15 @@ technique VBilateralBlur
     }
 }
 
-technique AmbientOcclusion
+// This uses the normal-weighted SSAO shader, since that doesn't impact performance as much on medium-res
+technique ClassicAmbientOcclusion
 {
     pass p0
     {
         ZEnable             = False;
         ZWriteEnable        = False;
         VertexShader        = compile vs_3_0 DeferredPassVS();
-        PixelShader         = compile ps_3_0 AmbientOcclusionPS();
+        PixelShader         = compile ps_3_0 ClassicAmbientOcclusionPS();
         CullMode            = None;
     }
 }

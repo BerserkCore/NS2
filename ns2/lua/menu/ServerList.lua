@@ -158,6 +158,10 @@ function FilterModded(active)
     return function(entry) return not active or entry.modded == false end
 end
 
+function FilterFavoriteOnly(active)
+    return function(entry) return not active or entry.favorite == true end
+end
+
 function FilterRookie(active)
     return function(entry) return not active or entry.rookieFriendly == false end
 end
@@ -301,8 +305,10 @@ end
 function ServerList:AddEntry(serverEntry)
 
     table.insert(self.tableData, serverEntry)
-    // can afford to render here since that functionality became quite cheap
-    self:Sort(self.tableData)
+    RenderServerList(self)
+    
+    // dont sort here
+    //self:Sort(self.tableData)
     
 end
 

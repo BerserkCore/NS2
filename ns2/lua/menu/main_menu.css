@@ -1558,6 +1558,12 @@ form.filter_form slidebar
     left: 400px;
 }
 
+.filter_favorites
+{
+    top: 16px;
+    left: 600px;
+}
+
 .filter_rookie
 {
     top: 16px;

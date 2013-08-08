@@ -116,27 +116,36 @@ function Infestation:DestroyClientGeometry()
 end
 
 function Infestation:UpdateClientGeometry()
-
-    local parentCloakFraction = 0
     
+    local cloakFraction = 0
     local infestationParentId = self.infestationParentId
-    if infestationParentId ~= Entity_invalidId then
     
-        local infestationParent = Shared_GetEntity(infestationParentId)
-        if infestationParent and HasMixin(infestationParent, "Cloakable") then
-            parentCloakFraction = infestationParent:GetCloakedFraction()
-            if not GetAreEnemies(self, Client_GetLocalPlayer()) then
-                parentCloakFraction = 0
-            end
-        end
-    
-    end
+    if GetAreEnemies( self, Client_GetLocalPlayer() ) then
+        // we may be invisible to enemies
 
+        if infestationParentId ~= Entity_invalidId then
+            local infestationParent = Shared_GetEntity(infestationParentId)
+
+            if infestationParent then
+            
+                if HasMixin(infestationParent, "Cloakable") then
+                    cloakFraction = infestationParent:GetCloakedFraction()
+                end
+
+            else
+                // parent is missing, but one was expected
+                // assume it is because the parent is invisible to the local player, who may be a commander or something
+                // so we should be invisible
+                cloakFraction = 1.0
+            end
+        
+        end
+    end
+    
     local radius = self:GetRadius()
     local maxRadius = self:GetMaxRadius()
     local radiusFraction = (radius / maxRadius) * kDebugVisualGrowthScale
-    local parentCloaked = parentCloakFraction > 0.03
-
+    
     local decal = self.infestationDecal
     if decal then
         
@@ -153,7 +162,7 @@ function Infestation:UpdateClientGeometry()
         local clientRadius = radius * kClientScalarRange + kClientAddRange * (radiusFraction) + radiusMod
         
         decal:SetExtents( Vector(clientRadius, Infestation.kDecalVerticalSize, clientRadius) )
-        self.infestationMaterial:SetParameter("intensity", 1-parentCloakFraction)
+        self.infestationMaterial:SetParameter("intensity", 1-cloakFraction)
         
     end
     
@@ -166,10 +175,8 @@ function Infestation:UpdateClientGeometry()
             amount = math.min(time * 5, amount)
         end
 
-
-        if parentCloaked then
-            amount = 0.0
-        end
+        // apply cloaking effects
+        amount = amount * (1-cloakFraction)
         
         SetMaterialParameters(self.infestationModelArray, amount, origin, maxRadius)
         SetMaterialParameters(self.infestationShellModelArray, amount, origin, maxRadius)

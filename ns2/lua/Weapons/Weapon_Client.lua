@@ -22,6 +22,10 @@ end
 function Weapon:Dropped(prevOwner)
 end
 
+function Weapon:GetPreventCameraAnimation(player)
+    return not Client.GetOptionBoolean("CameraAnimation", true)
+end
+
 function Weapon:UpdateDropped()
 
     if self:GetPhysicsType() == PhysicsType.DynamicServer and not self.dropped then

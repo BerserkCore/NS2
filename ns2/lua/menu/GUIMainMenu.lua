@@ -410,6 +410,7 @@ local function RefreshServerList(self)
     self.refreshingServerList = true
     Client.RebuildServerList()
     self.playWindow.refreshButton:SetText("REFRESHING...")
+    self.playWindow:ResetSlideBar()
     self.timeRefreshButtonPressed = Shared.GetTime()
     self.selectServer:SetIsVisible(false)
     self.serverList:ClearChildren()
@@ -686,6 +687,20 @@ local function CreateFilterForm(self)
     description:SetText("FILTER MODDED")
     description:SetCSSClass("filter_description")
     
+    self.filterFavorites = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FAVORITES")
+    self.filterFavorites:SetCSSClass("filter_favorites")
+    self.filterFavorites:AddSetValueCallback( function(self)
+    
+        self.scriptHandle.serverList:SetFilter(7, FilterFavoriteOnly(self:GetValue()))
+        Client.SetOptionString("filter_favorites", ToString(self.scriptHandle.filterFavorites:GetValue()))
+        
+    end )
+    
+    local description = CreateMenuElement(self.filterFavorites, "Font")
+    description:SetText("FAVORITES")
+    description:SetCSSClass("filter_description")
+    
+    
     self.filterRookie = self.filterForm:CreateFormElement(Form.kElementType.Checkbox, "FILTER ROOKIE")
     self.filterRookie:SetCSSClass("filter_rookie")
     self.filterRookie:AddSetValueCallback( function(self)
@@ -707,6 +722,7 @@ local function CreateFilterForm(self)
     self.filterMaxPing:SetValue(tonumber(Client.GetOptionString("filter_maxping", "1")) or 1)
     self.filterModded:SetValue(true)
     self.filterRookie:SetValue(Client.GetOptionString("filter_rookie", "false"))
+    self.filterFavorites:SetValue(Client.GetOptionString("filter_favorites", "false"))
     
 end
 
@@ -786,6 +802,7 @@ function GUIMainMenu:CreateServerListWindow()
             // Default to sorting by ping!
             sortedColumn = nil
             entryCallbacks[6].OnClick()
+            self.playWindow:ResetSlideBar()
             RefreshServerList(self) 
         end
     })
@@ -1222,6 +1239,7 @@ local function InitOptions(optionElements)
     local ambientOcclusion = Client.GetOptionString("graphics/display/ambient-occlusion", kAmbientOcclusionModes[1])
     local infestation = Client.GetOptionString("graphics/infestation", "rich")
     local fovAdjustment = Client.GetOptionFloat("graphics/display/fov-adjustment", 0)
+    local cameraAnimation       = Client.GetOptionBoolean("CameraAnimation", true) and "ON" or "OFF"
     
     local minimapZoom = Client.GetOptionFloat( "minimap-zoom", 0.75 )
     local armorType = Client.GetOptionString( "armorType", "" )
@@ -1292,6 +1310,8 @@ local function InitOptions(optionElements)
     optionElements.FOVAdjustment:SetValue(fovAdjustment)
     optionElements.MinimapZoom:SetValue(minimapZoom)
     optionElements.ArmorType:SetValue(armorType)
+    optionElements.CameraAnimation:SetValue(cameraAnimation)
+    
     
     optionElements.SoundVolume:SetValue(soundVol)
     optionElements.MusicVolume:SetValue(musicVol)
@@ -1398,6 +1418,7 @@ local function SaveOptions(mainMenu)
     local voiceVol              = mainMenu.optionElements.VoiceVolume:GetValue() * 100
     
     local armorType             = mainMenu.optionElements.ArmorType:GetValue()
+    local cameraAnimation       = mainMenu.optionElements.CameraAnimation:GetActiveOptionIndex() > 1
     
     Client.SetOptionString( "locale", locale )
 
@@ -1407,6 +1428,7 @@ local function SaveOptions(mainMenu)
     Client.SetOptionBoolean( "commanderHelp", showCommanderHelp )
     Client.SetOptionBoolean( "drawDamage", drawDamage)
     Client.SetOptionBoolean( kRookieOptionsKey, rookieMode)
+    Client.SetOptionBoolean( "CameraAnimation", cameraAnimation)
     Client.SetOptionString( "armorType", armorType )
 
     Client.SetOptionFloat("input/mouse/acceleration-amount", accelerationAmount)
@@ -1444,6 +1466,10 @@ local function SaveOptions(mainMenu)
     Client.ReloadKeyOptions()
     
 
+end
+
+local function StoreCameraAnimationOption(formElement)
+    Client.SetOptionBoolean("CameraAnimation", formElement:GetActiveOptionIndex() > 1)
 end
 
 function GUIMainMenu:CreateOptionWindow()
@@ -1578,6 +1604,14 @@ function GUIMainMenu:CreateOptionWindow()
                 type    = "select",
                 values  = armorTypes
             },
+            
+            {
+                name    = "CameraAnimation",
+                label   = "CAMERA ANIMATION",
+                type    = "select",
+                values  = { "OFF", "ON" },
+                callback = StoreCameraAnimationOption
+            }, 
         }
 
     local soundOptions =
@@ -1693,7 +1727,7 @@ function GUIMainMenu:CreateOptionWindow()
                 type    = "select",
                 values  = { "OFF", "ON" },
                 callback = autoApplyCallback
-            },            
+            }, 
         }
         
     self.optionElements = { }
@@ -1705,7 +1739,7 @@ function GUIMainMenu:CreateOptionWindow()
     
     local tabs = 
         {
-            { label = "GENERAL",  form = generalForm, scroll = true },
+            { label = "GENERAL",  form = generalForm, scroll=true  },
             { label = "BINDINGS", form = keyBindingsForm, scroll=true },
             { label = "GRAPHICS", form = graphicsForm },
             { label = "SOUND",    form = soundForm },

@@ -326,10 +326,6 @@ if Client then
         return 0.08
     end
     
-    function Rifle:GetPreventCameraAnimation()
-        return self:GetIsReloading()
-    end
-    
     function Rifle:GetBarrelPoint()
     
         local player = self:GetParent()
