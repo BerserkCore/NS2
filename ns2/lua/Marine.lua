@@ -33,6 +33,7 @@ Script.Load("lua/ParasiteMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/WebableMixin.lua")
+Script.Load("lua/CorrodeMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -147,6 +148,7 @@ AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(WebableMixin, networkVars)
+AddMixinNetworkVars(CorrodeMixin, networkVars)
 
 function Marine:OnCreate()
 
@@ -167,6 +169,7 @@ function Marine:OnCreate()
     InitMixin(self, ParasiteMixin)
     InitMixin(self, RagdollMixin)
     InitMixin(self, WebableMixin)
+    InitMixin(self, CorrodeMixin)
     
     //self.loopingSprintSoundEntId = Entity.invalidId
     

@@ -114,7 +114,7 @@ local kWhackSpeed = 16
 function AiGrenadeWhackAttackType:OnHit()
 
     local grenade = self:GetTarget()
-    if grenade and grenade:isa("Grenade") then
+    if grenade and grenade:isa("Grenade") and GetCanSeeEntity(self.aiEntity, grenade) then
     
         local range = (grenade:GetOrigin() - self.aiEntity:GetOrigin()):GetLength() 
 
@@ -187,7 +187,7 @@ function AiGrenadeWhackAttackType:ScanForGrenades()
         if attackTime and (nextAttackTime == nil or attackTime < nextAttackTime) then
         
             // ignore grenades already getting whacked
-            if not grenade:GetWhacker() then
+            if not grenade:GetWhacker() and GetCanSeeEntity(self.aiEntity, grenade) then
                 targetId, nextAttackTime = grenade:GetId(), attackTime
             end
             

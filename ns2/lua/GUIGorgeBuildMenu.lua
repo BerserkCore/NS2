@@ -155,7 +155,7 @@ local function GetRowForTechId(techId)
         rowTable[kTechId.Hydra] = 1
         rowTable[kTechId.GorgeTunnel] = 2
         rowTable[kTechId.Clog] = 3
-        rowTable[kTechId.Babbler] = 4
+        rowTable[kTechId.BabblerEgg] = 4
         rowTable[kTechId.Web] = 5
     
     end

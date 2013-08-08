@@ -79,7 +79,7 @@ if Client then
         local prediction = Shared.GetIsRunningPrediction()
         local now = Shared.GetTime()
         local enoughTimePassed = (now - self.lastMarineActionFindTime) >= kIconUpdateRate
-        if gameStarted and not prediction and enoughTimePassed then
+        if not prediction and enoughTimePassed then
         
             self.lastMarineActionFindTime = now
             
@@ -88,7 +88,7 @@ if Client then
             if self:GetIsAlive() and not GetIsVortexed(self) then
             
                 local foundNearbyWeapon = FindNearbyWeapon(self, self:GetOrigin())
-                if foundNearbyWeapon then
+                if gameStarted and foundNearbyWeapon then
                 
                     self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Drop"), foundNearbyWeapon:GetClassName(), nil)
                     success = true
@@ -96,13 +96,13 @@ if Client then
                 else
                 
                     local ent = self:PerformUseTrace()
-                    if ent then
+                    if ent and (gameStarted or (ent.GetUseAllowedBeforeGameStart and ent:GetUseAllowedBeforeGameStart())) then
                     
                         if GetPlayerCanUseEntity(self, ent) and not self:GetIsUsing() then
                         
                             local hintText = nil
                             if ent:isa("CommandStation") and ent:GetIsBuilt() then
-                                hintText = "START_COMMANDING"
+                                hintText = gameStarted and "START_COMMANDING" or "START_GAME"
                             end
                             
                             self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, hintText, nil)

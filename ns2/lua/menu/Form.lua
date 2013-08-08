@@ -15,10 +15,11 @@ Script.Load("lua/menu/SlideSelect.lua")
 Script.Load("lua/menu/Slider.lua")
 Script.Load("lua/menu/SlideBar.lua")
 Script.Load("lua/menu/FormButton.lua")
+Script.Load("lua/menu/ProgressBar.lua")
 
 class 'Form' (MenuElement)
 
-Form.kElementType = enum({'Checkbox', 'DropDown', 'TextInput', 'SlideSelect', 'Slider', 'SlideBar', 'FormButton' })
+Form.kElementType = enum({'Checkbox', 'DropDown', 'TextInput', 'SlideSelect', 'Slider', 'SlideBar', 'FormButton', 'ProgressBar' })
 
 local kDefaultSize = Vector(400, 400, 0)
 

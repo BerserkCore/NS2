@@ -12,16 +12,23 @@ Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/TriggerMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/OwnerMixin.lua")
+Script.Load("lua/Mixins/BaseModelMixin.lua")
+Script.Load("lua/Mixins/ClientModelMixin.lua")
 
 class 'Web' (Actor)
 
 Web.kMapName = "web"
+
+Web.kModelName = PrecacheAsset("models/alien/gorge/web.model")
+local kAnimationGraph = PrecacheAsset("models/alien/gorge/web.animation_graph")
 
 local networkVars =
 {
     endPoint = "vector"
 }
 
+AddMixinNetworkVars(BaseModelMixin, networkVars)
+AddMixinNetworkVars(ClientModelMixin, networkVars)
 AddMixinNetworkVars(TechMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 
@@ -41,6 +48,8 @@ function Web:OnCreate()
 
     Entity.OnCreate(self)
     
+    InitMixin(self, BaseModelMixin)
+    InitMixin(self, ClientModelMixin)
     InitMixin(self, TechMixin)
     InitMixin(self, TeamMixin)
     
@@ -57,6 +66,17 @@ function Web:OnCreate()
     
     self:SetUpdates(false)
     
+end
+
+function Web:OnInitialized()
+
+    self:SetModel(Web.kModelName, kAnimationGraph)
+    self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
+    
+end
+
+function Web:GetPhysicsModelAllowedOverride()
+    return false
 end
 
 if Server then
@@ -92,8 +112,18 @@ if Server then
     end
 
     function Web:SetEndPoint(endPoint)
+    
         self.endPoint = Vector(endPoint)
         CreateTrigger(self)
+        
+        local coords = Coords.GetIdentity()
+        coords.origin = self:GetOrigin()
+        coords.zAxis = GetNormalizedVector(self.endPoint - self:GetOrigin())
+        coords.xAxis = coords.zAxis:GetPerpendicular()
+        coords.yAxis = coords.zAxis:CrossProduct(coords.xAxis)
+        
+        self:SetCoords(coords)
+        
     end
 
     // OnUpdate is only called when entities are in interest range    
@@ -145,25 +175,38 @@ function Web:OnDestroy()
 
 end
 
-function Web:OnUpdateRender()
+if Client then
 
-    // we are smart and do that only once.
-    if not self.webRenderModel then
-    
-        self.webRenderModel = DynamicMesh_Create()
-        self.webRenderModel:SetMaterial(kWebMaterial)
+    function Web:OnUpdateRender()
+
+        // we are smart and do that only once.
+        /* old code generated model
+        if not self.webRenderModel then
         
-        local length = (self.endPoint - self:GetOrigin()):GetLength()
-        local coords = Coords.GetIdentity()
-        coords.origin = self:GetOrigin()
-        coords.zAxis = GetNormalizedVector(self.endPoint - self:GetOrigin())
-        coords.xAxis = coords.zAxis:GetPerpendicular()
-        coords.yAxis = coords.zAxis:CrossProduct(coords.xAxis)
+            self.webRenderModel = DynamicMesh_Create()
+            self.webRenderModel:SetMaterial(kWebMaterial)
+            
+            local length = (self.endPoint - self:GetOrigin()):GetLength()
+            local coords = Coords.GetIdentity()
+            coords.origin = self:GetOrigin()
+            coords.zAxis = GetNormalizedVector(self.endPoint - self:GetOrigin())
+            coords.xAxis = coords.zAxis:GetPerpendicular()
+            coords.yAxis = coords.zAxis:CrossProduct(coords.xAxis)
+            
+            DynamicMesh_SetTwoSidedLine(self.webRenderModel, coords, kWebWidth, length)
         
-        DynamicMesh_SetTwoSidedLine(self.webRenderModel, coords, kWebWidth, length)
-    
+        end
+        */
+
     end
-
-end
+    
+    function Web:OnUpdatePoseParameters()
+    
+        local length = Clamp((self.endPoint - self:GetOrigin()):GetLength(), kMinWebLength, kMaxWebLength)    
+        self:SetPoseParam("scale", length)
+        
+    end
+    
+end    
 
 Shared.LinkClassToMap("Web", Web.kMapName, networkVars)

@@ -97,6 +97,21 @@ local function UpdateCorrodeMaterial(self)
     
 end
 
+local function CheckTunnelCorrode(self)
+
+    if (not self.timeLastTunnelCorrodeCheck or self.timeLastTunnelCorrodeCheck + 1 < Shared.GetTime() ) and GetIsPointInGorgeTunnel(self:GetOrigin()) then
+        
+        // drain armor only
+        self:DeductHealth(kGorgeArmorTunnelDamagePerSecond, nil, nil, false, true)
+        
+        self.isCorroded = true
+        self.timeCorrodeStarted = Shared.GetTime()
+        self.timeLastTunnelCorrodeCheck = Shared.GetTime()
+
+    end
+
+end
+
 local function SharedUpdate(self, deltaTime)
     
     if Server then
@@ -104,6 +119,8 @@ local function SharedUpdate(self, deltaTime)
         if self.isCorroded and self.timeCorrodeStarted + kCorrodeShaderDuration < Shared.GetTime() then        
             self.isCorroded = false   
         end
+        
+        CheckTunnelCorrode(self)
         
     elseif Client then
         UpdateCorrodeMaterial(self)

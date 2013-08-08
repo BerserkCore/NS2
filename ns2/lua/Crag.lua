@@ -98,6 +98,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function Crag:OnCreate()
 

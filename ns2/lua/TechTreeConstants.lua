@@ -69,6 +69,7 @@ kTechId = enum({
     // Research 
     'PhaseTech', 'MACSpeedTech', 'MACEMPTech', 'ARCArmorTech', 'ARCSplashTech', 'JetpackTech', 'ExosuitTech',
     'DualMinigunTech', 'DualMinigunExosuit',
+    'ClawRailgunTech', 'ClawRailgunExosuit',
     'DualRailgunTech', 'DualRailgunExosuit',
     'DropJetpack', 'DropExosuit',
     
@@ -102,7 +103,7 @@ kTechId = enum({
     
     // Alien abilities (not all are needed, only ones with damage types)
     'Bite', 'LerkBite', 'Parasite',  'Spit', 'BuildAbility', 'Spray', 'Spores', 'HydraSpike', 'Swipe', 'StabBlink', 'Gore', 'Smash',
-    'Babbler',
+    'Babbler', 'BabblerEgg',
 
     
     // upgradeable alien abilities (need to be unlocked)

@@ -8,23 +8,6 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 /**
- * Sets whether or not the actor is marked as selected. The actual selection state is stored
- * with the commander, this is used to make the actor always propagated to commanders.
- */
-function ScriptActor:SetIsSelected(selected)
-
-    if selected then
-        self.selectedCount = self.selectedCount + 1
-    else
-        self.selectedCount = self.selectedCount - 1
-        ASSERT(self.selectedCount >= 0)
-    end
-    
-    self:UpdateIncludeRelevancyMask()
-
-end
-
-/**
  * Sets whether or not the actor is marked as hotgrouped. The actual hotgroup state is stored
  * with the commander, this is used to make the actor always propagated to commanders.
  */
@@ -38,36 +21,6 @@ function ScriptActor:SetIsHotgrouped(hotgrouped)
     end
     
     self:UpdateIncludeRelevancyMask()
-
-end
-
-function ScriptActor:UpdateIncludeRelevancyMask()
-
-    // Make entities which are active for a commander relevant to all commanders
-    // on the same team.
-    self:SetAlwaysRelevantToCommander( self.selectedCount > 0 or self.hotgroupedCount > 0 )
-    
-end
-
-/**
- * Marks the actor as being always relevant to the commanders on the same team.
- */
-function ScriptActor:SetAlwaysRelevantToCommander(relevant)
-    
-    local includeMask = 0
-    
-    if relevant then
-    
-        if not HasMixin(self, "Team") then
-            includeMask = bit.bor(kRelevantToTeam1Commander, kRelevantToTeam2Commander)
-        elseif self:GetTeamNumber() == 1 then
-            includeMask = kRelevantToTeam1Commander
-        elseif self:GetTeamNumber() == 2 then
-            includeMask = kRelevantToTeam2Commander
-        end
-    end
-    
-    self:SetIncludeRelevancyMask( includeMask )
 
 end
 

@@ -22,6 +22,13 @@ local kMaxOutCrop = 0.45 // should be low enough so skulks can always comfortabl
 local kMinOutCrop = 0.1 // should be 
 local kMaxIterations = 16
 
+local kSlowUpdateInterval = 0.5 // when the infestation has been stable for a while, run full updates this many times/sec
+local kSlowUpdateCountLimit = 5 // how many stable updates need to pass before going into slow update mode
+
+local kBlobGenNum = 50 // base number of blobs generated per infestation
+local kBlobGenFrameSpread = 5 // number of frames taken to generate the spread
+local kBlobGenMax = 100 // maximum number of blobs generated during a frame for all infestations
+
 local _quality = nil
 local _numBlobsGenerated = 0
 
@@ -59,7 +66,20 @@ function Infestation:OnInitialized()
     self.hasClientGeometry = false
     self.parentMissingTime = 0.0
     
+    self.slowUpdateCount  = 0
+    self.updateInterval = 0
+    self.lastUpdateTime = 0
+    
 end
+
+
+function Infestation:RunUpdatesAtFullSpeed()
+
+    self.slowUpdateCount = 0
+    self.updateInterval = 0
+
+end
+
 
 local function TraceBlobRay(startPoint, endPoint)
     // we only want to place blobs on static level geometry, so we select this rep and mask
@@ -119,42 +139,52 @@ function Infestation:DestroyClientGeometry()
     
 end
 
-function Infestation:UpdateClientGeometry()
-    
+function Infestation:GetParentCloakFraction()
+
     local cloakFraction = 0
     local infestationParentId = self.infestationParentId
-    
-    if GetAreEnemies( self, Client_GetLocalPlayer() ) then
-        // we may be invisible to enemies
 
-        if infestationParentId ~= Entity_invalidId then
-            local infestationParent = Shared_GetEntity(infestationParentId)
+    if infestationParentId ~= Entity_invalidId then
+        local infestationParent = Shared_GetEntity(infestationParentId)
 
-            if infestationParent then
-            
-                if HasMixin(infestationParent, "Cloakable") then
-                    cloakFraction = infestationParent:GetCloakedFraction()
-                end
-                
-                self.parentMissingTime = -1.0
-                
-            else
-            
-                // parent is missing, but one was expected
-                // assume it is because the parent is invisible/irrelevant to the local player, who may be a commander or something
-                // But, due to a quirk with how state is sync'd, delay this hiding to avoid flickering.
-                if self.parentMissingTime < 0 then
-                    self.parentMissingTime = Shared_GetTime()
-                elseif (Shared_GetTime() - self.parentMissingTime) > kTimeToCloakIfParentMissing then
-                    cloakFraction = 1.0
-                end
-                
+        if infestationParent then
+        
+            if HasMixin(infestationParent, "Cloakable") then
+                cloakFraction = infestationParent:GetCloakedFraction()
             end
-        else
+            
             self.parentMissingTime = -1.0
+            
+        else
+        
+            // parent is missing, but one was expected
+            // assume it is because the parent is invisible/irrelevant to the local player, who may be a commander or something
+            // But, due to a quirk with how state is sync'd, delay this hiding to avoid flickering.
+            if self.parentMissingTime < 0 then
+                self.parentMissingTime = Shared_GetTime()
+            elseif (Shared_GetTime() - self.parentMissingTime) > kTimeToCloakIfParentMissing then
+                // assume that if the parent is missing, we should assume it it cloaked
+                cloakFraction = 1.0
+            end
+            
         end
+    else
+        self.parentMissingTime = -1.0
     end
     
+    return cloakFraction
+end
+
+function Infestation:UpdateClientGeometry()
+
+    PROFILE("Infestation:UpdateClientGeometry()")
+    
+    local cloakFraction = 0
+    if GetAreEnemies( self, Client_GetLocalPlayer() ) then
+        // we may be invisible to enemies
+        cloakFraction = self:GetParentCloakFraction()
+    end
+
     local radius = self:GetRadius()
     local maxRadius = self:GetMaxRadius()
     local radiusFraction = (radius / maxRadius) * kDebugVisualGrowthScale
@@ -176,7 +206,7 @@ function Infestation:UpdateClientGeometry()
     end
     
     if self.infestationDecals then
-        self.infestationMaterial:SetParameter("amount", radiusFraction)
+        self.infestationMaterial:SetParameter("amount", amount)
         self.infestationMaterial:SetParameter("origin", origin)
         self.infestationMaterial:SetParameter("maxRadius", maxRadius)
     end
@@ -600,12 +630,13 @@ function Infestation:ResetBlobPlacement()
 
     self.blobCoords = { }
     
-    local numBlobGens = 50
+    local numBlobGens = kBlobGenNum
     local parent = Shared.GetEntity(self.infestationParentId)
     if parent and parent.GetInfestationNumBlobSplats then
         numBlobGens = numBlobGens * parent:GetInfestationNumBlobSplats()
     end    
     
+    self.maxNumBlobs = numBlobGens
     self.numBlobsToGenerate = numBlobGens
 
 end
@@ -663,6 +694,10 @@ end
 function Infestation:OnUpdate(deltaTime)
 
     PROFILE("Infestation:OnUpdate")
+
+    if self.lastUpdateTime + self.updateInterval > Shared.GetTime() then
+        return
+    end
     
     ScriptActor.OnUpdate(self, deltaTime)
     
@@ -684,7 +719,7 @@ function Infestation:OnUpdate(deltaTime)
     end
 
     if self.numBlobsToGenerate > 0 then
-        numBlobGens = math.min(_numBlobsToGenerate, self.numBlobsToGenerate)
+        numBlobGens = math.min(_numBlobsToGenerate, math.min(self.maxNumBlobs / kBlobGenFrameSpread, self.numBlobsToGenerate))
         self:PlaceBlobs(numBlobGens)
         self.numBlobsToGenerate = self.numBlobsToGenerate - numBlobGens
         _numBlobsToGenerate = _numBlobsToGenerate - numBlobGens
@@ -696,6 +731,41 @@ function Infestation:OnUpdate(deltaTime)
     if self.numBlobsToGenerate == 0 then
         self:UpdateBlobAnimation()
     end
+    
+    // if we are not doing anything, we can slow down our update rate
+    if self:IsStable() then
+    
+        if self.updateInterval == 0 then
+
+            self.slowUpdateCount = self.slowUpdateCount + 1
+            if self.slowUpdateCount >  kSlowUpdateCountLimit then
+                self.updateInterval = kSlowUpdateInterval
+            end
+
+        end
+
+    else
+
+        self:RunUpdatesAtFullSpeed()
+       
+    end
+    
+    self.lastUpdateTime = Shared.GetTime()
+     
+end
+
+// Return true if the infestation is stable, ie not changing anything
+// Once the infestation has been stable for a while, the infestations slows
+// down its update rate to save on CPU
+function Infestation:IsStable()
+    //        local cloakFraction = 0
+    if GetAreEnemies( self, Client_GetLocalPlayer() ) then
+        // we may be invisible to enemies
+        cloakFraction = self:GetParentCloakFraction()
+    end
+
+    // Log("%s: %s, %s, %s, %s, %s", self, self.clientHostAlive, self.numBlobsToGenerate, cloakFraction, self:GetRadius(), self:GetMaxRadius()) 
+    return self.clientHostAlive and self.numBlobsToGenerate == 0 and (cloakFraction == 0 or cloakFraction == 1) and self:GetRadius() == self:GetMaxRadius() 
     
 end
 
@@ -828,15 +898,18 @@ function Infestation_SetQuality(quality)
 
     local ents = GetEntitiesWithFilter( Shared.GetEntitiesWithClassname("Infestation"), Filter )
     for id,ent in ipairs(ents) do
-        ent:DestroyClientGeometry()
-    end
     
+        ent:DestroyClientGeometry()
+        ent:RunUpdatesAtFullSpeed()
+
+    end
+     
 end
 
 function Infestation_UpdateForPlayer()
     
-    // Maximum number of blobs to generate in a frame
-    _numBlobsToGenerate = 100
+    // Maximum number of blobs to generate in a frame.
+    _numBlobsToGenerate = kBlobGenMax
 
     // Change the texture scale when we're viewing top down to reduce the
     // tiling and make it look better.

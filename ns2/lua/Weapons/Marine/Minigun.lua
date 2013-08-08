@@ -265,6 +265,7 @@ local function Shoot(self, leftSide)
         if trace.fraction < 1 then
         
             local direction = (trace.endPoint - startPoint):GetUnit()
+            local impactPoint = trace.endPoint - direction * kHitEffectOffset
             
             local impactPoint = trace.endPoint - GetNormalizedVector(endPoint - startPoint) * kHitEffectOffset
             local surfaceName = trace.surface
@@ -272,7 +273,7 @@ local function Shoot(self, leftSide)
             local effectFrequency = self:GetTracerEffectFrequency()
             local showTracer = ConditionalValue(GetIsVortexed(player), false, math.random() < effectFrequency)
             
-            self:ApplyBulletGameplayEffects(player, trace.entity, trace.endPoint, direction, kMinigunDamage, trace.surface, showTracer)
+            self:ApplyBulletGameplayEffects(player, trace.entity, impactPoint, direction, kMinigunDamage, trace.surface, showTracer)
             
             if Client and showTracer then
                 TriggerFirstPersonTracer(self, trace.endPoint)

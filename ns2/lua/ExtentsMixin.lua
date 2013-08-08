@@ -15,9 +15,9 @@ Script.Load("lua/FunctionContracts.lua")
 ExtentsMixin = CreateMixin( ExtentsMixin )
 ExtentsMixin.type = "Extents"
 
-ExtentsMixin.expectedCallbacks =
+ExtentsMixin.expectedMixins =
 {
-    GetTechId = "Returns the tech Id of this entity."
+    Tech = "Returns the tech Id of this entity."
 }
 
 ExtentsMixin.optionalCallbacks =
@@ -25,11 +25,46 @@ ExtentsMixin.optionalCallbacks =
     GetExtentsOverride = "Returns a Vector indicating the current extents of this entity."
 }
 
-function ExtentsMixin:__initmixin()
+local function InternalGetMaxExtents(self)
 
-    local maxExtents = LookupTechData(self:GetTechId(), kTechDataMaxExtents, Vector(0.5, 0.5, 0.5))
-    self.maxExtents = Vector(maxExtents)
+    if not self.maxExtents then
     
+        local maxExtents = LookupTechData(self:GetTechId(), kTechDataMaxExtents, nil)
+        
+        if not maxExtents then
+            
+            if HasMixin(self, "Model") then
+            
+                local min, max = self:GetModelExtents()
+                maxExtents = max
+
+            end
+            
+        else
+            self.extentsTechDataDefined = true
+        end
+        
+        if maxExtents == nil then
+            maxExtents = Vector(0.5, 0.5, 0.5)
+        end
+    
+        self.maxExtents = Vector(maxExtents)
+    
+    end
+    
+    return self.maxExtents
+
+end
+
+function ExtentsMixin:__initmixin()
+    InternalGetMaxExtents(self)
+end
+
+// we keep the previous extents in case there is no model anymore
+function ExtentsMixin:OnModelChanged(hasModel)
+    if hasModel and not self.extentsTechDataDefined then
+        self.maxExtents = nil
+    end
 end
 
 function ExtentsMixin:GetExtents()
@@ -43,6 +78,6 @@ end
 AddFunctionContract(ExtentsMixin.GetExtents, { Arguments = { "Entity" }, Returns = { "Vector" } })
 
 function ExtentsMixin:GetMaxExtents()
-    return Vector(self.maxExtents)
+    return Vector(InternalGetMaxExtents(self))
 end
 AddFunctionContract(ExtentsMixin.GetMaxExtents, { Arguments = { "Entity" }, Returns = { "Vector" } })

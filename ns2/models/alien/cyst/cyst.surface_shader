@@ -12,6 +12,7 @@
         <input name="hiddenAmount" type="float">0.0</input>
 		<input name="connected" type="float">1.0</input>
 		<input name="maturity" type="float">0.0</input>
+        <input name="killWarning" type="float">0.0</input>
 	</inputs>
 	
 	<params>
@@ -56,11 +57,11 @@
 			material.albedo = tex2D(albedoMap, input.texCoord).rgb * connected + (1 - connected) * tex2D(unconnectedAlbedoMap, input.texCoord).rgb;
 			material.emissive = (tex2D(emissiveMap, input.texCoord).rgb * (connected + connected * maturity * maturityPulse) + (1 - connected) * tex2D(unconnectedEmissiveMap, input.texCoord).rgb) * f;
 
+            float killWarningPulse = (1 + cos(time * 12)) * 2;
+            material.emissive += float3((killWarning * 0.5) + 0.3 * killWarning * killWarningPulse, 0, 0);
+            
 			// Opacity
 			material.opacity = f;
-			
-			
-			
 		}
 	]]>
 	</code>

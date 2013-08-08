@@ -157,7 +157,7 @@ function PlayingTeam:ResetTeam()
 
     local initialTechPoint = self:GetInitialTechPoint()
     
-    self:SpawnInitialStructures(initialTechPoint)
+    local tower, commandStructure = self:SpawnInitialStructures(initialTechPoint)
     
     self.conceded = false
     
@@ -169,6 +169,8 @@ function PlayingTeam:ResetTeam()
         player:SetResources(kPlayerInitialIndivRes)
         
     end
+    
+    return commandStructure
     
 end
 
@@ -265,6 +267,7 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.ExosuitTech] = 3
         relevantResearchIds[kTechId.JetpackTech] = 3
         relevantResearchIds[kTechId.DualMinigunTech] = 3
+        relevantResearchIds[kTechId.ClawRailgunTech] = 3
         relevantResearchIds[kTechId.DualRailgunTech] = 3
         
         relevantResearchIds[kTechId.Armor1] = 1

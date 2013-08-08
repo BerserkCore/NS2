@@ -155,6 +155,13 @@ end
 
 if Server then
 
+    /**
+     * The entity could be configured to not ragdoll even if the animation tells it to.
+     */
+    function RagdollMixin:SetBypassRagdoll(bypass)
+        self.bypassRagdoll = bypass
+    end
+    
     function RagdollMixin:OnTag(tagName)
     
         PROFILE("RagdollMixin:OnTag")
@@ -162,7 +169,13 @@ if Server then
         if not self.GetHasClientModel or not self:GetHasClientModel() then
         
             if tagName == "death_end" then
-                SetRagdoll(self, kRagdollTime)
+            
+                if self.bypassRagdoll then
+                    self:SetModel(nil)
+                else
+                    SetRagdoll(self, kRagdollTime)
+                end
+                
             elseif tagName == "destroy" then
                 DestroyEntitySafe(self)
             end

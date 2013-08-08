@@ -98,7 +98,7 @@ function DropStructureAbility:GetNumStructuresBuilt(techId)
         return self.numWebsLeft
     end
         
-    if techId == kTechId.Babbler then
+    if techId == kTechId.BabblerEgg then
         return self.numBabblersLeft
     end
         
@@ -258,15 +258,21 @@ local function DropStructure(self, player, origin, direction, structureAbility, 
                 // Check for space
                 if structure:SpaceClearForEntity(coords.origin) then
                 
-                    local angles = Angles()
+                    local angles = Angles()                    
                     
-                    if not structure:isa("Clog") then
-                        angles:BuildFromCoords(coords)
-                    else
+                    if structure:isa("BabblerEgg") and coords.yAxis.y > 0.8 then
+                        angles.yaw = math.random() * math.pi * 2
+                    
+                    elseif structure:isa("Clog") then
+                    
                         angles.yaw = math.random() * math.pi * 2
                         angles.pitch = math.random() * math.pi * 2
                         angles.roll = math.random() * math.pi * 2
+                        
+                    else
+                        angles:BuildFromCoords(coords)
                     end
+                    
                     structure:SetAngles(angles)
                     
                     if structure.OnCreatedByGorge then
@@ -460,7 +466,7 @@ function DropStructureAbility:ProcessMoveOnWeapon(input)
             local numAllowedClogs = LookupTechData(kTechId.Clog, kTechDataMaxAmount, -1) 
             local numAllowedTunnels = LookupTechData(kTechId.GorgeTunnel, kTechDataMaxAmount, -1) 
             local numAllowedWebs = LookupTechData(kTechId.Web, kTechDataMaxAmount, -1) 
-            local numAllowedBabblers = LookupTechData(kTechId.Babbler, kTechDataMaxAmount, -1) 
+            local numAllowedBabblers = LookupTechData(kTechId.BabblerEgg, kTechDataMaxAmount, -1) 
 
             if numAllowedHydras >= 0 then     
                 self.numHydrasLeft = team:GetNumDroppedGorgeStructures(player, kTechId.Hydra)           
@@ -479,7 +485,7 @@ function DropStructureAbility:ProcessMoveOnWeapon(input)
             end
             
             if numAllowedBabblers >= 0 then     
-                self.numBabblersLeft = team:GetNumDroppedGorgeStructures(player, kTechId.Babbler)           
+                self.numBabblersLeft = team:GetNumDroppedGorgeStructures(player, kTechId.BabblerEgg)           
             end
             
         end
@@ -555,6 +561,10 @@ if Client then
         self:DestroyBuildMenu()        
         Ability.OnDestroy(self)
         
+    end
+    
+    function DropStructureAbility:OnKillClient()
+        self:DestroyBuildMenu()
     end
     
     function DropStructureAbility:OnDrawClient()

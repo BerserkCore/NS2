@@ -62,57 +62,6 @@ function PathingMixin:GetMoveDirection()
     
 end
 
-function PathingMixin:SetPathingFlags(flags)
-
-    local model = nil
-    if HasMixin(self, "Model") then
-        model = Shared.GetModel(self.modelIndex)
-    end
-    
-    local extents = nil
-    local position = self:GetOrigin()
-    
-    if model ~= nil then
-    
-        local min, max = model:GetExtents()
-        extents = max
-        
-    end
-    
-    if self.GetPathingFlagOverride then
-        position, extents, flags = self:GetPathingFlagOverride(position, extents, flags)
-    end
-    
-    if extents ~= nil then
-        Pathing.SetPolyFlags(position, extents, flags)
-    end
-    
-end
-
-function PathingMixin:ClearPathingFlags(flags)
-
-    local model = Shared.GetModel(self.modelIndex)
-    local extents = nil
-    local position = self:GetOrigin()
-    
-    if model ~= nil then
-    
-        local min, max = model:GetExtents()
-        extents = max
-        
-    end
-    
-    if self.GetPathingFlagOverride then
-        position, extents, flags = self.GetPathingFlagOverride(position, extents, flags)
-    end
-    
-    if extents ~= nil then
-        Pathing.ClearPolyFlags(position, extents, flags)
-    end
-    
-end
-
-
 function PathingMixin:NormalizeYaw(yaw)
 
     yaw = yaw % pi2
@@ -263,6 +212,17 @@ function PathingMixin:SetCurrentPositionValid(position)
     
 end
 
+function PathingMixin:OnObstacleChanged()
+    self.resetAtTime = Shared.GetTime() + 0.2
+end
+
+// hack, there seems to be a delay when an obstacle is added and the pathing mesh updated
+function PathingMixin:ResetPathing()
+    self.cursor = nil
+    self.points = nil
+    self.targetPoint = nil
+end
+
 //
 // Move towards the given endPoint at given speed and time.
 // Return true if we have gone as far as we can, which can indicate that we can't reach the target
@@ -270,6 +230,11 @@ end
 function PathingMixin:MoveToTarget(physicsGroupMask, endPoint, movespeed, time)
 
     PROFILE("PathingMixin:MoveToTarget")
+    
+    if self.resetAtTime and self.resetAtTime < Shared.GetTime() then
+        self:ResetPathing()
+        self.resetAtTime = nil
+    end
     
     if not self:CheckTarget(endPoint) then
         return true

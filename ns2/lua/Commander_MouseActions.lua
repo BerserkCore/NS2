@@ -8,6 +8,75 @@
 
 assert(Client)
 
+local function ClickSelect(commander, x, y, controlSelect, shiftSelect)
+
+    local success = false
+    local hitEntity = false
+    shiftSelect = shiftSelect == true
+
+    if Client and commander.leftClickActionDelay > 0 then
+        return false
+    end
+    
+    if Client and commander.timeLastTargetedAction and commander.timeLastTargetedAction + kCommanderLeftClickDelay > Shared.GetTime() then
+        return false
+    end
+    
+    local pickVec = CreatePickRay(commander, x, y)
+    local entity = commander:GetUnitUnderCursor(pickVec) 
+    
+    if controlSelect then
+    
+        // select all entities on screen
+        local entity = commander:GetUnitUnderCursor(pickVec) 
+        if entity and HasMixin(entity, "Selectable") then
+        
+            local pickStartVec = CreatePickRay(commander, 0, 0)
+            local pickEndVec = CreatePickRay(commander, Client.GetScreenWidth(), Client.GetScreenHeight())   
+            local newSelection = {}
+            // select entities of the same kind
+            local potentials = GetEntitiesForTeam(entity:GetClassName(), commander:GetTeamNumber())    
+            commander:GetEntitiesBetweenVecs(potentials, pickStartVec, pickEndVec, newSelection)
+            
+            if not shiftSelect then
+                DeselectAllUnits(commander:GetTeamNumber())
+            end
+            
+            for _, entity in ipairs(newSelection) do
+            
+                local setSelected = true
+                if shiftSelect then
+                    setSelected = not entity:GetIsSelected(commander:GetTeamNumber())
+                end
+            
+                entity:SetSelected(commander:GetTeamNumber(), setSelected)    
+                
+            end
+        
+        end
+        
+    else
+        
+        if entity and HasMixin(entity, "Selectable") then
+        
+            if shiftSelect then
+                local isSelected = entity:GetIsSelected(commander:GetTeamNumber())
+                entity:SetSelected(commander:GetTeamNumber(), not isSelected, true)
+            else
+            
+                DeselectAllUnits(commander:GetTeamNumber())
+                entity:SetSelected(commander:GetTeamNumber(), true)
+            
+            end
+
+        end
+     
+    end
+    
+    return success, hitEntity
+    
+end
+
 // The number of pixels that the cursor needs to move in order to enable the marquee selector.
 local kEnableSelectorMoveAmount = 5
 
@@ -30,8 +99,7 @@ kMouseActions.ButtonDown[InputKey.MouseButton0] = function(player, mouseX, mouse
         local techNode = GetTechNode(player.currentTechId)
         
         if player.currentTechId == nil or techNode == nil or not techNode:GetRequiresTarget() then
-            // TODO: Move clicking code out of the Commander class.
-            player:ClickSelect(mouseX, mouseY, player.ctrlDown)
+            ClickSelect(player, mouseX, mouseY, player.ctrlDown, player.shiftDown)
         end
         
     end
@@ -41,7 +109,7 @@ end
 kMouseActions.ButtonUp[InputKey.MouseButton0] = function(player, mouseX, mouseY)
 
     if GetIsCommanderMarqueeSelectorDown() then
-        SetCommanderMarqueeeSelectorUp(mouseX, mouseY)
+        SetCommanderMarqueeeSelectorUp(mouseX, mouseY, player.shiftDown)
     else
         // TODO: Move code into this file.
         CommanderUI_OnMouseRelease(0, mouseX, mouseY)
@@ -70,7 +138,7 @@ kMouseActions.DoubleClick[InputKey.MouseButton0] = function(player, mouseX, mous
             // Double clicking on an entity will simulate a control click.
             // All entities of the same type will be selected.
             // ToDo: Move ClickSelect code out of Player and into this file.
-            player:ClickSelect(mouseX, mouseY, true)
+            ClickSelect(player, mouseX, mouseY, true, player.shiftDown)
             
         end
         

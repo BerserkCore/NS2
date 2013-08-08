@@ -383,9 +383,7 @@ function GUISelectionPanel:UpdateSelected()
     
 end
 
-function GUISelectionPanel:UpdateSingleSelection(entityId)
-
-    local entity = Shared.GetEntity(entityId)
+function GUISelectionPanel:UpdateSingleSelection(entity)
 
     // Make all multiselection icons invisible.
     function SetItemInvisible(item) item:SetIsVisible(false) end
@@ -393,24 +391,24 @@ function GUISelectionPanel:UpdateSingleSelection(entityId)
     
     self.selectedIcon:SetIsVisible(true)
     
-    self:SetIconTextureCoordinates(self.selectedIcon, entityId)
+    self:SetIconTextureCoordinates(self.selectedIcon, entity)
     if not self.selectedIcon:GetIsVisible() then
         return
     end
     
-    local selectedDescription = CommanderUI_GetSelectedDescriptor(entityId)
+    local selectedDescription = CommanderUI_GetSelectedDescriptor(entity)
     self.selectedName:SetIsVisible(true)
     self.selectedName:SetText(string.upper(selectedDescription))
-    local selectedLocationText = CommanderUI_GetSelectedLocation(entityId)
+    local selectedLocationText = CommanderUI_GetSelectedLocation(entity)
     self.selectedLocationName:SetIsVisible(false)
     self.selectedLocationName:SetText(string.upper(selectedLocationText))
     
-    local selectedBargraphs = CommanderUI_GetSelectedBargraphs(entityId)
-    local healthText = CommanderUI_GetSelectedHealth(entityId)
+    local selectedBargraphs = CommanderUI_GetSelectedBargraphs(entity)
+    local healthText = CommanderUI_GetSelectedHealth(entity)
     self.healthText:SetText(healthText)
     self.healthIcon:SetIsVisible(string.len(healthText) > 0)
     
-    local armorText = CommanderUI_GetSelectedArmor(entityId)
+    local armorText = CommanderUI_GetSelectedArmor(entity)
     self.armorText:SetText(armorText)
     self.armorIcon:SetIsVisible(string.len(armorText) > 0)
 
@@ -459,13 +457,13 @@ function GUISelectionPanel:UpdateSingleSelection(entityId)
     end 
     
     local showEnergy = false // entity and HasMixin(entity, "Energy")
-    local energy = CommanderUI_GetSelectedEnergy(entityId)
+    local energy = CommanderUI_GetSelectedEnergy(entity)
     
     self.energyText:SetIsVisible(showEnergy)
     self.energyText:SetText(energy)
     self.energyIcon:SetIsVisible(showEnergy)
     
-    local singleSelectionCustomText = CommanderUI_GetSingleSelectionCustomText(entityId)
+    local singleSelectionCustomText = CommanderUI_GetSingleSelectionCustomText(entity)
     if singleSelectionCustomText and string.len(singleSelectionCustomText) > 0 then
         self.customText:SetIsVisible(true)
         self.customText:SetText(singleSelectionCustomText)
@@ -473,19 +471,16 @@ function GUISelectionPanel:UpdateSingleSelection(entityId)
         self.customText:SetIsVisible(false)
     end
     
-    //self.healthBar:SetSize(Vector(GUISelectionPanel.kInfoBarWidth * CommanderUI_GetSelectedHealthFraction(entityId), GUISelectionPanel.kInfoBarHeight, 0))
-    //self.armorBar:SetSize(Vector(GUISelectionPanel.kInfoBarWidth * CommanderUI_GetSelectedArmorFraction(entityId), GUISelectionPanel.kInfoBarHeight, 0))
-
 end
 
-function GUISelectionPanel:UpdateMultiSelection(selectedEntityIds)
+function GUISelectionPanel:UpdateMultiSelection(selectedEntities)
 
     function SetItemInvisible(item) item:SetIsVisible(false) end
     // Make all previous selection icons invisible.
     table.foreachfunctor(self.multiSelectionIcons, SetItemInvisible)
     
     local currentIconIndex = 1
-    for i, selectedEntityId in ipairs(selectedEntityIds) do
+    for i, selectedEntity in ipairs(selectedEntities) do
         local selectedIcon = nil
         if table.count(self.multiSelectionIcons) >= currentIconIndex then
             selectedIcon = self.multiSelectionIcons[currentIconIndex]
@@ -493,7 +488,7 @@ function GUISelectionPanel:UpdateMultiSelection(selectedEntityIds)
             selectedIcon = self:CreateMultiSelectionIcon()
         end
         selectedIcon:SetIsVisible(true)
-        self:SetIconTextureCoordinates(selectedIcon, selectedEntityId)
+        self:SetIconTextureCoordinates(selectedIcon, selectedEntity)
         selectedIcon:SetColor(kIconColors[self.teamType])
         
         local xOffset = -(GUISelectionPanel.kMultiSelectedIconSize * currentIconIndex)
@@ -532,28 +527,13 @@ function GUISelectionPanel:SendKeyEvent(key, down)
 
 end
 
-function GUISelectionPanel:SetIconTextureCoordinates(selectedIcon, entityId)
+function GUISelectionPanel:SetIconTextureCoordinates(selectedIcon, entity)
 
-    local textureOffsets = CommanderUI_GetSelectedIconOffset(entityId)
+    local textureOffsets = CommanderUI_GetSelectedIconOffset(entity)
+    local techId = (entity and HasMixin(entity, "Tech")) and entity:GetTechId() or kTechId.None
+    local texCoords = GetTextureCoordinatesForIcon(techId)
     
-    if textureOffsets and textureOffsets[1] and textureOffsets[2] then
-    
-        local pixelXOffset = textureOffsets[1] * GUISelectionPanel.kSelectedIconTextureWidth
-        local pixelYOffset = textureOffsets[2] * GUISelectionPanel.kSelectedIconTextureHeight
-        selectedIcon:SetTexturePixelCoordinates(pixelXOffset, pixelYOffset, pixelXOffset + GUISelectionPanel.kSelectedIconTextureWidth, pixelYOffset + GUISelectionPanel.kSelectedIconTextureHeight)
-        
-    else
-    
-        local techId = nil
-        local ent = Shared.GetEntity(entityId)
-        if ent ~= nil and ent:isa("ScriptActor") then
-            techId = ent:GetTechId()
-        end
-        
-        Shared.Message( string.format("Warning: Missing texture coordinates for selection panel icon for TechId %s", ConditionalValue(techId, EnumToString(kTechId, techId), "nil")) )
-        selectedIcon:SetIsVisible(false)
-        
-    end
+    selectedIcon:SetTexturePixelCoordinates(unpack(texCoords))
     
 end
 

@@ -20,8 +20,9 @@ kAlienStructureEffects =
     {
         babblerEggLandEffects =
         {
-            {cinematic = "cinematics/alien/structures/death_small.cinematic" },
-            {sound = "sound/NS2.fev/alien/structures/generic_spawn_large", world_space = true, done = true},
+            {cinematic = "cinematics/alien/babbler/spawn.cinematic" },
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/drifter/attack", world_space = true, done = true},
         },
     },
 
@@ -70,7 +71,8 @@ kAlienStructureEffects =
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Shift", done = true},
             
             {cinematic = "cinematics/alien/structures/death_harvester.cinematic", classname = "Harvester", done = true},
-            {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Babbler", done = true},
+            {cinematic = "cinematics/alien/babbler/death.cinematic", classname = "Babbler", done = true},
+            {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "BabblerEgg", done = true},
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Cyst", done = true},
             
             {cinematic = "cinematics/alien/infestationspike/death.cinematic", classname = "BoneWall", done = true},
@@ -94,6 +96,9 @@ kAlienStructureEffects =
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Crag", done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Shade", done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Shift", done = true},
+            
+            {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Babbler", done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_small", classname = "BabblerEgg", done = true},
             
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "BoneWall", done = true},
             
@@ -228,14 +233,6 @@ kAlienStructureEffects =
             {cinematic = "cinematics/alien/crag/heal_wave.cinematic"}
         },
     }, 
-
-    // Triggered by commander
-    crag_trigger_babblers =
-    {
-        cragBabblerEffects =
-        {
-        },
-    },    
     
     whip_attack =
     {
@@ -338,8 +335,35 @@ kAlienStructureEffects =
     {
         babblerJumpEffect =
         {
-            {sound = "sound/NS2.fev/alien/drifter/attack" },
-            {cinematic = "cinematics/alien/crag/babbler_jump.cinematic", done = true},         
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/babbler/jump" },     
+        },
+    }, 
+    
+    babbler_engage =
+    {
+        babblerEngageEffect =
+        {
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/babbler/attack_jump" },     
+        },
+    }, 
+    
+    babbler_wag_begin =
+    {
+        babblerWagBeginEffect =
+        {
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/babbler/fetch" },     
+        },
+    }, 
+    
+    babbler_move =
+    {
+        babblerIdleEffect =
+        {
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/babbler/idle" },     
         },
     }, 
     
@@ -347,8 +371,8 @@ kAlienStructureEffects =
     {
         babblerAttackEffect =
         {
-            {sound = "sound/NS2.fev/alien/fade/impale" },
-            {cinematic = "cinematics/alien/crag/babbler_attack.cinematic", done = true},         
+            {sound = "", silenceupgrade = true, done = true},
+            {sound = "sound/NS2.fev/alien/babbler/attack_jump" },    
         },
     }, 
     

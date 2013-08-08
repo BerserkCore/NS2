@@ -63,6 +63,7 @@ AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function Veil:OnCreate()
 

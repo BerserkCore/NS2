@@ -170,10 +170,6 @@ function CommandStation:OnUpdateRender()
             state = kCommandStationState.Locked
         end
         
-        if not PlayerUI_GetHasGameStarted() then
-            state = kCommandStationState.Locked
-        end
-        
         model:SetMaterialParameter("state", state)
         
     end
@@ -183,6 +179,12 @@ end
 local kCommandStationHealthbarOffset = Vector(0, 2, 0)
 function CommandStation:GetHealthbarOffset()
     return kCommandStationHealthbarOffset
+end
+
+// return a good spot from which a player could have entered the hive
+// used for initial entry point for the commander
+function CommandStation:GetDefaultEntryOrigin()
+    return self:GetOrigin() + Vector(0,0.9,0)
 end
 
 Shared.LinkClassToMap("CommandStation", CommandStation.kMapName, networkVars)

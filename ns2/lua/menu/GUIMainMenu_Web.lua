@@ -18,6 +18,7 @@ function SetMenuWebView(url, size)
     
     webView = GetGUIManager():CreateGUIScript("GUIWebView")
     webView:LoadUrl(url, size.x, size.y)
+    webView:DisableMusic()
     
     webView:GetBackground():SetAnchor(GUIItem.Middle, GUIItem.Center)
     webView:GetBackground():SetPosition(-webView:GetBackground():GetSize() / 2)

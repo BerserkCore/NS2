@@ -18,6 +18,7 @@ Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
+Script.Load("lua/BabblerClingMixin.lua")
 
 class 'Gorge' (Alien)
 
@@ -37,6 +38,7 @@ AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
+AddMixinNetworkVars(BabblerClingMixin, networkVars)
 
 Gorge.kMapName = "gorge"
 
@@ -78,6 +80,7 @@ function Gorge:OnCreate()
     Alien.OnCreate(self)
     
     InitMixin(self, DissolveMixin)
+    InitMixin(self, BabblerClingMixin)
     
     self.bellyYaw = 0
     self.timeSlideEnd = 0

@@ -15,14 +15,16 @@ class 'GUIEventTester' (GUIScript)
 local kBackgroundSize = Vector(250, 400, 0)
 
 local kMaxEventsDisplayedOnPage = 24
+local kDefaultBackgroundColor = Color(0.8, 0.8, 0.8, 0.8)
 
 function GUIEventTester:Initialize()
 
     self.background = GUIManager:CreateGraphicItem()
     self.background:SetSize(kBackgroundSize)
-    self.background:SetAnchor(GUIItem.Right, GUIItem.Center)
-    self.background:SetPosition(Vector(-kBackgroundSize.x - 10, -kBackgroundSize.y / 2, 0))
-    self.background:SetColor(Color(0.8, 0.8, 0.8, 0.8))
+    self.background:SetAnchor(GUIItem.Left, GUIItem.Center)
+    self.background:SetPosition(Vector(10, -kBackgroundSize.y / 2, 0))
+    self.background:SetColor(kDefaultBackgroundColor)
+    self.background:SetLayer(kGUILayerTestEvents)
     self.background:SetIsVisible(false)
     
     self.percentComplete = GUIManager:CreateTextItem()
@@ -111,8 +113,8 @@ function GUIEventTester:SetTestEvents(testEvents)
     self.currentEvents = testEvents
     
     local sortedEvents = table.array(table.countkeys(self.currentEvents))
-    for name, tested in pairs(self.currentEvents) do
-        table.insert(sortedEvents, { name = name, tested = tested })
+    for name, timesTested in pairs(self.currentEvents) do
+        table.insert(sortedEvents, { name = name, timesTested = timesTested })
     end
     table.sort(sortedEvents, function(a, b) return (a.name < b.name) end)
     
@@ -121,16 +123,17 @@ function GUIEventTester:SetTestEvents(testEvents)
     for e = 1, #sortedEvents do
     
         local name = sortedEvents[e].name
-        local tested = sortedEvents[e].tested
+        local timesTested = sortedEvents[e].timesTested
         local currentEventNum = e - 1
+        local wasTested = timesTested > 0
         
         // Only display the events on the current page.
         if currentEventNum >= self.currentPage * kMaxEventsDisplayedOnPage and
            currentEventNum < (self.currentPage + 1) * kMaxEventsDisplayedOnPage then
         
             local eventUI = GetFreeTestEvent(self)
-            eventUI:SetColor(Color(0, tested and 0.5 or 0, 0, 1))
-            local testedName = tested and ("- " .. name) or name
+            eventUI:SetColor(Color(0, wasTested and 0.5 or 0, 0, 1))
+            local testedName = wasTested and ("- " .. name .. "(" .. timesTested .. ")") or name
             eventUI:SetText(testedName)
             eventUI:SetPosition(Vector(2, eventNum * 16 + 24, 0))
             
@@ -138,7 +141,7 @@ function GUIEventTester:SetTestEvents(testEvents)
             
         end
         
-        if tested then
+        if wasTested then
             numTested = numTested + 1
         end
         
@@ -151,4 +154,8 @@ end
 
 function GUIEventTester:SetIsVisible(visible)
     self.background:SetIsVisible(visible)
+end
+
+function GUIEventTester:SetOpacity(opacity)
+    self.background:SetColor(Color(kDefaultBackgroundColor.r, kDefaultBackgroundColor.g, kDefaultBackgroundColor.b, opacity))
 end

@@ -528,7 +528,7 @@ local function OnCommandCommand(client)
         if #ents > 0 then
         
             player:SetOrigin(ents[1]:GetOrigin() + Vector(0, 1, 0))
-            player:UseTarget(ents[1], 0)
+            player:UseTarget(ents[1], nil, 0)
             ents[1]:UpdateCommanderLogin(true)
             
         end
@@ -1260,7 +1260,10 @@ Event.Hook("Console_marine", OnCommandChangeClass("marine", kTeam1Index))
 Event.Hook("Console_exo", OnCommandChangeClass("exo", kTeam1Index, { layout = "ClawMinigun" }))
 Event.Hook("Console_dualminigun", OnCommandChangeClass("exo", kTeam1Index, { layout = "MinigunMinigun" }))
 if kRailgunEnabled then
+
+    Event.Hook("Console_clawrailgun", OnCommandChangeClass("exo", kTeam1Index, { layout = "ClawRailgun" }))
     Event.Hook("Console_dualrailgun", OnCommandChangeClass("exo", kTeam1Index, { layout = "RailgunRailgun" }))
+    
 end
 
 Event.Hook("Console_command", OnCommandCommand)

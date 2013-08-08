@@ -541,10 +541,11 @@ function CommanderHelp_ProccessTechIdAction(techId, entity)
         local menuTechId = commander:GetMenuTechIdFor(techId) or kTechId.RootMenu
         local buttonTable = nil
 
-        if menuTechId == kTechId.RootMenu and entity and commander:GetIsEntityValidForSelection(entity) then
+        if menuTechId == kTechId.RootMenu and entity then
         
-            commander:InternalSetSelection( { {entity:GetId(), Shared.GetTime()} } )
-            Client.SendNetworkMessage("SelectId", BuildSelectIdMessage(entity:GetId()), true)
+            DeselectAllUnits(commander:GetTeamNumber())
+            entity:SetSelected(commander:GetTeamNumber(), true, false)
+            
             if entity.GetMenuTechIdFor then
                 
                 menuTechId = entity:GetMenuTechIdFor(techId)

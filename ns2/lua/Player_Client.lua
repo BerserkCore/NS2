@@ -755,7 +755,7 @@ function PlayerUI_GetCrosshairY()
             // All alien crosshairs are the same for now
             elseif mapname == LerkBite.kMapName or mapname == Spores.kMapName or mapname == LerkUmbra.kMapName or mapname == Parasite.kMapName then
                 index = 6
-            elseif(mapname == SpitSpray.kMapName) then
+            elseif mapname == SpitSpray.kMapName or mapname == BabblerAbility.kMapName then
                 index = 7
             // Blanks (with default damage indicator)
             else
@@ -2358,7 +2358,7 @@ function Player:GetCameraViewCoordsOverride(cameraCoords)
 
     local continue = true
 
-    if not self:GetIsAlive() and self:GetAnimateDeathCamera() then
+    if not self:GetIsAlive() and self:GetAnimateDeathCamera() and self:GetRenderModel() then
 
         local attachCoords = self:GetAttachPointCoords(self:GetHeadAttachpointName())
 
@@ -3450,10 +3450,7 @@ end
 // Set after hotgroup updated over the network
 function Player:SetHotgroup(number, entityList)
 
-    if(number >= 1 and number <= Player.kMaxHotkeyGroups) then
-        //table.copy(entityList, self.hotkeyGroups[number])
-        self.hotkeyGroups[number] = entityList
-    end
+    Print("Player:SetHotgroup")
     
 end
 

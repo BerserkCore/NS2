@@ -44,45 +44,42 @@ if Client then
     
         PROFILE("AlienActionFinderMixin:OnProcessMove")
         
-        if self:GetGameStarted() and not Shared.GetIsRunningPrediction() then
+        local ent = self:PerformUseTrace()
+        if ent and (self:GetGameStarted() or (ent.GetUseAllowedBeforeGameStart and ent:GetUseAllowedBeforeGameStart())) then
         
-            local ent = self:PerformUseTrace()
-            if ent then
+            if GetPlayerCanUseEntity(self, ent) and not self:GetIsUsing() then
             
-                if GetPlayerCanUseEntity(self, ent) and not self:GetIsUsing() then
+                if ent:isa("Hive") then
                 
-                    if ent:isa("Hive") then
-                    
-                        if not ScoreboardUI_GetTeamHasCommander(self:GetTeamNumber()) then
-                            self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, "START_COMMANDING", nil)
-                        else
-                            self.actionIconGUI:Hide()
-                        end
-                        
-                    elseif ent:isa("Egg") then
-                        self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, "EVOLVE", nil)
-                    elseif HasMixin(ent, "Digest") and ent:GetIsAlive() then
-                    
-                        local digestFraction = DigestMixin.GetDigestFraction(ent)
-                        // avoid the slight flicker at the end, caused by the digest effect for Clogs..
-                        if digestFraction <= 1.0 then
-                            self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, "DESTROY", digestFraction)
-                         else
-                            self.actionIconGUI:Hide()
-                         end
-                         
+                    if not ScoreboardUI_GetTeamHasCommander(self:GetTeamNumber()) then
+                        local text = self:GetGameStarted() and "START_COMMANDING" or "START_GAME"
+                        self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, text, nil)
                     else
-                        self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, nil, nil)
+                        self.actionIconGUI:Hide()
                     end
                     
+                elseif ent:isa("Egg") then
+                    self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, "EVOLVE", nil)
+                elseif HasMixin(ent, "Digest") and ent:GetIsAlive() then
+                
+                    local digestFraction = DigestMixin.GetDigestFraction(ent)
+                    // avoid the slight flicker at the end, caused by the digest effect for Clogs..
+                    if digestFraction <= 1.0 then
+                        self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, "DESTROY", digestFraction)
+                     else
+                        self.actionIconGUI:Hide()
+                     end
+                     
                 else
-                    self.actionIconGUI:Hide()
+                    self.actionIconGUI:ShowIcon(BindingsUI_GetInputValue("Use"), nil, nil, nil)
                 end
                 
             else
                 self.actionIconGUI:Hide()
             end
             
+        else
+            self.actionIconGUI:Hide()
         end
         
     end

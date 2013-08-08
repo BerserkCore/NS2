@@ -495,7 +495,7 @@ function Alien:UpdateClientEffects(deltaTime, isLocal)
         local stunned = HasMixin(self, "Stun") and self:GetIsStunned()
         self:SetBlurEnabled(self:GetBuyMenuIsDisplaying() or stunned or self.minimapVisible)
         
-        self:UpdateCelerityEffect()
+        //self:UpdateCelerityEffect()
         self:UpdateRegenerationEffect()
         
     end

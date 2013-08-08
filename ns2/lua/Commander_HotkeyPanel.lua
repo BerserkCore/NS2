@@ -8,15 +8,6 @@
 //=============================================================================
 
 /**
- * Return the number of hotkeys
- */
-function CommanderUI_GetTotalHotkeys()
-
-    return Client.GetLocalPlayer():GetNumHotkeyGroups()
-    
-end
-
-/**
  * Return name for hotkey at index
  */
 function CommanderUI_GetHotkeyName(idx)
@@ -25,32 +16,12 @@ function CommanderUI_GetHotkeyName(idx)
     
 end
 
-/**
- * Return icon offsets as {x, y} pixel array
- */
-function CommanderUI_GetHotkeyIconOffset(idx)
-
+function CommanderUI_GetHotKeyGroups()
+    
     local player = Client.GetLocalPlayer()
-    local hotgroups = player:GetHotkeyGroups()
-    local group = hotgroups[idx]
-    
-    // Use first ent id in group as icon
-    local entId = group[1]
-    if entId ~= nil then
-    
-        local entity = Shared.GetEntity(entId)
-        if entity and HasMixin(entity, "Tech") then
-        
-            local xOffset, yOffset = GetMaterialXYOffset(entity:GetTechId(), player:isa("MarineCommander"))
-            if xOffset ~= nil and yOffset ~= nil then
-                return {xOffset, yOffset}
-            end
-            
-        end
-        
+    if player then
+        return player:GetHotkeyGroups()
     end
-    
-    return nil
     
 end
 

@@ -21,9 +21,11 @@ local kCannotSpawnSound = PrecacheAsset("sound/NS2.fev/marine/voiceovers/command
 
 function MarineTeam:ResetTeam()
 
-    PlayingTeam.ResetTeam(self)
+    local commandStructure = PlayingTeam.ResetTeam(self)
     
     self.updateMarineArmor = false
+    
+    return commandStructure
     
 end
 
@@ -344,8 +346,10 @@ function MarineTeam:InitTechTree()
     self.techTree:AddResearchNode(kTechId.DualMinigunExosuit,    kTechId.DualMinigunTech, kTechId.TwoCommandStations)
     if kRailgunEnabled then
     
-        self.techTree:AddResearchNode(kTechId.DualRailgunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
-        self.techTree:AddResearchNode(kTechId.DualRailgunExosuit,    kTechId.DualRailgunTech, kTechId.TwoCommandStations)
+        self.techTree:AddResearchNode(kTechId.ClawRailgunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
+        self.techTree:AddResearchNode(kTechId.ClawRailgunExosuit,    kTechId.ClawRailgunTech, kTechId.TwoCommandStations)
+        //self.techTree:AddResearchNode(kTechId.DualRailgunTech,       kTechId.ExosuitTech, kTechId.TwoCommandStations)
+        //self.techTree:AddResearchNode(kTechId.DualRailgunExosuit,    kTechId.DualRailgunTech, kTechId.TwoCommandStations)
         
     end
     

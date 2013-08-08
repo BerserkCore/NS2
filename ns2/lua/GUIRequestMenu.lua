@@ -309,14 +309,7 @@ function GUIRequestMenu:Uninitialize()
 end
 
 local function GetCanOpenRequestMenu(self)
-    local commName = PlayerUI_GetCommanderName()
-    
-    if #self.menuButtons == 0 and (not commName or string.len(commName) == 0) then
-        return false
-    else
-        return PlayerUI_GetCanDisplayRequestMenu()
-    end    
-    
+    return PlayerUI_GetCanDisplayRequestMenu()
 end
 
 function GUIRequestMenu:SetIsVisible(isVisible)

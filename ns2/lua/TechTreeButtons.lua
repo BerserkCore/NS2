@@ -166,6 +166,7 @@ function InitTechTreeMaterialOffsets()
     kTechIdToMaterialOffset[kTechId.Weapons3] = 82
     kTechIdToMaterialOffset[kTechId.UpgradeRoboticsFactory] = 83
     kTechIdToMaterialOffset[kTechId.DualMinigunTech] = 84
+    kTechIdToMaterialOffset[kTechId.ClawRailgunTech] = 84
     kTechIdToMaterialOffset[kTechId.DualRailgunTech] = 84
     kTechIdToMaterialOffset[kTechId.ShotgunTech] = 85
     kTechIdToMaterialOffset[kTechId.Shotgun] = 85
@@ -309,18 +310,14 @@ function GetMaterialXYOffset(techId)
     
 end
 
-function GetPixelCoordsForIcon(entityId, forMarine)
-
-    local ent = Shared.GetEntity(entityId)
+function GetPixelCoordsForIcon(ent, forMarine)
     
-    if (ent ~= nil and ent:isa("ScriptActor")) then
+    if ent and HasMixin(ent, "Tech") then
     
-        local techId = ent:GetTechId()
-        
-        if (techId ~= kTechId.None) then
+        local techId = ent:GetTechId()        
+        if techId ~= kTechId.None then
             
             local xOffset, yOffset = GetMaterialXYOffset(techId, forMarine)
-            
             return {xOffset, yOffset}
             
         end

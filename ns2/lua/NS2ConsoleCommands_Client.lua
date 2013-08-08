@@ -14,12 +14,12 @@ local function OnCommandSelectAndGoto(selectAndGotoMessage)
     local player = Client.GetLocalPlayer()
     if player and player:isa("Commander") then
     
-        local entityId = ParseSelectAndGotoMessage(selectAndGotoMessage)
-        player:SetSelection({entityId})
-        
+        local entityId = ParseSelectAndGotoMessage(selectAndGotoMessage)        
         local entity = Shared.GetEntity(entityId)
         if entity ~= nil then
         
+            DeselectAllUnits(player:GetTeamNumber(), false, false)
+            entity:SetSelected(player:GetTeamNumber(), true, false, false)
             player:SetWorldScrollPosition(entity:GetOrigin().x, entity:GetOrigin().z)
             
         else
@@ -28,32 +28,6 @@ local function OnCommandSelectAndGoto(selectAndGotoMessage)
         
     end
     
-end
-
-local function OnCommandHotgroup(number, hotgroupString)
-
-    local player = Client.GetLocalPlayer()
-
-    if player then
-    
-        // Read hotgroup number and list of entities (separated by _)
-        local hotgroupNumber = tonumber(number)
-        local entityList = {}    
-        
-        if(hotgroupString ~= nil) then 
-       
-            for currentInt in string.gmatch(hotgroupString, "[0-9]+") do 
-            
-                table.insert(entityList, tonumber(currentInt))
-                
-            end
-            
-        end
-        
-        player:SetHotgroup(hotgroupNumber, entityList)
-        
-    end
-        
 end
 
 local function OnCommandTraceReticle()
@@ -174,7 +148,42 @@ local function OnCommandDebugCommander(vm)
     
 end
 
-Event.Hook("Console_hotgroup", OnCommandHotgroup)
+local function OnCommandDrawDecal(material, scale)
+
+    if Shared.GetCheatsEnabled() then
+
+        local player = Client.GetLocalPlayer()
+        if player and material then
+        
+            // trace to a surface and draw the decal
+            local startPoint = player:GetEyePos()
+            local endPoint = startPoint + player:GetViewCoords().zAxis * 100
+            local trace = Shared.TraceRay(startPoint, endPoint,  CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
+            
+            if trace.fraction ~= 1 then
+            
+                local coords = Coords.GetTranslation(trace.endPoint)
+                coords.yAxis = trace.normal
+                coords.zAxis = coords.yAxis:GetPerpendicular()
+                coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
+            
+                scale = scale and tonumber(scale) or 1.5
+                
+                Client.CreateTimeLimitedDecal(material, coords, scale)
+                Print("created decal %s", ToString(material))
+            
+            end
+        
+        else
+            Print("usage: drawdecal <materialname> <scale>")        
+        end
+    
+    end
+
+end
+
+Event.Hook("Console_drawdecal", OnCommandDrawDecal)
+
 Event.Hook("Console_tracereticle", OnCommandTraceReticle)
 Event.Hook("Console_testsentry", OnCommandTestSentry)
 Event.Hook("Console_random_debug", OnCommandRandomDebug)

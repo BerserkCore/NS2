@@ -8,6 +8,22 @@
 
 kGeneralEffectData = 
 {
+    babbler_pheromone =
+    {
+        babblerPheromoneEffects =
+        {
+            {cinematic = "cinematics/alien/babbler/pheromone_trail.cinematic" },
+        }
+    },
+    
+    babbler_pheromone_puff =
+    {
+        babblerPheromonePuffEffects =
+        {
+            {cinematic = "cinematics/alien/babbler/pheromone_puff.cinematic" },
+        }
+    },
+
     vortexed_start =
     {
         vortexEffects = 
@@ -372,6 +388,11 @@ kGeneralEffectData =
         generalDeathCinematicEffects =
         {
             {cinematic = "cinematics/marine/exo/explosion.cinematic", classname = "Exo", done = true},
+            {cinematic = "cinematics/alien/skulk/explode.cinematic", classname = "Skulk", doer = "Railgun", done = true},
+            {cinematic = "cinematics/alien/gorge/explode.cinematic", classname = "Gorge", doer = "Railgun", done = true},
+            {cinematic = "cinematics/alien/lerk/explode.cinematic", classname = "Lerk", doer = "Railgun", done = true},
+            {cinematic = "cinematics/alien/fade/explode.cinematic", classname = "Fade", doer = "Railgun", done = true},
+            {cinematic = "cinematics/alien/onos/explode.cinematic", classname = "Onos", doer = "Railgun", done = true},
             // TODO: Substitute material properties?
             {cinematic = "cinematics/materials/%s/grenade_explosion.cinematic", classname = "Grenade", done = true},
             {cinematic = "cinematics/marine/mac/death.cinematic", classname = "MAC", done = true},

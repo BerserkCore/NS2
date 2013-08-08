@@ -113,6 +113,7 @@ local function GetSmallIconPixelCoordinates(itemTechId)
         gSmallIconIndex[kTechId.Welder] = 10
         gSmallIconIndex[kTechId.LayMines] = 21
         gSmallIconIndex[kTechId.DualMinigunExosuit] = 26
+        gSmallIconIndex[kTechId.ClawRailgunExosuit] = 26
         gSmallIconIndex[kTechId.DualRailgunExosuit] = 26
     
     end
@@ -465,6 +466,7 @@ local function GetItemTechId(researchTechId)
         gResearchToWeaponIds[kTechId.JetpackTech] = kTechId.Jetpack
         gResearchToWeaponIds[kTechId.ExosuitTech] = kTechId.Exosuit
         gResearchToWeaponIds[kTechId.DualMinigunTech] = kTechId.DualMinigunExosuit
+        gResearchToWeaponIds[kTechId.ClawRailgunTech] = kTechId.ClawRailgunExosuit
         gResearchToWeaponIds[kTechId.DualRailgunTech] = kTechId.DualRailgunExosuit
         
     end

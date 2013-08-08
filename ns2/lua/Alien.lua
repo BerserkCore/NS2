@@ -92,6 +92,7 @@ local networkVars =
     infestationSpeedUpgrade = "private boolean",
     
     celeritySpeedScalar = "private float",
+    //celerityEffectsOn = "private boolean",
     storedHyperMutationTime = "private float",
     storedHyperMutationCost = "private float",
 
@@ -148,6 +149,7 @@ function Alien:OnCreate()
     
     self.infestationSpeedScalar = 0
     self.celeritySpeedScalar = 0
+    //self.celerityEffectsOn = false
     self.infestationSpeedUpgrade = false
     
     if Server then
@@ -156,9 +158,9 @@ function Alien:OnCreate()
         self.timeLastCombatAction = 0
         self.timeWhenPrimalScreamExpires = 0
         
-        self.loopingCeleritySound = Server.CreateEntity(SoundEffect.kMapName)
-        self.loopingCeleritySound:SetAsset(kCelerityLoopingSound)
-        self.loopingCeleritySound:SetParent(self)
+        //self.loopingCeleritySound = Server.CreateEntity(SoundEffect.kMapName)
+        //self.loopingCeleritySound:SetAsset(kCelerityLoopingSound)
+        //self.loopingCeleritySound:SetParent(self)
         
     elseif Client then
         InitMixin(self, TeamMessageMixin, { kGUIScriptName = "GUIAlienTeamMessage" })
@@ -431,65 +433,72 @@ function Alien:GetCelerityAllowed()
     return not self:GetIsCloaked()
 end
 
-function Alien:UpdateSpeedModifiers(input)
+local function UpdateCelerity(self, input)
 
-    if Server then
-        self.infestationSpeedUpgrade = GetHasMucousMembraneUpgrade(self:GetTeamNumber())        
-    end
-
-    local rate = -0.5
-    if self:GetGameEffectMask(kGameEffect.OnInfestation) and self.infestationSpeedUpgrade then
-        rate = 0.5
-    end
-
-    self.infestationSpeedScalar = Clamp( self.infestationSpeedScalar + input.time * rate, 0, 1)
-    
-    local prevCeleritySpeedScalar = self.celeritySpeedScalar
-    
     if GetHasCelerityUpgrade(self) then
     
         local isMoving = input.move:GetLength() > 0 or self:GetSpeedScalar() > 0.5
-
+        
         if self.timeCelerityInterrupted + kCelerityStart < Shared.GetTime() and isMoving and self:GetCelerityAllowed() then
-    
-            self.celeritySpeedScalar = Clamp( self.celeritySpeedScalar + input.time / kCelerityBuildUpDuration, 0, 1)
+        
+            self.celeritySpeedScalar = Clamp(self.celeritySpeedScalar + input.time / kCelerityBuildUpDuration, 0, 1)
             
-            if prevCeleritySpeedScalar ~= self.celeritySpeedScalar and prevCeleritySpeedScalar == 0 then
+            /*if not self.celerityEffectsOn then
             
                 self:TriggerEffects("celerity_start")
                 self.timeLastCelerityStartEffect = Shared.GetTime()
-
-                if Server and not self.loopingCeleritySound:GetIsPlaying() then
-                    self.loopingCeleritySound:Start()
-                end    
+                
+                //if Server and not self.loopingCeleritySound:GetIsPlaying() then
+                //    self.loopingCeleritySound:Start()
+                //end
+                
+                self.celerityEffectsOn = true
                 
             end
-      
+            */
+            
         else
         
-            self.celeritySpeedScalar = Clamp( self.celeritySpeedScalar - input.time / kCelerityRampDownDuration, 0, 1)
+            self.celeritySpeedScalar = Clamp(self.celeritySpeedScalar - input.time / kCelerityRampDownDuration, 0, 1)
             
             if not isMoving then
                 self.timeCelerityInterrupted = Shared.GetTime()
             end
             
-            if prevCeleritySpeedScalar ~= self.celeritySpeedScalar and (not self.timeLastCelerityEndEffect or self.timeLastCelerityEndEffect + 2 < Shared.GetTime()) then
+            /*if self.celerityEffectsOn then
             
                 self:TriggerEffects("celerity_end")
-                self.timeLastCelerityEndEffect = Shared.GetTime()
                 
-                if Server and self.loopingCeleritySound:GetIsPlaying() then
-                    self.loopingCeleritySound:Stop()
-                end
+                //if Server and self.loopingCeleritySound:GetIsPlaying() then
+                //    self.loopingCeleritySound:Stop()
+                //end
                 
-            end
+                self.celerityEffectsOn = false
+                
+            end*/
             
         end
         
     else
         self.celeritySpeedScalar = 0
     end
+    
+end
 
+function Alien:UpdateSpeedModifiers(input)
+
+    if Server then
+        self.infestationSpeedUpgrade = GetHasMucousMembraneUpgrade(self:GetTeamNumber())
+    end
+    
+    local rate = -0.5
+    if self:GetGameEffectMask(kGameEffect.OnInfestation) and self.infestationSpeedUpgrade then
+        rate = 0.5
+    end
+    
+    self.infestationSpeedScalar = Clamp(self.infestationSpeedScalar + input.time * rate, 0, 1)
+    
+    UpdateCelerity(self, input)
     
 end
 
@@ -706,9 +715,11 @@ function Alien:OnPrimaryAttack()
 end
 
 function Alien:OnDamageDone(doer, target)
-    if not doer or not doer:isa("Hydra") then
+
+    if not doer or doer == self or doer:GetParent() == self then
         self.timeCelerityInterrupted = Shared.GetTime()
     end
+    
 end
 
 function Alien:OnUpdateAnimationInput(modelMixin)

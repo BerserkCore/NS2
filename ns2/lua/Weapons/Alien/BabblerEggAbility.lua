@@ -15,19 +15,19 @@ function BabblerEggAbility:GetEnergyCost(player)
 end
 
 function BabblerEggAbility:GetGhostModelName(ability)
-    return Babbler.kEggModelName
+    return BabblerEgg.kModelName
 end
 
 function BabblerEggAbility:GetDropStructureId()
-    return kTechId.Babbler
+    return kTechId.BabblerEgg
 end
 
 function BabblerEggAbility:GetSuffixName()
-    return "babbler"
+    return "babbleregg"
 end
 
 function BabblerEggAbility:GetDropClassName()
-    return "Babbler"
+    return "BabblerEgg"
 end
 
 function BabblerEggAbility:GetDropRange()
@@ -35,5 +35,5 @@ function BabblerEggAbility:GetDropRange()
 end
 
 function BabblerEggAbility:GetDropMapName()
-    return Babbler.kMapName
+    return BabblerEgg.kMapName
 end

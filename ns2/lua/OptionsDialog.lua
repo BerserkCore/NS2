@@ -77,6 +77,19 @@ function OptionsDialogUI_GetScreenResolutions()
     
 end
 
+function OptionsDialogUI_GetSoundDeviceNames(deviceType)
+
+    local numDevices = Client.GetSoundDeviceCount(deviceType)
+    local deviceNames = { }
+    
+    for id = 1, numDevices do
+        deviceNames[id] = Client.GetSoundDeviceName(deviceType, id - 1) 
+    end
+    
+    return deviceNames
+    
+end
+
 /**
  * Get current index for screen res (assuming lua indexing for script convenience)
  */

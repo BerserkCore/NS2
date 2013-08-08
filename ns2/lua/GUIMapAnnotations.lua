@@ -119,18 +119,29 @@ function GUIMapAnnotations:Update(deltaTime)
     
 end
 
+local function ParseAnnotations(data)
+
+    local obj, pos, err = json.decode(data, 1, nil)
+    if err then
+        Shared.Message("Error in parsing annotations: " .. ToString(err))
+    else
+    
+        for k, v in pairs(obj) do
+            GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):AddAnnotation(v.message, Vector(v.x, v.y, v.z))
+        end
+        
+    end
+    
+end
+
 function GUIMapAnnotations:GetLatestAnnotations(versionNumOverride, mapNameOverride)
 
     self:ClearAnnotations()
     
     local versionNumString = (versionNumOverride and ToString(versionNumOverride)) or ToString(Shared.GetBuildNumber())
-    local mapName = mapNameOverride or Shared.GetMapName()
-    local params =
-    {
-        version = versionNumString,
-        map = mapName
-    }
-    Shared.SendHTTPRequest(kStatisticsURL .. "/location", "GET", params, ParseAnnotations)
+    local mapName = string.lower(mapNameOverride or Shared.GetMapName())
+    local requestURL = "http://sponitor2.herokuapp.com/api/get/annotations/" .. mapName .. "/" .. versionNumString .. "/"
+    Shared.SendHTTPRequest(requestURL, "GET", { }, ParseAnnotations)
     
 end
 
@@ -186,21 +197,6 @@ function OnCommandDisplayAnnotations(versionNum, mapName)
         
     else
         Shared.Message("Annotations are invisible.")
-    end
-    
-end
-
-function ParseAnnotations(data)
-
-    local obj, pos, err = json.decode(data, 1, nil)
-    if err then
-        Shared.Message("Error in parsing annotations: " .. ToString(err))
-    else
-    
-        for k, v in pairs(obj) do
-            GetGUIManager():GetGUIScriptSingle("GUIMapAnnotations"):AddAnnotation(v.message, Vector(v.x, v.y, v.z))
-        end
-        
     end
     
 end

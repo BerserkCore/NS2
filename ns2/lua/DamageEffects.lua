@@ -42,6 +42,7 @@ kDamageEffects =
             {sound = "sound/NS2.fev/marine/rifle/alt_hit_hard", surface = "hallucination", world_space = true, done = true},
             {sound = "sound/NS2.fev/marine/rifle/alt_hit_hard", surface = "umbra", doer = "ClipWeapon", world_space = true, done = true},
             {sound = "sound/NS2.fev/marine/rifle/alt_hit_hard", surface = "umbra", doer = "Minigun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/marine/rifle/alt_hit_hard", surface = "umbra", doer = "Railgun", world_space = true, done = true},
             
             {sound = "sound/NS2.fev/materials/metal/bash", surface = "metal", doer = "Rifle", alt_mode = true, world_space = true, done = true},
             {sound = "sound/NS2.fev/materials/organic/bash", surface = "organic", doer = "Rifle", alt_mode = true, world_space = true, done = true},
@@ -79,6 +80,18 @@ kDamageEffects =
             {sound = "sound/NS2.fev/materials/flesh/ricochet", surface = "flesh", doer = "Minigun", world_space = true, done = true},
             {sound = "sound/NS2.fev/materials/membrane/ricochet", surface = "membrane", doer = "Minigun", world_space = true, done = true},
             {sound = "sound/NS2.fev/materials/organic/ricochet", doer = "Minigun", world_space = true, done = true},
+            
+            {sound = "sound/NS2.fev/materials/metal/ricochet", surface = "metal", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/organic/ricochet", surface = "organic", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/organic/ricochet", surface = "infestation", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/rock/ricochet", surface = "rock", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/thin_metal/ricochet", surface = "thin_metal", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/door/ricochet", surface = "door", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/electronic/ricochet", surface = "electronic", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/armor/ricochet", surface = "armor", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/flesh/ricochet", surface = "flesh", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/membrane/ricochet", surface = "membrane", doer = "Railgun", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/organic/ricochet", doer = "Railgun", world_space = true, done = true},
 
             {sound = "sound/NS2.fev/materials/metal/ricochet", surface = "metal", doer = "Sentry", world_space = true, done = true},
             {sound = "sound/NS2.fev/materials/organic/ricochet", surface = "organic", doer = "Sentry", world_space = true, done = true},
@@ -172,10 +185,41 @@ kDamageEffects =
             
         }
     },
+    
+    damage_decal =
+    {
+        damageDecals = 
+        {
+                  
+            // marine blood
+            {decal = "cinematics/vfx_materials/decals/marine_blood_01.material", scale = 2, surface = "armor", done = true},   
+            {decal = "cinematics/vfx_materials/decals/marine_blood_01.material", scale = 2, surface = "flesh", done = true}, 
+        
+            // alien blood
+            {decal = "cinematics/vfx_materials/decals/alien_blood_01.material", scale = 0.75, surface = "organic", done = true},   
+            {decal = "cinematics/vfx_materials/decals/alien_blood_02.material", scale = 0.75, surface = "membrane", done = true},   
+            
+            // surface marine weapons
+            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.35, doer = "Axe", done = true},
+            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.35, doer = "Rifle", alt_mode = true, done = true},            
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Rifle", alt_mode = false, done = true},        
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Shotgun", done = true},        
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.125, doer = "Pistol", done = true}, 
+            {decal = "cinematics/vfx_materials/decals/bullet_hole_01.material", scale = 0.3, doer = "Minigun", done = true},      
+
+            // surface alien weapons   
+            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.5, doer = "BiteLeap", done = true}, 
+            {decal = "", scale = 0.5, doer = "LerkBite", alt_mode = true, done = true}, 
+            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.5, doer = "LerkBite", done = true}, 
+            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 0.75, doer = "SwipeBlink", done = true}, 
+            {decal = "cinematics/vfx_materials/decals/clawmark_01.material", scale = 1, doer = "Gore", done = true}, 
+        },    
+    },
 
     // triggered client side for the shooter, all other players receive a message from the server
     damage =
     {
+    
         damageEffects =
         {
             {player_cinematic = "cinematics/materials/deflect/marine.cinematic", surface = "nanoshield", done = true},
@@ -189,6 +233,7 @@ kDamageEffects =
             {player_cinematic = "cinematics/materials/flame/flame.cinematic", doer = "Flamethrower", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochetHeavy.cinematic", doer = "Shotgun", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochetMinigun.cinematic", doer = "Minigun", done = true},
+            {player_cinematic = "cinematics/materials/%s/ricochetRailgun.cinematic", doer = "Railgun", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochet.cinematic", doer = "ClipWeapon", done = true},
             {player_cinematic = "cinematics/materials/%s/ricochet.cinematic", doer = "Sentry", done = true},
             {player_cinematic = "cinematics/materials/%s/axe.cinematic", doer = "Axe", done = true},

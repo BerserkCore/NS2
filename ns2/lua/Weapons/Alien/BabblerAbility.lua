@@ -9,6 +9,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/Babbler.lua")
 Script.Load("lua/Weapons/Alien/Ability.lua")
 Script.Load("lua/Weapons/Alien/BabblerPheromone.lua")
 Script.Load("lua/Weapons/Alien/HealSprayMixin.lua")
@@ -17,21 +18,8 @@ class 'BabblerAbility' (Ability)
 
 BabblerAbility.kMapName = "babblerability"
 
-local kSpitSpeed = 40
-local kSpitRange = 40
-
 local kAnimationGraph = PrecacheAsset("models/alien/gorge/gorge_view.animation_graph")
-
-local kSpitViewEffect = PrecacheAsset("cinematics/alien/gorge/spit_1p.cinematic")
-local kSpitProjectileEffect = PrecacheAsset("cinematics/alien/gorge/spit_1p_projectile.cinematic")
-local attackEffectMaterial = nil
-
-if Client then
-
-    attackEffectMaterial = Client.CreateRenderMaterial()
-    attackEffectMaterial:SetMaterial("materials/effects/mesh_effects/view_spit.material")
-    
-end
+local kPheromoneTraceWidth = 0.1
 
 local networkVars =
 {
@@ -46,6 +34,10 @@ function BabblerAbility:OnCreate()
     self.primaryAttacking = false
     
     InitMixin(self, HealSprayMixin)
+    
+    if Client then
+        self.babblerMoveType = kBabblerMoveType.Move
+    end
     
 end
 
@@ -69,51 +61,6 @@ function BabblerAbility:GetPrimaryEnergyCost()
     return kBabblerPheromoneEnergyCost
 end
 
-local function CreateSpitProjectile(self, player)   
-
-    if Server then
-        
-        local viewAngles = player:GetViewAngles()
-        local viewCoords = viewAngles:GetCoords()
-        local startPoint = player:GetEyePos() + viewCoords.zAxis * 1
-
-        local startVelocity = viewCoords.zAxis * kSpitSpeed
-        
-        local spit = CreateEntity(Spit.kMapName, startPoint, player:GetTeamNumber())
-        SetAnglesFromVector(spit, viewCoords.zAxis)
-        spit:Setup(player, startVelocity, false)
-        
-    end
-
-end
-
-local function CreatePredictedProjectile(self, player)
-
-    local viewAngles = player:GetViewAngles()
-    local viewCoords = viewAngles:GetCoords()
-    local startPoint = player:GetEyePos() - viewCoords.yAxis * 0.2
-    local trace = Shared.TraceRay(startPoint, player:GetEyePos() + viewCoords.zAxis * kSpitRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAll())
-    local endPoint = trace.endPoint
-    local tracerVelocity = viewCoords.zAxis * kSpitSpeed
-
-    if Server then
-    
-        if not self.compensatedProjectiles then
-            self.compensatedProjectiles = {}
-        end    
-    
-        local compensatedProjectile = {}
-        compensatedProjectile.velocity = Vector(tracerVelocity)
-        compensatedProjectile.origin = Vector(startPoint)
-        compensatedProjectile.endPoint = Vector(endPoint)
-        compensatedProjectile.endTime = ((startPoint - endPoint):GetLength() / kSpitSpeed) + Shared.GetTime()
-        
-        table.insert(self.compensatedProjectiles, compensatedProjectile)
-    
-    end
-
-end
-
 function BabblerAbility:OnPrimaryAttack(player)
 
     if player:GetEnergy() >= self:GetEnergyCost() then
@@ -132,41 +79,6 @@ function BabblerAbility:OnPrimaryAttackEnd(player)
     
 end
 
-function BabblerAbility:OnTag(tagName)
-
-    PROFILE("BabblerAbility:OnTag")
-
-    if self.primaryAttacking and tagName == "shoot" then
-    
-        local player = self:GetParent()
-        
-        if player then
-
-            CreatePredictedProjectile(self, player)
-            
-            player:DeductAbilityEnergy(self:GetEnergyCost())
-            
-            self:TriggerEffects("babblerability_attack")
-            
-            if Client then
-            
-                local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
-                cinematic:SetCinematic(kSpitViewEffect)
-                
-                local model = player:GetViewModelEntity():GetRenderModel()
-
-                model:RemoveMaterial(attackEffectMaterial)
-                model:AddMaterial(attackEffectMaterial)
-                attackEffectMaterial:SetParameter("attackTime", Shared.GetTime())
-                
-            end
-            
-        end
-        
-    end
-    
-end
-
 function BabblerAbility:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("BabblerAbility:OnUpdateAnimationInput")
@@ -181,72 +93,147 @@ function BabblerAbility:OnUpdateAnimationInput(modelMixin)
     
 end
 
-function BabblerAbility:GetDeathIconIndex()
-    return ConditionalValue(self.spitted, kDeathMessageIcon.Spit, kDeathMessageIcon.Spray)
+function BabblerAbility:GetRange()
+    return 15
 end
 
-function BabblerAbility:GetDamageType()
-    return ConditionalValue(self.spitted, kSpitDamageType, kHealsprayDamageType)
-end
+local function FindTarget(self, player)
 
-if Server then
-
-    function BabblerAbility:ProcessHit(position, entity)
+    local startPoint = player:GetEyePos()
+    local direction = player:GetViewCoords().zAxis
+    local extents = Vector(kPheromoneTraceWidth, kPheromoneTraceWidth, kPheromoneTraceWidth)
     
-        local parent = self:GetParent()
+    local trace = Shared.TraceBox(extents, startPoint, startPoint + direction * self:GetRange(), CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(player))
+    
+    local targetEntity = trace.entity
+    local endPoint = trace.fraction < 1 and (trace.endPoint + trace.normal * kPheromoneTraceWidth) or nil
+    
+    return targetEntity, endPoint
+
+end
+
+local function CreateBabblerPheromone(self, player)
+
+    local client = Server.GetOwner(player)    
+    local ownerClientId = client:GetUserId()
+    
+    // destroy at first all other pheromones
+    for _, pheromone in ientitylist(Shared.GetEntitiesWithClassname("BabblerPheromone")) do
+        if pheromone:GetOwnerClientId() == ownerClientId then
+            DestroyEntity(pheromone)
+        end
+    end
+
+    local viewAngles = player:GetViewAngles()
+    local viewCoords = viewAngles:GetCoords()
+    local startPoint = player:GetEyePos() + viewCoords.zAxis * 1
+    
+    local startPointTrace = Shared.TraceRay(player:GetEyePos(), startPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(player))
+    startPoint = startPointTrace.endPoint
+    
+    local babblerPheromone = CreateEntity(BabblerPheromone.kMapName, startPoint, player:GetTeamNumber())
+    babblerPheromone:SetOwnerClientId(ownerClientId)
+    
+    local startVelocity = viewCoords.zAxis * 10
+    babblerPheromone:Setup(player, startVelocity, true)
+
+end
+
+function BabblerAbility:OnTag(tagName)
+
+    PROFILE("BabblerAbility:OnTag")
+
+    if self.primaryAttacking and tagName == "shoot" then
+    
+        local player = self:GetParent()
         
-        if parent then
-        
-            local client = Server.GetOwner(parent)    
-            local ownerClientId = client:GetUserId()
+        if player then
+
+            if Server then
+                CreateBabblerPheromone(self, player)
+            end
             
-            // destroy at first all other pheromones
-            for _, pheromone in ientitylist(Shared.GetEntitiesWithClassname("BabblerPheromone")) do
-                if pheromone:GetOwnerClientId() == ownerClientId then
-                    DestroyEntity(pheromone)
-                end
-            end
+            player:DeductAbilityEnergy(self:GetEnergyCost())
+            player:TriggerEffects("babblerability_attack")
+            
+            
+        end
         
-            local babblerPheromone = CreateEntity(BabblerPheromone.kMapName, position, parent:GetTeamNumber())
-            babblerPheromone:SetOwnerClientId(ownerClientId)
+    end
+    
+end
+
+if Client then
+
+    local function CleanUpGUI(self)
+    
+        if self.babblerMoveGUI then
         
-            if entity and entity:isa("Alien") then
-                babblerPheromone:SetAttached(entity)
-            end
+            GetGUIManager():DestroyGUIScript(self.babblerMoveGUI)
+            self.babblerMoveGUI = nil
+            
+        end
         
+    end
+    
+    local function CreateGUI(self)
+    
+        local player = self:GetParent()
+        if not self.babblerMoveGUI and player and player:GetIsLocalPlayer() then        
+            self.babblerMoveGUI = GetGUIManager():CreateGUIScript("GUIBabblerMoveIndicator")        
         end
     
     end
 
-    function BabblerAbility:OnProcessMove(input)
-
+    function BabblerAbility:OnProcessIntermediate()
+    
+        //update babbler move type for GUI
         local player = self:GetParent()
-        if self.compensatedProjectiles and player then
+        if player then
         
-            local updateTable = {}
-        
-            for _, compensatedProjectile in ipairs(self.compensatedProjectiles) do
+            local target, endPoint = FindTarget(self, player)
             
-                if compensatedProjectile.endTime > Shared.GetTime() then
-                
-                    local trace = Shared.TraceRay(compensatedProjectile.origin, compensatedProjectile.origin + 3 * compensatedProjectile.velocity * input.time, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterTwo(self, player))
-                    if trace.entity then                    
-                        self:ProcessHit(trace.endPoint, trace.entity)                        
-                    else
-                        compensatedProjectile.origin = compensatedProjectile.origin + input.time * compensatedProjectile.velocity
-                        table.insert(updateTable, compensatedProjectile)
-                    end
-                
-                else
-                    self:ProcessHit(compensatedProjectile.origin , nil)   
-                end
+            if target and GetAreEnemies(self, target) and HasMixin(target, "Live") and target:GetIsAlive() then
+                self.babblerMoveType = kBabblerMoveType.Attack
             
-            end
+            elseif target and GetAreFriends(self, target) and HasMixin(target, "BabblerCling") and target:GetIsAlive() then
+                self.babblerMoveType = kBabblerMoveType.Cling
             
-            self.compensatedProjectiles = updateTable
+            else
+                self.babblerMoveType = kBabblerMoveType.Move
+            end  
         
         end
+        
+    end
 
+    function BabblerAbility:GetBabblerMoveType()
+        return self.babblerMoveType
+    end
+    
+    function BabblerAbility:OnDrawClient()
+        
+        CreateGUI(self)
+        Ability.OnDrawClient(self)
+        
+    end
+    
+    function BabblerAbility:OnHolsterClient()
+    
+        CleanUpGUI(self)
+        Ability.OnHolsterClient(self)
+
+    end 
+    
+    function BabblerAbility:OnKillClient()
+        CleanUpGUI(self)
+    end
+    
+    function BabblerAbility:OnDestroy()
+    
+        CleanUpGUI(self)
+        Ability.OnDestroy(self)
+    
     end
 
 end

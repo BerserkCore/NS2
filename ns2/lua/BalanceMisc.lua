@@ -175,7 +175,7 @@ kUpgradeGestationTime = 2
 // 
 kHiveCystParentRange = 15 // distance from a hive a cyst can be connected
 kCystMaxParentRange = 15 // distance from a cyst another cyst can be placed
-kCystMinParentRange = 6 // minimum distance to other cyst allowed
+kCystRedeployRange = 6 // distance from existing Cysts that will cause redeployment
 
 // Damage over time that all cysts take when not connected
 kCystUnconnectedDamage = 12
@@ -286,5 +286,5 @@ kBileBombSplashRadius = 6
 
 kDropStructureEnergyCost = 20
 
-kMinWebLength = 1.5
-kMaxWebLength = 6
+kMinWebLength = 0.5
+kMaxWebLength = 8

@@ -432,15 +432,18 @@ end
 
 function GUICommanderButtons:InitializeSelectAllPlayersIcon()
 
-    self.selectAllPlayers = GUIManager:CreateGraphicItem()
-    self.selectAllPlayers:SetSize(Vector(GUICommanderButtons.kSelectAllPlayersSize, GUICommanderButtons.kSelectAllPlayersSize, 0))
-    self.selectAllPlayers:SetAnchor(GUIItem.Left, GUIItem.Top)
-    self.selectAllPlayers:SetPosition(Vector(GUICommanderButtons.kSelectAllPlayersX, GUICommanderButtons.kSelectAllPlayersY, 0))
-    self.selectAllPlayers:SetTexture("ui/buildmenu.dds")
+    if PlayerUI_GetTeamType() == kMarineTeamType then
+
+        self.selectAllPlayers = GUIManager:CreateGraphicItem()
+        self.selectAllPlayers:SetSize(Vector(GUICommanderButtons.kSelectAllPlayersSize, GUICommanderButtons.kSelectAllPlayersSize, 0))
+        self.selectAllPlayers:SetAnchor(GUIItem.Left, GUIItem.Top)
+        self.selectAllPlayers:SetPosition(Vector(GUICommanderButtons.kSelectAllPlayersX, GUICommanderButtons.kSelectAllPlayersY, 0))
+        self.selectAllPlayers:SetTexture("ui/buildmenu.dds")
+        
+        local coordinates = GetTextureCoordinatesForIcon(kTechId.Marine)
+        self.selectAllPlayers:SetTexturePixelCoordinates(unpack(coordinates))
     
-    local coordinates = GetTextureCoordinatesForIcon(kTechId.Marine)
-    self.selectAllPlayers:SetTexturePixelCoordinates(unpack(coordinates))
-    self.selectAllPlayers:SetIsVisible(false)
+    end
     
 end
 
@@ -501,9 +504,7 @@ function GUICommanderButtons:Update(deltaTime)
     self:UpdateIdleWorkersIcon()
     
     self:UpdateAlertIcon()
-    
-    self:UpdateSelectAllPlayersIcon()
-    
+
     local buttonList, indexOffset = self:GetButtonList()
     
     for i, buttonItem in ipairs(buttonList) do
@@ -638,31 +639,6 @@ function GUICommanderButtons:UpdateAlertIcon()
     
         self.playerAlerts:SetIsVisible(false)
         self.playerAlertsText:SetIsVisible(false)
-        
-    end
-    
-end
-
-function GUICommanderButtons:UpdateSelectAllPlayersIcon()
-
-    if (self.timeOfLastUpdateSelectAll == nil) or (Shared.GetTime() > self.timeOfLastUpdateSelectAll + 1) then
-    
-        local player = Client.GetLocalPlayer()
-        
-        local friendlyPlayers = GetEntitiesForTeam("Marine", player:GetTeamNumber())
-        
-        local visState = false
-        
-        for index, marine in ipairs(friendlyPlayers) do
-            if marine:GetIsAlive() then
-                visState = true
-                break
-            end
-        end
-        
-        self.selectAllPlayers:SetIsVisible(visState)
-        
-        self.timeOfLastUpdateSelectAll = Shared.GetTime()
         
     end
     
@@ -832,7 +808,7 @@ function GUICommanderButtons:MousePressed(key, mouseX, mouseY)
                 CommanderUI_ClickedIdleWorker()
             elseif self.playerAlerts:GetIsVisible() and GUIItemContainsPoint(self.playerAlerts, mouseX, mouseY) then
                 CommanderUI_ClickedPlayerAlert()
-            elseif self.selectAllPlayers:GetIsVisible() and GUIItemContainsPoint(self.selectAllPlayers, mouseX, mouseY) then
+            elseif self.selectAllPlayers and GUIItemContainsPoint(self.selectAllPlayers, mouseX, mouseY) then
                 CommanderUI_ClickedSelectAllPlayers()
             elseif self.targetedButton ~= nil then
             
@@ -996,7 +972,7 @@ function GUICommanderButtons:ContainsPoint(pointX, pointY)
     // Check if the point is over any of the UI managed by the GUICommanderButtons.
     local containsPoint = GUIItemContainsPoint(self.idleWorkers, pointX, pointY)
     containsPoint = containsPoint or GUIItemContainsPoint(self.playerAlerts, pointX, pointY)
-    containsPoint = containsPoint or GUIItemContainsPoint(self.selectAllPlayers, pointX, pointY)
+    containsPoint = containsPoint or (selectAllPlayers ~= nil and GUIItemContainsPoint(self.selectAllPlayers, pointX, pointY))
     return containsPoint or GUIItemContainsPoint(self.background, pointX, pointY)
     
 end

@@ -36,6 +36,9 @@ resources =
 		// Light accumulation buffer.
 		{ name="accumulation_1"			format="A16B16G16R16F"	x_scale=1 y_scale=1 ping_pong=true }
 		
+		// Stores a copy of the final lit scene which is fed into the refraction pass
+		{ name="refraction"				format="A16B16G16R16F"	x_scale=1 y_scale=1 }
+		
 		// Medium-quality ambient occlusion. Half-res buffers.
 		{ name="med_ao_depth" 			format="R16F" 			x_scale=0.5 y_scale=0.5 }
 		{ name="med_ao_ao"				format="G16R16F"		x_scale=0.5 y_scale=0.5 }
@@ -436,6 +439,88 @@ layers =
 			objects_mask					= "decal"
 		}
 
+		
+	    //----------------------------------------
+        //  Refraction
+        //----------------------------------------
+	
+		// Copy the lit scene for input as the refraction map.
+		{
+			name							= "generate_refraction_map"
+			conditions						= { mode = "lit" }
+			generator						= "copy"
+			color_targets					= "refraction"
+			copy_source						= "accumulation_1"
+		}
+		
+		// Clear the alpha component of the refraction texture to white.
+		{
+			name							= "clear_refraction_map_mask"
+			conditions						= { mode = "lit" }
+			generator						= "fullscreen"
+			color_targets					= "refraction"
+			shader							= "renderer/Refraction.fx"
+			technique						= "RefractionMaskClear"
+		}
+		
+		// Generate the mask of pixels we'll grab for distortion.
+		{
+			name							= "generate_refraction_map_mask"
+			conditions						= { mode = "lit" }
+			color_targets					= "refraction"
+			depth_stencil_target			= "back_buffer_depth_stencil"		
+			technique						= "WriteRefractionMask"
+			parameters						= { depthTexture = "depth" }
+			generator						= "objects"
+			objects_mask					= "~ particles decal"
+		}		
+		{
+			name							= "generate_refraction_map_mask"
+			conditions						= { mode = "lit" }
+			color_targets					= "refraction"
+			depth_stencil_target			= "back_buffer_depth_stencil"		
+			technique						= "DecalRefractionMask"
+			parameters						= { depthTexture = "depth" }
+			generator						= "objects"
+			objects_mask					= "decal"
+		}		
+	
+		// Write the objects that use refraction.
+		{
+			name							= "refraction"
+			conditions						= { mode = "lit" }
+			color_targets					= "accumulation_1"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "WriteRefraction"
+			parameters						= { depthTexture = "depth" refractionTexture = "refraction" }
+			generator						= "objects"
+			objects_mask					= "~ particles decal"
+		}		
+
+        // Write the decals that use refraction
+		{
+			name							= "refraction_decals"
+			conditions						= { mode = "lit" }
+			color_targets					= "accumulation_1"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "DecalRefraction"
+			parameters						= { depthTexture = "depth" refractionTexture = "refraction" }
+			generator						= "objects"
+			objects_mask					= "decal"
+		}
+		
+        // Write the particles that use refraction
+		{
+			name							= "refraction_particles"
+			conditions						= { mode = "lit" }
+			color_targets					= "accumulation_1"
+			depth_stencil_target			= "back_buffer_depth_stencil"
+			technique						= "ParticleRefraction"
+			parameters						= { depthTexture = "depth" refractionTexture = "refraction" }
+			generator						= "objects"
+			objects_mask					= "particles"
+		}
+		
         // High-res particles pass
 		{
 			name							= "emissive_particles"
@@ -543,7 +628,7 @@ layers =
 			parameters 						= { lightingTexture = "reflections"  }
 		}
 		*/
-
+	
 		//////////////////////////////////////////////////////////////////
 		// BLOOM
 
@@ -825,6 +910,7 @@ layers =
 			technique 						= "VisualizeInfestation"
 			generator 						= "fullscreen"
 			parameters 						= { infestationMask = "infestation_mask_half_skirt" }
-		}			
+		}		
+		
 		
 	]

@@ -88,6 +88,7 @@ AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(ResearchMixin, networkVars)
 AddMixinNetworkVars(RecycleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(ObstacleMixin, networkVars)

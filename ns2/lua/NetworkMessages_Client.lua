@@ -20,54 +20,8 @@ end
 
 function OnCommandHitEffect(hitEffectTable)
 
-    local position, doer, surface, target, showtracer, altMode, damage = ParseHitEffectMessage(hitEffectTable)
-    
-    local tableParams = { }
-    tableParams[kEffectHostCoords] = Coords.GetTranslation(position)
-    if doer then
-        tableParams[kEffectFilterDoerName] = doer:GetClassName()
-    end
-    tableParams[kEffectSurface] = surface
-    tableParams[kEffectFilterInAltMode] = altMode
-    
-    if target then
-    
-        tableParams[kEffectFilterClassName] = target:GetClassName()
-        
-        if target.GetTeamType then
-        
-            tableParams[kEffectFilterIsMarine] = target:GetTeamType() == kMarineTeamType
-            tableParams[kEffectFilterIsAlien] = target:GetTeamType() == kAlienTeamType
-            
-        end
-        
-    else
-    
-        tableParams[kEffectFilterIsMarine] = false
-        tableParams[kEffectFilterIsAlien] = false
-        
-    end
-    
-    // Don't play the hit cinematic, those are made for third person.
-    if target ~= Client.GetLocalPlayer() then
-        GetEffectManager():TriggerEffects("damage", tableParams)
-    end
-    
-    // Always play sound effect.
-    GetEffectManager():TriggerEffects("damage_sound", tableParams)
-    
-    if showtracer == true and doer then
-    
-        local tracerStart = (doer.GetBarrelPoint and doer:GetBarrelPoint()) or (doer.GetEyePos and doer:GetEyePos()) or doer:GetOrigin()
-        
-        local tracerVelocity = GetNormalizedVector(position - tracerStart) * kTracerSpeed
-        CreateTracer(tracerStart, position, tracerVelocity, doer)
-        
-    end
-    
-    if damage > 0 and target and target.OnTakeDamageClient then
-        target:OnTakeDamageClient(damage, doer, position)
-    end
+    local position, doer, surface, target, showtracer, altMode, damage, direction = ParseHitEffectMessage(hitEffectTable)
+    HandleHitEffect(position, doer, surface, target, showtracer, altMode, damage, direction)
     
 end
 
@@ -210,6 +164,19 @@ function OnCommandJoinError(message)
     ChatUI_AddSystemMessage( Locale.ResolveString("JOIN_ERROR_TOO_MANY") )
 end
 
+function OnCommandCreateDecal(message)
+    
+    local normal, position, materialName, scale = ParseCreateDecalMessage(message)
+    
+    local coords = Coords.GetTranslation(position)
+    coords.yAxis = normal
+    coords.zAxis = coords.yAxis:GetPerpendicular()
+    coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
+    
+    Shared.CreateRenderDecal(materialName, coords, scale)
+
+end
+
 Client.HookNetworkMessage("Ping", OnCommandPing)
 Client.HookNetworkMessage("HitEffect", OnCommandHitEffect)
 Client.HookNetworkMessage("Damage", OnCommandDamage)
@@ -232,3 +199,5 @@ Client.HookNetworkMessage("DebugCapsule", OnCommandDebugCapsule)
 
 Client.HookNetworkMessage("WorldText", OnCommandWorldText)
 Client.HookNetworkMessage("CommanderError", OnCommandCommanderError)
+
+Client.HookNetworkMessage("CreateDecal", OnCommandCreateDecal)

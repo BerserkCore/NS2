@@ -62,6 +62,7 @@ else
 end
 
 local _enableBoneUpdating = true
+local _enablePoseParams   = true
 
 BaseModelMixin = CreateMixin( BaseModelMixin )
 BaseModelMixin.type = "BaseModel"
@@ -282,8 +283,11 @@ local function UpdatePoseParameters(self, forceUpdate)
     if self.OnUpdatePoseParameters and not Shared.GetIsRunningPrediction() and (self.fullyUpdated or forceUpdate) then
     
         PROFILE("BaseModelMixin:OnUpdatePoseParameters")
-
-        self:OnUpdatePoseParameters(self)
+        if _enablePoseParams then
+            self:OnUpdatePoseParameters(self)
+        else
+            self.poseParams = PoseParams()
+        end
         
     end
 
@@ -442,6 +446,10 @@ local function UpdateRenderModel(self)
         
         // Save off the model index so we can detect when it changes.
         self.oldModelIndex = self.modelIndex
+        
+        if self.OnModelChanged then
+            self:OnModelChanged(self.modelIndex ~= 0)
+        end
         
         self:UpdatePhysicsModel()
         UpdateBoneCoords(self, true)  
@@ -1257,27 +1265,49 @@ local function SetBoneUpdatingEnabled(enable)
     
 end
 
-local OnCommandAnimationEnable = nil
-if Server then
+local function SetPoseParamsEnabled(enable)
 
-    OnCommandAnimationEnable = function(client, enable)
-    
-        if not client or Shared.GetCheatsEnabled() then
-            SetBoneUpdatingEnabled(enable)
-        end
-        
-    end
-    
-else
-
-    OnCommandAnimationEnable = function(enable)
-    
-        if Shared.GetCheatsEnabled() then
-            SetBoneUpdatingEnabled(enable)
-        end
-        
+    _enablePoseParams = enable == "true"
+    if _enablePoseParams then
+        Shared.Message("Pose params enabled")
+    else
+        Shared.Message("Pose params disabled")
     end
     
 end
 
+local OnCommandAnimationEnable = nil
+local OnCommandPoseParamsEnable = nil
+
+if Server then
+
+    OnCommandAnimationEnable = function(client, enable)
+        if not client or Shared.GetCheatsEnabled() then
+            SetBoneUpdatingEnabled(enable)
+        end
+    end
+
+    OnCommandPoseParamsEnable = function(client, enable)
+        if not client or Shared.GetCheatsEnabled() then
+            SetPoseParamsEnabled(enable)
+        end
+    end
+
+    
+else
+
+    OnCommandAnimationEnable = function(enable)
+        if Shared.GetCheatsEnabled() then
+            SetBoneUpdatingEnabled(enable)
+        end
+    end
+    
+    OnCommandPoseParamsEnable = function(enable)
+        if Shared.GetCheatsEnabled() then
+            SetPoseParamsEnabled(enable)
+        end
+    end    
+end
+
 Event.Hook("Console_r_animation", OnCommandAnimationEnable)
+Event.Hook("Console_r_poseparams", OnCommandPoseParamsEnable)

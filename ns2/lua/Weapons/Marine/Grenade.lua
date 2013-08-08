@@ -89,7 +89,7 @@ if Server then
         end
         
     end
-    
+
     function Grenade:Detonate(targetHit)
     
         // Do damage to nearby targets.
@@ -97,6 +97,13 @@ if Server then
         
         // Remove grenade and add firing player.
         table.removevalue(hitEntities, self)
+        
+        // full damage on direct impact
+        if targetHit then
+            table.removevalue(hitEntities, targetHit)
+            self:DoDamage(kGrenadeLauncherGrenadeDamage, targetHit, targetHit:GetOrigin(), GetNormalizedVector(targetHit:GetOrigin() - self:GetOrigin()), "none")
+        end
+        
         local owner = self:GetOwner()
         // It is possible this grenade does not have an owner.
         if owner then
@@ -118,6 +125,8 @@ if Server then
         end
         
         self:TriggerEffects("grenade_explode", params)
+        
+        CreateExplosionDecals(self)
         
         DestroyEntity(self)
         

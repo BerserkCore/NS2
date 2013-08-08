@@ -19,7 +19,21 @@ function GUIWebView:Initialize()
     self.buttonDown = { [InputKey.MouseButton0] = false, [InputKey.MouseButton1] = false, [InputKey.MouseButton2] = false }
 end
 
+/**
+ * Disables music playback while the web view is open. This is useful if the
+ * web view is going to play sound that might interfere with the music. The music
+ * is automatically re-enabled when the web view is destroyed.
+ */
+function GUIWebView:DisableMusic()
+    self.musicVolume = Client.GetMusicVolume()
+    Client.SetMusicVolume(0)
+end
+
 local function Destroy(self)
+
+    if self.musicVolume ~= nil then
+        Client.SetMusicVolume(self.musicVolume)
+    end
 
     if self.webView then
     

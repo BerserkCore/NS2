@@ -108,6 +108,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function ARC:OnCreate()
 
@@ -296,24 +297,9 @@ end
 
 function ARC:GetTechButtons(techId)
 
-    if techId == kTechId.RootMenu then
-    
-        if self:GetInAttackMode() then
-        
-            return  { kTechId.Stop, kTechId.Move, kTechId.None, kTechId.None,
-                      kTechId.ARCUndeploy, kTechId.None, kTechId.None, kTechId.None }
-        
-        else
-        
-            return  { kTechId.Stop, kTechId.Move, kTechId.None, kTechId.None,
-                      kTechId.ARCDeploy, kTechId.None, kTechId.None, kTechId.None }
-        
-        end
-        
-    else
-        return nil
-    end
-    
+    return  { kTechId.Stop, kTechId.Move, kTechId.None, kTechId.None,
+              kTechId.ARCDeploy, kTechId.ARCUndeploy, kTechId.None, kTechId.None }
+              
 end
 
 function ARC:GetInAttackMode()

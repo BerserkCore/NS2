@@ -10,13 +10,11 @@
 
 class 'GUIHotkeyIcons' (GUIScript)
 
-GUIHotkeyIcons.kMaxHotkeys = Player.kMaxHotkeyGroups
-
 GUIHotkeyIcons.kHotkeyIconSize = 40
 // The buffer between icons.
 GUIHotkeyIcons.kHotkeyIconXOffset = 6
 
-GUIHotkeyIcons.kBackgroundWidth = (GUIHotkeyIcons.kHotkeyIconSize + GUIHotkeyIcons.kHotkeyIconXOffset) * GUIHotkeyIcons.kMaxHotkeys
+GUIHotkeyIcons.kBackgroundWidth = (GUIHotkeyIcons.kHotkeyIconSize + GUIHotkeyIcons.kHotkeyIconXOffset) * kMaxHotkeyGroups
 GUIHotkeyIcons.kBackgroundHeight = 2 * GUIHotkeyIcons.kHotkeyIconSize
 
 GUIHotkeyIcons.kHoykeyFontSize = 16
@@ -40,7 +38,7 @@ function GUIHotkeyIcons:Initialize()
     self.background:SetPosition(Vector(0, -GUIHotkeyIcons.kBackgroundHeight, 0))
     
     local currentHotkey = 0
-    while currentHotkey < GUIHotkeyIcons.kMaxHotkeys do
+    while currentHotkey < kMaxHotkeyGroups do
     
         local hotkeyIcon = GUIManager:CreateGraphicItem()
         hotkeyIcon:SetSize(Vector(GUIHotkeyIcons.kHotkeyIconSize, GUIHotkeyIcons.kHotkeyIconSize, 0))
@@ -79,27 +77,63 @@ function GUIHotkeyIcons:Uninitialize()
     
 end
 
+local function GetIsGroupInCombat(group)
+
+    local inCombat = false
+    
+    for i = 1, #group do
+
+        local entity = group[i]
+        if HasMixin(entity, "Combat") and entity:GetIsInCombat() then
+            inCombat = true
+            break
+        end
+
+    end   
+    
+    return inCombat
+
+end
+
 function GUIHotkeyIcons:Update(deltaTime)
     
     PROFILE("GUIHotkeyIcons:Update")
     
-    local numHotkeys = CommanderUI_GetTotalHotkeys()
+    local hotKeyGroups = CommanderUI_GetHotKeyGroups()
+    local numHotkeys = 0
+    for index, group in pairs(hotKeyGroups) do
+        numHotkeys = numHotkeys + 1
+    end
+
     if numHotkeys > 0 then
         self.background:SetIsVisible(true)
+        
         local currentHotkey = 0
-        while currentHotkey < GUIHotkeyIcons.kMaxHotkeys do
+        while currentHotkey < kMaxHotkeyGroups do
+        
             local hotkeyTable = self.hotkeys[currentHotkey + 1]
-            local coordinates = CommanderUI_GetHotkeyIconOffset(currentHotkey + 1)
+            local coordinates = nil
+            local group = hotKeyGroups[currentHotkey + 1]
             
-            if coordinates then
+            if group and group[1] and HasMixin(group[1], "Tech") then
+            
+                local techId = group[1]:GetTechId()
+                coordinates = GetTextureCoordinatesForIcon(techId)
             
                 hotkeyTable.Icon:SetIsVisible(true)
                 hotkeyTable.Text:SetText(CommanderUI_GetHotkeyName(currentHotkey + 1))
-                local x1 = GUIHotkeyIcons.kHotkeyTextureWidth * coordinates[1]
-                local x2 = x1 + GUIHotkeyIcons.kHotkeyTextureWidth
-                local y1 = GUIHotkeyIcons.kHotkeyTextureHeight * coordinates[2]
-                local y2 = y1 + GUIHotkeyIcons.kHotkeyTextureHeight
-                hotkeyTable.Icon:SetTexturePixelCoordinates(x1, y1, x2, y2)
+                hotkeyTable.Icon:SetTexturePixelCoordinates(unpack(coordinates))
+                
+                local useColor = Color(kIconColors[self.teamType])
+                if GetIsGroupInCombat(group) then
+                    
+                    local anim = 0.2 + (1 + math.cos(Shared.GetTime() * 6)) * 0.2
+                    useColor.g = anim
+                    useColor.b = anim
+                    
+                end
+                
+                hotkeyTable.Icon:SetColor(useColor)                
                 
             else
                 // No coordinates, this hotkey is not valid (has no entities in the group).
@@ -131,7 +165,7 @@ function GUIHotkeyIcons:MousePressed(key, mouseX, mouseY)
 
     if key == InputKey.MouseButton0 then
         local currentHotkey = 0
-        while currentHotkey < GUIHotkeyIcons.kMaxHotkeys do
+        while currentHotkey < kMaxHotkeyGroups do
             local hotkeyTable = self.hotkeys[currentHotkey + 1]
             if hotkeyTable.Icon:GetIsVisible() and GUIItemContainsPoint(hotkeyTable.Icon, mouseX, mouseY) then
                 CommanderUI_SelectHotkey(currentHotkey + 1)

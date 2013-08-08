@@ -24,7 +24,7 @@ local kMaxEventNameLength = 128
 local kEventTested =
 {
     name = "string (" .. kMaxEventNameLength .. ")",
-    tested = "boolean"
+    timesTested = "integer"
 }
 Shared.RegisterNetworkMessage("EventTested", kEventTested)
 
@@ -40,12 +40,12 @@ if Server then
         
     end
     
-    local function SyncEventTested(client, eventName, tested)
+    local function SyncEventTested(client, eventName, timesTested)
     
         if client then
-            Server.SendNetworkMessage(client, "EventTested", { name = eventName, tested = tested }, true)
+            Server.SendNetworkMessage(client, "EventTested", { name = eventName, timesTested = timesTested }, true)
         else
-            Server.SendNetworkMessage("EventTested", { name = eventName, tested = tested }, true)
+            Server.SendNetworkMessage("EventTested", { name = eventName, timesTested = timesTested }, true)
         end
         
     end
@@ -56,8 +56,8 @@ if Server then
         
         if eventTestingEnabled then
         
-            for name, tested in pairs(testEvents) do
-                SyncEventTested(client, name, tested)
+            for name, timesTested in pairs(testEvents) do
+                SyncEventTested(client, name, timesTested)
             end
             
         end
@@ -77,10 +77,10 @@ if Server then
     
     local function SharedTestEvent(eventName)
     
-        if eventTestingEnabled and not testEvents[eventName] then
+        if eventTestingEnabled then
         
-            testEvents[eventName] = true
-            SyncEventTested(nil, eventName, true)
+            testEvents[eventName] = (testEvents[eventName] and testEvents[eventName] + 1) or 1
+            SyncEventTested(nil, eventName, testEvents[eventName])
             
         end
         
@@ -125,7 +125,7 @@ elseif Client then
     
     local function OnEventTested(message)
     
-        testEvents[message.name] = message.tested
+        testEvents[message.name] = message.timesTested
         
         local eventTester = GetGUIManager():CreateGUIScriptSingle("GUIEventTester")
         eventTester:SetTestEvents(testEvents)
@@ -135,11 +135,17 @@ elseif Client then
     
     function TEST_EVENT(eventName)
     
+        // The Client doesn't send the number of times tested.
         if eventTestingEnabled then
-            Client.SendNetworkMessage("EventTested", { name = eventName, tested = true }, true)
+            Client.SendNetworkMessage("EventTested", { name = eventName, timesTested = 0 }, true)
         end
         
     end
+    
+    local function SetUIOpacity(opacity)
+        GetGUIManager():CreateGUIScriptSingle("GUIEventTester"):SetOpacity(tonumber(opacity))
+    end
+    Event.Hook("Console_test_events_opacity", SetUIOpacity)
     
 elseif Predict then
 
@@ -170,7 +176,7 @@ local function OnScriptLoaded(fileName)
             if string.len(cleanEventName) > kMaxEventNameLength then
                 Shared.Message(cleanEventName " is too long. " .. kMaxEventNameLength .. " is the max length.")
             else
-                testEvents[cleanEventName] = false
+                testEvents[cleanEventName] = 0
             end
             
         end

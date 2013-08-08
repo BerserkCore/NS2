@@ -70,7 +70,7 @@ function AiSlapAttackType:OnHit()
             local direction = ent:GetModelOrigin() - hitPosition
             direction:Normalize()
             
-            self.aiEntity:DoDamage(Whip.kDamage, ent, hitPosition, hitDirection, nil, true)
+            self.aiEntity:DoDamage(Whip.kDamage, ent, hitPosition, direction, nil, true)
             didDamage = true
             
         end

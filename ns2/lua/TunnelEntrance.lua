@@ -39,8 +39,8 @@ class 'TunnelEntrance' (ScriptActor)
 
 TunnelEntrance.kMapName = "tunnelentrance"
 
-TunnelEntrance.kModelName = PrecacheAsset("models/props/generic/generic_crate_01.model")
-TunnelEntrance.kAnimationGraph = nil
+TunnelEntrance.kModelName = PrecacheAsset("models/alien/tunnel/mouth.model") PrecacheAsset("models/props/generic/generic_crate_01.model")
+local kAnimationGraph = PrecacheAsset("models/alien/tunnel/mouth.animation_graph")
 
 local networkVars = { 
     connected = "boolean"
@@ -62,6 +62,7 @@ AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function TunnelEntrance:OnCreate()
 
@@ -104,7 +105,7 @@ function TunnelEntrance:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
-    self:SetModel(TunnelEntrance.kModelName, TunnelEntrance.kAnimationGraph)
+    self:SetModel(TunnelEntrance.kModelName, kAnimationGraph)
     
     if Server then
     
@@ -215,7 +216,7 @@ if Server then
         end
         
         // no tunnel entity present, check if there is another tunnel entrance to connect with
-        local tunnel = CreateEntity(Tunnel.kMapName)
+        local tunnel = CreateEntity(Tunnel.kMapName, nil, self:GetTeamNumber())
         tunnel:SetOwnerClientId(self:GetOwnerClientId()) 
         tunnel:AddExit(self)
         self.tunnelId = tunnel:GetId()

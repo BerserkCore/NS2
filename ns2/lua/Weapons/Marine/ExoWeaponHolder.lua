@@ -20,9 +20,11 @@ local networkVars =
 
 local kViewModelNames = { ["minigun+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_mm_view.model"),
                           ["claw+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_cm_view.model"),
+                          ["claw+railgun"] = PrecacheAsset("models/marine/exosuit/exosuit_cr_view.model"),
                           ["railgun+railgun"] = PrecacheAsset("models/marine/exosuit/exosuit_rr_view.model") }
 local kAnimationGraphs = { ["minigun+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_mm_view.animation_graph"),
                            ["claw+minigun"] = PrecacheAsset("models/marine/exosuit/exosuit_cm_view.animation_graph"),
+                           ["claw+railgun"] = PrecacheAsset("models/marine/exosuit/exosuit_cr_view.animation_graph"),
                            ["railgun+railgun"] = PrecacheAsset("models/marine/exosuit/exosuit_rr_view.animation_graph") }
 
 local kDeploy2DSoundEffect = PrecacheAsset("sound/NS2.fev/marine/heavy/deploy_2D")

@@ -75,6 +75,14 @@ kAlienWeaponEffects =
             
         },
     },
+    
+    bilebomb_decal =
+    {
+        bileBombDecal =
+        {
+            {decal = "cinematics/vfx_materials/decals/bilebomb_decal.material", scale = 3.5, done = true}
+        }    
+    },
 
     parasite_attack =
     {
@@ -111,7 +119,7 @@ kAlienWeaponEffects =
         babblerabilityAttackEffects = 
         {   
             {sound = "", silenceupgrade = true, done = true}, 
-            {sound = "sound/NS2.fev/alien/gorge/create_structure_start", world_space = true},
+            {sound = "sound/NS2.fev/alien/gorge/babbler_ball_spit", world_space = true},
         },
     },
     

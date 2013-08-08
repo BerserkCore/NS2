@@ -159,8 +159,13 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
             if Server then
             
                 if GetShouldSendHitEffect() then
-            
-                    local message = BuildHitEffectMessage(point, doer, surface, target, showtracer, altMode, damage)
+                                
+                    local directionVectorIndex = 1
+                    if direction then
+                        directionVectorIndex = GetIndexFromVector(direction)
+                    end
+                    
+                    local message = BuildHitEffectMessage(point, doer, surface, target, showtracer, altMode, damage, directionVectorIndex)
                     
                     local toPlayers = GetEntitiesWithinRange("Player", point, kHitEffectRelevancyDistance)
                     table.removevalue(toPlayers, attacker)
@@ -173,38 +178,13 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
 
             elseif Client then
             
-                local tableParams = { damagetype = damageType, flinch_severe = ConditionalValue(damage > 20, true, false) }
-                tableParams[kEffectHostCoords] = Coords.GetTranslation(point)
-                tableParams[kEffectFilterDoerName] = self:GetClassName()
-                tableParams[kEffectSurface] = surface
-                tableParams[kEffectFilterInAltMode] = altMode
-                
-                if target then
-                
-                    tableParams[kEffectFilterClassName] = target:GetClassName()
-                    
-                    if target.GetTeamType then
-                        tableParams[kEffectFilterIsMarine] = target:GetTeamType() == kMarineTeamType
-                        tableParams[kEffectFilterIsAlien] = target:GetTeamType() == kAlienTeamType
-                    end
-                    
-                else
-                        tableParams[kEffectFilterIsMarine] = false
-                        tableParams[kEffectFilterIsAlien] = false
-                end
-            
-                GetEffectManager():TriggerEffects("damage", tableParams, attacker)
-                GetEffectManager():TriggerEffects("damage_sound", tableParams, attacker)
+                HandleHitEffect(point, doer, surface, target, showtracer, altMode, damage, direction)
                 
                 // If we are far away from our target, trigger a private sound so we can hear we hit something
                 if target then
                 
                     if (point - attacker:GetOrigin()):GetLength() > 5 then
                         attacker:TriggerEffects("hit_effect_local", tableParams)
-                    end
-                    
-                    if damage > 0 and target.OnTakeDamageClient then
-                        target:OnTakeDamageClient(damage, doer, point)
                     end
                     
                 end

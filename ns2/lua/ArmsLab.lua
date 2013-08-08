@@ -77,6 +77,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function ArmsLab:OnCreate()
 

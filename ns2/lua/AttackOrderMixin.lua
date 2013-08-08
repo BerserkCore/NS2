@@ -122,6 +122,21 @@ if Server then
         
             local target = Shared.GetEntity(currentOrder:GetParam())
             
+            // Different targets can be attacked from different ranges, depending on size
+            local attackDistance = GetEngagementDistance(currentOrder:GetParam())
+            
+            // If we are close enough to target, attack it    
+            local targetPosition = target and Vector(target:GetOrigin()) or Vector()
+            if self.GetHoverHeight then
+                targetPosition.y = targetPosition.y + self:GetHoverHeight()
+            end
+            local distanceToTarget = (targetPosition - self:GetOrigin()):GetLength()
+            // Factor in the size of the target.
+            local sizeOfTarget = target and target:GetExtents() or Vector()
+            sizeOfTarget.y = 0
+            distanceToTarget = distanceToTarget - sizeOfTarget:GetLength()
+            local withinAttackDistance = distanceToTarget <= attackDistance
+            
             if target then
             
                 // How do you kill that which has no life?
@@ -130,7 +145,7 @@ if Server then
                 // If the target is not sighted, it cannot be killed.
                 elseif HasMixin(target, "LOS") and not target:GetIsSighted() then
                     self:CompletedCurrentOrder()
-                else
+                elseif not withinAttackDistance then
                 
                     local targetLocation = target:GetEngagementPoint()
                     if self:GetIsFlying() then
@@ -150,17 +165,7 @@ if Server then
             
             if target and HasMixin(target, "Live") then
             
-                // If we are close enough to target, attack it    
-                local targetPosition = Vector(target:GetOrigin())
-                if self.GetHoverHeight then
-                    targetPosition.y = targetPosition.y + self:GetHoverHeight()
-                end
-                
-                // Different targets can be attacked from different ranges, depending on size
-                local attackDistance = GetEngagementDistance(currentOrder:GetParam())
-                
-                local distanceToTarget = (targetPosition - self:GetOrigin()):GetLength()
-                if distanceToTarget <= attackDistance and target:GetIsAlive() then
+                if withinAttackDistance and target:GetIsAlive() then
                     OrderMeleeAttack(self, target)
                 end
                 

@@ -111,6 +111,7 @@ AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(AttackOrderMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function MAC:OnCreate()
 
@@ -828,7 +829,7 @@ function MAC:OnOverrideDoorInteraction(inEntity)
 end
 
 function MAC:UpdateIncludeRelevancyMask()
-    self:SetAlwaysRelevantToCommander(true)
+    SetAlwaysRelevantToCommander(self, true)
 end
 
 if Server then

@@ -104,3 +104,15 @@ if Client then
     end
     
 end
+
+// Removed in 238 because it requires the entire level to be kept in memory
+if Client then
+    local reported = false
+    function Client.LoadSoundGeometry() 
+	    if not reported then
+	        Shared.Message("Client.LoadSoundGeometry function no longer exists. Called from:")
+	        Shared.Message(Script.CallStack())
+	        reported = true
+	    end
+	end
+end

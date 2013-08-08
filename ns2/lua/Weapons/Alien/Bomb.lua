@@ -13,6 +13,8 @@ Script.Load("lua/Weapons/Projectile.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/Weapons/DotMarker.lua")
 
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/bilebomb_decal.surface_shader")
+
 class 'Bomb' (Projectile)
 
 Bomb.kMapName            = "bomb"
@@ -79,6 +81,8 @@ if Server then
             dotMarker:SetOwner(self:GetOwner())
 
             DestroyEntity(self)
+            
+            CreateExplosionDecals(self, "bilebomb_decal")
 
         end
 

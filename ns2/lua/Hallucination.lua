@@ -55,6 +55,7 @@ AddMixinNetworkVars(FlinchMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 local gTechIdAttacking = nil
 local function GetTechIdAttacks(techId)

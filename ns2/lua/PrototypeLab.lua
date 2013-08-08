@@ -79,6 +79,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function PrototypeLab:OnCreate()
 
@@ -163,7 +164,7 @@ end
 function PrototypeLab:GetTechButtons(techId)
 
     if kRailgunEnabled then
-        return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.DualRailgunTech }
+        return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech, kTechId.ClawRailgunTech }
     else
         return { kTechId.JetpackTech, kTechId.ExosuitTech, kTechId.DualMinigunTech }
     end
@@ -246,7 +247,7 @@ end
 function PrototypeLab:GetItemList()
 
     if kRailgunEnabled then
-        return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.DualRailgunExosuit }
+        return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.ClawRailgunExosuit }
     else
         return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit }
     end

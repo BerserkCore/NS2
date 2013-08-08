@@ -21,14 +21,32 @@ local networkVars =
 }
 
 // higher numbers reduces the spread
-local kSpreadDistance = 45
+local kSpreadDistance = 10
 local kStartOffset = 0
 local kSpreadVectors =
 {
-    GetNormalizedVector(Vector(-2.8, 4, kSpreadDistance)), GetNormalizedVector(Vector(-1, 3.5, kSpreadDistance)), GetNormalizedVector(Vector(3, 3.5, kSpreadDistance)),
-    GetNormalizedVector(Vector(-3.5, 0, kSpreadDistance)), GetNormalizedVector(Vector(-0, 1.5, kSpreadDistance)), GetNormalizedVector(Vector(0.4, 0.5, kSpreadDistance)),
-    GetNormalizedVector(Vector(-2, -2, kSpreadDistance)), GetNormalizedVector(Vector(1, -0.5, kSpreadDistance)), GetNormalizedVector(Vector(2, -2.5, kSpreadDistance)),
-    GetNormalizedVector(Vector(-1, 0, kSpreadDistance)), 
+    GetNormalizedVector(Vector(-0.01, 0.01, kSpreadDistance)),
+    
+    GetNormalizedVector(Vector(-0.45, 0.45, kSpreadDistance)),
+    GetNormalizedVector(Vector(0.45, 0.45, kSpreadDistance)),
+    GetNormalizedVector(Vector(0.45, -0.45, kSpreadDistance)),
+    GetNormalizedVector(Vector(-0.45, -0.45, kSpreadDistance)),
+    
+    GetNormalizedVector(Vector(-1, 0, kSpreadDistance)),
+    GetNormalizedVector(Vector(1, 0, kSpreadDistance)),
+    GetNormalizedVector(Vector(0, -1, kSpreadDistance)),
+    GetNormalizedVector(Vector(0, 1, kSpreadDistance)),
+    
+    GetNormalizedVector(Vector(-0.25, 0, kSpreadDistance)),
+    GetNormalizedVector(Vector(0.25, 0, kSpreadDistance)),
+    GetNormalizedVector(Vector(0, -0.25, kSpreadDistance)),
+    GetNormalizedVector(Vector(0, 0.25, kSpreadDistance)),
+    
+    GetNormalizedVector(Vector(-0.8, -0.8, kSpreadDistance)),
+    GetNormalizedVector(Vector(-0.8, 0.8, kSpreadDistance)),
+    GetNormalizedVector(Vector(0.8, 0.8, kSpreadDistance)),
+    GetNormalizedVector(Vector(0.8, -0.8, kSpreadDistance)),
+    
 }
 
 Shotgun.kModelName = PrecacheAsset("models/marine/shotgun/shotgun.model")
@@ -192,7 +210,7 @@ function Shotgun:FirePrimary(player)
     
     self:TriggerEffects("shotgun_attack")
     
-    for bullet = 1, numberBullets do
+    for bullet = 1, math.min(numberBullets, #kSpreadVectors) do
     
         if not kSpreadVectors[bullet] then
             break

@@ -63,6 +63,10 @@ Drifter.kFov = 360
 
 Drifter.kTurnSpeed = 8 * math.pi
 
+// Control detection of drifters from enemy team units.
+local kDetectInterval = 0.5
+local kDetectRange = 1.5
+
 local kTrailCinematicNames =
 {
     PrecacheAsset("cinematics/alien/drifter/trail1.cinematic"),
@@ -97,6 +101,7 @@ AddMixinNetworkVars(DetectableMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function Drifter:OnCreate()
 
@@ -411,6 +416,24 @@ function Drifter:OnUpdatePoseParameters()
     
 end 
 
+local function ScanForNearbyEnemy(self)
+
+    // Check for nearby enemy units. Uncloak if we find any.
+    self.lastDetectedTime = self.lastDetectedTime or 0
+    if self.lastDetectedTime + kDetectInterval < Shared.GetTime() then
+    
+        if #GetEntitiesForTeamWithinRange("Player", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kDetectRange) > 0 then
+        
+            self:TriggerUncloak()
+            self:SetCloakChargeTime(kDetectInterval + 0.5)
+            
+        end
+        self.lastDetectedTime = Shared.GetTime()
+        
+    end
+    
+end
+
 function Drifter:OnUpdate(deltaTime)
 
     ScriptActor.OnUpdate(self, deltaTime)
@@ -422,6 +445,8 @@ function Drifter:OnUpdate(deltaTime)
     if Server then
     
         UpdateTasks(self, deltaTime)
+        
+        ScanForNearbyEnemy(self)
         
         self.camouflaged = not self:GetHasOrder() and not self:GetIsInCombat()
         
@@ -554,7 +579,7 @@ function Drifter:OnOverrideDoorInteraction(inEntity)
 end
 
 function Drifter:UpdateIncludeRelevancyMask()
-    self:SetAlwaysRelevantToCommander(true)
+    SetAlwaysRelevantToCommander(self, true)
 end
 
 function Drifter:OnDestroyCurrentOrder(order)

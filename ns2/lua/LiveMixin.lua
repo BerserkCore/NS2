@@ -414,12 +414,12 @@ end
 AddFunctionContract(LiveMixin.AmountDamaged, { Arguments = { "Entity" }, Returns = { "number" } })
 
 // used for situtations where we don't have an attacker. Always normal damage and normal armor use rate
-function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly)
+function LiveMixin:DeductHealth(damage, attacker, doer, healthOnly, armorOnly)
 
     local armorUsed = 0
     local healthUsed = damage
     
-    if self.healthIgnored then
+    if self.healthIgnored or armorOnly then
     
         armorUsed = damage
         healthUsed = 0
@@ -532,7 +532,7 @@ AddFunctionContract(LiveMixin.GetSendDeathMessage, { Arguments = { "Entity" }, R
 /**
  * Entities using LiveMixin are only selectable when they are alive.
  */
-function LiveMixin:OnGetIsSelectable(result, byPlayer)
+function LiveMixin:OnGetIsSelectable(result, byTeamNumber)
     result.selectable = result.selectable and self:GetIsAlive()
 end
 AddFunctionContract(LiveMixin.OnGetIsSelectable, { Arguments = { "Entity", "table" }, Returns = { } })
@@ -610,6 +610,19 @@ elseif Client then
         return healthDiff > 250
         
     end
+    
+    local function OnKillClientChildren(self)
+    
+        // also call this for all children
+        local numChildren = self:GetNumChildren()
+        for i = 1,numChildren do
+            local child = self:GetChildAtIndex(i - 1)
+            if child.OnKillClient then
+                child:OnKillClient()
+            end
+        end
+    
+    end
 
     function LiveMixin:OnPreUpdate()
     
@@ -619,8 +632,14 @@ elseif Client then
         
             self.clientStateAlive = self.alive
             
-            if not self.alive and self.OnKillClient then
-                self:OnKillClient()
+            if not self.alive then
+            
+                if self.OnKillClient then            
+                    self:OnKillClient()
+                end
+                
+                OnKillClientChildren(self)
+                
             end
             
         end
@@ -645,6 +664,8 @@ elseif Client then
                 self:OnKillClient()
             end
             
+            OnKillClientChildren(self)
+
         end
         
     end

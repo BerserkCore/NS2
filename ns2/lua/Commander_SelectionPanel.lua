@@ -66,13 +66,13 @@ end
 /**
  * Get a string that describes the entity
  */
-function CommanderUI_GetSelectedDescriptor(entityId)
+function CommanderUI_GetSelectedDescriptor(entity)
+
     local player = Client.GetLocalPlayer()
     
     local descriptor = "Unknown"
-    local ent = Shared.GetEntity(entityId)
-    if(ent ~= nil) then
-        descriptor = GetSelectionText(ent, player:GetTeamNumber())
+    if player and entity then
+        descriptor = GetSelectionText(entity, player:GetTeamNumber())
     end
     
     return descriptor
@@ -82,47 +82,43 @@ end
 /**
  * Get a string that describes the entity location
  */
-function CommanderUI_GetSelectedLocation(entityId)
+function CommanderUI_GetSelectedLocation(entity)
 
     local locationText = ""
-    local ent = Shared.GetEntity(entityId)
-    if (ent ~= nil) and ent.GetLocationName then
-        locationText = locationText .. ent:GetLocationName()
+    if entity and entity.GetLocationName then
+        locationText = locationText .. entity:GetLocationName()
     else
-        Print("CommanderUI_GetSelectedLocation(): Entity %d is nil.", entityId)
+        Print("CommanderUI_GetSelectedLocation(): Entity is nil.")
     end
         
     return locationText
 
 end
 
-function CommanderUI_GetSelectedHealth(entityId)
+function CommanderUI_GetSelectedHealth(entity)
 
-    local ent = Shared.GetEntity(entityId)
-    if ent and HasMixin(ent, "Live") and ent:GetMaxHealth() > 0 and not ent:GetIgnoreHealth() then
-        return string.format("%d/%d", math.floor(ent:GetHealth()), math.ceil(ent:GetMaxHealth()))
+    if entity and HasMixin(entity, "Live") and entity:GetMaxHealth() > 0 and not entity:GetIgnoreHealth() then
+        return string.format("%d/%d", math.floor(entity:GetHealth()), math.ceil(entity:GetMaxHealth()))
     end
     
     return ""
     
 end
 
-function CommanderUI_GetSelectedArmor(entityId)
+function CommanderUI_GetSelectedArmor(entity)
 
-    local ent = Shared.GetEntity(entityId)
-    if ent and HasMixin(ent, "Live") and ent:GetMaxArmor() > 0 then
-        return string.format("%d/%d", math.floor(ent:GetArmor()), math.ceil(ent:GetMaxArmor()))
+    if entity and HasMixin(entity, "Live") and entity:GetMaxArmor() > 0 then
+        return string.format("%d/%d", math.floor(entity:GetArmor()), math.ceil(entity:GetMaxArmor()))
     end
     
     return ""
     
 end
 
-function CommanderUI_GetSelectedEnergy(entityId)
+function CommanderUI_GetSelectedEnergy(entity)
 
-    local ent = Shared.GetEntity(entityId)
-    if ent and ent.GetEnergy and ent.GetMaxEnergy then
-        return string.format("%d/%d", math.floor(ent:GetEnergy()), math.ceil(ent:GetMaxEnergy()))
+    if entity and entity.GetEnergy and entity.GetMaxEnergy then
+        return string.format("%d/%d", math.floor(entity:GetEnergy()), math.ceil(entity:GetMaxEnergy()))
     end
     
     return ""
@@ -132,43 +128,41 @@ end
 /**
  * Get up to 2 <text>,[0-1] pairs in linear array for bargraphs on the selected entity
  */
-function CommanderUI_GetSelectedBargraphs(entityId)
+function CommanderUI_GetSelectedBargraphs(entity)
 
     local t = {}
     
-    local ent = Shared.GetEntity(entityId)
-    
-    if ent then
+    if entity then
         
-        if HasMixin(ent, "Recycle") and ent:GetRecycleActive() then
+        if HasMixin(entity, "Recycle") and entity:GetRecycleActive() then
         
             table.insert(t, Locale.ResolveString("COMM_SEL_RECYCLING"))
-            table.insert(t, ent:GetResearchProgress())
-            table.insert(t, ent:GetResearchingId())
+            table.insert(t, entity:GetResearchProgress())
+            table.insert(t, entity:GetResearchingId())
             
-        elseif HasMixin(ent, "Construct") and not ent:GetIsBuilt() then
+        elseif HasMixin(entity, "Construct") and not entity:GetIsBuilt() then
         
             table.insert(t, Locale.ResolveString("COMM_SEL_CONSTRUCTING"))
-            table.insert(t, ent:GetBuiltFraction())
+            table.insert(t, entity:GetBuiltFraction())
             table.insert(t, kTechId.Construct)
             
-        elseif HasMixin(ent, "Research") and ent:GetIsManufacturing() then
+        elseif HasMixin(entity, "Research") and entity:GetIsManufacturing() then
         
             table.insert(t, Locale.ResolveString("COMM_SEL_BUILDING"))
-            table.insert(t, ent:GetResearchProgress())
-            table.insert(t, ent:GetResearchingId())
+            table.insert(t, entity:GetResearchProgress())
+            table.insert(t, entity:GetResearchingId())
             
-        elseif HasMixin(ent, "Research") and ent:GetIsUpgrading() then
+        elseif HasMixin(entity, "Research") and entity:GetIsUpgrading() then
         
             table.insert(t, Locale.ResolveString("COMM_SEL_UPGRADING"))
-            table.insert(t, ent:GetResearchProgress())
-            table.insert(t, ent:GetResearchingId())
+            table.insert(t, entity:GetResearchProgress())
+            table.insert(t, entity:GetResearchingId())
             
-        elseif HasMixin(ent, "Research") and ent:GetIsResearching() then
+        elseif HasMixin(entity, "Research") and entity:GetIsResearching() then
         
             table.insert(t, Locale.ResolveString("COMM_SEL_RESEARCHING"))
-            table.insert(t, ent:GetResearchProgress())
-            table.insert(t, ent:GetResearchingId())
+            table.insert(t, entity:GetResearchProgress())
+            table.insert(t, entity:GetResearchingId())
             
         end
         
@@ -178,78 +172,24 @@ function CommanderUI_GetSelectedBargraphs(entityId)
     
 end
 
-function CommanderUI_GetSelectedHealthFraction(entityId)
-
-    local ent = Shared.GetEntity(entityId)
-    
-    if ent and HasMixin(ent, "Live") and ent:GetIsAlive() then
-        return ent:GetHealth() / ent:GetMaxHealth()
-    end
-    
-    return 0
-
-end
-
-function CommanderUI_GetSelectedArmorFraction(entityId)
-
-    local ent = Shared.GetEntity(entityId)
-    
-    if ent and HasMixin(ent, "Live") and ent:GetIsAlive() and ent:GetMaxArmor() ~= 0 then
-        return ent:GetArmor() / ent:GetMaxArmor()
-    end
-    
-    return 0
-
-end
-
 /**
  * Return pixel coordinates to the selected entity icon
  */
-function CommanderUI_GetSelectedIconOffset(entityId)
+function CommanderUI_GetSelectedIconOffset(entity)
     
     local isaMarine = Client.GetLocalPlayer():isa("MarineCommander")
-    return GetPixelCoordsForIcon(entityId, isaMarine)
+    return GetPixelCoordsForIcon(entity, isaMarine)
     
 end
-
-/**
- * Indicates the entity selected from a multiple-selection panel.
- */
-function CommanderUI_ClickedSelectedEntity(entityId)
-end
-
-
-/**
- * Get custom rightside selection text for the commander selection pane
- */
-function CommanderUI_GetCommanderSelectionCustomText()
-    // Return description of what we have selected
-    return "Energy 50/200"
-end
-
-function CommanderUI_GetCommandStationDescriptor()
-end
-
-function CommanderUI_GetCommandStationLocation()
-end
-
-function CommanderUI_GetCommandIconOffset()
-end
-
 /**
  * Get custom rightside selection text for a single selection
  */
-function CommanderUI_GetSingleSelectionCustomText(entId)
+function CommanderUI_GetSingleSelectionCustomText(entity)
 
     local customText = ""
     
-    if entId ~= nil then
-    
-        local ent = Shared.GetEntity(entId)    
-        if ent ~= nil and ent.GetCustomSelectionText then
-            customText = ent:GetCustomSelectionText()
-        end
-        
+    if entity and entity.GetCustomSelectionText then
+        customText = entity:GetCustomSelectionText()
     end
     
     return customText

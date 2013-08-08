@@ -8,8 +8,11 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/TunnelProp.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
+Script.Load("lua/TeamMixin.lua")
+Script.Load("lua/MinimapConnectionMixin.lua")
 
 class 'Tunnel' (Entity)
 
@@ -33,8 +36,13 @@ local kTunnelStart = Vector(-1800, 200, -1800)
 
 local kTunnelLength = 27
 
-Tunnel.kModelName = nil // PrecacheAsset("models/temp/tunnel/tunnel.model")
-local kAnimationGraph = nil // PrecacheAsset("models/temp/tunnel/tunnel.animation_graph")
+Tunnel.kModelName = PrecacheAsset("models/alien/tunnel/tunnel.model")
+local kAnimationGraph = PrecacheAsset("models/alien/tunnel/tunnel.animation_graph")
+
+local kTunnelPropAttachPoints =
+{
+    "attachpoint1"
+}
 
 local networkVars =
 {
@@ -48,6 +56,7 @@ Tunnel.kMapName = "tunnel"
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
+AddMixinNetworkVars(TeamMixin, networkVars)
 
 function Tunnel:OnCreate()
 
@@ -55,6 +64,7 @@ function Tunnel:OnCreate()
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
+    InitMixin(self, TeamMixin)
     
     if Server then
     
@@ -77,6 +87,25 @@ function Tunnel:OnCreate()
 
 end
 
+local function CreateRandomTunnelProps(self)
+
+    for i = 1, #kTunnelPropAttachPoints do
+    
+        local attachPointName = kTunnelPropAttachPoints[i]
+        local attachPointPosition = self:GetAttachPointOrigin(attachPointName)
+        
+        if attachPointPosition then
+        
+            local tunnelProp = CreateEntity(TunnelProp.kMapName, attachPointPosition)
+            tunnelProp:SetParent(self)
+            tunnelProp:SetAttachPoint(attachPointName)
+            
+        end
+    
+    end
+
+end
+
 function Tunnel:OnInitialized()
 
     self:SetModel(Tunnel.kModelName, kAnimationGraph)
@@ -84,6 +113,9 @@ function Tunnel:OnInitialized()
     if Server then    
     
         self:SetOrigin(gNumTunnels * kTunnelSpacing + kTunnelStart)
+        CreateRandomTunnelProps(self)
+        
+        InitMixin(self, MinimapConnectionMixin)
       
     elseif Client then
         
@@ -138,6 +170,22 @@ if Server then
         self.exitBEntityPosition = exitB:GetOrigin()
         self.timeExitBChanged = Shared.GetTime()
     
+    end
+ 
+    function Tunnel:GetConnectionStartPoint()
+    
+        if self.exitAConnected then
+            return self.exitAEntityPosition
+        end
+        
+    end
+ 
+    function Tunnel:GetConnectionEndPoint()
+    
+        if self.exitBConnected then
+            return self.exitBEntityPosition
+        end
+        
     end
  
     function Tunnel:AddExit(exit)

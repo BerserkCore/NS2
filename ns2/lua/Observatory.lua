@@ -80,6 +80,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function Observatory:OnCreate()
 

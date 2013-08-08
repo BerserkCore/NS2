@@ -57,7 +57,6 @@ Cyst.kBurstDuration = 3
 
 // range at which we can be a parent
 Cyst.kCystMaxParentRange = kCystMaxParentRange
-Cyst.kCystMinParentRange = kCystMinParentRange
 
 // size of infestation patch
 Cyst.kInfestationRadius = kInfestationRadius
@@ -96,6 +95,7 @@ AddMixinNetworkVars(PointGiverMixin, networkVars)
 AddMixinNetworkVars(CloakableMixin, networkVars)
 AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 //
 // To avoid problems with minicysts on walls connection to each other through solid rock,
@@ -183,9 +183,44 @@ function Cyst:OnDestroy()
             Client.DestroyRenderLight(self.light)
         end
         
+        if self.redeployCircleModel then
+        
+            Client.DestroyRenderModel(self.redeployCircleModel)
+            self.redeployCircleModel = nil
+            
+        end
+        
     end
     
     ScriptActor.OnDestroy(self)
+    
+end
+
+/**
+ * A Cyst is redeployable if it is within range of the origin but
+ * we ignore the Y distance within some tolerance.
+ */
+local function GetCystIsRedeployable(cyst, origin)
+
+    if cyst:GetDistance(origin) <= kCystRedeployRange then
+        return math.abs(cyst:GetOrigin().y - origin.y) < 1
+    end
+    
+    return false
+    
+end
+
+local function DestroyNearbyCysts(self)
+
+    local nearbyCysts = GetEntitiesForTeamWithinRange("Cyst", self:GetTeamNumber(), self:GetOrigin(), kCystRedeployRange)
+    for c = 1, #nearbyCysts do
+    
+        local cyst = nearbyCysts[c]
+        if cyst ~= self and GetCystIsRedeployable(cyst, self:GetOrigin()) then
+            cyst:Kill()
+        end
+        
+    end
     
 end
 
@@ -217,13 +252,13 @@ function Cyst:OnInitialized()
         
         InitMixin(self, SleeperMixin)
         InitMixin(self, StaticTargetMixin)
-
+        
         self:SetModel(Cyst.kModelName, Cyst.kAnimationGraph)
         
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
-        end       
+        end
         
     elseif Client then    
     
@@ -250,6 +285,10 @@ function Cyst:OnInitialized()
     self.index = 1
     
     self:SetUpdates(true)
+    
+    if Server then
+        DestroyNearbyCysts(self)
+    end
     
 end
 
@@ -574,6 +613,19 @@ function Cyst:GetCystParent()
     
 end
 
+local function MarkPotentialDeployedCysts(ents, origin)
+
+    for i = 1, #ents do
+    
+        local ent = ents[i]
+        if ent:isa("Cyst") and GetCystIsRedeployable(ent, origin) then
+            ent.markAsPotentialRedeploy = true
+        end
+        
+    end
+    
+end
+
 /**
  * Returns a parent and the track from that parent, or nil if none found.
  */
@@ -583,8 +635,14 @@ function GetCystParentFromPoint(origin, normal, connectionMethodName, optionalIg
     
     local ents = GetSortedListOfPotentialParents(origin)
     
-    for i, ent in ipairs(ents) do
+    if Client then
+        MarkPotentialDeployedCysts(ents, origin)
+    end
     
+    for i = 1, #ents do
+    
+        local ent = ents[i]
+        
         // must be either a built hive or an cyst with a connected infestation
         if optionalIgnoreEnt ~= ent and
            ((ent:isa("Hive") and ent:GetIsBuilt()) or (ent:isa("Cyst") and ent[connectionMethodName](ent))) then
@@ -622,11 +680,10 @@ end
 /**
  * Return true if a connected cyst parent is availble at the given origin normal. 
  */
-function GetCystParentAvailableAndSpaceClear(techId, origin, normal, commander)
+function GetCystParentAvailable(techId, origin, normal, commander)
 
     local parent, path = GetCystParentFromPoint(origin, normal, "GetIsConnected")
-    local spaceClear = #GetEntitiesWithinRange("Cyst", origin, kCystMinParentRange) == 0
-    return parent ~= nil and spaceClear
+    return parent ~= nil
     
 end
 
@@ -680,8 +737,8 @@ end
 function Cyst:PerformActivation(techId, position, normal, commander)
 
     if techId == kTechId.Rupture and self:GetMaturityLevel() == kMaturityLevel.Mature then
-            
-        CreateEntity(Rupture.kMapName, self:GetOrigin(), self:GetTeamNumber())            
+    
+        CreateEntity(Rupture.kMapName, self:GetOrigin(), self:GetTeamNumber())
         self.bursted = true
         self.timeBursted = Shared.GetTime()
         self:ResetMaturity()
@@ -694,15 +751,41 @@ function Cyst:PerformActivation(techId, position, normal, commander)
     
 end
 
+local function UpdateRedeployCircle(self, display)
+
+    if not self.redeployCircleModel then
+    
+        self.redeployCircleModel = Client.CreateRenderModel(RenderScene.Zone_Default)
+        self.redeployCircleModel:SetModel(Commander.kAlienCircleModelName)
+        local coords = Coords.GetLookIn(self:GetOrigin() + Vector(0, kZFightingConstant, 0), Vector.xAxis)
+        coords:Scale(kCystRedeployRange * 2)
+        self.redeployCircleModel:SetCoords(coords)
+        
+    end
+    
+    self.redeployCircleModel:SetIsVisible(display)
+    
+end
+
 function Cyst:OnUpdateRender()
 
     PROFILE("Cyst:OnUpdateRender")
-
+    
     local model = self:GetRenderModel()
-    if model and self.connectedFraction then
-        model:SetMaterialParameter("connected", self.connectedFraction)
+    if model then
+    
+        if self.connectedFraction then
+            model:SetMaterialParameter("connected", self.connectedFraction)
+        end
+        
+        model:SetMaterialParameter("killWarning", self.markAsPotentialRedeploy and 1 or 0)
+        
+        UpdateRedeployCircle(self, self.markAsPotentialRedeploy or false)
+        
+        self.markAsPotentialRedeploy = false
+        
     end
-
+    
 end
 
 function Cyst:OverrideHintString(hintString)

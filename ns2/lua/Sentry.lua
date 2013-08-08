@@ -126,6 +126,7 @@ AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function Sentry:OnCreate()
 
@@ -494,11 +495,11 @@ if Server then
 
     end
     
-    function Sentry:UpdateBatteryState()
-
+    local function UpdateBatteryState(self)
+    
         local time = Shared.GetTime()
         
-        if self.lastBatteryCheckTime == nil or (time > self.lastBatteryCheckTime + .5) then
+        if self.lastBatteryCheckTime == nil or (time > self.lastBatteryCheckTime + 0.5) then
         
             // Update if we're powered or not
             self.attachedToBattery = false
@@ -524,15 +525,15 @@ if Server then
     function Sentry:OnUpdate(deltaTime)
     
         PROFILE("Sentry:OnUpdate")
-    
+        
         ScriptActor.OnUpdate(self, deltaTime)  
         
-        self:UpdateBatteryState()
-    
+        UpdateBatteryState(self)
+        
         if self.timeNextAttack == nil or (Shared.GetTime() > self.timeNextAttack) then
         
             local initialAttack = self.target == nil
-        
+            
             local prevTarget = nil
             if self.target then
                 prevTarget = self.target
@@ -672,17 +673,26 @@ end
 
 function GetCheckSentryLimit(techId, origin, normal, commander)
 
-    local batteries = GetEntitiesForTeamWithinRange("SentryBattery", commander:GetTeamNumber(), origin, SentryBattery.kRange)
-    if #batteries > 0 then
-
-        local batteryPos = batteries[1]:GetOrigin()
-
-        local sentries = GetEntitiesForTeamWithinRange("Sentry", commander:GetTeamNumber(), batteryPos, SentryBattery.kRange + 0.4)
-        return #sentries < kSentriesPerBattery
+    local location = GetLocationForPoint(origin)
+    local locationName = location and location:GetName() or nil
+    local numInRoom = 0
+    local validRoom = false
+    
+    if locationName then
+    
+        validRoom = true
+        
+        for index, sentry in ientitylist(Shared.GetEntitiesWithClassname("Sentry")) do
+            
+            if sentry:GetLocationName() == locationName then
+                numInRoom = numInRoom + 1
+            end
+            
+        end
     
     end
     
-    return false
+    return validRoom and numInRoom < kSentriesPerBattery
     
 end
 

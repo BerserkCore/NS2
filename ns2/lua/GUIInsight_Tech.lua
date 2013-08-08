@@ -67,6 +67,7 @@ local techIdGridPosition =
     [kTechId.JetpackTech] =         Vector(2, 2, 0),
     [kTechId.ExosuitTech] =         Vector(3, 2, 0),
     [kTechId.DualMinigunTech] =     Vector(4, 2, 0),
+    [kTechId.ClawRailgunTech] =     Vector(4, 2, 0),
     [kTechId.DualRailgunTech] =     Vector(4, 2, 0),
 
     [kTechId.ARCRoboticsFactory] =  Vector(0, 3, 0),

@@ -208,14 +208,28 @@ local function BurnSporesAndUmbra(self, startPoint, endPoint)
 
 end
 
-local function CreateFlame(self, player, position)
+local function CreateFlame(self, player, position, normal, direction)
 
     // create flame entity, but prevent spamming:
     local nearbyFlames = GetEntitiesForTeamWithinRange("Flame", self:GetTeamNumber(), position, 1.5)    
 
     if table.count(nearbyFlames) == 0 then
+    
         local flame = CreateEntity(Flame.kMapName, position, player:GetTeamNumber())
         flame:SetOwner(player)
+        
+        local coords = Coords.GetTranslation(position)
+        coords.yAxis = normal
+        coords.zAxis = direction
+        
+        coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
+        coords.xAxis:Normalize()
+        
+        coords.zAxis = coords.xAxis:CrossProduct(coords.yAxis)
+        coords.zAxis:Normalize()
+        
+        flame:SetCoords(coords)
+        
     end
 
 end
@@ -262,7 +276,7 @@ local function ApplyConeDamage(self, player)
                     fireDirection:Normalize()
                     
                     if Server then
-                        CreateFlame(self, player, lineTrace.endPoint)
+                        CreateFlame(self, player, lineTrace.endPoint, lineTrace.normal, fireDirection)
                     end
                     
                 end

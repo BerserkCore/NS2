@@ -187,7 +187,7 @@ function CommanderUI_MenuButtonAction(index)
     
     // Deselect all units if a tab was selected that isn't the select tab.
     if kDeselectUnitsOnTech[newTechId] then
-        player:ClearSelection()
+        DeselectAllUnits(player:GetTeamNumber())
     end
     
 end
@@ -202,8 +202,7 @@ function CommanderUI_MenuButtonOffset(index)
         if index == 4 then
             local selectedEnts = player:GetSelection()
             if selectedEnts and selectedEnts[1] then
-                local entity = Shared.GetEntity(selectedEnts[1])
-                techId = entity:GetTechId()
+                techId = selectedEnts[1]:GetTechId()
             end
         end
 
@@ -225,8 +224,7 @@ function CommanderUI_MenuButtonXOffset(index)
         if index == 4 then
             local selectedEnts = player:GetSelection()
             if selectedEnts and selectedEnts[1] then
-                local entity = Shared.GetEntity(selectedEnts[1])
-                techId = entity:GetTechId()
+                techId = selectedEnts[1]:GetTechId()
             end
         end
     
@@ -270,7 +268,7 @@ local function UpdateSharedTechButtons(self)
         local maxTechButtons = 0
         for i = 1, #selection do
 
-            local entity = Shared.GetEntity(selection[i])
+            local entity = selection[i]
             if entity then
 
                 local techButtons = self:GetCurrentTechButtons(self.menuTechId, entity)
@@ -396,8 +394,7 @@ local function ComputeMenuTechAvailability(self)
                 
                     for e = 1, #selection do
                     
-                        local entityId = selection[e]
-                        local entity = Shared.GetEntity(entityId)
+                        local entity = selection[e]
                         local isTechAllowed = false
                         local canAfford = false
                         
@@ -451,7 +448,7 @@ end
 function Commander:UpdateMenu()
 
     if self.menuTechId == nil then
-        self.menuTechId = kTechId.RootMenu
+        self.menuTechId = kTechId.BuildMenu
     end
     
     UpdateSharedTechButtons(self)

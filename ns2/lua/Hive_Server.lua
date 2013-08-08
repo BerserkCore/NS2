@@ -176,7 +176,7 @@ local function SpawnEgg(self)
 
     if self.eggSpawnPoints == nil or #self.eggSpawnPoints == 0 then
     
-        Print("Can't spawn egg. No spawn points!")
+        //Print("Can't spawn egg. No spawn points!")
         return nil
         
     end

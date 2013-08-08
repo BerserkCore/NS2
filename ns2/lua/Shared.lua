@@ -124,6 +124,9 @@ Script.Load("lua/Embryo.lua")
 Script.Load("lua/Hallucination.lua")
 Script.Load("lua/Weapons/Alien/Web.lua")
 
+Script.Load("lua/Babbler.lua")
+Script.Load("lua/BabblerEgg.lua")
+
 // Base players
 Script.Load("lua/ReadyRoomPlayer.lua")
 Script.Load("lua/Spectator.lua")

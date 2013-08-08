@@ -139,6 +139,7 @@ AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(PowerSourceMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function PowerPoint:OnCreate()
 

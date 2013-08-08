@@ -67,6 +67,7 @@ AddMixinNetworkVars(GameEffectsMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 local kDoorLockTimeout = 6
 local kDoorLockDuration = 4
@@ -153,7 +154,6 @@ function Door:OnCreate()
         
     end
     
-    self:SetPathingFlags(Pathing.PolyFlag_NoBuild)
     self.state = Door.kState.Open
 end
 

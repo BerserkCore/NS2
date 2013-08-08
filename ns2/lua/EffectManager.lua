@@ -8,6 +8,9 @@
 // artist, sound designer, etc.
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
+
+Script.Load("lua/SharedDecal.lua")
+
 class 'EffectManager' 
 
 // Set to true to use triggering entity's coords
@@ -276,6 +279,11 @@ function EffectManager:InternalPrecacheEffectTable(globalEffectTable)
                 // nil allowed - means we can stop processing
                 if assetEntry == nil then
                 
+                
+                elseif effectTable[kDecalType] then
+                
+                    Shared.RegisterDecalMaterial(assetEntry)
+                
                 elseif type(assetEntry) == "string" then
                 
                     if string.find(assetEntry, "%%") ~= nil then
@@ -408,9 +416,13 @@ end
 
 function EffectManager:InternalTriggerCinematic(effectTable, triggeringParams, triggeringEntity)
 
-    local coords = triggeringParams[kEffectHostCoords]    
     local cinematicName = self:ChooseAssetName(effectTable, triggeringParams[kEffectSurface], triggeringEntity)
-    local player = GetPlayerFromTriggeringEntity(triggeringEntity)
+    if cinematicName == "" then
+        return
+    end
+
+    local coords  = triggeringParams[kEffectHostCoords]    
+    local player  = GetPlayerFromTriggeringEntity(triggeringEntity)
     local success = false
     
     // World cinematics
@@ -702,32 +714,17 @@ function EffectManager:InternalTriggerDecal(effectTable, triggeringParams, trigg
 
     local success = false
     
-    if effectTable[kDecalType] and Client then
+    if effectTable[kDecalType] then
     
-        // Create new decal
-        local decal = Client.CreateRenderDecal()
-
         // Read specified material
-        local materialName = self:ChooseAssetName(effectTable, triggeringParams[kEffectSurface], triggeringEntity)        
-        decal:SetMaterial(materialName)
+        local materialName = self:ChooseAssetName(effectTable, triggeringParams[kEffectSurface], triggeringEntity)    
+        if materialName then
         
-        // Set coords to triggering host coords
-        local coords = triggeringParams[kEffectHostCoords]    
-        self.decal:SetCoords( coords )
+            local ignorePlayer = nil // TODO: figure out player to ignore
+            local scale = ConditionalValue(type(effectTable[kEffectParamScale]) == "number", effectTable[kEffectParamScale], 1)
+            success = Shared.CreateRenderDecal(materialName, triggeringParams[kEffectHostCoords], scale, ignorePlayer)
         
-        // Set uniform scale from parameter
-        local scale = ConditionalValue(type(effectTable[kEffectParamScale]) == "number", effectTable[kEffectParamScale], 1)
-        self.decal:SetExtents( Vector(scale, scale, scale) )
-        
-        // Set lifetime (default is 5) and store as pair in list
-        local lifetime = ConditionalValue(type(effectTable[kEffectParamLifetime]) == "number", effectTable[kEffectParamLifetime], 5)
-        table.insert(self.decalList, {decal, lifetime})
-        
-        Print("Inserting decal %s, %.2f", materialName, lifetime)
-        
-        self:DisplayDebug(kRagdollType, effectTable, triggeringParams, triggeringEntity)
-        
-        success = true
+        end
         
     end
     
@@ -771,6 +768,21 @@ function EffectManager:InternalTriggerEffect(effectTable, triggeringParams, trig
     
 end
 
+// Destroy expired decals and remove from list
+function removeExpiredDecal(decalPair)
+
+    if decalPair[2] < 0 then
+    
+        //Print("Decal expired")
+        Client.DestroyRenderDecal( decalPair[1] )
+        return true
+        
+    end
+    
+    return false
+    
+end
+
 function EffectManager:UpdateDecals(deltaTime)
 
     if self.decalList and Client then
@@ -778,21 +790,6 @@ function EffectManager:UpdateDecals(deltaTime)
         // Reduce lifetime of decals
         for index, decalPair in ipairs(self.decalList) do
             decalPair[2] = decalPair[2] - deltaTime
-        end
-        
-        // Destroy expired decals and remove from list
-        function removeExpiredDecal(decalPair)
-        
-            if decalPair[2] < 0 then
-            
-                Print("Decal expired")
-                Client.DestroyRenderDecal( decalPair[1] )
-                return true
-                
-            end
-            
-            return false
-            
         end
         
         table.removeConditional(self.decalList, removeExpiredDecal)

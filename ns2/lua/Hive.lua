@@ -248,7 +248,7 @@ local function GetLifeFormButtons(self)
 
     local upgrades =
     {
-        kTechId.Leap, kTechId.BileBomb, /*kTechId.GorgeTunnelTech,*/ kTechId.None,  kTechId.Spores,
+        kTechId.Leap, kTechId.BileBomb, kTechId.None, /* kTechId.GorgeTunnelTech, */ kTechId.Spores,
         kTechId.Blink, kTechId.Stomp, kTechId.None, kTechId.RootMenu,
     }
     
@@ -263,7 +263,7 @@ local function GetLifeFormButtons(self)
         if GetIsTechResearched(teamNum, kTechId.BileBomb) then
             upgrades[2] = kTechId.WebTech
         end
-        */
+        */        
         if GetIsTechResearched(teamNum, kTechId.Spores) then
             upgrades[4] = kTechId.Umbra
         end   
@@ -392,6 +392,12 @@ function GetTechPointInfested(techId, origin, normal, commander)
     
     return attachEntity and attachEntity:GetGameEffectMask(kGameEffect.OnInfestation)
     
+end
+
+// return a good spot from which a player could have entered the hive
+// used for initial entry point for the commander
+function Hive:GetDefaultEntryOrigin()
+    return self:GetOrigin() + Vector(2,0,2)
 end
 
 Shared.LinkClassToMap("Hive", Hive.kMapName, networkVars)

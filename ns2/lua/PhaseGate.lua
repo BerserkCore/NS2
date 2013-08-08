@@ -33,6 +33,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/MinimapConnectionMixin.lua")
 
 local kAnimationGraph = PrecacheAsset("models/marine/phase_gate/phase_gate.animation_graph")
 
@@ -138,6 +139,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function PhaseGate:OnCreate()
 
@@ -201,6 +203,7 @@ function PhaseGate:OnInitialized()
         
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, InfestationTrackerMixin)
+        InitMixin(self, MinimapConnectionMixin)
     
     elseif Client then
     
@@ -326,8 +329,14 @@ if Server then
     function PhaseGate:Update()
     
         local destinationPhaseGate = GetDestinationGate(self)
-        if destinationPhaseGate ~= nil and GetCanPhase(destinationPhaseGate) and GetCanPhase(self) then
+        if destinationPhaseGate ~= nil then
+            self.destinationEndpoint = destinationPhaseGate:GetOrigin()
+        else
+            self.destinationEndpoint = nil
+        end
         
+        if destinationPhaseGate ~= nil and GetCanPhase(destinationPhaseGate) and GetCanPhase(self) then
+
             local players = GetEntitiesForTeamWithinRange("Marine", self:GetTeamNumber(), self:GetOrigin(), 1)
             
             for p = 1, #players do
@@ -361,7 +370,7 @@ if Server then
                 end
                 
             end
-            
+
         end
         
         // Update network variable state
@@ -373,6 +382,18 @@ if Server then
         
         return true
         
+    end
+    
+    function PhaseGate:GetConnectionStartPoint()
+        return self:GetOrigin()
+    end
+    
+    function PhaseGate:GetConnectionEndPoint()
+
+        if GetIsUnitActive(self) then
+            return self.destinationEndpoint
+        end    
+
     end
     
 end
@@ -416,5 +437,32 @@ function PhaseGate:GetHealthbarOffset()
     return kPhaseGateHealthbarOffset
 end 
 
+local function GetDestinationLocationName(self)
+
+    local locationEndId = self:GetDestLocationId()
+    local location = Shared.GetEntity(locationEndId)
+    
+    if location then
+        return location:GetName()
+    end
+
+end
+
+function PhaseGate:GetUnitNameOverride(viewer)
+
+    local unitName = GetDisplayName(self)
+
+    if not GetAreEnemies(self, viewer) then
+    
+        local destinationName = GetDestinationLocationName(self)        
+        if destinationName then
+            unitName = unitName .. " to " .. destinationName
+        end
+
+    end
+
+    return unitName
+
+end
 
 Shared.LinkClassToMap("PhaseGate", PhaseGate.kMapName, networkVars)

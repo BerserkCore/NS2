@@ -12,6 +12,62 @@ Script.Load("lua/Globals.lua")
 Script.Load("lua/TechTreeConstants.lua")
 Script.Load("lua/VoiceOver.lua")
 Script.Load("lua/InsightNetworkMessages.lua")
+Script.Load("lua/SharedDecal.lua")
+
+local kSelectUnitMessage =
+{
+    teamNumber = "integer (0 to 4)",
+    unitId = "entityid",
+    selected = "boolean",
+    keepSelection = "boolean"
+
+}
+
+local kCreateDecalMessage =
+{
+    normal = string.format("integer(1 to %d)", kNumIndexedVectors),
+    posx = string.format("float (%d to %d by 0.05)", -kHitEffectMaxPosition, kHitEffectMaxPosition),
+    posy = string.format("float (%d to %d by 0.05)", -kHitEffectMaxPosition, kHitEffectMaxPosition),
+    posz = string.format("float (%d to %d by 0.05)", -kHitEffectMaxPosition, kHitEffectMaxPosition), 
+    decalIndex = string.format("integer (1 to %d)", kNumSharedDecals),
+    scale = "float (0 to 5 by 0.05)"
+}
+
+Shared.RegisterNetworkMessage("CreateDecal", kCreateDecalMessage)
+
+function BuildCreateDecalMessage(normal, position, decalIndex, scale)   
+ 
+    local t = { }
+    t.normal = normal
+    t.posx = position.x
+    t.posy = position.y
+    t.posz = position.z
+    t.decalIndex = decalIndex
+    t.scale = scale
+    return t
+    
+end
+
+function ParseCreateDecalMessage(message)
+    return GetVectorFromIndex(message.normal), Vector(message.posx, message.posy, message.posz), GetDecalMaterialNameFromIndex(message.decalIndex), message.scale
+end
+
+function BuildSelectUnitMessage(teamNumber, unit, selected, keepSelection)
+
+    assert(teamNumber)
+
+    local t =  {}
+    t.teamNumber = teamNumber
+    t.unitId = unit and unit:GetId() or Entity.invalidId
+    t.selected = selected == true
+    t.keepSelection = keepSelection == true    
+    return t
+
+end
+
+function ParseSelectUnitMessage(message)
+    return message.teamNumber, Shared.GetEntity(message.unitId), message.selected, message.keepSelection
+end
 
 function BuildConnectMessage(armorId)
 
@@ -61,10 +117,11 @@ local kHitEffectMessage =
     targetId = "entityid",
     showtracer = "boolean",
     altMode = "boolean",
-    damage = "integer (0 to 5000)"
+    damage = "integer (0 to 5000)",
+    direction = string.format("integer(1 to %d)", kNumIndexedVectors),
 }
 
-function BuildHitEffectMessage(position, doer, surface, target, showtracer, altMode, damage)
+function BuildHitEffectMessage(position, doer, surface, target, showtracer, altMode, damage, direction)
 
     local t = { }
     t.posx = position.x
@@ -76,6 +133,7 @@ function BuildHitEffectMessage(position, doer, surface, target, showtracer, altM
     t.showtracer = showtracer == true
     t.altMode = altMode == true
     t.damage = damage
+    t.direction = direction or 1
     return t
     
 end
@@ -89,8 +147,9 @@ function ParseHitEffectMessage(message)
     local showtracer = message.showtracer
     local altMode = message.altMode
     local damage = message.damage
+    local direction = GetVectorFromIndex(message.direction)
     
-    return position, doer, surface, target, showtracer, altMode, damage
+    return position, doer, surface, target, showtracer, altMode, damage, direction
     
 end
 
@@ -400,25 +459,6 @@ function ParseCommMarqueeSelectMessage(message)
     return message.pickStartVec, message.pickEndVec
 end
 
-local kClearSelectionMessage =
-{
-    removeAll = "boolean",
-    removeId = "entityid",
-    ctrlPressed = "boolean"
-}
-
-function BuildClearSelectionMessage(removeAll, entityId, ctrlPressed)
-    local t = {}
-    t.removeAll = removeAll == true
-    t.removeId = entityId or Entity.invalidId
-    t.ctrlPressed = ctrlPressed == true
-    return t
-end
-
-function ParseClearSelectionMessage(message)
-    return message.removeAll, message.removeId, message.ctrlPressed
-end
-
 local kClickSelectMessage =
 {
     pickVec = "vector"
@@ -436,23 +476,6 @@ function ParseCommClickSelectMessage(message)
     return message.pickVec
 end
 
-local kControlClickSelectMessage =
-{
-    pickVec = "vector",
-    minDot = "float"
-}
-
-function BuildControlClickSelectCommand(pickVec, minDot)
-
-    local t = {}
-    
-    t.pickVec = Vector(pickVec)
-    t.minDot = minDot
-    
-    return t
-    
-end
-
 local kCreateHotkeyGroupMessage =
 {
     groupNumber = "integer (1 to " .. ToString(kMaxHotkeyGroups) .. ")"
@@ -465,10 +488,6 @@ function BuildCreateHotkeyGroupMessage(setGroupNumber)
     
     return t
 
-end
-
-function ParseControlClickSelectMessage(message)
-    return message.pickVec, message.minDot
 end
 
 local kSelectHotkeyGroupMessage =
@@ -645,20 +664,6 @@ function ParseDebugCapsuleMessage(t)
     return t.sweepStart, t.sweepEnd, t.capsuleRadius, t.capsuleHeight, t.lifetime
 end
 
-function BuildSelectIdMessage(entityId)
-
-    local t = {}        
-    t.entityId = entityId        
-    return t
-
-end
-
-function ParseSelectIdMessage(t)
-
-        return t.entityId
-        
-end
-
 local kMinimapAlertMessage = 
 {
     techId = "enum kTechId",
@@ -672,11 +677,6 @@ local kCommanderNotificationMessage =
 {
     locationId = "integer",
     techId = "enum kTechId"
-}
-
-local kSelectIdMessage =
-{
-    entityId = "entityid"
 }
 
 // From TechNode.kTechNodeVars
@@ -860,12 +860,8 @@ Shared.RegisterNetworkMessage("ResetMouse", {} )
 Shared.RegisterNetworkMessage("ResetGame", {} )
 
 // Selection
-Shared.RegisterNetworkMessage("MarqueeSelect", kMarqueeSelectMessage)
-Shared.RegisterNetworkMessage("ClickSelect", kClickSelectMessage)
-Shared.RegisterNetworkMessage("ClearSelection", kClearSelectionMessage)
-Shared.RegisterNetworkMessage("ControlClickSelect", kControlClickSelectMessage)
+Shared.RegisterNetworkMessage("SelectUnit", kSelectUnitMessage)
 Shared.RegisterNetworkMessage("SelectHotkeyGroup", kSelectHotkeyGroupMessage)
-Shared.RegisterNetworkMessage("SelectId", kSelectIdMessage)
 
 // Commander actions
 Shared.RegisterNetworkMessage("CommAction", kCommAction)

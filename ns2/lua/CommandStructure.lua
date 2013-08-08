@@ -50,6 +50,7 @@ AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(ResearchMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(ObstacleMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function CommandStructure:OnCreate()
 
@@ -128,13 +129,13 @@ if Client then
             self.lastTimeOccupied = now
         end
         
-        local displayHelpArrows = false
+        local displayHelpArrows = true
         if player then
         
             // Display the help arrows (get into Comm structure) when the
             // team does not have a commander and the Comm structure is built
             // and some time has passed.
-            displayHelpArrows = player:GetGameStarted()
+            displayHelpArrows = true
             displayHelpArrows = displayHelpArrows and player:GetTeamNumber() == self:GetTeamNumber()
             displayHelpArrows = displayHelpArrows and self:GetIsBuilt() and self:GetIsAlive()
             displayHelpArrows = displayHelpArrows and not ScoreboardUI_GetTeamHasCommander(self:GetTeamNumber())
@@ -170,6 +171,11 @@ end
 
 function CommandStructure:GetCanBeUsedConstructed()
     return not self:GetIsOccupied()
+end
+
+// allow players to enter the hives before game start to signal that they want to command
+function CommandStructure:GetUseAllowedBeforeGameStart()
+    return true
 end
 
 Shared.LinkClassToMap("CommandStructure", CommandStructure.kMapName, networkVars, true)

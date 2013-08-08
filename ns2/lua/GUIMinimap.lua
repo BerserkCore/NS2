@@ -8,6 +8,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/GUIMinimapConnection.lua")
+
 class 'GUIMinimap' (GUIScript)
 
 GUIMinimap.kBackgroundWidth = GUIScale(300)
@@ -134,6 +136,7 @@ function GUIMinimap:Initialize()
     self.scanColor = Color(kScanColor.r, kScanColor.g, kScanColor.b, kScanColor.a)
     self.scanSize = Vector(0, 0, 0)
     self.blipSizeTable = { }
+    self.minimapConnections = { }
 
     self:SetScale(1) // Compute plot to map transformation
     self:SetBlipScale(1) // Compute blipSizeTable
@@ -753,6 +756,44 @@ local function UpdateMapClick(self)
     
 end
 
+local function UpdateConnections(self)
+
+    local mapConnectors = Shared.GetEntitiesWithClassname("MapConnector")
+    local numConnectors = 0
+    for index, connector in ientitylist(mapConnectors) do
+
+        if not self.minimapConnections[index] then
+            self.minimapConnections[index] = GUIMinimapConnection()
+            self.minimapConnections[index]:SetStencilFunc(self.stencilFunc)
+        end
+        
+        local startPoint = Vector(PlotToMap(self, connector:GetOrigin().x, connector:GetOrigin().z))
+        local endPoint = Vector(PlotToMap(self, connector:GetEndPoint().x, connector:GetEndPoint().z))
+        
+        self.minimapConnections[index]:Setup(startPoint, endPoint, self.minimap)
+        
+        numConnectors = numConnectors + 1
+        
+    end
+    
+    local numMinimapConnections = #self.minimapConnections    
+    if numConnectors < numMinimapConnections then
+    
+        for i = 1, numMinimapConnections - numConnectors do
+        
+            local lastIndex = #self.minimapConnections
+            local minimapConnection = self.minimapConnections[lastIndex]
+            minimapConnection:Uninitialize()
+            self.minimapConnections[lastIndex] = nil
+        
+        end
+    
+    end
+
+    //Print("num minimap connections %s", ToString(#self.minimapConnections))
+
+end
+
 function GUIMinimap:Update(deltaTime)
 
     PROFILE("GUIMinimap:Update")
@@ -766,6 +807,8 @@ function GUIMinimap:Update(deltaTime)
         UpdateDynamicBlips(self)
         
         UpdateMapClick(self)
+        
+        UpdateConnections(self)
         
         // update commander ping
         if self.commanderPing then
@@ -918,17 +961,25 @@ function GUIMinimap:SetMoveBackgroundEnabled(enabled)
 end
 
 function GUIMinimap:SetStencilFunc(stencilFunc)
+
     self.stencilFunc = stencilFunc
     
     self.minimap:SetStencilFunc(stencilFunc)
     self.commanderPing.Mark:SetStencilFunc(stencilFunc)
     self.commanderPing.Border:SetStencilFunc(stencilFunc)
+    
     for _, blip in ipairs(self.inuseDynamicBlips) do
         blip.Item:SetStencilFunc(stencilFunc)
     end
+    
     for _, blip in ipairs(self.staticBlips) do
         blip:SetStencilFunc(stencilFunc)
     end
+    
+    for _, connectionLine in ipairs(self.minimapConnections) do
+        connectionLine:SetStencilFunc(stencilFunc)
+    end
+    
 end
 
 function GUIMinimap:SetPlayerIconColor(color)

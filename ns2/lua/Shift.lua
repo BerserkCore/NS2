@@ -103,6 +103,7 @@ AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 local function GetIsTeleport(techId)
 

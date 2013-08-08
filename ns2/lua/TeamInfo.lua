@@ -69,6 +69,7 @@ TeamInfo.kRelevantTechIdsMarine =
     kTechId.JetpackTech,
     kTechId.ExosuitTech,
     kTechId.DualMinigunTech,
+    kTechId.ClawRailgunTech,
     kTechId.DualRailgunTech,
 
     kTechId.ARCRoboticsFactory,

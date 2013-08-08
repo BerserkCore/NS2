@@ -157,9 +157,7 @@ end
 
 function ConstructMixin:OnUpdatePoseParameters()
 
-    if HasMixin(self, "Tech") and LookupTechData(self:GetTechId(), kTechDataGrows, false) then
-        self:SetPoseParam("grow", self.buildFraction)
-    end
+    self:SetPoseParam("grow", self.buildFraction)
     
 end
 

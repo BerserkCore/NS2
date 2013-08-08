@@ -13,6 +13,7 @@ Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/FlinchMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/LOSMixin.lua")
+Script.Load("lua/ObstacleMixin.lua")
 
 class 'BoneWall' (CommanderAbility)
 
@@ -82,6 +83,7 @@ function BoneWall:OnCreate()
     InitMixin(self, FlinchMixin)
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
+    InitMixin(self, ObstacleMixin)
     
     self.forcedEndLifespan = nil
 
@@ -115,6 +117,10 @@ end
 
 function BoneWall:GetType()
     return BoneWall.kType
+end
+
+function BoneWall:GetResetsPathing()
+    return true
 end
 
 function BoneWall:GetLifeSpan()

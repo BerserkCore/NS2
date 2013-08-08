@@ -41,12 +41,8 @@ function ReadyRoomTeam:GetRespawnMapName(player)
         
     end
     
-    // Default to the basic ReadyRoomPlayer type for certain player types.
-    // We cannot currently allow the JetpackMarine in the Ready Room because
-    // his Jetpack is destroyed when the game is reset and JetpackMarine
-    // expects that the Jetpack always exists.
-    if mapName == Embryo.kMapName or
-       mapName == JetpackMarine.kMapName then
+    // need to set embryos to ready room players, otherwise they wont be able to move
+    if mapName == Embryo.kMapName then
         mapName = ReadyRoomPlayer.kMapName
     end
     return mapName

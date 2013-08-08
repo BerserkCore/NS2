@@ -89,6 +89,7 @@ AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CatalystMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 function Hydra:OnCreate()
 

@@ -83,7 +83,7 @@ PhysicsMask = enum
     
     // For Drifters, MACs
     AIMovement = CreateMaskExcludingGroups(PhysicsGroup.MediumStructuresGroup, PhysicsGroup.SmallStructuresGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.PlayerGroup, PhysicsGroup.BabblerGroup, PhysicsGroup.CommanderBuildGroup),
-    
+
     // Use these with trace functions to determine which entities we collide with. Use the filter to then
     // ignore specific entities. 
     AllButPCs = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup),
@@ -97,10 +97,10 @@ PhysicsMask = enum
     AllButTriggers = CreateMaskExcludingGroups(PhysicsGroup.TriggerGroup),
     
     // Shooting and hive sight
-    Bullets = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup),
+    Bullets = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.Projectile),
 
     // Melee attacks
-    Melee = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup),
+    Melee = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CollisionGeometryGroup, PhysicsGroup.WeaponGroup, PhysicsGroup.CommanderBuildGroup, PhysicsGroup.Projectile),
 
     // Allows us to mark props as non interfering for commander selection (culls out any props with commAlpha < 1)
     CommanderSelect = CreateMaskExcludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup, PhysicsGroup.CommanderPropsGroup, PhysicsGroup.CollisionGeometryGroup),
@@ -114,7 +114,7 @@ PhysicsMask = enum
     // Dropped weapons don't collide with the player controller
     DroppedWeaponFilter = CreateMaskIncludingGroups(PhysicsGroup.PlayerControllersGroup, PhysicsGroup.RagdollGroup),
     
-    BabblerFilter = CreateMaskIncludingGroups(PhysicsGroup.BabblerGroup),
+    BabblerMovement = CreateMaskIncludingGroups(PhysicsGroup.BabblerGroup),
     
     OnlyWhip = CreateMaskIncludingGroups(PhysicsGroup.WhipGroup),
 }

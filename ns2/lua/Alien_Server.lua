@@ -228,6 +228,13 @@ function Alien:ProcessBuyAction(techIds)
             
             newPlayer:DropToFloor()
             
+            // Add all the existing upgrades to the new Alien's upgrade list so
+            // they don't lose them.
+            local previousUpgrades = self:GetUpgrades()
+            for u = 1, #previousUpgrades do
+                table.insertunique(techIds, previousUpgrades[u])
+            end
+            
             newPlayer:SetGestationData(techIds, self:GetTechId(), healthScalar, armorScalar)
             
             success = true

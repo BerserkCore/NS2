@@ -70,6 +70,7 @@ AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(TeleportMixin, networkVars)
+AddMixinNetworkVars(SelectableMixin, networkVars)
 
 if Server then
     

@@ -101,6 +101,8 @@ local function Detonate(self, armFunc)
     
     DestroyEntity(self)
     
+    CreateExplosionDecals(self)
+    
     TEST_EVENT("Mine detonated")
     
 end

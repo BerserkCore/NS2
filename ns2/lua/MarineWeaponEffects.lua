@@ -321,6 +321,14 @@ kMarineWeaponEffects =
         },
     },
     
+    explosion_decal =
+    {
+        explosionDecal =
+        {
+            {decal = "cinematics/vfx_materials/decals/blast_01.material", scale = 2, done = true}
+        }    
+    },
+    
     grenade_explode =
     {
         grenadeExplodeEffects =

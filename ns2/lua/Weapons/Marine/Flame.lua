@@ -11,6 +11,8 @@ Script.Load("lua/ScriptActor.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/DamageMixin.lua")
 
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/flame_decal.surface_shader")
+
 class 'Flame' (ScriptActor)
 
 Flame.kMapName            = "flame"
@@ -62,6 +64,8 @@ function Flame:OnInitialized()
         local coords = Coords.GetIdentity()
         coords.origin = self:GetOrigin()
         self.fireEffect:SetCoords(coords)
+        
+        Client.CreateTimeLimitedDecal("cinematics/vfx_materials/decals/flame_decal.material", self:GetCoords(), 3, Flame.kLifeTime - 1)
     
     end
     

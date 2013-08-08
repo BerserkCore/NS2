@@ -17,6 +17,7 @@ Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/WallMovementMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
+Script.Load("lua/BabblerClingMixin.lua")
 
 class 'Skulk' (Alien)
 
@@ -53,6 +54,7 @@ AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
+AddMixinNetworkVars(BabblerClingMixin, networkVars)
 
 // Balance, movement, animation
 Skulk.kJumpRepeatTime = 0.1
@@ -118,6 +120,7 @@ function Skulk:OnCreate()
     Alien.OnCreate(self)
 
     InitMixin(self, DissolveMixin)
+    InitMixin(self, BabblerClingMixin)
     
 end
 
@@ -147,12 +150,6 @@ function Skulk:OnInitialized()
     
     self.timeLastWallJump = 0
     
-end
-
-function Skulk:OnDestroy()
-
-    Alien.OnDestroy(self)
-
 end
 
 function Skulk:GetInfestationBonus()

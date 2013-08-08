@@ -144,7 +144,7 @@ function Projectile:OnUpdate(deltaTime)
         // if we have hit something that slowed us down in xz direction, or if we are standing still, we explode
         if delta:GetLengthSquaredXZ() > 0.0001 or velocity:GetLength() < 0.0001 then                    
 
-            local endPoint = self.lastOrigin + 1.25*deltaTime*self.lastVelocity
+            local endPoint = self.lastOrigin + self.lastVelocity * (deltaTime + self.radius * 3)
             local trace = Shared.TraceCapsule(self.lastOrigin, endPoint, self.radius, 0, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(self))
 
             self:SetOrigin(trace.endPoint)

@@ -244,6 +244,8 @@ local function BuyExo(self, techId)
                 self:GiveExo(spawnPoint)
             elseif techId == kTechId.DualMinigunExosuit then
                 self:GiveDualExo(spawnPoint)
+            elseif techId == kTechId.ClawRailgunExosuit then
+                self:GiveClawRailgunExo(spawnPoint)
             elseif techId == kTechId.DualRailgunExosuit then
                 self:GiveDualRailgunExo(spawnPoint)
             end
@@ -258,7 +260,8 @@ local function BuyExo(self, techId)
     
 end
 
-local kIsExoTechId = { [kTechId.Exosuit] = true, [kTechId.DualMinigunExosuit] = true, [kTechId.DualRailgunExosuit] = true }
+local kIsExoTechId = { [kTechId.Exosuit] = true, [kTechId.DualMinigunExosuit] = true,
+                       [kTechId.ClawRailgunExosuit] = true, [kTechId.DualRailgunExosuit] = true }
 function Marine:AttemptToBuy(techIds)
 
     local techId = techIds[1]
@@ -439,6 +442,13 @@ function Marine:GiveDualExo(spawnPoint)
 
     self:DropAllWeapons()
     self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "MinigunMinigun" })
+    
+end
+
+function Marine:GiveClawRailgunExo(spawnPoint)
+
+    self:DropAllWeapons()
+    self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "ClawRailgun" })
     
 end
 

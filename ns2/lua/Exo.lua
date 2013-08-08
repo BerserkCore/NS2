@@ -19,6 +19,7 @@ Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
+Script.Load("lua/CorrodeMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
@@ -42,6 +43,9 @@ local kAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_cm.animatio
 
 local kDualModelName = PrecacheAsset("models/marine/exosuit/exosuit_mm.model")
 local kDualAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_mm.animation_graph")
+
+local kClawRailgunModelName = PrecacheAsset("models/marine/exosuit/exosuit_cr.model")
+local kClawRailgunAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_cr.animation_graph")
 
 local kDualRailgunModelName = PrecacheAsset("models/marine/exosuit/exosuit_rr.model")
 local kDualRailgunAnimationGraph = PrecacheAsset("models/marine/exosuit/exosuit_rr.animation_graph")
@@ -104,6 +108,7 @@ AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
+AddMixinNetworkVars(CorrodeMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
@@ -131,6 +136,7 @@ function Exo:OnCreate()
     InitMixin(self, WeldableMixin)
     InitMixin(self, CombatMixin)
     InitMixin(self, SelectableMixin)
+    InitMixin(self, CorrodeMixin)
     
     self:SetIgnoreHealth(true)
     
@@ -189,6 +195,11 @@ function Exo:OnInitialized()
         
             modelName = kDualModelName
             graphName = kDualAnimationGraph
+            
+        elseif self.layout == "ClawRailgun" then
+        
+            modelName = kClawRailgunModelName
+            graphName = kClawRailgunAnimationGraph
             
         elseif self.layout == "RailgunRailgun" then
         
@@ -275,11 +286,15 @@ function Exo:InitWeapons()
         weaponHolder:SetWeapons(Claw.kMapName, Minigun.kMapName)
     elseif self.layout == "MinigunMinigun" then
         weaponHolder:SetWeapons(Minigun.kMapName, Minigun.kMapName)
+    elseif self.layout == "ClawRailgun" then
+        weaponHolder:SetWeapons(Claw.kMapName, Railgun.kMapName)
     elseif self.layout == "RailgunRailgun" then
         weaponHolder:SetWeapons(Railgun.kMapName, Railgun.kMapName)
     else
+    
         Print("Warning: incorrect layout set for exosuit")
         weaponHolder:SetWeapons(Claw.kMapName, Minigun.kMapName)
+        
     end
     
     weaponHolder:TriggerEffects("exo_login")

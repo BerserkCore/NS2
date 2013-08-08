@@ -190,7 +190,8 @@ local function UpdateServerWebInterface()
     if Shared.GetSystemTime() - lastPerfDataTime >= kLogPerfDataRate then
     
         local playerRecords = Shared.GetEntitiesWithClassname("Player")
-        local newData = { players = playerRecords:GetSize(), tickrate = Server.GetFrameRate(), time = Shared.GetSystemTime() }
+        local entCount = Shared.GetEntitiesWithClassname("Entity"):GetSize()
+        local newData = { players = playerRecords:GetSize(), tickrate = Server.GetFrameRate(), time = Shared.GetSystemTime(), ent_count = entCount }
         perfDataBuffer:Insert(newData)
         
         lastPerfDataTime = Shared.GetSystemTime()

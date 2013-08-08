@@ -19,6 +19,150 @@ if Client then
     PrecacheAsset("ui/buildmenu.dds")
 end
 
+local function HandleImpactDecal(position, doer, surface, target, showtracer, altMode, damage, direction, decalParams)
+
+    // when we hit a target project some blood on the geometry behind
+    //DebugLine(position, position + direction * kBloodDistance, 3, 1, 0, 0, 1)
+    if direction then
+    
+        local trace =  Shared.TraceRay(position, position + direction * kBloodDistance, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOne(target))
+        if trace.fraction ~= 1 then   
+
+            decalParams[kEffectHostCoords] = Coords.GetTranslation(trace.endPoint)
+            decalParams[kEffectHostCoords].yAxis = trace.normal
+            decalParams[kEffectHostCoords].zAxis = direction
+            decalParams[kEffectHostCoords].xAxis = decalParams[kEffectHostCoords].yAxis:CrossProduct(decalParams[kEffectHostCoords].zAxis)
+            decalParams[kEffectHostCoords].zAxis = decalParams[kEffectHostCoords].xAxis:CrossProduct(decalParams[kEffectHostCoords].yAxis)
+
+            decalParams[kEffectHostCoords].zAxis:Normalize()
+            decalParams[kEffectHostCoords].xAxis:Normalize()
+            
+            //DrawCoords(decalParams[kEffectHostCoords])
+            
+            if not target then
+                decalParams[kEffectSurface] = trace.surface        
+            end
+            
+            GetEffectManager():TriggerEffects("damage_decal", decalParams)
+         
+        end
+    
+    end
+
+end
+
+function HandleHitEffect(position, doer, surface, target, showtracer, altMode, damage, direction)
+
+    local tableParams = { }
+    tableParams[kEffectHostCoords] = Coords.GetTranslation(position)
+    if doer then
+        tableParams[kEffectFilterDoerName] = doer:GetClassName()
+    end
+    tableParams[kEffectSurface] = surface
+    tableParams[kEffectFilterInAltMode] = altMode
+    
+    if target then
+    
+        tableParams[kEffectFilterClassName] = target:GetClassName()
+        
+        if target.GetTeamType then
+        
+            tableParams[kEffectFilterIsMarine] = target:GetTeamType() == kMarineTeamType
+            tableParams[kEffectFilterIsAlien] = target:GetTeamType() == kAlienTeamType
+            
+        end
+        
+    else
+    
+        tableParams[kEffectFilterIsMarine] = false
+        tableParams[kEffectFilterIsAlien] = false
+        
+    end
+    
+    // Don't play the hit cinematic, those are made for third person.
+    if target ~= Client.GetLocalPlayer() then
+        GetEffectManager():TriggerEffects("damage", tableParams)
+    end
+    
+    // Always play sound effect.
+    GetEffectManager():TriggerEffects("damage_sound", tableParams)
+    
+    if showtracer == true and doer then
+    
+        local tracerStart = (doer.GetBarrelPoint and doer:GetBarrelPoint()) or (doer.GetEyePos and doer:GetEyePos()) or doer:GetOrigin()
+        
+        local tracerVelocity = GetNormalizedVector(position - tracerStart) * kTracerSpeed
+        CreateTracer(tracerStart, position, tracerVelocity, doer)
+        
+    end
+    
+    if damage > 0 and target and target.OnTakeDamageClient then
+        target:OnTakeDamageClient(damage, doer, position)
+    end
+    
+    HandleImpactDecal(position, doer, surface, target, showtracer, altMode, damage, direction, tableParams)
+
+end
+
+function GetCommanderForTeam(teamNumber)
+
+    local commanders = GetEntitiesForTeam("Commander", teamNumber)
+    if #commanders > 0 then
+        return commanders[1]
+    end    
+
+end
+
+function UpdateMenuTechId(teamNumber, selected)
+
+    local commander = GetCommanderForTeam(teamNumber)
+    local menuTechId = commander:GetMenuTechId()
+
+    if selected then
+        menuTechId = kTechId.RootMenu
+    elseif menuTechId ~= kTechId.BuildMenu and
+           menuTechId ~= kTechId.AdvancedMenu and
+           menuTechId ~= kTechId.AssistMenu then
+       
+        menuTechId = kTechId.BuildMenu
+    
+    end       
+
+    
+    if Client then
+        commander:SetCurrentTech(menuTechId)    
+    elseif Server then    
+        commander.menuTechId = menuTechId    
+    end
+
+    return menuTechId
+
+end
+
+// passing true for resetClientMask will cause the client to discard the predict selection and wait for a server update
+function DeselectAllUnits(teamNumber, resetClientMask, sendMessage)
+
+    if sendMessage == nil then
+        sendMessage = true
+    end 
+
+    for _, unit in ipairs(GetEntitiesWithMixin("Selectable")) do
+    
+        unit:SetSelected(teamNumber, false, false, false)
+        if resetClientMask then
+            unit:ClearClientSelectionMask()
+        end
+        
+    end
+
+    // inform server to reset the selection
+    if Client and sendMessage then
+        local selectUnitMessage = BuildSelectUnitMessage(teamNumber, nil, false, false)
+        Client.SendNetworkMessage("SelectUnit", selectUnitMessage, true)
+    end
+
+end
+
 function GetIsRecycledUnit(unit)
     return unit ~= nil and HasMixin(unit, "Recycle") and unit:GetIsRecycled()
 end
@@ -1347,6 +1491,13 @@ function GetIsPointOnInfestation(point)
 
 end
 
+function GetIsPointInGorgeTunnel(point)
+
+    local tunnelEntities = GetEntitiesWithinRange("Tunnel", point, 40)
+    return #tunnelEntities > 0
+        
+end
+
 function GetIsPointOffInfestation(point)
     return not GetIsPointOnInfestation(point)
 end
@@ -1516,6 +1667,10 @@ end
 // All damage is routed through here.
 function CanEntityDoDamageTo(attacker, target, cheats, devMode, friendlyFire, damageType)
 
+    if not GetGameInfoEntity():GetGameStarted() then
+        return false
+    end
+    
     if target:isa("Clog") then
         return true
     end    
@@ -1727,7 +1882,7 @@ function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceR
     surface = surface or middleTrace.surface
     startPoint = startPoint or middleStart
     
-    local direction = target and (endPoint - startPoint):GetUnit() or nil
+    local direction = target and (endPoint - startPoint):GetUnit() or coords.zAxis
     return target ~= nil or middleTrace.fraction < 1, target, endPoint, direction, surface
     
 end
@@ -1736,21 +1891,30 @@ local kNumMeleeZones = 3
 function PerformGradualMeleeAttack(weapon, player, damage, range, optionalCoords, altMode)
 
     local didHit, target, endPoint, direction, surface
-
+    local didHitNow
+    local damageMult = 1
     local stepSize = 1 / kNumMeleeZones
+    
     for i = 1, kNumMeleeZones do
     
-        didHit, target, endPoint, direction, surface = CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, true, i * stepSize)
-        if target and didHit then
-        
-            local damageMult = 1 - (i - 1) * stepSize
+        didHitNow, target, endPoint, direction, surface = CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, true, i * stepSize)
+        didHit = didHit or didHitNow
+        if target and didHitNow then
+            
+            if target:isa("Player") then
+                damageMult = 1 - (i - 1) * stepSize
+            end
+    
             //damageMult = math.cos(damageMult * (math.pi / 2) + math.pi) + 1
             //Print(ToString(damageMult))
-            weapon:DoDamage(damage * damageMult, target, endPoint, direction, surface, altMode)
-            return didHit, target, endPoint, direction, surface
+            break
             
         end
         
+    end
+    
+    if didHit then
+        weapon:DoDamage(damage * damageMult, target, endPoint, direction, surface, altMode)
     end
     
     return didHit, target, endPoint, direction, surface
@@ -1771,6 +1935,42 @@ function AttackMeleeCapsule(weapon, player, damage, range, optionalCoords, altMo
     
     return didHit, target, endPoint, surface
     
+end
+
+local kExplosionDirections =
+{
+    Vector(0, 1, 0),
+    Vector(0, -1, 0),
+    Vector(1, 0, 0),
+    Vector(-1, 0, 0),
+    Vector(1, 0, 0),
+    Vector(0, 0, 1),
+    Vector(0, 0, -1),
+}
+
+function CreateExplosionDecals(triggeringEntity, effectName)
+
+    effectName = effectName or "explosion_decal"
+
+    local startPoint = triggeringEntity:GetOrigin() + Vector(0, 0.2, 0)
+    for i = 1, #kExplosionDirections do
+    
+        local direction = kExplosionDirections[i]
+        local trace = Shared.TraceRay(startPoint, startPoint + direction * 2, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAll())
+
+        if trace.fraction ~= 1 then
+        
+            local coords = Coords.GetTranslation(trace.endPoint)
+            coords.yAxis = trace.normal
+            coords.zAxis = trace.normal:GetPerpendicular()
+            coords.xAxis = coords.zAxis:CrossProduct(coords.yAxis)
+
+            triggeringEntity:TriggerEffects(effectName, {effecthostcoords = coords})
+        
+        end
+    
+    end
+
 end
 
 // Get the effective height that we trace down for this entity to see if it is "on" infestation

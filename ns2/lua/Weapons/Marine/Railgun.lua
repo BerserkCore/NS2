@@ -17,14 +17,18 @@ class 'Railgun' (Entity)
 Railgun.kMapName = "railgun"
 
 local kChargeTime = 2
+// The Railgun will automatically shoot if it is charged for too long.
+local kChargeForceShootTime = 3
 local kRailgunRange = 400
 local kRailgunSpread = Math.Radians(0)
 
+local kChargeSound = PrecacheAsset("sound/NS2.fev/marine/heavy/railgun_charge")
+
 local networkVars =
 {
-    timeChargeStarted = "private time",
-    railgunAttacking = "private boolean",
-    shooting = "boolean"
+    timeChargeStarted = "time",
+    railgunAttacking = "boolean",
+    timeOfLastShot = "time"
 }
 
 AddMixinNetworkVars(TechMixin, networkVars)
@@ -43,10 +47,27 @@ function Railgun:OnCreate()
     
     self.timeChargeStarted = 0
     self.railgunAttacking = false
-    self.shooting = false
+    self.timeOfLastShot = 0
     
     if Client then
+    
         InitMixin(self, ClientWeaponEffectsMixin)
+        self.chargeSound = Client.CreateSoundEffect(Shared.GetSoundIndex(kChargeSound))
+        self.chargeSound:SetParent(self:GetId())
+        
+    end
+    
+end
+
+function Railgun:OnDestroy()
+
+    Entity.OnDestroy(self)
+    
+    if self.chargeSound then
+    
+        Client.DestroySoundEffect(self.chargeSound)
+        self.chargeSound = nil
+        
     end
     
 end
@@ -61,13 +82,7 @@ function Railgun:OnPrimaryAttack(player)
 end
 
 function Railgun:OnPrimaryAttackEnd(player)
-
-    if self.railgunAttacking then
-        self.shooting = false
-    end
-    
     self.railgunAttacking = false
-    
 end
 
 function Railgun:GetBarrelPoint()
@@ -106,7 +121,7 @@ function Railgun:GetBarrelPoint()
 end
 
 function Railgun:GetTracerEffectName()
-    return kMinigunTracerEffectName
+    return kRailgunTracerEffectName
 end
 
 function Railgun:GetTracerEffectFrequency()
@@ -117,8 +132,11 @@ function Railgun:GetDeathIconIndex()
     return kDeathMessageIcon.Minigun
 end
 
-local function GetChargeAmount(timeChargeStarted)
-    return math.min(1, (Shared.GetTime() - timeChargeStarted) / kChargeTime)
+local function GetChargeAmount(self)
+
+    local chargeAmt = math.min(1, (Shared.GetTime() - self.timeChargeStarted) / kChargeTime)
+    return self.railgunAttacking and chargeAmt or 0
+    
 end
 
 local function Shoot(self, leftSide)
@@ -154,7 +172,7 @@ local function Shoot(self, leftSide)
             local effectFrequency = self:GetTracerEffectFrequency()
             local showTracer = ConditionalValue(GetIsVortexed(player), false, math.random() < effectFrequency)
             
-            self:ApplyBulletGameplayEffects(player, trace.entity, trace.endPoint, direction, kRailgunDamage + (kRailgunChargeDamage * GetChargeAmount(self.timeChargeStarted)), trace.surface, showTracer)
+            self:ApplyBulletGameplayEffects(player, trace.entity, trace.endPoint, direction, kRailgunDamage + (kRailgunChargeDamage * GetChargeAmount(self)), trace.surface, showTracer)
             
             if Client and showTracer then
                 TriggerFirstPersonTracer(self, trace.endPoint)
@@ -162,7 +180,7 @@ local function Shoot(self, leftSide)
             
         end
         
-        self.shooting = true
+        self.timeOfLastShot = Shared.GetTime()
         
     end
     
@@ -171,12 +189,70 @@ end
 if Server then
 
     function Railgun:OnParentKilled(attacker, doer, point, direction)
-        self.shooting = false
+    end
+    
+    /**
+     * The Railgun explodes players. We must bypass the ragdoll here.
+     */
+    function Railgun:OnDamageDone(doer, target)
+    
+        if doer == self then
+        
+            if target:isa("Player") and not target:GetIsAlive() then
+                target:SetBypassRagdoll(true)
+            end
+            
+        end
+        
     end
     
 end
 
 function Railgun:ProcessMoveOnWeapon(player, input)
+
+    if self.railgunAttacking then
+    
+        if (Shared.GetTime() - self.timeChargeStarted) >= kChargeForceShootTime then
+            self.railgunAttacking = false
+        end
+        
+    end
+    
+end
+
+function Railgun:OnUpdateRender()
+
+    PROFILE("Railgun:OnUpdateRender")
+    
+    local chargeAmount = GetChargeAmount(self)
+    local parent = self:GetParent()
+    if parent and parent:GetIsLocalPlayer() then
+    
+        local viewModel = parent:GetViewModelEntity()
+        if viewModel and viewModel:GetRenderModel() then
+        
+            viewModel:InstanceMaterials()
+            local renderModel = viewModel:GetRenderModel()
+            renderModel:SetMaterialParameter("chargeAmount" .. self:GetExoWeaponSlotName(), chargeAmount)
+            renderModel:SetMaterialParameter("timeSinceLastShot" .. self:GetExoWeaponSlotName(), Shared.GetTime() - self.timeOfLastShot)
+            
+        end
+        
+    end
+    
+    if self.chargeSound then
+    
+        local playing = self.chargeSound:GetIsPlaying()
+        if not playing and chargeAmount > 0 then
+            self.chargeSound:Start()
+        elseif playing and chargeAmount <= 0 then
+            self.chargeSound:Stop()
+        end
+        
+        self.chargeSound:SetParameter("charge", chargeAmount, 1)
+        
+    end
+    
 end
 
 function Railgun:OnTag(tagName)
@@ -204,14 +280,14 @@ end
 function Railgun:UpdateViewModelPoseParameters(viewModel)
 
     local chargeParam = "charge_" .. (self:GetIsLeftSlot() and "l" or "r")
-    local chargeAmount = self.railgunAttacking and GetChargeAmount(self.timeChargeStarted) or 0
+    local chargeAmount = GetChargeAmount(self)
     viewModel:SetPoseParam(chargeParam, chargeAmount)
     
 end
 
 if Client then
 
-    local kRailgunMuzzleEffectRate = 0.15
+    local kRailgunMuzzleEffectRate = 0.5
     local kAttachPoints = { [ExoWeaponHolder.kSlotNames.Left] = "fxnode_l_railgun_muzzle", [ExoWeaponHolder.kSlotNames.Right] = "fxnode_r_railgun_muzzle" }
     local kMuzzleEffectName = PrecacheAsset("cinematics/marine/railgun/muzzle_flash.cinematic")
     
@@ -224,7 +300,7 @@ if Client then
     end
     
     function Railgun:GetPrimaryAttacking()
-        return self.shooting
+        return (Shared.GetTime() - self.timeOfLastShot) <= kRailgunMuzzleEffectRate
     end
     
     function Railgun:GetSecondaryAttacking()
@@ -236,9 +312,9 @@ if Client then
         local parent = self:GetParent()
         
         if parent then
-            //CreateMuzzleCinematic(self, kMuzzleEffectName, kMuzzleEffectName, kAttachPoints[self:GetExoWeaponSlot()] , parent)
+            CreateMuzzleCinematic(self, kMuzzleEffectName, kMuzzleEffectName, kAttachPoints[self:GetExoWeaponSlot()] , parent)
         end
-    
+        
     end
     
 end

@@ -66,12 +66,14 @@ kExosuitTechResearchCost = 30
 kExosuitLockdownTechResearchCost = 20
 kExosuitUpgradeTechResearchCost = 20
 kDualExosuitCost = 75
+kClawRailgunExosuitCost = 50
 kDualRailgunExosuitCost = 75
 
 kMinigunCost = 30
 kRailgunCost = 30
 kDualMinigunCost = 25
 kDualMinigunTechResearchCost = 20
+kClawRailgunTechResearchCost = 20
 kDualRailgunTechResearchCost = 20
 
 kWeapons1ResearchCost = 15
@@ -216,13 +218,13 @@ kAxeDamageType = kDamageType.Structural
 kGrenadeLauncherGrenadeDamage = 130
 kGrenadeLauncherGrenadeDamageType = kDamageType.Structural
 kGrenadeLauncherClipSize = 4
-kGrenadeLauncherGrenadeDamageRadius = 8
+kGrenadeLauncherGrenadeDamageRadius = 6
 kGrenadeLifetime = 2.0
 
-kShotgunDamage = 17
+kShotgunDamage = 11
 kShotgunDamageType = kDamageType.Normal
 kShotgunClipSize = 8
-kShotgunBulletsPerShot = 10
+kShotgunBulletsPerShot = 17
 kShotgunRange = 30
 
 kNadeLauncherClipSize = 4
@@ -245,8 +247,8 @@ kMinigunClipSize = 250
 kClawDamage = 50
 kClawDamageType = kDamageType.Structural
 
-kRailgunDamage = 100
-kRailgunChargeDamage = 25
+kRailgunDamage = 50
+kRailgunChargeDamage = 100
 kRailgunDamageType = kDamageType.Puncture
 
 kMACAttackDamage = 5
@@ -292,14 +294,19 @@ kXenocideDamageType = kDamageType.Normal
 kXenocideRange = 14
 kXenocideEnergyCost = 30
 
-kSpitDamage = 40
+kGorgeArmorTunnelDamagePerSecond = 5
+
+kSpitDamage = 30
 kSpitDamageType = kDamageType.Normal
 kSpitEnergyCost = 7
 
 kBabblerPheromoneEnergyCost = 7
+kBabblerDamage = 5
 
-kBabblerEggBuildTime = 4
-kNumBabblersPerGorge = 10
+kBabblerCost = 1
+kBabblerEggBuildTime = 8
+kNumBabblerEggsPerGorge = 3
+kNumBabblersPerEgg = 3
 
 // Also see kHealsprayHealStructureRate
 kHealsprayDamage = 8
@@ -470,6 +477,7 @@ kFlamethrowerTechResearchTime = 60
 kFlamethrowerAltTechResearchTime = 60
 
 kDualMinigunTechResearchTime = 60
+kClawRailgunTechResearchTime = 60
 kDualRailgunTechResearchTime = 60
 kCatPackTechResearchTime = 15
 

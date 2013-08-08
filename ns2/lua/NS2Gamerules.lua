@@ -25,6 +25,7 @@ local kGameEndCheckInterval = 0.75
 local kPregameLength = 15
 local kTimeToReadyRoom = 8
 local kPauseToSocializeBeforeMapcycle = 30
+local kGameStartMessageInterval = 20
 
 // How often to send the "No commander" message to players in seconds.
 local kSendNoCommanderMessageRate = 50
@@ -258,11 +259,7 @@ if Server then
                     if team:AddPlayer(entity) then
 
                         // Tell team to send entire tech tree on team change
-                        entity.sendTechTreeBase = true
-
-                        // Clear all hotkey groups on team change since old
-                        // hotkey groups will be invalid.
-                        entity:InitializeHotkeyGroups()                
+                        entity.sendTechTreeBase = true           
                         
                     end
                    
@@ -370,6 +367,10 @@ if Server then
      */
     function NS2Gamerules:ResetGame()
     
+        // save commanders for later re-login
+        local team1CommanderClientIndex = self.team1:GetCommander() and self.team1:GetCommander().clientIndex or nil
+        local team2CommanderClientIndex = self.team2:GetCommander() and self.team2:GetCommander().clientIndex or nil
+        
         // Cleanup any peeps currently in the commander seat by logging them out
         // have to do this before we start destroying stuff.
         self:LogoutCommanders()
@@ -464,8 +465,26 @@ if Server then
         self.team2:ReplaceRespawnAllPlayers()
         
         // Create team specific entities
-        self.team1:ResetTeam()
-        self.team2:ResetTeam()
+        local commandStructure1 = self.team1:ResetTeam()
+        local commandStructure2 = self.team2:ResetTeam()
+        
+        // login the commanders again
+        local function LoginCommander(commandStructure, team, clientIndex)
+            if commandStructure and clientIndex then
+                for i,player in ipairs(team:GetPlayers()) do
+                    if player.clientIndex == clientIndex then
+                        // make up for not manually moving to CS and using it
+                        commandStructure.occupied = true
+                        player:SetOrigin(commandStructure:GetDefaultEntryOrigin())
+                        commandStructure:LoginPlayer(player)
+                        break
+                    end
+                end 
+            end
+        end
+        
+        LoginCommander(commandStructure1, self.team1, team1CommanderClientIndex)
+        LoginCommander(commandStructure2, self.team2, team2CommanderClientIndex)
         
         // Create living map entities fresh
         CreateLiveMapEntities()
@@ -755,6 +774,17 @@ if Server then
         
     end
     
+    // Network variable type time has a maximum value it can contain, so reload the map if
+    // the age exceeds the limit and no game is going on.
+    local kMaxServerAgeBeforeMapChange = 36000
+    local function ServerAgeCheck(self)
+    
+        if self.gameState ~= kGameState.Started and Shared.GetTime() > kMaxServerAgeBeforeMapChange then
+            MapCycle_ChangeMap(Shared.GetMapName())
+        end
+        
+    end
+    
     local function UpdateAutoTeamBalance(self, dt)
     
         local wasDisabled = false
@@ -875,6 +905,7 @@ if Server then
                 self:UpdatePregame(timePassed)
                 self:UpdateToReadyRoom()
                 self:UpdateMapCycle()
+                ServerAgeCheck(self)
                 UpdateAutoTeamBalance(self, timePassed)
                 
                 self.timeSinceGameStateChanged = self.timeSinceGameStateChanged + timePassed
@@ -1161,23 +1192,35 @@ if Server then
     function NS2Gamerules:SetPreventGameEnd(state)
         self.preventGameEnd = state
     end
-
+    
     function NS2Gamerules:CheckGameStart()
-
+    
         if self:GetGameState() == kGameState.NotStarted or self:GetGameState() == kGameState.PreGame then
         
-            // Start pre-game when both teams have players or when once side does if cheats are enabled
-            local team1Players = self.team1:GetNumPlayers()
-            local team2Players = self.team2:GetNumPlayers()
+            // Start pre-game when both teams have commanders or when once side does if cheats are enabled
+            local team1Commander = self.team1:GetCommander()
+            local team2Commander = self.team2:GetCommander()
             
-            if (team1Players > 0 and team2Players > 0) or (Shared.GetCheatsEnabled() and (team1Players > 0 or team2Players > 0)) then
+            if (team1Commander and team2Commander) or Shared.GetCheatsEnabled() then
             
                 if self:GetGameState() == kGameState.NotStarted then
                     self:SetGameState(kGameState.PreGame)
                 end
                 
-            elseif self:GetGameState() == kGameState.PreGame then
-                self:SetGameState(kGameState.NotStarted)
+            else
+            
+                if self:GetGameState() == kGameState.PreGame then
+                    self:SetGameState(kGameState.NotStarted)
+                end
+                
+                if not self.nextGameStartMessageTime or Shared.GetTime() > self.nextGameStartMessageTime then
+                
+                    SendTeamMessage(self.team1, kTeamMessageTypes.GameStartCommanders)
+                    SendTeamMessage(self.team2, kTeamMessageTypes.GameStartCommanders)
+                    self.nextGameStartMessageTime = Shared.GetTime() + kGameStartMessageInterval
+                    
+                end
+                
             end
             
         end

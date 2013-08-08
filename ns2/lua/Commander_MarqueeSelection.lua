@@ -55,15 +55,7 @@ function SetCommanderMarqueeeSelectorUp(mouseX, mouseY)
     local pickStartVec = CreatePickRay(player, selectorStartX, selectorStartY)
     local pickEndVec = CreatePickRay(player, mouseX, mouseY)
     
-    // Process selection locally.
-    local didSelectEntities = player:MarqueeSelectEntities(pickStartVec, pickEndVec)
-    
-    // Don't bother sending the message to the server if nothing was selected on the client.
-    if didSelectEntities then
-    
-        local message = BuildMarqueeSelectCommand(pickStartVec, pickEndVec)
-        Client.SendNetworkMessage("MarqueeSelect", message, true)
-        
-    end
+    player:MarqueeSelectEntities(pickStartVec, pickEndVec, player.shiftDown)
     
 end
+
