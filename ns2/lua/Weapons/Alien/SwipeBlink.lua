@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\Weapons\Alien\SwipeBlink.lua
 //
@@ -52,22 +52,14 @@ function SwipeBlink:GetPrimaryAttackRequiresPress()
     return false
 end
 
-if kUseGradualMeleeAttacks then
-
 function SwipeBlink:GetMeleeBase()
-    return 1.5, 1.2
-end
 
-else
-
-function SwipeBlink:GetMeleeBase()
     local parent = self:GetParent()
     if parent and parent.GetIsEnzymed and parent:GetIsEnzymed() then
         return 1, 1.2
     end
     return .7, 1
-end
-
+    
 end
 
 function SwipeBlink:GetDeathIconIndex()
@@ -114,13 +106,16 @@ function SwipeBlink:OnTag(tagName)
     
     if tagName == "hit" then
     
-        local player = self:GetParent()
-        if player then
-            player:DeductAbilityEnergy(self:GetEnergyCost())
-        end
-        
         self:TriggerEffects("swipe_attack")    
         self:PerformMeleeAttack()
+    
+        local player = self:GetParent()
+        if player then
+        
+            player:DeductAbilityEnergy(self:GetEnergyCost())
+            self:ConsumeVortex(player)
+          
+        end
         
     end
 
@@ -129,14 +124,8 @@ end
 function SwipeBlink:PerformMeleeAttack()
 
     local player = self:GetParent()
-    if player then
-    
-        if kUseGradualMeleeAttacks then
-            PerformGradualMeleeAttack(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
-        else
-            AttackMeleeCapsule(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
-        end    
-            
+    if player then    
+        AttackMeleeCapsule(self, player, SwipeBlink.kDamage, SwipeBlink.kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
     end
     
 end

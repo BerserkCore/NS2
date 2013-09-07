@@ -80,6 +80,16 @@ local function GetPlayerMatching(id)
     return GetPlayerMatchingSteamId(id) or GetPlayerMatchingName(id)
 end
 
+local function TournamentMode(client, enabled)
+    if enabled == "true" or enabled == "1" then        
+        EnableTournamentMode(client)
+    elseif enabled == "false" or enabled == "0" then
+        DisableTournamentMode(client)
+    end
+end
+
+CreateServerAdminCommand("Console_sv_tournament", TournamentMode, "<true/false>, Enables or disabled tournament mode.")
+
 local function PrintStatus(player, client, index)
 
     local playerClient = Server.GetOwner(player)
@@ -391,6 +401,111 @@ local function ListBans(client)
     
 end
 CreateServerAdminCommand("Console_sv_listbans", ListBans, "Lists the banned players")
+
+function GetReservedSlotData()
+
+    local returnData = { }
+    
+    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    if reservedSlots and reservedSlots.amount and reservedSlots.ids then
+    
+        returnData.amount = reservedSlots.amount
+        returnData.ids = { }
+        for name, id in pairs(reservedSlots.ids) do
+            table.insert(returnData.ids, { name = name, id = id })
+        end
+        
+    end
+    
+    return returnData
+    
+end
+
+function SetReservedSlotAmount(amount)
+
+    amount = tonumber(amount)
+    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    if reservedSlots and amount and amount >= 0 and amount <= Server.GetMaxPlayers() then
+    
+        reservedSlots.amount = amount
+        
+        // We are using tags for the reserved slots.
+        // First clear out the old tag.
+        local tags = { }
+        Server.GetTags(tags)
+        for t = 1, #tags do
+        
+            if string.find(tags[t], "R_S") then
+                Server.RemoveTag(tags[t])
+            end
+            
+        end
+        
+        Server.AddTag("R_S" .. reservedSlots.amount)
+        
+        Shared.Message("Reserved slot amount set to " .. reservedSlots.amount)
+        Server.SaveConfigSettings()
+        
+    end
+    
+end
+CreateServerAdminCommand("Console_sv_reserved_slots", function(client, amount) SetReservedSlotAmount(amount) end, "<amount>. Set the amount of reserved slots available on the server.")
+
+local function AddReservedSlot(client, name, id)
+
+    name = name or "None"
+    id = tonumber(id)
+    
+    if not id then
+    
+        ServerAdminPrint(client, "Invalid arguments. Pass in a name and Steam Id for the new reserved slot.")
+        return
+        
+    end
+    
+    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    if reservedSlots and reservedSlots.ids then
+    
+        reservedSlots.ids[name] = id
+        ServerAdminPrint(client, "Added reserved slot for " .. name .. " with Id " .. id)
+        Server.SaveConfigSettings()
+        
+    end
+    
+end
+CreateServerAdminCommand("Console_sv_add_reserved_slot", AddReservedSlot, "<name> <steamid>. Adds a new reserved slot for the SteamID specified.")
+
+local function RemoveReservedSlot(client, id)
+
+    id = tonumber(id)
+    
+    if not id then
+    
+        ServerAdminPrint(client, "Invalid argument. Pass in the Steam Id for the existing reserved slot.")
+        return
+        
+    end
+    
+    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    if reservedSlots and reservedSlots.ids then
+    
+        for name, steamId in pairs(reservedSlots.ids) do
+        
+            if id == steamId then
+            
+                reservedSlots.ids[name] = nil
+                ServerAdminPrint(client, "Removed reserved slot for " .. name)
+                Server.SaveConfigSettings()
+                break
+                
+            end
+            
+        end
+        
+    end
+    
+end
+CreateServerAdminCommand("Console_sv_remove_reserved_slot", RemoveReservedSlot, "<steamid>. Removes the reserved slot for the SteamID specified.")
 
 local function PLogAll(client)
 

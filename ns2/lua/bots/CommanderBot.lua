@@ -32,7 +32,7 @@ class 'CommanderBot' (PlayerBot)
 //  Override
 //----------------------------------------
 function CommanderBot:GetNamePrefix()
-    return "[COMBOT] "
+    return "[BOT] "
 end
 
 //----------------------------------------

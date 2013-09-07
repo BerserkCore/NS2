@@ -479,7 +479,7 @@ function MobileTargetType:Debug(selector, full)
             local unfiltered = selector:_ApplyFilters(target, targetPoint)
             local visible = selector.visibilityRequired and GetCanAttackEntity(selector.attacker, target) or "N/A"
             local inRadius = table.contains(targets, target)
-            Log("%s, in range %s (%s), in radius %s, valid %s, unfiltered %s, visible %s", target, range, inRange, inRadius, valid, unfiltered, visible)
+            Log("%s, in range %s, in radius %s, valid %s, unfiltered %s, visible %s", target, range, inRadius, valid, unfiltered, visible)
         end
     end
 end

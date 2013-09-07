@@ -45,9 +45,9 @@ local function FilterOutMarqueeSelection(selection)
     local toRemove = { }
     
     for index, entity in ipairs(selection) do
-        
+    
         if entity:isa("Commander") then
-            table.insertunique(toRemove, entityPair)
+            table.insertunique(toRemove, entity)
         else
         
             if entity.GetIsMoveable and entity:GetIsMoveable() then
@@ -63,7 +63,7 @@ local function FilterOutMarqueeSelection(selection)
     if foundStructure and foundNonStructure then
     
         for index, entity in ipairs(selection) do
-
+        
             // filter out non moveables
             if not entity.GetIsMoveable or not entity:GetIsMoveable() then
                 table.insertunique(toRemove, entity)
@@ -76,7 +76,7 @@ local function FilterOutMarqueeSelection(selection)
     for index, entity in ipairs(toRemove) do
     
         if not table.removevalue(selection, entity) then
-            Print("FilterOutMarqueeSelection(): Unable to remove entityPair (%s)", entity:GetClassName())
+            Print("FilterOutMarqueeSelection(): Unable to remove entity (%s)", entity:GetClassName())
         end
         
     end
@@ -122,16 +122,26 @@ end
 function Commander:GetUnitUnderCursor(pickVec)
 
     local origin = self:GetOrigin()
-    local trace = Shared.TraceRay(origin, origin + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
-    local recastCount = 0
-    while trace.entity == nil and trace.fraction < 1 and trace.normal:DotProduct(Vector(0, 1, 0)) < 0 and recastCount < 3 do
-        // We've hit static geometry with the normal pointing down (ceiling). Re-cast from the point of impact.
-        local recastFrom = 1000 * trace.fraction + 0.1
-        trace = Shared.TraceRay(origin + pickVec*recastFrom, origin + pickVec*1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterOne(self))
-        recastCount = recastCount + 1
+    
+    local entity = nil
+    
+    for i = 1, 25 do
+    
+        local trace = Shared.TraceRay(origin, origin + pickVec * 1000, CollisionRep.Select, PhysicsMask.CommanderSelect, EntityFilterAllButMixin("Selectable"))
+        if trace.fraction == 1 then
+            break
+        elseif trace.entity then
+        
+            entity = trace.entity
+            break
+        
+        else        
+            origin = trace.endPoint + pickVec * 0.1        
+        end
+    
     end
     
-    return trace.entity
+    return entity
     
 end
 

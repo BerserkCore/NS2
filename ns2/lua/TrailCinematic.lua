@@ -260,6 +260,10 @@ function TrailCinematic:Update(deltaTime)
 
     baseCoords = self:_GetBaseCoords(deltaTime)
     
+    if not baseCoords then
+        return
+    end
+    
     // apply the attach offset
     baseCoords.origin = baseCoords:TransformPoint(self.attachOffset)
     

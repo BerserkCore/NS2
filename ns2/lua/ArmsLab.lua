@@ -32,6 +32,7 @@ Script.Load("lua/PowerConsumerMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'ArmsLab' (ScriptActor)
 ArmsLab.kMapName = "armslab"
@@ -65,6 +66,7 @@ AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function ArmsLab:OnCreate()
 
@@ -91,6 +93,7 @@ function ArmsLab:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
     
@@ -124,6 +127,7 @@ function ArmsLab:OnInitialized()
         
     elseif Client then
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
     end
     
     self:SetModel(ArmsLab.kModelName, kAnimationGraph)

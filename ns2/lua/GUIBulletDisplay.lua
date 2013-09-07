@@ -25,7 +25,7 @@ function GUIBulletDisplay:Initialize()
     self.background = GUIManager:CreateGraphicItem()
     self.background:SetSize( Vector(256, 512, 0) )
     self.background:SetPosition( Vector(0, 0, 0))    
-    self.background:SetTexture("ui/RifleDisplay.dds")
+    self.background:SetTexture("ui/rifledisplay.dds")
     self.background:SetIsVisible(true)
 
     // Slightly larger copy of the text for a glow effect
@@ -58,7 +58,7 @@ function GUIBulletDisplay:Initialize()
     
     for i =1,self.numClips do
         self.clip[i] = GUIManager:CreateGraphicItem()
-        self.clip[i]:SetTexture("ui/RifleDisplay.dds")
+        self.clip[i]:SetTexture("ui/rifledisplay.dds")
         self.clip[i]:SetSize( Vector(21, self.clipHeight, 0) )
         self.clip[i]:SetBlendTechnique( GUIItem.Add )
     end

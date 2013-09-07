@@ -100,7 +100,7 @@ function EncrustMixin:OverHeal(player, overHealAmount)
     
         if not self.GetCanReward or self:GetCanReward(player) then
         
-            local addFraction = amountHealed / self:GetOverHealTreshold()
+            local addFraction = overHealAmount / self:GetOverHealTreshold()
             self.encrustFraction = self.encrustFraction + addFraction
     
 	        local playerId = player:GetId()

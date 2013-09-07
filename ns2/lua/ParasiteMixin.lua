@@ -55,8 +55,8 @@ function ParasiteMixin:SetParasited(fromPlayer)
             
                 self:OnParasited()
                 
-                if fromPlayer and HasMixin(fromPlayer, "Scoring") then
-                    fromPlayer:AddScore(1)
+                if fromPlayer and HasMixin(fromPlayer, "Scoring") and self:isa("Player") then
+                    fromPlayer:AddScore(kParasitePlayerPointValue)
                 end
                 
             end
@@ -76,6 +76,14 @@ function ParasiteMixin:OnDestroy()
         self:_RemoveParasiteEffect()
     end
     
+end
+
+if Server then
+
+    function ParasiteMixin:OnKill()
+        self:RemoveParasite()
+    end
+
 end
 
 function ParasiteMixin:GetIsParasited()
@@ -216,5 +224,5 @@ if Client then
         end        
 
     end
-    
+
 end

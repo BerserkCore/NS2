@@ -134,7 +134,7 @@ local function FindBuildOrder(self, structuresNearby)
     end
     
     if closestStructure then
-        return kTechId.None ~= self:GiveOrder(kTechId.Construct, closestStructure:GetId(), closestStructure:GetOrigin(), nil, true, false)
+        return kTechId.None ~= self:GiveOrder(kTechId.AutoConstruct, closestStructure:GetId(), closestStructure:GetOrigin(), nil, true, false)
     end
     
     return false

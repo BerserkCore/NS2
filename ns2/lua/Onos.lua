@@ -24,6 +24,7 @@ Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Onos' (Alien)
 
@@ -54,8 +55,8 @@ Onos.kMomentumEffectTriggerDiff = 3
 Onos.kGroundFrictionForce = 3
 
 // used for animations and sound effects
-Onos.kMaxSpeed = 6.6
-Onos.kChargeSpeed = 10.5
+Onos.kMaxSpeed = 7.5
+Onos.kChargeSpeed = 11.5
 
 Onos.kHealth = kOnosHealth
 Onos.kArmor = kOnosArmor
@@ -86,7 +87,8 @@ local networkVars =
     stooping = "boolean",
     stoopIntensity = "compensated interpolated float",
     charging = "private boolean",
-    rumbleSoundId = "entityid"
+    rumbleSoundId = "entityid",
+    hasCharge = "private boolean"
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -98,6 +100,7 @@ AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Onos:OnCreate()
 
@@ -115,7 +118,10 @@ function Onos:OnCreate()
     InitMixin(self, TunnelUserMixin)
     
     if Client then
+    
         InitMixin(self, RailgunTargetMixin)
+        self.boneShieldCrouchAmount = 0
+        
     end
     
     self.directionMomentum = 0
@@ -153,6 +159,8 @@ function Onos:OnInitialized()
     if Client then
         self:AddHelpWidget("GUITunnelEntranceHelp", 1)
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -195,6 +203,10 @@ function Onos:GetCanJump()
 
     return Alien.GetCanJump(self) and not stomping
     
+end
+
+function Onos:GetPlayFootsteps()
+    return self:GetVelocityLength() > .75 and self:GetIsOnGround() and self:GetIsAlive()
 end
 
 function Onos:GetCanCrouch()
@@ -299,7 +311,11 @@ function Onos:PreUpdateMove(input, runningPrediction)
 end
 
 function Onos:GetAngleSmoothRate()
-    return 3
+    return 5
+end
+
+function Onos:GetVelocitySmoothRate()
+    return 8
 end
 
 function Onos:PostUpdateMove(input, runningPrediction)
@@ -321,7 +337,7 @@ end
 
 function Onos:TriggerCharge(move)
 
-    if not self.charging and self.timeLastChargeEnd + Onos.kChargeDelay < Shared.GetTime() and self:GetIsOnGround() and not self:GetCrouching() then
+    if not self.charging and self:GetHasMovementSpecial() and self.timeLastChargeEnd + Onos.kChargeDelay < Shared.GetTime() and self:GetIsOnGround() and not self:GetCrouching() and not self:GetIsBoneShieldActive() then
 
         self.charging = true
         self.timeLastCharge = Shared.GetTime()
@@ -343,16 +359,12 @@ function Onos:HandleButtons(input)
 
     Alien.HandleButtons(self, input)
     
-    if self:GetIsBoneShieldActive() then
-    
-        input.commands = bit.bor(input.commands, Move.Crouch)
-    
+    if self:GetIsBoneShieldActive() then    
+        input.move:Scale(0)    
     end
 
-    if self.movementModiferState then
-    
-        self:TriggerCharge(input.move)
-        
+    if self.movementModiferState then    
+        self:TriggerCharge(input.move)        
     else
     
         if self.charging then
@@ -388,14 +400,6 @@ function Onos:GetViewModelName()
     return Onos.kViewModelName
 end
 
-function Onos:AddEnergy(energy)
-
-    if not self:GetIsBoneShieldActive() then
-        Alien.AddEnergy(self, energy)
-    end
-
-end
-
 function Onos:GetMaxViewOffsetHeight()
     return Onos.kViewOffsetHeight
 end 
@@ -404,10 +408,6 @@ function Onos:GetMaxSpeed(possible)
 
     if possible then
         return Onos.kMaxSpeed
-    end
-    
-    if self:GetIsBoneShieldActive() then
-        return Onos.kMaxSpeed * 0.5
     end
 
     return ( Onos.kMaxSpeed + self:GetChargeFraction() * (Onos.kChargeSpeed - Onos.kMaxSpeed) )
@@ -421,10 +421,6 @@ end
 
 function Onos:GetJumpHeight()
     return Onos.kJumpHeight
-end
-
-function Onos:GetHideArmorAmount()
-    return kOnosHideArmor
 end
 
 function Onos:GetMaxBackwardSpeedScalar()
@@ -478,11 +474,7 @@ function Onos:UpdateAutoCrouch(move)
     
     local startPos2 = self:GetOrigin() + frontLeft + Vector(0, extents.y * (1 - self:GetCrouchShrinkAmount()), 0)
     local startPos3 = self:GetOrigin() + backRight + Vector(0, extents.y * (1 - self:GetCrouchShrinkAmount()), 0)
-    
-    //DebugLine(startPos1, startPos1 + moveDirection * 3, 3, 1,1,1,1)
-    //DebugLine(startPos2, startPos2 + moveDirection * 3, 3, 1,1,1,1)
-    //DebugLine(startPos3, startPos3 + moveDirection * 3, 3, 1,1,1,1)
-    
+
     local trace1 = Shared.TraceRay(startPos1, startPos1 + moveDirection * 3, CollisionRep.Move, PhysicsMask.Movement, EntityFilterOne(self))
     local trace2 = Shared.TraceRay(startPos2, startPos2 + moveDirection * 3, CollisionRep.Move, PhysicsMask.Movement, EntityFilterOne(self))
     local trace3 = Shared.TraceRay(startPos3, startPos3 + moveDirection * 3, CollisionRep.Move, PhysicsMask.Movement, EntityFilterOne(self))
@@ -492,6 +484,32 @@ function Onos:UpdateAutoCrouch(move)
         self.autoCrouching = true
     end
 
+end
+
+function Onos:OnUpdateAnimationInput(modelMixin)
+
+    Alien.OnUpdateAnimationInput(self, modelMixin)
+    
+    if self:GetIsBoneShieldActive() then
+        modelMixin:SetAnimationInput("move", "shield")
+    end
+    
+end
+
+function Onos:GetHasMovementSpecial()
+    return self.hasCharge or self:GetTeamNumber() == kTeamReadyRoom 
+end
+
+function Onos:GetMovementSpecialEnergyCost()
+    return 0
+end
+
+function Onos:GetHasBiomassHealth()
+    return GetHasTech(self, kTechId.UpgradeOnos)
+end
+
+function Onos:GetMovementSpecialTechId()
+    return kTechId.Charge
 end
 
 local function SharedUpdate(self, dt)
@@ -511,16 +529,19 @@ function Onos:OnProcessMove(input)
 
     PROFILE("Onos:OnProcessMove")
     
-    Alien.OnProcessMove(self, input)
-    
+    Alien.OnProcessMove(self, input)    
 
-    if self.stooping then    
+    if self.stooping then
         self.stoopIntensity = math.min(1, self.stoopIntensity + Onos.kStoopingAnimationSpeed * input.time)
-    else    
+    else
         self.stoopIntensity = math.max(0, self.stoopIntensity - Onos.kStoopingAnimationSpeed * input.time)
     end
     
     SharedUpdate(self, input.time)
+    
+    if Server then
+        self.hasCharge = GetIsTechUnlocked(self, kTechId.Charge) == true or GetGamerules():GetAllTech()
+    end
     
 end
 
@@ -529,6 +550,44 @@ function Onos:OnUpdate(dt)
     Alien.OnUpdate(self, dt)
     
     SharedUpdate(self, dt)
+    
+end
+
+local function UpdateBoneShieldCrouch(self, deltaTime)
+
+    local direction = self:GetIsBoneShieldActive() and 1 or -1
+
+    self.boneShieldCrouchAmount = Clamp(self.boneShieldCrouchAmount + direction * deltaTime * 3, 0, 1)
+
+end
+
+function Onos:OnProcessIntermediate(input)
+
+    Alien.OnProcessIntermediate(self, input)
+
+    UpdateBoneShieldCrouch(self, input.time)
+    
+end
+
+function Onos:GetIsEnergizeAllowed()
+    return not self:GetIsBoneShieldActive()
+end
+
+function Onos:GetRecuperationRate()
+    
+    if self:GetIsBoneShieldActive() then
+        return 0
+    end
+
+    return Alien.GetRecuperationRate(self)    
+    
+end
+
+function Onos:OnProcessSpectate(deltaTime)
+
+    Alien.OnProcessSpectate(self, deltaTime)
+
+    UpdateBoneShieldCrouch(self, deltaTime)
     
 end
 
@@ -558,6 +617,8 @@ function Onos:PlayerCameraCoordsAdjustment(cameraCoords)
             
         end
         
+        cameraCoords.origin.y = cameraCoords.origin.y - self.boneShieldCrouchAmount
+        
     end
 
     return cameraCoords
@@ -573,30 +634,60 @@ function Onos:OnClampSpeed(input, velocity)
     Player.OnClampSpeed(self, input, velocity)
 end
 
-function Onos:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+local kBlockDoers =
+{
+    "Minigun",
+    "Pistol",
+    "Rifle",
+    "HeavyRifle",
+    "Shotgun",
+    "Axe",
+    "Welder",
+    "Sentry",
+    "Claw"
+}
 
-    // TODO: consider impact point
-    if self:GetIsBoneShieldActive() then
-        
-        //local maxAbsorbDamage = self:GetEnergy() * kBoneShieldDamageAbsorbPerEnergy
-        //local fullDamage = damageTable.damage
-        
-        damageTable.damage = damageTable.damage * (1 - kBoneShieldAbsorbFraction) // + math.max(0, damageTable.damage - maxAbsorbDamage)
-        //Print("modified damage: %s", ToString(damageTable.damage))
-        //self:DeductAbilityEnergy((fullDamage - damageTable.damage) / kBoneShieldDamageAbsorbPerEnergy)
+local function GetHitsBoneShield(self, doer, hitPoint)
+
+    if table.contains(kBlockDoers, doer:GetClassName()) then
+    
+        local coords = self:GetCoords()
+        local zPosition = coords.zAxis:DotProduct(GetNormalizedVector(hitPoint - coords.origin))
+
+        return zPosition > 0.25
+    
+    end
+    
+    return false
+
+end
+
+function Onos:GetSurfaceOverride(damage)
+
+    if self:GetIsBoneShieldActive() and damage == 0 then
+        return "none"
+    end
+
+end
+
+function Onos:ModifyDamageTaken(damageTable, attacker, doer, damageType, hitPoint)
+
+    if hitPoint ~= nil and self:GetIsBoneShieldActive() and GetHitsBoneShield(self, doer, hitPoint) then
+    
+        damageTable.damage = 0
+        self:TriggerEffects("boneshield_blocked", {effecthostcoords = Coords.GetTranslation(hitPoint)} )
         
     end
 
 end
 
-function Onos:GetSurfaceOverride()
+function Onos:ModifyAttackSpeed(attackSpeedTable)
 
-    if self:GetIsBoneShieldActive() then
-        return "metal"
+    local activeWeapon = self:GetActiveWeapon()
+    if activeWeapon and activeWeapon:isa("Gore") and activeWeapon:GetAttackType() == Gore.kAttackType.Smash then
+        attackSpeedTable.attackSpeed = attackSpeedTable.attackSpeed * 1.35
     end
-    
-    return "organic"
-    
+
 end
 
 function Onos:GetIsBoneShieldActive()
@@ -607,10 +698,6 @@ function Onos:GetIsBoneShieldActive()
     end    
     return false
     
-end
-
-function Onos:GetCrouchDesired(crouching)
-    return self:GetIsBoneShieldActive()
 end
 
 Shared.LinkClassToMap("Onos", Onos.kMapName, networkVars)

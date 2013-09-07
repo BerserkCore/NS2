@@ -30,6 +30,7 @@ Script.Load("lua/ConstructMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/SpawnBlockMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 Script.Load("lua/CommAbilities/Alien/EnzymeCloud.lua")
 Script.Load("lua/CommAbilities/Alien/Rupture.lua")
@@ -103,6 +104,7 @@ AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(InfestationMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 //
 // To avoid problems with minicysts on walls connection to each other through solid rock,
@@ -283,6 +285,12 @@ function Cyst:OnInitialized()
         DestroyNearbyCysts(self)
     end
     
+    InitMixin(self, IdleMixin)
+    
+end
+
+function Cyst:GetPlayIdleSound()
+    return self:GetIsBuilt() and self:GetCurrentInfestationRadiusCached() < 1
 end
 
 function Cyst:SetImmuneToRedeploymentTime(forTime)
@@ -293,9 +301,8 @@ function Cyst:GetInfestationGrowthRate()
     return Cyst.kInfestationGrowthDuration
 end
 
-local kCystHealthbarOffset = Vector(0, 0.5, 0)
 function Cyst:GetHealthbarOffset()
-    return kCystHealthbarOffset
+    return 0.5
 end 
 
 /**
@@ -348,6 +355,10 @@ function Cyst:GetCystParentRange()
     return Cyst.kCystMaxParentRange
 end  
 
+function Cyst:GetCanBeUsed(player, useSuccessTable)
+    useSuccessTable.useSuccess = false    
+end
+
 /**
  * Note: On the server side, used GetIsActuallyConnected()!
  */
@@ -379,8 +390,8 @@ function Cyst:GetReceivesStructuralDamage()
     return true
 end
 
-local function ServerUpdate(self, point, deltaTime)
-    
+local function ServerUpdate(self, deltaTime)
+
     if not self:GetIsAlive() then
         return
     end
@@ -447,7 +458,7 @@ function Cyst:OnUpdate(deltaTime)
         
         if Server then
         
-            ServerUpdate(self, point, deltaTime)
+            ServerUpdate(self, deltaTime)
             self.hasChild = #self.children > 0
             
         elseif Client then
@@ -820,6 +831,7 @@ function GetCystPoints(origin)
     local path, parent = FindPathToClosestParent(origin)
 
     local splitPoints = {}
+    local normals = {}
     
     if parent then
 
@@ -843,12 +855,26 @@ function GetCystPoints(origin)
             if i == #path then
             
                 if currentDistance > minDistance then
-                    table.insert(splitPoints, point)
+                
+                    local groundTrace = Shared.TraceRay(point + Vector(0, 0.25, 0), point + Vector(0, -5, 0), CollisionRep.Default, PhysicsMask.CystBuild, EntityFilterAllButIsa("TechPoint"))
+                    if groundTrace.fraction == 1 then                        
+                        return {}, nil                        
+                    end
+                
+                    table.insert(splitPoints, groundTrace.endPoint)
+                    table.insert(normals, groundTrace.normal)
+                    
                 end
             
             elseif currentDistance > maxDistance then
             
-                table.insert(splitPoints, path[i])
+                local groundTrace = Shared.TraceRay(path[i] + Vector(0, 0.25, 0), path[i] + Vector(0, -5, 0), CollisionRep.Default, PhysicsMask.CystBuild, EntityFilterAllButIsa("TechPoint"))
+                if groundTrace.fraction == 1 then                        
+                    return {}, nil                        
+                end
+            
+                table.insert(splitPoints, groundTrace.endPoint)
+                table.insert(normals, groundTrace.normal)
                 currentDistance = (path[i] - point):GetLength()
                 
             end
@@ -859,7 +885,7 @@ function GetCystPoints(origin)
     
     end
     
-    return splitPoints, parent
+    return splitPoints, parent, normals
     
 
 end

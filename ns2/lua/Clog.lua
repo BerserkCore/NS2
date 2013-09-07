@@ -76,16 +76,16 @@ function Clog:OnInitialized()
     
         local mask = bit.bor(kRelevantToTeam1Unit, kRelevantToTeam2Unit, kRelevantToReadyRoom)
         
-        if sighted or self:GetTeamNumber() == 1 then
-            mask = bit.bor(mask, kRelevantToTeam1Commander)              
-        elseif self:GetTeamNumber() == 2 then        
-            mask = bit.bor(mask, kRelevantToTeam2Commander)        
-        end  
+        if self:GetTeamNumber() == 1 then
+            mask = bit.bor(mask, kRelevantToTeam1Commander)
+        elseif self:GetTeamNumber() == 2 then
+            mask = bit.bor(mask, kRelevantToTeam2Commander)
+        end
         
-        self:SetExcludeRelevancyMask( mask )
-    
+        self:SetExcludeRelevancyMask(mask)
+        
     end
-
+    
 end
 
 function Clog:GetSimplePhysicsBodyType()
@@ -204,6 +204,9 @@ function Clog:GetEffectParams(tableParams)
         tableParams[kEffectHostCoords] = Coords.GetTranslation( self:GetOrigin() )
     end
     
+end
+
+function Clog:OnCapsuleTraceHit(entity)
 end
 
 // simple solution for now to avoid griefing

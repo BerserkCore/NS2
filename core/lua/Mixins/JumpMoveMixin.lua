@@ -28,14 +28,14 @@ JumpMoveMixin.networkVars =
     // Set to true when jump key has been released after jump processed
     // Used to require the key to pressed multiple times
     jumpHandled = "private compensated boolean",
-    timeOfLastJump = "private time",
+	timeOfLastJump = "private time",
     jumping = "compensated boolean",
 }
 
 function JumpMoveMixin:__initmixin()
 
     self.jumpHandled = false
-    self.timeOfLastJump = 0
+	self.timeOfLastJump = 0
     self.jumping = false
     self.jumpingClient = false
     
@@ -55,7 +55,6 @@ function JumpMoveMixin:DoJump(input, velocity)
 
 end
 
-// If we jump, make sure to set self.timeOfLastJump to the current time
 local function HandleJump(self, input, velocity)
 
     local success = false
@@ -80,17 +79,22 @@ function JumpMoveMixin:ModifyVelocity(input, velocity, deltaTime)
     // Must press jump multiple times to get multiple jumps 
     if bit.band(input.commands, Move.Jump) ~= 0 and not self.jumpHandled then
     
+        if self.OnJumpRequest then
+            self:OnJumpRequest()
+        end
+    
         if HandleJump(self, input, velocity) then
         
             if self.OnJump then
                 self:OnJump()
             end
             
-            self.onGround = false        
+            self.onGround = false
+            self.timeGroundTouched = Shared.GetTime()      
             self.jumping = true
             
             self.jumpHandled = true
-            self.timeOfLastJump = Shared.GetTime()
+			self.timeOfLastJump = Shared.GetTime()
             
         end
            

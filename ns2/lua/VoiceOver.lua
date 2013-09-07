@@ -132,14 +132,22 @@ local kSoundData =
 
 }
 
-function GetVoiceSoundData(voiceId)
-    return kSoundData[voiceId]
+-- Initialize the female variants of the voice overs and precache.
+for _, soundData in pairs(kSoundData) do
+
+    if soundData.Sound ~= nil and string.len(soundData.Sound) > 0 then
+    
+        PrecacheAsset(soundData.Sound)
+        
+        soundData.SoundFemale = soundData.Sound .. "_female"
+        PrecacheAsset(soundData.SoundFemale)
+        
+    end
+    
 end
 
-for _, soundData in pairs(kSoundData) do
-    if soundData.Sound ~= nil and string.len(soundData.Sound) > 0 then
-        PrecacheAsset(soundData.Sound)
-    end
+function GetVoiceSoundData(voiceId)
+    return kSoundData[voiceId]
 end
 
 local kMarineMenu =

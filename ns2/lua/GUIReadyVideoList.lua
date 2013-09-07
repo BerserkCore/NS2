@@ -4,11 +4,13 @@
 //
 // Created by: Steven An (steve@unknownworlds.com)
 //
+// This interacts with GUITipVideo, making it play videos when the player requests them in the ready room
+//
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/GUITipVideo.lua")
 
-local kSlideInSecs = 1.0
+local kSlideInSecs = 0.5
 local kFadeOutSecs = 0.5
 local kWidgetRightMargin = 20
 local kBackgroundAlpha = 0.75
@@ -22,8 +24,10 @@ gReadyVideoUrlPrefix = "file:///ns2/readyvideos/"
 Script.Load("lua/GUITipVideo_ReadyVideos.lua")
 local kVids = gReadyTipVideos
 
-local kEntryKeyCodes = { InputKey.Num1, InputKey.Num2 , InputKey.Num3 , InputKey.Num4 , InputKey.Num5 }
-local kEntryKeyLabels = { "1", "2", "3", "4", "5" }
+local kEntryKeyCodes = { InputKey.Num5, InputKey.Num6 , InputKey.Num7 , InputKey.Num8 , InputKey.Num9 }
+local kEntryKeyLabels = { "5", "6", "7", "8", "9" }
+local kNextPageKeyCode = InputKey.Num0
+local kNextPageKeyLabel = "0"
 
 //----------------------------------------
 //  Pagination helpers
@@ -53,6 +57,8 @@ end
 //----------------------------------------
 class "GUIReadyVideoList" (GUIScript)
 
+GUIReadyVideoList.main = nil
+
 function GUIReadyVideoList:UpdateEntries()
 
     for i,label in ipairs(kEntryKeyLabels) do
@@ -70,7 +76,7 @@ function GUIReadyVideoList:UpdateEntries()
         self.entries[i]:SetText(s)
 
     end
-    self.pageText:SetText(string.format("Page %d/%d (Press 0 for more)", self.pageNum, GetNumPages()))
+    self.pageText:SetText(string.format("Page %d/%d (Press %s for more)", self.pageNum, GetNumPages(), kNextPageKeyLabel))
 
 end
 
@@ -94,9 +100,12 @@ end
 function GUIReadyVideoList:Initialize()
 
     GUIScript.Initialize(self)
+
+    assert( GUIReadyVideoList.main == nil )
+    GUIReadyVideoList.main = self
     
     // Compute size/pos
-    local wt = 350
+    local wt = 250
     local ht = 220
     local textPad = 10
 
@@ -118,7 +127,7 @@ function GUIReadyVideoList:Initialize()
 
     self.pageText = CreateTextLine(textPad, posY, Color(0,1,0))
     posY = posY + stepY + 10
-    self.pageText:SetText("Page Press 0 for more")
+    self.pageText:SetText("---")
 
     self.background = GUIManager:CreateGraphicItem()
     self.background:SetColor( Color(0.0, 0.0, 0.0, kBackgroundAlpha) )
@@ -141,12 +150,14 @@ function GUIReadyVideoList:Initialize()
     self.widget:AddChild(title)
     self.widget:AddChild(self.pageText)
 
-    self.widget:SetIsVisible(true)
+    self.widget:SetIsVisible(false)
     self.widget:SetLayer(kGUILayerTipVideos)
 
     self.pageNum = 1
 
-    self:Show()
+    if not self:GetMustHide() then
+        self:Show()
+    end
 
 end
 
@@ -189,7 +200,16 @@ end
 function GUIReadyVideoList:GetMustHide()
 
     local hintsEnabled = Client.GetOptionBoolean("showHints", true)
-    return not hintsEnabled or GetGameInfoEntity():GetState() == kGameState.Started
+
+    if not hintsEnabled then
+        return true
+    end
+
+    if Client.GetLocalPlayer():GetTeamNumber() == kNeutralTeamType then
+        return false
+    end
+
+    return GetGameInfoEntity():GetState() == kGameState.Started
 
 end
 
@@ -214,7 +234,7 @@ function GUIReadyVideoList:Update(dt)
             local endX = -widgetWidth - kWidgetRightMargin
 
             if self.sinceShow < kSlideInSecs then
-                local alpha = Easing.outBounce( self.sinceShow, 0.0, 1.0, kSlideInSecs )
+                local alpha = Easing.outBack( self.sinceShow, 0.0, 1.0, kSlideInSecs )
                 pos.x = (1-alpha)*startX + alpha*endX
             else
                 pos.x = endX
@@ -241,7 +261,7 @@ function GUIReadyVideoList:Update(dt)
         
     elseif self.state == "hidden" then
 
-        if not GUITipVideo.singleton:GetIsPlaying() then
+        if not GUITipVideo.singleton:GetIsPlaying() and not self:GetMustHide() then
             self:Show()
         end
 
@@ -261,7 +281,7 @@ function GUIReadyVideoList:SendKeyEvent(key, down)
 
     if self.state == "shown" and down then
 
-        if key == InputKey.Num0 then
+        if key == kNextPageKeyCode then
             self.pageNum = ((self.pageNum-1+1) % GetNumPages())+1
             self:UpdateEntries()
             StartSoundEffect(kPageSound)

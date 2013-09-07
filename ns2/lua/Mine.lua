@@ -18,6 +18,7 @@ Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/OwnerMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/SleeperMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'Mine' (ScriptActor)
 
@@ -44,6 +45,7 @@ AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(StunMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function Mine:OnCreate()
 
@@ -57,6 +59,7 @@ function Mine:OnCreate()
     InitMixin(self, TeamMixin)
     InitMixin(self, DamageMixin)
     InitMixin(self, VortexAbleMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Server then
     
@@ -74,12 +77,16 @@ function Mine:GetReceivesStructuralDamage()
     return true
 end    
 
+local function SineFalloff(distanceFraction)
+    local piFraction = Clamp(distanceFraction, 0, 1) * math.pi / 2
+    return math.cos(piFraction + math.pi) + 1 
+end
+
 local function Detonate(self, armFunc)
 
     local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kMineDetonateRange)
     
-    // RadiusDamage without damage falloff. Ignore damage that goes through the world. Also hurt owner if in range.
-    RadiusDamage(hitEntities, self:GetOrigin(), kMineDetonateRange, kMineDamage, self, false)
+    RadiusDamage(hitEntities, self:GetOrigin(), kMineDetonateRange, kMineDamage, self, false, SineFalloff)
     
     // Start the timed destruction sequence for any mine within range of this exploded mine.
     local nearbyMines = GetEntitiesWithinRange("Mine", self:GetOrigin(), kMineChainDetonateRange)
@@ -289,6 +296,13 @@ function Mine:GetDeathIconIndex()
 end
 
 if Client then
+
+    function Mine:OnInitialized()
+    
+        InitMixin(self, HiveVisionMixin)
+        ScriptActor.OnInitialized(self)
+    
+    end
 
     function Mine:OnGetIsVisible(visibleTable, viewerTeamNumber)
     

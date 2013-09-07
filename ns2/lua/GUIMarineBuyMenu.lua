@@ -27,7 +27,7 @@ GUIMarineBuyMenu.kArrowTexture = "ui/menu/arrow_horiz.dds"
 GUIMarineBuyMenu.kFont = "fonts/AgencyFB_small.fnt"
 GUIMarineBuyMenu.kFont2 = "fonts/AgencyFB_small.fnt"
 
-GUIMarineBuyMenu.kDescriptionFontName = "fonts/MicrogrammaDMedExt_medium.fnt"
+GUIMarineBuyMenu.kDescriptionFontName = "fonts/AgencyFB_small.fnt"
 GUIMarineBuyMenu.kDescriptionFontSize = GUIScale(20)
 
 GUIMarineBuyMenu.kScanLineHeight = GUIScale(256)
@@ -63,8 +63,15 @@ local function GetBigIconPixelCoords(techId, researched)
         gBigIconIndex[kTechId.Welder] = 8
         gBigIconIndex[kTechId.LayMines] = 9
         gBigIconIndex[kTechId.DualMinigunExosuit] = 10
+        gBigIconIndex[kTechId.UpgradeToDualMinigun] = 10
         gBigIconIndex[kTechId.ClawRailgunExosuit] = 11
         gBigIconIndex[kTechId.DualRailgunExosuit] = 11
+        gBigIconIndex[kTechId.UpgradeToDualRailgun] = 11
+        
+        gBigIconIndex[kTechId.ClusterGrenade] = 12
+        gBigIconIndex[kTechId.GasGrenade] = 13
+        gBigIconIndex[kTechId.PulseGrenade] = 14
+        
     
     end
     
@@ -91,9 +98,10 @@ local function GetBigIconPixelCoords(techId, researched)
 end
 
 // Small Item Icons
+local kSmallIconScale = 0.9
 GUIMarineBuyMenu.kSmallIconSize = GUIScale( Vector(100, 50, 0) )
-GUIMarineBuyMenu.kMenuIconSize = GUIScale( Vector(190, 80, 0) )
-GUIMarineBuyMenu.kSelectorSize = GUIScale( Vector(215, 110, 0) )
+GUIMarineBuyMenu.kMenuIconSize = GUIScale( Vector(190, 80, 0) ) * kSmallIconScale
+GUIMarineBuyMenu.kSelectorSize = GUIScale( Vector(215, 110, 0) ) * kSmallIconScale
 GUIMarineBuyMenu.kIconTopOffset = 10
 GUIMarineBuyMenu.kItemIconYOffset = {}
 
@@ -114,12 +122,18 @@ local function GetSmallIconPixelCoordinates(itemTechId)
         gSmallIconIndex[kTechId.GrenadeLauncher] = 8
         gSmallIconIndex[kTechId.Flamethrower] = 6
         gSmallIconIndex[kTechId.Jetpack] = 24
-        gSmallIconIndex[kTechId.Exosuit] = 25
+        gSmallIconIndex[kTechId.Exosuit] = 26
         gSmallIconIndex[kTechId.Welder] = 10
         gSmallIconIndex[kTechId.LayMines] = 21
         gSmallIconIndex[kTechId.DualMinigunExosuit] = 26
+        gSmallIconIndex[kTechId.UpgradeToDualMinigun] = 26
         gSmallIconIndex[kTechId.ClawRailgunExosuit] = 38
         gSmallIconIndex[kTechId.DualRailgunExosuit] = 38
+        gSmallIconIndex[kTechId.UpgradeToDualRailgun] = 38
+        
+        gSmallIconIndex[kTechId.ClusterGrenade] = 42
+        gSmallIconIndex[kTechId.GasGrenade] = 43
+        gSmallIconIndex[kTechId.PulseGrenade] = 44
     
     end
     
@@ -143,7 +157,7 @@ GUIMarineBuyMenu.kPadding = GUIScale(8)
 GUIMarineBuyMenu.kEquippedWidth = GUIScale(128)
 
 GUIMarineBuyMenu.kBackgroundWidth = GUIScale(600)
-GUIMarineBuyMenu.kBackgroundHeight = GUIScale(520)
+GUIMarineBuyMenu.kBackgroundHeight = GUIScale(710)
 // We want the background graphic to look centered around the circle even though there is the part coming off to the right.
 GUIMarineBuyMenu.kBackgroundXOffset = GUIScale(0)
 
@@ -178,14 +192,8 @@ function GUIMarineBuyMenu:SetHostStructure(hostStructure)
 
     self.hostStructure = hostStructure
     self:_InitializeItemButtons()
-    if hostStructure:isa("Armory") then
-        self.selectedItem = kTechId.Shotgun //PlayerUI_GetActiveWeaponTechId()
-    else
-        self.selectedItem = kTechId.Jetpack
-    end
     
 end
-
 
 function GUIMarineBuyMenu:OnClose()
 
@@ -204,7 +212,7 @@ function GUIMarineBuyMenu:Initialize()
     self.mouseOverStates = { }
     self.equipped = { }
     
-    self.selectedItem = kTechId.Shotgun
+    self.selectedItem = kTechId.None
     
     self:_InitializeBackground()
     self:_InitializeContent()
@@ -394,7 +402,7 @@ function GUIMarineBuyMenu:_InitializeItemButtons()
     
     self.itemButtons = { }
     
-    local itemTechIdList = self.hostStructure:GetItemList()
+    local itemTechIdList = self.hostStructure:GetItemList(Client.GetLocalPlayer())
     local selectorPosX = -GUIMarineBuyMenu.kSelectorSize.x + GUIMarineBuyMenu.kPadding
     local fontScaleVector = Vector(0.8, 0.8, 0)
     
@@ -567,8 +575,6 @@ function GUIMarineBuyMenu:_InitializeContent()
     
     self.itemDescription = GetGUIManager():CreateTextItem()
     self.itemDescription:SetFontName(GUIMarineBuyMenu.kDescriptionFontName)
-    //self.itemDescription:SetFontIsBold(true)
-    self.itemDescription:SetFontSize(GUIMarineBuyMenu.kDescriptionFontSize)
     self.itemDescription:SetAnchor(GUIItem.Middle, GUIItem.Top)
     self.itemDescription:SetPosition(Vector(-GUIMarineBuyMenu.kItemDescriptionSize.x / 2, GUIMarineBuyMenu.kItemDescriptionOffsetY, 0))
     self.itemDescription:SetTextAlignmentX(GUIItem.Align_Min)
@@ -605,7 +611,7 @@ function GUIMarineBuyMenu:_UpdateContent(deltaTime)
         self.itemName:SetColor(color)
         self.portrait:SetColor(color)        
         self.itemDescription:SetColor(color)
-        
+
         self.itemName:SetText(MarineBuy_GetDisplayName(techId))
         self.portrait:SetTexturePixelCoordinates(GetBigIconPixelCoords(techId, researched))
         self.itemDescription:SetText(MarineBuy_GetWeaponDescription(techId))
@@ -788,7 +794,7 @@ function GUIMarineBuyMenu:SendKeyEvent(key, down)
         local mouseX, mouseY = Client.GetCursorPosScreen()
         if down then
         
-            inputHandled, closeMenu = HandleItemClicked(self, mouseX, mouseY) or inputHandled
+            inputHandled, closeMenu = HandleItemClicked(self, mouseX, mouseY)
             
             if not inputHandled then
             
@@ -796,7 +802,6 @@ function GUIMarineBuyMenu:SendKeyEvent(key, down)
                 if GetIsMouseOver(self, self.closeButton) then
                 
                     closeMenu = true
-                    inputHandled = true
                     MarineBuy_OnClose()
                     
                 end
@@ -805,6 +810,11 @@ function GUIMarineBuyMenu:SendKeyEvent(key, down)
             
         end
         
+    end
+    
+    // No matter what, this menu consumes MouseButton0.
+    if key == InputKey.MouseButton0 then
+        inputHandled = true
     end
     
     if InputKey.Escape == key and not down then

@@ -16,15 +16,16 @@ local kShowOnTeam = { }
 kShowOnTeam["all"] = { GUIFeedback = true, GUIScoreboard = true, GUIDeathMessages = true, GUIChat = true,
                        GUIVoiceChat = true, GUIMinimapFrame = true, GUIMapAnnotations = true,
                        GUICommunicationStatusIcons = true, GUIUnitStatus = true, GUIDeathScreen = true,
-                       GUITipVideo = true, /* STEVETEMP GUIReadyVideoList = true,*/ GUIVoteMenu = true, GUIStartVoteMenu = true }
+                       GUITipVideo = true, GUIVoteMenu = true, GUIStartVoteMenu = true }
 
-kShowOnTeam[kTeamReadyRoom] = { GUIReadyRoomOrders = true }
+kShowOnTeam[kTeamReadyRoom] = { GUIReadyRoomOrders = true } // , GUIPlayerRanking = true }
 kShowOnTeam[kTeam1Index] = { }
 kShowOnTeam[kTeam2Index] = { GUIAlienSpectatorHUD = true }
 kShowOnTeam[kSpectatorIndex] = { GUIGameEnd = true, GUISpectator = true }
 
 local kBothAlienAndMarine = { GUICrosshair = true, GUINotifications = true, GUIDamageIndicators = true, GUIGameEnd = true, GUIWorldText = true,
-                              GUIPing = true, GUIWaitingForAutoTeamBalance = true }
+                              GUIPing = true, GUIWaitingForAutoTeamBalance = true, GUITechMap = true }
+                              
 for n, e in pairs(kBothAlienAndMarine) do
 
     kShowOnTeam[kTeam1Index][n] = e
@@ -38,18 +39,19 @@ end
 
 // Below are the rules for what scripts should be active when the local player is a certain class.
 local kShowAsClass = { }
-kShowAsClass["Marine"] = { ["Hud/Marine/GUIMarineHUD"] = true, GUIPoisonedFeedback = true, GUIPickups = true, GUIOrders = true,
+kShowAsClass["Marine"] = { ["Hud/Marine/GUIMarineHUD"] = true, GUIPoisonedFeedback = true, GUIPickups = true,
                            GUISensorBlips = true, GUIObjectiveDisplay = true, GUIProgressBar = true, GUIRequestMenu = true,
                            GUIWaypoints = true }
 kShowAsClass["JetpackMarine"] = { GUIJetpackFuel = true }
-kShowAsClass["Exo"] = { GUIExoThruster = true, ["Hud/Marine/GUIMarineHUD"] = true, ["Hud/Marine/GUIExoHUD"] = true, GUIProgressBar = true, GUIRequestMenu = true, GUIWaypoints = true }
+kShowAsClass["Exo"] = { GUIExoThruster = true, ["Hud/Marine/GUIMarineHUD"] = true, ["Hud/Marine/GUIExoHUD"] = true, GUIProgressBar = true, GUIRequestMenu = true, GUIWaypoints = true, GUIExoEject = true }
 kShowAsClass["MarineSpectator"] = { GUIRequestMenu = true }
 kShowAsClass["Alien"] = { GUIObjectiveDisplay = true, GUIProgressBar = true, GUIRequestMenu = true, GUIWaypoints = true, GUIAlienHUD = true,
                           GUIEggDisplay = true, GUIRegenerationFeedback = true, GUIBioMassDisplay = true, GUIUpgradeChamberDisplay = true, GUIAuraDisplay = true }
 kShowAsClass["AlienSpectator"] = { GUIRequestMenu = true }
+kShowAsClass["Fade"] = { GUIFadeVortex = true }
 kShowAsClass["Commander"] = { GUICommanderOrders = true }
-kShowAsClass["MarineCommander"] = { GUISensorBlips = true, GUIDistressBeacon = true }
-kShowAsClass["AlienCommander"] = { GUIEggDisplay = true, GUICommanderPheromoneDisplay = true, GUIBioMassDisplay = true, /* GUIUpgradeChamberDisplay = true */ }
+kShowAsClass["MarineCommander"] = { GUICommanderTutorial = true, GUISensorBlips = true, GUIDistressBeacon = true }
+kShowAsClass["AlienCommander"] = { GUICommanderTutorial = true, GUIEggDisplay = true, GUICommanderPheromoneDisplay = true, GUIBioMassDisplay = true }
 kShowAsClass["ReadyRoomPlayer"] = { }
 kShowAsClass["TeamSpectator"] = { }
 kShowAsClass["Spectator"] = { }

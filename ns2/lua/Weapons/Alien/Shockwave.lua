@@ -2,149 +2,212 @@
 //
 // lua\Weapons\Alien\Shockwave.lua
 //
-// Created by Charlie Cleveland (charlie@unknownworlds.com)
+// Created by Andread Urwalek (andi@unknownworlds.com)
 // Copyright (c) 2011, Unknown Worlds Entertainment, Inc.
 //
 //=============================================================================
 
 Script.Load("lua/Weapons/Projectile.lua")
 Script.Load("lua/DamageMixin.lua")
+Script.Load("lua/TeamMixin.lua")
+Script.Load("lua/ScriptActor.lua")
 
-class 'Shockwave' (Projectile)
+class 'Shockwave' (ScriptActor)
 
 Shockwave.kMapName = "Shockwave"
-
-local kStompCinematic = PrecacheAsset("cinematics/alien/onos/shockwave.cinematic")
-local kStompHitCinematic = PrecacheAsset("cinematics/alien/onos/shockwave_hit.cinematic")
+// Shockwave.kModelName = PrecacheAsset("models/marine/rifle/rifle_grenade.model") // for debugging
+Shockwave.kRadius = 0.06
 
 local networkVars = { }
 
-local kShockwaveLifeTime = 6
-local kUpdateRate = 0.06
+AddMixinNetworkVars(networkVars, TeamMixin)
+
+local kShockwaveLifeTime = 0.7
+local kUpdateRate = 0.1
+local kShockWaveVelocity = 24
+
+local function CreateCoords(xAxis, yAxis, zAxis)
+
+    local coords = Coords()
+    coords.xAxis = xAxis
+    coords.yAxis = yAxis
+    coords.zAxis = zAxis
+    
+    return coords
+
+end
+
+local kRotationCoords =
+{
+    CreateCoords(Vector.xAxis, Vector.yAxis, Vector.zAxis),
+    CreateCoords(-Vector.xAxis, Vector.yAxis, -Vector.zAxis),
+    CreateCoords(-Vector.xAxis, -Vector.yAxis, Vector.zAxis),
+    CreateCoords(Vector.xAxis, -Vector.yAxis, -Vector.zAxis),
+}
+
+local function CreateEffect(self)
+
+    local coords = self:GetCoords()
+    local groundTrace = Shared.TraceRay(coords.origin, coords.origin - Vector.yAxis * 7, CollisionRep.Move, PhysicsMask.Movement, EntityFilterAllButIsa("Tunnel"))
+
+    if groundTrace.fraction ~= 1 then
+    
+        coords.origin = groundTrace.endPoint
+        
+        coords.zAxis.y = 0
+        coords.zAxis:Normalize()
+        
+        coords.xAxis.y = 0
+        coords.xAxis:Normalize()
+        
+        coords.yAxis = coords.zAxis:CrossProduct(coords.xAxis)
+
+        self:TriggerEffects("shockwave_trail", { effecthostcoords = coords })
+        Client.CreateTimeLimitedDecal("cinematics/vfx_materials/decals/shockwave_crack.material", coords * kRotationCoords[math.random(1, #kRotationCoords)], 2.7, 6)
+        
+    end    
+    
+    return true
+
+end
 
 function Shockwave:OnCreate()
 
-    Projectile.OnCreate(self)
+    ScriptActor.OnCreate(self)
     
     InitMixin(self, DamageMixin)
+    InitMixin(self, TeamMixin)
     
-    if Server then
+    if Server then    
     
-        self:AddTimedCallback(Shockwave.TimeUp, kShockwaveLifeTime)
-        self:AddTimedCallback(Shockwave.UpdateStunnables, kUpdateRate)
-        self.previousVelocity = Vector(0,0,0)
-        
+        self:AddTimedCallback(Shockwave.TimeUp, kShockwaveLifeTime)    
+        self:AddTimedCallback(Shockwave.Detonate, 0.05)   
+        self.damagedEntIds = {}
+   
     end
     
-    self:SetGroupFilterMask(PhysicsMask.NoBabblers)
+    if Client then
+        self:AddTimedCallback(CreateEffect, 0.1)
+    end
+    
+end
+
+local function DestroyShockwave(self)
+
+    if Server then
+    
+        local owner = self:GetOwner()
+        if owner then
+        
+            for i = 0, owner:GetNumChildren() - 1 do
+            
+                local child = owner:GetChildAtIndex(i)
+                if HasMixin(child, "Stomp") then
+                    child:UnregisterShockwave(self)
+                end
+                
+            end
+            
+        end
+        
+        DestroyEntity(self)
+        
+    end
     
 end
 
 function Shockwave:TimeUp()
 
-    DestroyEntity(self)
+    DestroyShockwave(self)
     return false
     
 end
 
-function Shockwave:GetSimulatePhysics()
-    return true
-end
+// called in on processmove server side by stompmixin
+function Shockwave:UpdateShockwave(deltaTime)
 
-if Client then
-
-    function Shockwave:OnInitialized()
+    if not self.endPoint then
     
-        Projectile.OnInitialized(self)
+        local bestEndPoint = nil
+        local bestFraction = 0
+    
+        for i = 1, 11 do
         
-        self.stompCinematic = Client.CreateCinematic(RenderScene.Zone_Default)
-        self.stompCinematic:SetRepeatStyle(Cinematic.Repeat_Endless)
-        self.stompCinematic:SetCinematic(kStompCinematic)
-        self.stompCinematic:SetCoords(self:GetCoords())
-    
-    end
+            local offset = Vector.yAxis * (i-1) * 0.3
+            local trace = Shared.TraceRay(self:GetOrigin() + offset, self:GetOrigin() + self:GetCoords().zAxis * kShockWaveVelocity * kShockwaveLifeTime + offset, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAllButIsa("Tunnel"))
 
-end
-
-function Shockwave:OnDestroy()
-
-    if Client then
-    
-        if self.stompCinematic then
-        
-            Client.DestroyCinematic(self.stompCinematic)
-            self.stompCinematic = nil
+            //DebugLine(self:GetOrigin() + offset, trace.endPoint, 2, 1, 1, 1, 1)
             
-            local endCinematic = Client.CreateCinematic(RenderScene.Zone_Default)
-            endCinematic:SetCinematic(kStompHitCinematic)
-            endCinematic:SetCoords(self:GetCoords())
+            if trace.fraction == 1 then
+            
+                bestEndPoint = trace.endPoint
+                break
                 
+            elseif trace.fraction > bestFraction then
+            
+                bestEndPoint = trace.endPoint
+                bestFraction = trace.fraction
+            
+            end
+        
         end
         
-    end
+        self.endPoint = bestEndPoint
+        local origin = self:GetOrigin()
+        origin.y = self.endPoint.y
+        self:SetOrigin(origin)
+        
+        //DebugLine(origin, self.endPoint, 2, 1, 0, 0, 1)
     
-    Projectile.OnDestroy(self)
+    end
+
+     local newPosition = SlerpVector(self:GetOrigin(), self.endPoint, self:GetCoords().zAxis * kShockWaveVelocity * deltaTime)
+     
+     if (newPosition - self.endPoint):GetLength() < 0.1 then
+        DestroyShockwave(self)
+     else
+        self:SetOrigin(newPosition)
+     end
 
 end
 
-function Shockwave:ProcessHit(targetHit, surface, normal)
+function Shockwave:Detonate()
 
-    if not targetHit then
+    local origin = self:GetOrigin()
+
+    local groundTrace = Shared.TraceRay(origin, origin - Vector.yAxis * 3, CollisionRep.Move, PhysicsMask.Movement, EntityFilterAllButIsa("Tunnel"))
+    local enemies = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), groundTrace.endPoint, 2.2)
     
-        if (normal:DotProduct(GetNormalizedVector(self.previousVelocity)) * -1) > 0.5 then
-            DestroyEntity(self)
-        end
+    if groundTrace.fraction < 1 then
+    
+        for _, enemy in ipairs(enemies) do
         
-        if self:GetVelocity():GetLength() < kShockwaveSpeed * 0.2 then
-            DestroyEntity(self)
-        end
+            local enemyId = enemy:GetId()
+            if enemy:GetIsAlive() and not table.contains(self.damagedEntIds, enemyId) and math.abs(enemy:GetOrigin().y - groundTrace.endPoint.y) < 0.8 then
+                
+                self:DoDamage(kStompDamage, enemy, enemy:GetOrigin(), GetNormalizedVector(enemy:GetOrigin() - groundTrace.endPoint), "none")
+                table.insert(self.damagedEntIds, enemyId)
+                
+                if not HasMixin(enemy, "GroundMove") or enemy:GetIsOnGround() then
+                    self:TriggerEffects("shockwave_hit", { effecthostcoords = enemy:GetCoords() })
+                end
+
+                if HasMixin(enemy, "Stun") then
+                    enemy:SetStun(kDisruptMarineTime)
+                end  
+                
+            end
         
+        end
+    
     end
-
-end
-
-function Shockwave:UpdateStunnables()
-
-    for index, ent in ipairs(GetEntitiesWithMixinWithinRange("Stun", self:GetOrigin(), 3)) do
-        ent:SetStun(kDisruptMarineTime)
-    end
-
+    
     return true
 
 end
 
-function Shockwave:GetPhysicsGroup()
-    return PhysicsGroup.SmallStructuresGroup
-end
-
-
-function Shockwave:OnUpdate(deltaTime)
-
-    Projectile.OnUpdate(self, deltaTime)
-    
-    if Server then
-    
-        if not self.startPoint then
-            self.startPoint = self:GetOrigin()
-        end
-    
-        if (self:GetOrigin() - self.startPoint):GetLength() >= kStompRange then
-            DestroyEntity(self)
-        end
-
-        self.previousVelocity = self:GetVelocity()
-    
-    elseif Client then
-    
-        if self.stompCinematic then    
-        
-            self.stompCinematic:SetCoords(self:GetCoords())                
-            //DebugCapsule(self:GetOrigin(), self:GetOrigin(), 0.3, 0, 1 )
-            
-        end
-
-    end
-
+function Shockwave:GetDeathIconIndex()
+    return kDeathMessageIcon.Stomp
 end
 
 Shared.LinkClassToMap("Shockwave", Shockwave.kMapName, networkVars)

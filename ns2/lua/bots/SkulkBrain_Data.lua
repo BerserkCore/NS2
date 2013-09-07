@@ -76,7 +76,6 @@ local function GetAttackUrgency(bot, mem)
         [kMinimapBlipType.Armory] =             numOthers >= 3 and 0.2 or 0.5,
         [kMinimapBlipType.RoboticsFactory] =    numOthers >= 3 and 0.2 or 0.5,
         [kMinimapBlipType.ArmsLab] =            numOthers >= 3 and 0.2 or 0.5,
-        [kMinimapBlipType.PowerPack] =          numOthers >= 3 and 0.2 or 0.5,
         [kMinimapBlipType.MAC] =                numOthers >= 2 and 0.2 or 0.4,
     }
 

@@ -17,9 +17,9 @@ function Fade:InitWeapons()
 end
 
 function Fade:GetTierTwoTechId()
-    return kTechId.Blink
+    return kTechId.Vortex
 end
 
 function Fade:GetTierThreeTechId()
-    return kTechId.Vortex
+    return kTechId.Stab
 end

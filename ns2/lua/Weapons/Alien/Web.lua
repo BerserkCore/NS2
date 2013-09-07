@@ -8,8 +8,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/TechMixin.lua")
 Script.Load("lua/TeamMixin.lua")
-Script.Load("lua/TriggerMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/OwnerMixin.lua")
 Script.Load("lua/Mixins/BaseModelMixin.lua")
@@ -19,18 +19,20 @@ class 'Web' (Entity)
 
 Web.kMapName = "web"
 
+Web.kRootModelName = PrecacheAsset("models/alien/gorge/web_helper.model")
 Web.kModelName = PrecacheAsset("models/alien/gorge/web.model")
 local kAnimationGraph = PrecacheAsset("models/alien/gorge/web.animation_graph")
 
 local networkVars =
 {
-    length = "float"
+    length = "float",
 }
 
+AddMixinNetworkVars(TechMixin, networkVars)
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
-AddMixinNetworkVars(TechMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
+AddMixinNetworkVars(LiveMixin, networkVars)
 
 Shared.PrecacheSurfaceShader("models/alien/gorge/web.surface_shader")
 local kWebMaterial = "models/alien/gorge/web.material"
@@ -44,31 +46,47 @@ function Web:SpaceClearForEntity(location)
     return true
 end
 
+local function CheckWebablesInRange(self)
+
+    local webables = GetEntitiesWithMixinForTeamWithinRange("Webable", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), self.checkRadius)
+    self.enemiesInRange = #webables > 0
+
+    return true
+
+end
+
 function Web:OnCreate()
 
     Entity.OnCreate(self)
     
+    InitMixin(self, TechMixin)
     InitMixin(self, EffectsMixin)
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
-    InitMixin(self, TechMixin)
     InitMixin(self, TeamMixin)
+    InitMixin(self, LiveMixin)
     
     if Server then
     
         InitMixin(self, InvalidOriginMixin)
         InitMixin(self, EntityChangeMixin)
-        InitMixin(self, TriggerMixin, {kPhysicsGroup = PhysicsGroup.TriggerGroup, kFilterMask = PhysicsMask.AllButTriggers} )
         InitMixin(self, OwnerMixin)
         
         self.nearbyWebAbleIds = {}
         self:SetTechId(kTechId.Web)
         
+        self:AddTimedCallback(CheckWebablesInRange, 0.3)
+        
+        self.triggerSpawnEffect = false
+        
     end
     
-    self:SetUpdates(false)
+    self:SetUpdates(true)
     self:SetPropagate(Entity.Propagate_Mask)
     self:SetRelevancyDistance(kMaxRelevancyDistance)
+    
+    self:SetPhysicsType(PhysicsType.Kinematic)
+    self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
     
 end
 
@@ -79,47 +97,12 @@ function Web:OnInitialized()
     
 end
 
-function Web:GetPhysicsModelAllowedOverride()
-    return false
-end
-
 if Server then
-    
-    local function CreateTrigger(self)
-    
-        if self.triggerBody then
-        
-            Shared.DestroyCollisionObject(self.triggerBody)
-            self.triggerBody = nil
-            
-        end
-        
-        local coords = Coords.GetTranslation((self:GetOrigin() - self.endPoint) * .5 + self.endPoint)
-        local radius = (self:GetOrigin() - self.endPoint):GetLength() * .5
-
-        self.triggerBody = Shared.CreatePhysicsSphereBody(false, radius, 0, coords)
-        self.triggerBody:SetTriggerEnabled(true)
-        self.triggerBody:SetCollisionEnabled(true)
-        
-        if self:GetMixinConstants().kPhysicsGroup then
-            //Print("set trigger physics group to %s", EnumToString(PhysicsGroup, self:GetMixinConstants().kPhysicsGroup))
-            self.triggerBody:SetGroup(self:GetMixinConstants().kPhysicsGroup)
-        end
-        
-        if self:GetMixinConstants().kFilterMask then
-            //Print("set trigger filter mask to %s", EnumToString(PhysicsMask, self:GetMixinConstants().kFilterMask))
-            self.triggerBody:SetGroupFilterMask(self:GetMixinConstants().kFilterMask)
-        end
-        
-        self.triggerBody:SetEntity(self)
-        
-    end
 
     function Web:SetEndPoint(endPoint)
     
         self.endPoint = Vector(endPoint)
         self.length = Clamp((self:GetOrigin() - self.endPoint):GetLength(), kMinWebLength, kMaxWebLength)
-        CreateTrigger(self)
         
         local coords = Coords.GetIdentity()
         coords.origin = self:GetOrigin()
@@ -129,39 +112,53 @@ if Server then
         
         self:SetCoords(coords)
         
-    end
-
-    // OnUpdate is only called when entities are in interest range    
-    function Web:OnUpdate(deltaTime)
-
-        local trace = Shared.TraceRay(self:GetOrigin(), self.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterNonWebables())
-        if trace.entity then
-            trace.entity:SetWebbed(kWebbedDuration)
-            DestroyEntity(self)
-        end
-    
-    end
-    
-    function Web:OnTriggerEntered(enterEntity)
-    
-        if HasMixin(enterEntity, "Webable") then
-            table.insertunique(self.nearbyWebAbleIds, enterEntity:GetId())
-            self:SetUpdates(true)
-        end
+        self.checkRadius = (self:GetOrigin() - self.endPoint):GetLength() * .5 + 1
         
     end
+
+end
+
+function Web:GetIsFlameAble()
+    return true
+end    
+
+function Web:ModifyDamageTaken(damageTable, attacker, doer, damageType, hitPoint)
+
+    // webs can't be destroyed with bullet weapons
+    if doer ~= nil and not (doer:isa("Grenade") or doer:isa("ClusterGrenade") or damageType == kDamageType.Flame) then
+        damageTable.damage = 0
+    end
+
+end
+
+if Server then
+
+    function Web:OnKill()
+
+        self:TriggerEffects("death")
+        DestroyEntity(self)
     
-    function Web:OnTriggerExited(exitEntity)
+    end
+
+end
+
+local function TriggerWebDestroyEffects(self)
+
+    local startPoint = self:GetOrigin()
+    local zAxis = -self:GetCoords().zAxis
+    local coords = self:GetCoords()
     
-        if HasMixin(enterEntity, "Webable") then
+    for i = 1, 20 do
+
+        local effectPoint = startPoint + zAxis * 0.36 * i
         
-            table.removevalue(self.nearbyWebAbleIds, exitEntity:GetId())
-            
-            if #self.nearbyWebAbleIds == 0 then
-                self:SetUpdates(false)
-            end
-            
-        end    
+        if (effectPoint - startPoint):GetLength() >= self.length then
+            break
+        end
+        
+        coords.origin = effectPoint
+
+        self:TriggerEffects("web_destroy", { effecthostcoords = coords })    
     
     end
 
@@ -176,6 +173,10 @@ function Web:OnDestroy()
         DynamicMesh_Destroy(self.webRenderModel)
         self.webRenderModel = nil
         
+    end
+    
+    if Server then
+        TriggerWebDestroyEffects(self)
     end
 
 end
@@ -206,11 +207,112 @@ if Client then
 
     end
 
-end    
+end   
+
+local function GetDistance(self, fromPlayer)
+
+    local tranformCoords = self:GetCoords():GetInverse()
+    local relativePoint = tranformCoords:TransformPoint(fromPlayer:GetOrigin())    
+
+    return math.abs(relativePoint.x), relativePoint.y
+
+end
+
+local function CheckForIntersection(self, fromPlayer)
+
+    if not self.endPoint then
+        self.endPoint = self:GetOrigin() + self.length * self:GetCoords().zAxis
+    end
+    
+    if fromPlayer then
+    
+        // need to manually check for intersection here since the local players physics are invisible and normal traces would fail
+        local playerOrigin = fromPlayer:GetOrigin()
+        local extents = fromPlayer:GetExtents()
+        local fromWebVec = playerOrigin - self:GetOrigin()
+        local webDirection = -self:GetCoords().zAxis
+        local dotProduct = webDirection:DotProduct(fromWebVec)
+
+        local minDistance = - extents.z
+        local maxDistance = self.length + extents.z
+        
+        if dotProduct >= minDistance and dotProduct < maxDistance then
+        
+            local horizontalDistance, verticalDistance = GetDistance(self, fromPlayer)
+            
+            local horizontalOk = horizontalDistance <= extents.z
+            local verticalOk = verticalDistance >= 0 and verticalDistance <= extents.y * 2         
+
+            //DebugPrint("horizontalDistance %s  verticalDistance %s", ToString(horizontalDistance), ToString(verticalDistance))   
+
+            if horizontalOk and verticalOk then
+              
+                fromPlayer:SetWebbed(kWebbedDuration)
+                if Server then
+                    DestroyEntity(self)
+                end
+          
+            end
+        
+        end
+    
+    elseif Server then
+    
+        local trace = Shared.TraceRay(self:GetOrigin(), self.endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterNonWebables())
+        if trace.entity and not trace.entity:isa("Player") then
+            trace.entity:SetWebbed(kWebbedDuration)
+            DestroyEntity(self)
+        end    
+    
+    end
+
+end 
 
 // TODO: somehow the pose params dont work here when using clientmodelmixin. should figure out why this is broken and switch to clientmodelmixin
 function Web:OnUpdatePoseParameters()
     self:SetPoseParam("scale", self.length)    
+end
+
+// called by the players so they can predict the web effect
+function Web:UpdateWebOnProcessMove(fromPlayer)
+    CheckForIntersection(self, fromPlayer)
+end
+
+if Server then
+
+    local function TriggerWebSpawnEffects(self)
+
+        local startPoint = self:GetOrigin()
+        local zAxis = -self:GetCoords().zAxis
+        
+        for i = 1, 20 do
+
+            local effectPoint = startPoint + zAxis * 0.36 * i
+            
+            if (effectPoint - startPoint):GetLength() >= self.length then
+                break
+            end
+
+            self:TriggerEffects("web_create", { effecthostcoords = Coords.GetTranslation(effectPoint) })    
+        
+        end
+    
+    end
+
+    // OnUpdate is only called when entities are in interest range, players are ignored here since they need to predict the effect  
+    function Web:OnUpdate(deltaTime)
+
+        if self.enemiesInRange then        
+            CheckForIntersection(self)            
+        end
+        
+        if not self.triggerSpawnEffect then
+            TriggerWebSpawnEffects(self)
+            self.triggerSpawnEffect = true
+        end
+
+    end
+
 end
 
 Shared.LinkClassToMap("Web", Web.kMapName, networkVars)

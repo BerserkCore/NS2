@@ -91,6 +91,7 @@ end
 function GhostModel:Update()
 
     self.attachArrow:SetIsVisible(false)
+    self:SetIsVisible(true)
     
     if Client.GetLocalPlayer():isa("Commander") then
         self.renderMaterial:SetParameter("edge", 0)
@@ -117,8 +118,6 @@ function GhostModel:Update()
         
     end
 
-    self:SetIsVisible(true)
-
     if self.loadedModelIndex ~= modelIndex then
     
         self.renderModel:SetModel(modelIndex)
@@ -133,14 +132,12 @@ function GhostModel:Update()
     
     end
     
-    if modelCoords then
+    if not modelCoords or not modelCoords:GetIsFinite() then
     
-        if not modelCoords:GetIsFinite() then
+        self:SetIsVisible(false)
+        return nil
         
-            self:SetIsVisible(false)
-            return self.renderModel:GetCoords()
-            
-        end
+    else    
         
         self.renderModel:SetCoords(modelCoords)
         

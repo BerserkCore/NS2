@@ -54,25 +54,50 @@ local function SetSpurIcon(icon)
 
 end
 
+local function UpdateBioMassText(icon, techId, text)
+
+    if text then
+        
+        local player = Client.GetLocalPlayer()
+        local teamNum = player and player:GetTeamNumber() or 0
+        local teamInfo = GetTeamInfoEntity(teamNum)
+        local bioMass = (teamInfo and teamInfo.GetBioMassLevel) and teamInfo:GetBioMassLevel() or 0
+        
+        text:SetText(ToString(bioMass))        
+        
+    end
+
+end
+
 kAlienTechMap =
 {
 
-                    { kTechId.Harvester, 5, 1 },                           { kTechId.Hive, 7, 1 },{ kTechId.ResearchBioMassOne, 9, 1 },{ kTechId.ResearchBioMassTwo, 10, 1 },
+                    { kTechId.Harvester, 4, 0 },                           { kTechId.Hive, 7, 0 },{ kTechId.ResearchBioMassOne, 9, 0 },{ kTechId.ResearchBioMassTwo, 10, 0, UpdateBioMassText, ""},
   
                    { kTechId.CragHive, 4, 3 },                               { kTechId.ShadeHive, 7, 3 },                            { kTechId.ShiftHive, 10, 3 },
               { kTechId.Shell, 4, 4, SetShellIcon },                     { kTechId.Veil, 7, 4, SetVeilIcon },                    { kTechId.Spur, 10, 4, SetSpurIcon },
   { kTechId.Carapace, 3.5, 5 },{ kTechId.Regeneration, 4.5, 5 }, { kTechId.Phantom, 6.5, 5 },{ kTechId.Aura, 7.5, 5 },{ kTechId.Celerity, 9.5, 5 },{ kTechId.Adrenaline, 10.5, 5 },
   
+  {kTechId.UpgradeGorge, 5, 1},{kTechId.GorgeTunnelTech, 8, 1},
+  {kTechId.BabblerEgg, 4, 2},{kTechId.BileBomb, 5, 2, nil, "3"},{kTechId.Web, 6, 2, nil, "7"},
+  
+  {kTechId.Drifter, 8, 2},
 
-                                   {kTechId.Whip, 4, 6},                                                                          {kTechId.Crag, 10, 6},
-  {kTechId.BileBomb, 2.5, 7},{kTechId.Stab, 3.5, 7},{kTechId.Xenocide, 4.5, 7},{kTechId.Stomp, 5.5, 7},            {kTechId.Umbra, 9, 7},{kTechId.BoneShield, 10, 7},{kTechId.WebTech, 11, 7},
+  {kTechId.Whip, 4, 6}, 
+  {kTechId.UpgradeSkulk, 4, 7},                                                            
+  {kTechId.Leap, 3.5, 8, nil, "4"}, {kTechId.Xenocide, 4.5, 8, nil, "7"},         
   
+  {kTechId.Crag, 10, 6}, 
+  {kTechId.UpgradeOnos, 10, 7},   
+  {kTechId.Charge, 9, 8, nil, "3"},{kTechId.BoneShield, 10, 8, nil, "5"}, {kTechId.Stomp, 11, 8, nil, "9"},
   
-                          {kTechId.Shift, 4, 8.5},                                                                   {kTechId.Shade, 10, 8.5},
-   {kTechId.GorgeTunnelTech, 3, 9.5}, {kTechId.Charge, 4, 9.5}, {kTechId.Leap, 5, 9.5},  {kTechId.ShadowStep, 9, 9.5},{kTechId.Spores, 10, 9.5},{kTechId.Vortex, 11, 9.5}, 
+  {kTechId.Shift, 4, 9},    
+  {kTechId.UpgradeLerk, 4, 10},                                 
+  {kTechId.Umbra, 3.5, 11, nil, "4"},{kTechId.Spores, 4.5, 11, nil, "6"},
    
-   
-  
+  {kTechId.Shade, 10, 9},
+  {kTechId.UpgradeFade, 10, 10},
+  {kTechId.ShadowStep, 9, 11, nil, "2"},{kTechId.Vortex, 10, 11, nil, "5"},{kTechId.Stab, 11, 11, nil, "8"},
 }
 
 kAlienLines = 
@@ -80,34 +105,41 @@ kAlienLines =
     GetLinePositionForTechMap(kAlienTechMap, kTechId.Harvester, kTechId.Hive),
     GetLinePositionForTechMap(kAlienTechMap, kTechId.Hive, kTechId.ResearchBioMassOne),
     GetLinePositionForTechMap(kAlienTechMap, kTechId.ResearchBioMassOne, kTechId.ResearchBioMassTwo),
-    { 7, 1, 7, 2.5 },
+    { 7, 0, 7, 2.5 },
     { 4, 2.5, 10, 2.5},
     { 4, 2.5, 4, 3},{ 7, 2.5, 7, 3},{ 10, 2.5, 10, 3},
     GetLinePositionForTechMap(kAlienTechMap, kTechId.CragHive, kTechId.Shell),
     GetLinePositionForTechMap(kAlienTechMap, kTechId.ShadeHive, kTechId.Veil),
     GetLinePositionForTechMap(kAlienTechMap, kTechId.ShiftHive, kTechId.Spur),
     
+    { 7, 2, 8, 2 },
+ 
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeGorge, kTechId.GorgeTunnelTech),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeGorge, kTechId.BabblerEgg),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeGorge, kTechId.BileBomb),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeGorge, kTechId.Web),
+    
     GetLinePositionForTechMap(kAlienTechMap, kTechId.Shell, kTechId.Carapace),GetLinePositionForTechMap(kAlienTechMap, kTechId.Shell, kTechId.Regeneration),
     GetLinePositionForTechMap(kAlienTechMap, kTechId.Veil, kTechId.Phantom),GetLinePositionForTechMap(kAlienTechMap, kTechId.Veil, kTechId.Aura),
     GetLinePositionForTechMap(kAlienTechMap, kTechId.Spur, kTechId.Celerity),GetLinePositionForTechMap(kAlienTechMap, kTechId.Spur, kTechId.Adrenaline),
     
-    
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Whip, kTechId.BileBomb),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Whip, kTechId.Stab),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Whip, kTechId.Xenocide),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Whip, kTechId.Stomp),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.Whip, kTechId.UpgradeSkulk),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeSkulk, kTechId.Leap),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeSkulk, kTechId.Xenocide),
 
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Crag, kTechId.Umbra),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Crag, kTechId.BoneShield),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Crag, kTechId.WebTech),
-    
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shift, kTechId.GorgeTunnelTech),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shift, kTechId.Charge),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shift, kTechId.Leap),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.Crag, kTechId.UpgradeOnos),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeOnos, kTechId.Charge),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeOnos, kTechId.BoneShield),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeOnos, kTechId.Stomp),
 
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shade, kTechId.ShadowStep),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shade, kTechId.Spores),
-    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shade, kTechId.Vortex),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shift, kTechId.UpgradeLerk),  
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeLerk, kTechId.Umbra),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeLerk, kTechId.Spores),
+
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.Shade, kTechId.UpgradeFade),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeFade, kTechId.ShadowStep),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeFade, kTechId.Vortex),
+    GetLinePositionForTechMap(kAlienTechMap, kTechId.UpgradeFade, kTechId.Stab),
 
 }
 

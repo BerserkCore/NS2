@@ -21,7 +21,6 @@ Jetpack.kMapName = "jetpack"
 Jetpack.kModelName = PrecacheAsset("models/marine/jetpack/jetpack.model")
 
 Jetpack.kAttachPoint = "JetPack"
-Jetpack.kPickupSound = PrecacheAsset("sound/NS2.fev/marine/common/pickup_jetpack")
 Jetpack.kEmptySound = PrecacheAsset("sound/NS2.fev/marine/common/jetpack_empty")
 
 Jetpack.kThinkInterval = .5
@@ -102,8 +101,9 @@ if Server then
     
         if self:GetIsValidRecipient(player) then
         
-            DestroyEntity(self)
             player:GiveJetpack()
+            self:TriggerEffects("pickup")
+            DestroyEntity(self)
             
         end
         

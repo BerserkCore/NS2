@@ -15,6 +15,7 @@ local kLineTexture = "ui/order_line.dds"
 local kLineTextureCoord = { 0, 0, 32, 16}
 local kLineWidth = GUIScale(10)
 local kLineColor = Color(kAlienTeamColorFloat.r, kAlienTeamColorFloat.g, kAlienTeamColorFloat.b, 0.5)
+local kLineDisconnectedColor = Color(1, 0.35, 0, 0.5)
 
 local kResourceIconTextureCoordinates = { 192, 363, 240, 411 }
 local kResIconSize = GUIScale(Vector(40, 40, 0))
@@ -125,13 +126,12 @@ local function CreateLine()
 
     local line = GUI.CreateItem()
     line:SetTexture(kLineTexture)
-    line:SetColor(kLineColor)
     
     return line
 
 end
 
-local function UpdateLine(startPoint, endPoint, guiItem, teamType)
+local function UpdateLine(startPoint, endPoint, guiItem, connected)
 
     local direction = GetNormalizedVector(startPoint - endPoint)
     local rotation = math.atan2(direction.x, direction.y)
@@ -157,13 +157,23 @@ local function UpdateLine(startPoint, endPoint, guiItem, teamType)
     local x2Coord = x1Coord + length
     
     guiItem:SetTexturePixelCoordinates(x1Coord, kLineTextureCoord[2], x2Coord, kLineTextureCoord[4])
-
+    
+    if connected then
+        guiItem:SetColor(kLineColor)
+    else
+        guiItem:SetColor(kLineDisconnectedColor)
+    end
+    
 end
 
-local function UpdateConnectionLines(self, cystPoints)
+local function UpdateConnectionLines(self, cystPoints, connected)
 
     local numCurrentLines = #self.lines
     local numNewLines = math.max(0, #cystPoints - 1)
+    
+    if numNewLines <= 1 then
+        numNewLines = 0
+    end    
     
     if numCurrentLines < numNewLines then
     
@@ -188,7 +198,7 @@ local function UpdateConnectionLines(self, cystPoints)
         local startPoint = GetClampedScreenPosition(cystPoints[i], -300)
         local endPoint = GetClampedScreenPosition(cystPoints[i + 1], -300)
     
-        UpdateLine(startPoint, endPoint, self.lines[i])
+        UpdateLine(startPoint, endPoint, self.lines[i], connected)
         
     end
 
@@ -247,10 +257,12 @@ function CystGhostModel:Update()
     local modelCoords = GhostModel.Update(self)
     
     local cystPoints = {}
+    local parent = nil
+    local normals = {}
     
     if modelCoords then        
         
-        cystPoints = GetCystPoints(modelCoords.origin)
+        cystPoints, parent, normals = GetCystPoints(modelCoords.origin)
         
         // use the last cyst point for the main ghost model
         if #cystPoints > 1 then
@@ -273,7 +285,9 @@ function CystGhostModel:Update()
         
     end
     
-    UpdateConnectionLines(self, cystPoints)
+    local connected = parent ~= nil and (not parent:isa("Cyst") or parent:GetIsConnected())
+    
+    UpdateConnectionLines(self, cystPoints, connected)
     UpdateCystModels(self, cystPoints)
     
 end

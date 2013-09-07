@@ -32,12 +32,14 @@ Player.screenEffects.cloaked = Client.CreateScreenEffect("shaders/Cloaked.screen
 Player.screenEffects.cloaked:SetActive(false)
 Player.screenEffects.disorient = Client.CreateScreenEffect("shaders/Disorient.screenfx")
 Player.screenEffects.disorient:SetActive(false)
-Player.screenEffects.celerityFX = Client.CreateScreenEffect("shaders/Celerity.screenfx")
-Player.screenEffects.celerityFX:SetActive(false)
+//Player.screenEffects.celerityFX = Client.CreateScreenEffect("shaders/Celerity.screenfx")
+//Player.screenEffects.celerityFX:SetActive(false)
 Player.screenEffects.shadowStepFX = Client.CreateScreenEffect("shaders/ShadowStep.screenfx")
 Player.screenEffects.shadowStepFX:SetActive(false)
 Player.screenEffects.spectatorTint = Client.CreateScreenEffect("shaders/SpectatorTint.screenfx")
 Player.screenEffects.spectatorTint:SetActive(false)
+Player.screenEffects.catalystVision = Client.CreateScreenEffect("shaders/CatalystVision.screenfx")
+Player.screenEffects.catalystVision:SetActive(false)
 
 
 local kDefaultPingSound = PrecacheAsset("sound/NS2.fev/common/ping")
@@ -391,12 +393,12 @@ function PlayerUI_GetBuyMenuDisplaying()
 end
 
 local function LocalIsFriendlyCommander(player, unit)
-    return player:isa("Commander") and unit:isa("Player")
+    return player:isa("Commander") and ( unit:isa("Player") or (HasMixin(unit, "Selectable") and unit:GetIsSelected(player:GetTeamNumber())) )
 end
 
 local kUnitStatusDisplayRange = 13
 local kUnitStatusCommanderDisplayRange = 50
-local kDefaultHealthOffset = Vector(0, 1.2, 0)
+local kDefaultHealthOffset = 1.2
 
 function PlayerUI_GetUnitStatusInfo()
 
@@ -414,12 +416,14 @@ function PlayerUI_GetUnitStatusInfo()
         if player:isa("Commander") then
             range = kUnitStatusCommanderDisplayRange
         end
+        
+        local healthOffsetDirection = player:isa("Commander") and Vector.xAxis or Vector.yAxis
     
         for index, unit in ipairs(GetEntitiesWithMixinWithinRange("UnitStatus", eyePos, range)) do
         
             // checks here if the model was rendered previous frame as well
             local status = unit:GetUnitStatus(player)
-            if unit:GetShowUnitStatusFor(player) and (unit:isa("Player") or status ~= kUnitStatus.None or unit == crossHairTarget) then       
+            if unit:GetShowUnitStatusFor(player) then       
 
                 // Get direction to blip. If off-screen, don't render. Bad values are generated if 
                 // Client.WorldToScreen is called on a point behind the camera.
@@ -444,11 +448,14 @@ function PlayerUI_GetUnitStatusInfo()
                     local hint = unit:GetUnitHint(player)
                     local distance = (origin - eyePos):GetLength()
                     
-                    local healthBarOrigin = origin + kDefaultHealthOffset
+                    local healthBarOffset = kDefaultHealthOffset
+                    
                     local getHealthbarOffset = unit.GetHealthbarOffset
                     if getHealthbarOffset then
-                        healthBarOrigin = origin + getHealthbarOffset(unit)
+                        healthBarOffset = getHealthbarOffset(unit)
                     end
+                    
+                    local healthBarOrigin = origin + healthOffsetDirection * healthBarOffset
                     
                     local worldOrigin = Vector(origin)
                     origin = Client.WorldToScreen(origin)
@@ -515,7 +522,6 @@ function PlayerUI_GetUnitStatusInfo()
                         IsCrossHairTarget = (unit == crossHairTarget and visibleToPlayer) or LocalIsFriendlyCommander(player, unit),
                         TeamType = kNeutralTeamType,
                         ForceName = unit:isa("Player") and not GetAreEnemies(player, unit),
-                        OnScreen = onScreen,
                         BadgeTexture = badge,
                         HasWelder = hasWelder
                     
@@ -823,7 +829,7 @@ function PlayerUI_GetCrosshairY()
             local index 
             local mapname = weapon:GetMapName()
             
-            if mapname == Rifle.kMapName then 
+            if mapname == Rifle.kMapName or mapname == HeavyRifle.kMapName then 
                 index = 0
             elseif mapname == Pistol.kMapName then
                 index = 1
@@ -834,7 +840,7 @@ function PlayerUI_GetCrosshairY()
             elseif mapname == Flamethrower.kMapName or mapname == GrenadeLauncher.kMapName then
                 index = 5
             // All alien crosshairs are the same for now
-            elseif mapname == LerkBite.kMapName or mapname == Spores.kMapName or mapname == LerkUmbra.kMapName or mapname == Parasite.kMapName or mapname == Vortex.kMapName then
+            elseif mapname == LerkBite.kMapName or mapname == Spores.kMapName or mapname == LerkUmbra.kMapName or mapname == Parasite.kMapName or mapname == BileBomb.kMapName then
                 index = 6
             elseif mapname == SpitSpray.kMapName or mapname == BabblerAbility.kMapName then
                 index = 7
@@ -1040,9 +1046,6 @@ function PlayerUI_GetTooltipDataFromTechId(techId, hotkeyIndex)
 
         tooltipData.text = GetDisplayNameForTechId(techId, "TIP")
         tooltipData.info = GetTooltipInfoText(techId)
-        if target and target.GetTooltipText then
-            tooltipData.info = target:GetTooltipText()
-        end
         tooltipData.costNumber = LookupTechData(techId, kTechDataCostKey, 0)                
         tooltipData.requires = techTree:GetRequiresText(techId)
         tooltipData.enabled = techTree:GetEnablesText(techId)          
@@ -1445,8 +1448,8 @@ end
 function PlayerUI_GetPlayerIsParasited()
 
     local player = Client.GetLocalPlayer()
-    if player then
-        return player:GetGameEffectMask(kGameEffect.Parasite)
+    if player and HasMixin(player, "ParasiteAble") then
+        return player:GetIsParasited()
     end
     
     return false
@@ -1873,14 +1876,19 @@ function Player:UpdateScreenEffects(deltaTime)
     else
         Player.screenEffects.lowHealth:SetActive(false)
     end
-    
+
     if Player.screenEffects.phase then
+    
+        local phaseTime = self.timeOfLastPhaseClient or self.timeOfLastPhase
+        if self.timeLastBeacon and (not phaseTime or phaseTime < self.timeLastBeacon) then
+            phaseTime = self.timeLastBeacon
+        end
     
         self.clientTimeOfLastPhase = self.clientTimeOfLastPhase or 0
         self.clientStartPhaseEffectTime = self.clientStartPhaseEffectTime or 0
-        if self.timeOfLastPhase and self.clientTimeOfLastPhase ~= self.timeOfLastPhase and (Shared.GetTime() - self.timeOfLastPhase <= kPhaseEffectActiveTime) then
+        if phaseTime and self.clientTimeOfLastPhase ~= phaseTime and (Shared.GetTime() - phaseTime <= kPhaseEffectActiveTime) then
         
-            self.clientTimeOfLastPhase = self.timeOfLastPhase
+            self.clientTimeOfLastPhase = phaseTime
             self.clientStartPhaseEffectTime = Shared.GetTime()
             self.phaseTweener = CreatePhaseTweener()
             
@@ -1897,16 +1905,63 @@ function Player:UpdateScreenEffects(deltaTime)
         end
         
     end
-    
+
     // If we're cloaked, change screen effect
     local cloakScreenEffectState = HasMixin(self, "Cloakable") and self:GetIsCloaked()    
     self:SetCloakShaderState(cloakScreenEffectState)    
     self:UpdateCloakSoundLoop(cloakScreenEffectState)
     
-    // Play disorient screen effect to show we're near a shade
+    // Play disorient screen effect to show we're near a shades ink cloud
     self:UpdateDisorientFX()
     
     self:UpdateShadowStepFX()
+    
+    if Player.screenEffects.catalystVision then
+
+        local effectActive = self.catpackboost == true and self.timeCatpackboost + kCatPackDuration > Shared.GetTime()
+        Player.screenEffects.catalystVision:SetActive(effectActive)
+        
+        if effectActive then
+        
+            local amount = Clamp(1.0 - (( Shared.GetTime() - self.timeCatpackboost) / kCatPackDuration), 0, 1)
+        
+            Player.screenEffects.catalystVision:SetParameter("amount", amount)
+            Player.screenEffects.catalystVision:SetParameter("time", Shared.GetTime())
+        end
+        
+    end
+    
+    if Player.screenEffects.fadeBlink and self:isa("Fade") and not self:GetIsThirdPerson() then
+    
+        if not self.blinkAmount then
+            self.blinkAmount = 0
+        end
+        
+        if self:GetIsBlinking() then
+            self.blinkAmount = math.min(1, self.blinkAmount + 0.5 * deltaTime)
+        else
+            self.blinkAmount = math.max(0, self.blinkAmount - 0.5 * deltaTime)
+        end
+
+        if self.clientBlinking ~= self:GetIsBlinking() then
+        
+            self.clientBlinking = self:GetIsBlinking()
+            if self.clientBlinking then
+                self.blinkStartTime = Shared.GetTime()
+            end
+            
+        end
+        
+        if not self.blinkStartTime then
+            self.blinkStartTime = 0
+        end
+
+        Player.screenEffects.fadeBlink:SetActive(self.blinkAmount > 0)
+        Player.screenEffects.fadeBlink:SetParameter("amount", self.blinkAmount)
+        Player.screenEffects.fadeBlink:SetParameter("time", Shared.GetTime())
+        Player.screenEffects.fadeBlink:SetParameter("startTime", self.blinkStartTime)
+    
+    end
     
 end
 
@@ -1988,33 +2043,9 @@ local function UpdateDangerEffects(self)
     
 end
 
-local function UpdateIdleSound(self, isLocal)
-
-    // Set idle sound parameter if playing
-    if self.idleSoundInstance then
-    
-        if isLocal then
-        
-            // 1 means inactive, 0 means active   
-            local value = ConditionalValue(Shared.GetTime() < self.timeOfIdleActive, 1, 0)
-            self.idleSoundInstance:SetParameter("idle", value, 5)
-            
-            // Set speed parameter also
-            local speedScalar = Clamp(self:GetSpeedScalar(), 0, 1)
-            self.idleSoundInstance:SetParameter("speed", speedScalar, 5)
-            
-        elseif self.idleSoundInstance:GetIsPlaying() then
-            self.idleSoundInstance:Stop()
-        end
-        
-    end
-    
-end
-
 // Only called when not running prediction
 function Player:UpdateClientEffects(deltaTime, isLocal)
 
-    UpdateIdleSound(self, isLocal)
     if isLocal then
     
         self:UpdateCommanderPingSound()
@@ -2190,21 +2221,6 @@ function Player:OnInitLocalClient()
     // Set commander geometry visible
     Client.SetGroupIsVisible(kCommanderInvisibleGroupName, true)
     
-    local loopingIdleSound = self:GetIdleSoundName()
-    if loopingIdleSound then
-    
-        if not self.idleSoundInstance then
-        
-            local soundIndex = Shared.GetSoundIndex(loopingIdleSound)
-            self.idleSoundInstance = Client.CreateSoundEffect(soundIndex)
-            self.idleSoundInstance:SetParent(self:GetId())
-            
-        end
-        self.idleSoundInstance:Start()
-        self.timeOfIdleActive = Shared.GetTime()
-        
-    end
-    
     self.crossHairText = nil
     self.crossHairTextColor = kFriendlyColor
     
@@ -2218,7 +2234,6 @@ end
 
 function Player:OnVortexClient()
 
-    self:SetEthereal(true)
     if self:GetIsLocalPlayer() then
     
         StartSoundEffectForPlayer(kVortexed2DStart, self)
@@ -2230,7 +2245,6 @@ end
 
 function Player:OnVortexEndClient()
 
-    self:SetEthereal(false)
     if self:GetIsLocalPlayer() then
     
         StartSoundEffectForPlayer(kVortexed2DEnd, self)
@@ -2274,6 +2288,7 @@ end
 
 function Player:UpdateDisorientFX()
 
+    local state = false
     if Player.screenEffects.disorient then
     
         local amount = 0
@@ -2281,7 +2296,7 @@ function Player:UpdateDisorientFX()
             amount = self:GetDisorientedAmount()
         end
         
-        local state = (amount > 0)
+        state = (amount > 0)
         if not self:GetIsThirdPerson() or not state then
             Player.screenEffects.disorient:SetActive(state)
         end
@@ -2373,8 +2388,41 @@ function Player:DebugVisibility()
 
 end
 
+function Player:DestroyGUI()
+
+    if Client then
+    
+        if self.buyMenu then
+        
+            GetGUIManager():DestroyGUIScript(self.buyMenu)
+            MouseTracker_SetIsVisible(false)
+            self.buyMenu = nil
+            
+        end
+        
+    end
+    
+end
+
 function Player:CloseMenu()
-    return false    
+
+    if self.buyMenu then
+    
+        GetGUIManager():DestroyGUIScript(self.buyMenu)
+        self.buyMenu = nil
+        MouseTracker_SetIsVisible(false)
+        
+        self:TriggerEffects("marine_buy_menu_close")
+        
+        // Quick work-around to not fire weapon when closing menu.
+        self.timeClosedMenu = Shared.GetTime()
+        
+        return true
+        
+    end
+   
+    return false
+    
 end
 
 function Player:ShowMap(showMap, showBig, forceReset)
@@ -2809,9 +2857,24 @@ function PlayerUI_GetRecentNotification()
     return notification
 end
 
+local kGrenades =
+{
+    kTechId.ClusterGrenade,
+    kTechId.GasGrenade,
+    kTechId.PulseGrenade
+}
+
+function PlayerUI_GetIsTechMapVisible()
+
+    local script = ClientUI.GetScript("GUITechMap")
+    return script ~= nil and script:GetIsVisible()
+
+end
+
 function PlayerUI_GetHasItem(techId)
 
     local hasItem = false
+    local isaGrenade = table.contains(kGrenades, techId)
 
     if techId and techId ~= kTechId.None then
     
@@ -2827,6 +2890,11 @@ function PlayerUI_GetHasItem(techId)
                     hasItem = true
                     break
                     
+                elseif isaGrenade and table.contains(kGrenades, item:GetTechId()) then
+                
+                    hasItem = true
+                    break
+                
                 end
 
             end
@@ -3394,7 +3462,7 @@ function PlayerUI_GetStaticMapBlips()
             
             local blipType = kMinimapBlipType.MoveOrder
             local orderType = order:GetType()
-            if orderType == kTechId.Construct then
+            if orderType == kTechId.Construct or orderType == kTechId.AutoConstruct then
                 blipType = kMinimapBlipType.BuildOrder
             elseif orderType == kTechId.Attack then
                 blipType = kMinimapBlipType.AttackOrder
@@ -3415,10 +3483,84 @@ function PlayerUI_GetStaticMapBlips()
             
         end
         
+        if player:isa("Fade") then
+        
+            local vortexAbility = player:GetWeapon(Vortex.kMapName)
+            if vortexAbility then
+            
+                local gate = vortexAbility:GetEtherealGate()
+                if gate then
+                
+                    local i = numBlips * 8
+                
+                    local blipOrig = gate:GetOrigin()
+                
+                    blipsData[i + 1] = blipOrig.x
+                    blipsData[i + 2] = blipOrig.z
+                    blipsData[i + 3] = 0
+                    blipsData[i + 4] = 0
+                    blipsData[i + 5] = 0
+                    blipsData[i + 6] = kMinimapBlipType.EtherealGate
+                    blipsData[i + 7] = kMinimapBlipTeam.Friendly
+                    blipsData[i + 8] = false
+                    
+                    numBlips = numBlips + 1
+                    
+                end
+            
+            end
+        
+        end
+        
+        local highlightPos = GetHighlightPosition()
+        if highlightPos then
+
+                local i = numBlips * 8
+
+                blipsData[i + 1] = highlightPos.x
+                blipsData[i + 2] = highlightPos.z
+                blipsData[i + 3] = 0
+                blipsData[i + 4] = 0
+                blipsData[i + 5] = 0
+                blipsData[i + 6] = kMinimapBlipType.HighlightWorld
+                blipsData[i + 7] = kMinimapBlipTeam.Friendly
+                blipsData[i + 8] = false
+                
+                numBlips = numBlips + 1
+            
+        end
+        
     end
     
     return blipsData
     
+end
+
+local gLastUnitCountUpdate = 0
+local gUnitCount = {}
+function PlayerUI_GetUnitCount(name)
+
+    if gLastUnitCountUpdate < Shared.GetTime() then
+    
+        gUnitCount = {}
+        
+        for _, mapBlip in ientitylist(Shared.GetEntitiesWithClassname("MapBlip")) do
+        
+            local mapBlipType = EnumToString(kMinimapBlipType, mapBlip:GetType())
+            if not gUnitCount[mapBlipType] then
+                gUnitCount[mapBlipType] = 1
+            else
+                gUnitCount[mapBlipType] = gUnitCount[mapBlipType] + 1
+            end
+        
+        end
+    
+        gLastUnitCountUpdate = Shared.GetTime()
+    
+    end
+    
+    return gUnitCount[name] or 0
+
 end
 
 /**
@@ -3808,7 +3950,8 @@ function Player:OnUpdateRender()
     
     if self:GetIsLocalPlayer() then
     
-        local blurEnabled = self:GetIsMinimapVisible()
+        local stunned = HasMixin(self, "Stun") and self:GetIsStunned()
+        local blurEnabled = self.buyMenu ~= nil or stunned
         self:SetBlurEnabled(blurEnabled)
         
         self.lastOnUpdateRenderTime = self.lastOnUpdateRenderTime or Shared.GetTime()
@@ -3832,14 +3975,6 @@ function Player:GetCustomSelectionText()
 
     end
             
-end
-
-function Player:GetIdleSoundName()
-    return nil
-end
-
-function Player:SetIdleSoundInactive()
-    self.timeOfIdleActive = Shared.GetTime() + 3
 end
 
 // Set light shake amount due to nearby roaming Onos

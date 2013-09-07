@@ -99,51 +99,6 @@ function GetTechIdToEmulate(techId)
 
 end
 
-local gHallucinationMenu = nil
-local function GetHallucinationMenu(assignedTechId, menuTechId)
-
-    if not gHallucinationMenu then
-    
-        gHallucinationMenu = {}
-        
-        local rootMenu = {}
-        rootMenu[kTechId.Gorge] = { kTechId.DestroyHallucination, kTechId.Attack, kTechId.Move, kTechId.Stop, kTechId.HallucinateHydra }
-        rootMenu[kTechId.Drifter] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Skulk] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Lerk] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Fade] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
-        rootMenu[kTechId.Onos] = { kTechId.DestroyHallucination,kTechId.Attack, kTechId.Move, kTechId.Stop }
-        
-        gHallucinationMenu[kTechId.RootMenu] = rootMenu
-        
-        gHallucinationMenu[kTechId.BuildMenu] = buildMenu
-    
-    end
-    
-    local menuEntry = gHallucinationMenu[menuTechId]
-    if menuEntry then
-        local classMenu = menuEntry[assignedTechId]
-        return ConditionalValue(classMenu, classMenu, {})
-    end
-    
-    return {}
-
-end
-
-local gTechIdRangedAttack = nil
-local function GetHallucinationAttacksRanged(techId)
-
-    if not gTechIdRangedAttack then
-        gTechIdRangedAttack = {}
-        gTechIdRangedAttack[kTechId.Gorge] = true
-        gTechIdRangedAttack[kTechId.Lerk] = true
-        gTechIdRangedAttack[kTechId.Hydra] = true
-    end
-
-    return gTechIdRangedAttack[techid]    
-
-end
-
 local gTechIdCanMove = nil
 local function GetHallucinationCanMove(techId)
 
@@ -217,7 +172,7 @@ local function GetMaxMovementSpeed(techId)
         gTechIdMaxMovementSpeed[kTechId.Fade] = 7
         gTechIdMaxMovementSpeed[kTechId.Onos] = 7
         
-        gTechIdMaxMovementSpeed[kTechId.Drifter] = 8
+        gTechIdMaxMovementSpeed[kTechId.Drifter] = 11
         gTechIdMaxMovementSpeed[kTechId.Whip] = 4
     
     end
@@ -666,6 +621,10 @@ end
 
 function Hallucination:GetCanBeUsed(player, useSuccessTable)
     useSuccessTable.useSuccess = false    
+end
+
+function Hallucination:GetSendDeathMessage()
+    return not self.consumed
 end
 
 if Client then

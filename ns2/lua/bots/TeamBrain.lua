@@ -61,12 +61,13 @@ local function MemoryToString(mem)
     local s = ""
     local ent = Shared.GetEntity(mem.entId)
     if ent ~= nil then
-        s = s .. string.format("%d-%s", mem.entId, entClass)
+        s = s .. string.format("%d-%s", mem.entId, ent:GetClassName())
     else
         s = s .. "<NIL>"
     end
-
+    
     return s
+    
 end
 
 function TeamBrain:Initialize(label, teamNumber)

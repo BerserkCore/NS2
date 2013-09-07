@@ -92,8 +92,9 @@ local function GetServerState()
                 team = player:GetTeamNumber(),
                 iscomm = player:GetIsCommander(),
                 score = HasMixin(player, "Scoring") and player:GetScore() or 0,
-                kills = player:GetKills(),
-                deaths = player:GetDeaths(),
+                kills = HasMixin(player, "Scoring") and player:GetKills() or 0,
+                assists = HasMixin(player, "Scoring") and player:GetAssistKills() or 0,
+                deaths = HasMixin(player, "Scoring") and player:GetDeaths() or 0,
                 resources = player:GetResources(),
                 ping = client:GetPing(),
                 ipaddress = IPAddressToString(Server.GetClientAddress(client))
@@ -134,6 +135,8 @@ local function OnWebRequest(actions)
 
     if actions.request == "getbanlist" then
         return "application/json", json.encode(GetBannedPlayersList())
+    elseif actions.request == "getreservedslots" then
+        return "application/json", json.encode(GetReservedSlotData())
     elseif actions.request == "getperfdata" then
         return "application/json", json.encode(perfDataBuffer:ToTable())
     elseif actions.request == "getchatlist" then
@@ -145,11 +148,20 @@ local function OnWebRequest(actions)
     elseif actions.request == "getmapcycle" then
         return "application/json", json.encode(MapCycle_GetMapCycle())
     elseif actions.request == "setmapcycle" then
-        MapCycle_SetMapCycle( json.decode(actions.data) )
+    
+        MapCycle_SetMapCycle(json.decode(actions.data))
         return ""
+        
+    elseif actions.request == "setreservedslotamount" then
+    
+        SetReservedSlotAmount(actions.amount)
+        return ""
+        
     elseif actions.request == "installmod" then
+    
         Server.InstallMod(DecToHex(actions.modid))
         return ""
+        
     elseif actions.request == "getmods" then
     
         local url = "http://www.unknownworlds.com/spark/browse_workshop.php?appid=4920"

@@ -87,7 +87,6 @@ local networkVars =
     hasAdrenalineUpgrade = "boolean",
     
     enzymed = "boolean",
-    primalScreamBoost = "compensated boolean",
     
     infestationSpeedScalar = "private float",
     infestationSpeedUpgrade = "private boolean",
@@ -95,7 +94,13 @@ local networkVars =
     storedHyperMutationTime = "private float",
     storedHyperMutationCost = "private float",
     
-    silenceLevel = "integer (0 to 3)"
+    silenceLevel = "integer (0 to 3)",
+    
+    electrified = "boolean",
+    
+    hatched = "private boolean",
+    
+    darkVisionSpectatorOn = "private boolean"
 
 }
 
@@ -110,6 +115,7 @@ AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
 AddMixinNetworkVars(StormCloudMixin, networkVars)
+AddMixinNetworkVars(ScoringMixin, networkVars)
 
 function Alien:OnCreate()
 
@@ -138,6 +144,7 @@ function Alien:OnCreate()
     
     // Only used on the local client.
     self.darkVisionOn = false
+    self.lastDarkVisionState = false
     self.darkVisionLastFrame = false
     self.darkVisionTime = 0
     self.darkVisionEndTime = 0
@@ -145,7 +152,6 @@ function Alien:OnCreate()
     self.twoHives = false
     self.threeHives = false
     self.enzymed = false
-    self.primalScreamBoost = false
     
     self.infestationSpeedScalar = 0
     self.infestationSpeedUpgrade = false
@@ -154,35 +160,14 @@ function Alien:OnCreate()
     
         self.timeWhenEnzymeExpires = 0
         self.timeLastCombatAction = 0
-        self.timeWhenPrimalScreamExpires = 0
         self.silenceLevel = 0
+        
+        self.electrified = false
+        self.timeElectrifyEnds = 0
         
     elseif Client then
         InitMixin(self, TeamMessageMixin, { kGUIScriptName = "GUIAlienTeamMessage" })
     end
-    
-end
-
-function Alien:DestroyGUI()
-
-    if Client then
-    
-        if self.buyMenu then
-        
-            GetGUIManager():DestroyGUIScript(self.buyMenu)
-            MouseTracker_SetIsVisible(false)
-            self.buyMenu = nil
-            
-        end
-        
-    end
-    
-end
-
-function Alien:OnDestroy()
-
-    Player.OnDestroy(self)
-    self:DestroyGUI()
     
 end
 
@@ -206,7 +191,13 @@ function Alien:OnInitialized()
         end
         
     elseif Client then
+    
         InitMixin(self, HiveVisionMixin)
+        
+        if self:GetIsLocalPlayer() and self.hatched then
+            self:TriggerHatchEffects()
+        end
+        
     end
     
     if Client and Client.GetLocalPlayer() == self then
@@ -218,8 +209,18 @@ function Alien:OnInitialized()
 
 end
 
+function Alien:SetHatched()
+    self.hatched = true
+end
+
 function Alien:GetCanRepairOverride(target)
     return false
+end
+
+
+// player for local player
+function Alien:TriggerHatchEffects()
+    self.clientTimeTunnelUsed = Shared.GetTime()
 end
 
 function Alien:GetArmorAmount()
@@ -249,15 +250,48 @@ function Alien:UpdateArmorAmount(carapaceLevel)
 
 end
 
-function Alien:UpdateHealAmount(bioMassLevel, maxLevel)
+function Alien:SetElectrified(time)
 
-    local level = math.max(0, bioMassLevel - kHiveBiomass - kHarvesterBiomass)    
+    if self.timeElectrifyEnds - Shared.GetTime() < time then
+    
+        self.timeElectrifyEnds = Shared.GetTime() + time
+        self.electrified = true
+        
+    end
+    
+end
+
+if Server then
+
+    local function Electrify(client)
+    
+        if Shared.GetCheatsEnabled() then
+        
+            local player = client:GetControllingPlayer()
+            if player.SetElectrified then
+                player:SetElectrified(5)
+            end
+            
+        end
+        
+    end
+    Event.Hook("Console_electrify", Electrify)
+    
+end
+
+function Alien:GetHasBiomassHealth()
+    return true
+end
+
+function Alien:UpdateHealthAmount(bioMassLevel, maxLevel)
+
+    local level = self:GetHasBiomassHealth() and math.max(0, bioMassLevel) or 0
     local newMaxHealth = self:GetBaseHealth() + level * self:GetHealthPerBioMass()
 
-    if newMaxHealth ~= self.maxHealth then
+    if newMaxHealth ~= self.maxHealth  then
 
         local healthPercent = self.maxHealth > 0 and self.health/self.maxHealth or 0
-        self.maxHealth = newMaxHealth
+        self:SetMaxHealth(newMaxHealth)
         self:SetHealth(self.maxHealth * healthPercent)
     
     end
@@ -350,6 +384,7 @@ function Alien:DeductAbilityEnergy(energyCost)
     
         self.abilityEnergyOnChange = Clamp(self:GetEnergy() - energyCost, 0, maxEnergy)
         self.timeAbilityEnergyChanged = Shared.GetTime()
+        
     end
     
 end
@@ -357,6 +392,7 @@ end
 function Alien:GetRecuperationRate()
 
     local scalar = ConditionalValue(self:GetGameEffectMask(kGameEffect.OnFire), kOnFireEnergyRecuperationScalar, 1)
+    scalar = scalar * (self.electrified and kElectrifiedEnergyRecuperationScalar or 1)
     local rate = 0
 
     if self.hasAdrenalineUpgrade then
@@ -399,25 +435,8 @@ function Alien:GetMaxBackwardSpeedScalar()
 end
 
 function Alien:SetDarkVision(state)
-
-    if state ~= self.darkVisionOn then
-
-        if state then
-        
-            self.darkVisionTime = Shared.GetTime()
-            self:TriggerEffects("alien_vision_on") 
-            
-        else
-        
-            self.darkVisionEndTime = Shared.GetTime()
-            self:TriggerEffects("alien_vision_off")
-            
-        end
-    
-    end
-    
     self.darkVisionOn = state
-
+    self.darkVisionSpectatorOn = state
 end
 
 function Alien:HandleButtons(input)
@@ -444,7 +463,7 @@ function Alien:HandleButtons(input)
     
     self.movementModiferState = newMovementState
     
-    if Client and self:GetCanControl() and not Shared.GetIsRunningPrediction() then
+    if self:GetCanControl() and (Client or Server) then
     
         local darkVisionPressed = bit.band(input.commands, Move.ToggleFlashlight) ~= 0
         if not self.darkVisionLastFrame and darkVisionPressed then
@@ -549,26 +568,6 @@ function Alien:GetCanTakeDamageOverride()
     return Player.GetCanTakeDamageOverride(self) and not self:GetIsFeinting()
 end
 
-// childs ca override this. Any incoming damage will be reduced by this number, before any further calculations are done
-function Alien:GetHideArmorAmount()
-    return 0
-end
-
-function Alien:ComputeDamageOverride(attacker, damage, damageType, time)
-
-    if self.primalScreamBoost then
-        damage = 0
-    else    
-
-        damage = damage - self:GetHideArmorAmount()
-        damage = ConditionalValue(damage >= 0, damage, 0)
-        
-    end    
-
-    return damage
-
-end
-
 function Alien:GetEffectParams(tableParams)
 
     tableParams[kEffectFilterSilenceUpgrade] = self.silenceLevel == 3
@@ -585,6 +584,7 @@ function Alien:OnUpdateAnimationInput(modelMixin)
     Player.OnUpdateAnimationInput(self, modelMixin)
     
     local attackSpeed = self:GetIsEnzymed() and kEnzymeAttackSpeed or kDefaultAttackSpeed
+    attackSpeed = attackSpeed * ( self.electrified and kElectrifiedAttackSpeed or 1 )
     if self.ModifyAttackSpeed then
     
         local attackSpeedTable = { attackSpeed = attackSpeed }
@@ -603,18 +603,13 @@ end
 
 function Alien:ModifyHeal(healTable)
 
-    if GetHasRegenerationUpgrade(self) then
+    if GetHasCarapaceUpgrade(self) then
     
         local level = GetShellLevel(self:GetTeamNumber())
-        healTable.health = healTable.health * (1 + level * 0.01)
-        
-    elseif GetHasCarapaceUpgrade(self) then
-    
-        local level = GetShellLevel(self:GetTeamNumber())
-        healTable.health = healTable.health * (1 - level * 0.05)
+        healTable.health = healTable.health * (1 - level * kCarapaceHealReductionPerLevel)
 
     end
     
 end 
 
-Shared.LinkClassToMap("Alien", Alien.kMapName, networkVars)
+Shared.LinkClassToMap("Alien", Alien.kMapName, networkVars, true)

@@ -12,9 +12,8 @@ Skulk.kCameraRollTiltModifier = 0.05
 Skulk.kViewModelRollSpeedModifier = 7
 Skulk.kViewModelRollTiltModifier = 0.15
 
-local kSkulkHealthbarOffset = Vector(0, 0.7, 0)
 function Skulk:GetHealthbarOffset()
-    return kSkulkHealthbarOffset
+    return 0.7
 end
 
 function Skulk:GetHeadAttachpointName()

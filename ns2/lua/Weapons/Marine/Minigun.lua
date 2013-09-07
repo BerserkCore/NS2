@@ -11,6 +11,7 @@ Script.Load("lua/Weapons/Marine/ExoWeaponSlotMixin.lua")
 Script.Load("lua/TechMixin.lua")
 Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 Script.Load("lua/TeamMixin.lua")
+Script.Load("lua/PointGiverMixin.lua")
 
 class 'Minigun' (Entity)
 
@@ -48,7 +49,10 @@ local kMinigunSpread = Math.Radians(5)
 local kBulletSize = 0.03
 
 local kHeatUpRate = 0.2
+local kDualGunHeatUpRate = 0.15
 local kCoolDownRate = 0.4
+
+local kMinigunMovementSlowdown = 0.6
 
 local networkVars =
 {
@@ -73,6 +77,7 @@ function Minigun:OnCreate()
     InitMixin(self, DamageMixin)
     InitMixin(self, BulletsMixin)
     InitMixin(self, ExoWeaponSlotMixin)
+    InitMixin(self, PointGiverMixin)
     
     self.minigunAttacking = false
     self.shooting = false
@@ -125,6 +130,18 @@ function Minigun:OnDestroy()
         
     end
     
+end
+
+function Minigun:ModifyMaxSpeed(maxSpeedTable)
+
+    if self.shooting then
+        maxSpeedTable.maxSpeed = maxSpeedTable.maxSpeed * kMinigunMovementSlowdown
+    end
+
+end
+
+function Minigun:GetIsThrusterAllowed()
+    return not self.shooting
 end
 
 function Minigun:OnWeaponSlotAssigned(slot)
@@ -337,6 +354,10 @@ local function UpdateOverheated(self, player)
     
 end
 
+function Minigun:AddHeat(amount)
+    self.heatAmount = self.heatAmount + amount
+end
+
 function Minigun:ProcessMoveOnWeapon(player, input)
 
     local dt = input.time
@@ -344,6 +365,20 @@ function Minigun:ProcessMoveOnWeapon(player, input)
     self.heatAmount = math.min(1, math.max(0, self.heatAmount + addAmount))
     
     UpdateOverheated(self, player)
+    
+    if self.shooting then
+    
+        local exoWeaponHolder = player:GetActiveWeapon()
+        if exoWeaponHolder then
+        
+            local otherSlotWeapon = self:GetExoWeaponSlot() == ExoWeaponHolder.kSlotNames.Left and exoWeaponHolder:GetRightSlotWeapon() or exoWeaponHolder:GetLeftSlotWeapon()
+            if otherSlotWeapon and otherSlotWeapon:isa("Minigun") then
+                otherSlotWeapon:AddHeat(dt * kDualGunHeatUpRate)
+            end
+        
+        end
+    
+    end
     
     if Client and not Shared.GetIsRunningPrediction() then
     

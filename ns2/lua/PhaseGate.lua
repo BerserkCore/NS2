@@ -24,7 +24,7 @@ Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/ScriptActor.lua")
 Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/NanoShieldMixin.lua")
-Script.Load("Lua/ObstacleMixin.lua")
+Script.Load("lua/ObstacleMixin.lua")
 Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
@@ -35,6 +35,8 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/MinimapConnectionMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 local kAnimationGraph = PrecacheAsset("models/marine/phase_gate/phase_gate.animation_graph")
 
@@ -67,7 +69,7 @@ local function TransformPlayerCoordsForPhaseGate(player, srcCoords, dstCoords)
     local viewAngles = Angles()
     viewAngles:BuildFromCoords(viewCoords)
     
-    player:SetOffsetAngles(viewAngles)
+    player:SetViewAngles(viewAngles)
     
 end
 
@@ -119,7 +121,9 @@ local networkVars =
     linked = "boolean",
     phase = "boolean",
     deployed = "boolean",
-    destLocationId = "entityid"
+    destLocationId = "entityid",
+    targetYaw = "float (-3.14159265 to 3.14159265 by 0.003)",
+    destinationEndpoint = "position"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -141,6 +145,8 @@ AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function PhaseGate:OnCreate()
 
@@ -167,6 +173,7 @@ function PhaseGate:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -210,8 +217,11 @@ function PhaseGate:OnInitialized()
     elseif Client then
     
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -255,146 +265,119 @@ function PhaseGate:GetDamagedAlertId()
     return kTechId.MarineAlertStructureUnderAttack
 end
 
-function PhaseGate:GetIsIdle()
-    return ScriptActor.GetIsIdle(self) and self.linked
+function PhaseGate:GetPlayIdleSound()
+    return ScriptActor.GetPlayIdleSound(self) and self.linked
 end
 
-if Server then
+// Returns next phase gate in round-robin order. Returns nil if there are no other built/active phase gates
+local function GetDestinationGate(self)
 
-    /**
-     * Returns true if the phase gate is ready to teleport a player. This does not check if
-     * there is a destination phase gate however.
-     */
-    local function GetCanPhase(self)
+    // Find next phase gate to teleport to
+    local phaseGates = {}    
+    for index, phaseGate in ipairs( GetEntitiesForTeam("PhaseGate", self:GetTeamNumber()) ) do
+        if GetIsUnitActive(phaseGate) then
+            table.insert(phaseGates, phaseGate)
+        end
+    end    
     
-        if not self.deployed or not GetIsUnitActive(self) then
-            return false
-        end
-        
-        if self.timeOfLastPhase == nil or (Shared.GetTime() > (self.timeOfLastPhase + kDepartureRate)) then
-            return true
-        end
-        
-        return false
-        
-    end
-    
-    // Returns next phase gate in round-robin order. Returns nil if there are no other built/active phase gates
-    local function GetDestinationGate(self)
-
-        // Find next phase gate to teleport to
-        local phaseGates = {}    
-        for index, phaseGate in ipairs( GetEntitiesForTeam("PhaseGate", self:GetTeamNumber()) ) do
-            if GetIsUnitActive(phaseGate) then
-                table.insert(phaseGates, phaseGate)
-            end
-        end    
-        
-        if table.count(phaseGates) < 2 then
-            return nil
-        end
-        
-        // Find our index and add 1
-        local index = table.find(phaseGates, self)
-        if (index ~= nil) then
-        
-            local nextIndex = ConditionalValue(index == table.count(phaseGates), 1, index + 1)
-            ASSERT(nextIndex >= 1)
-            ASSERT(nextIndex <= table.count(phaseGates))
-            return phaseGates[nextIndex]
-            
-        end
-        
+    if table.count(phaseGates) < 2 then
         return nil
+    end
+    
+    // Find our index and add 1
+    local index = table.find(phaseGates, self)
+    if (index ~= nil) then
+    
+        local nextIndex = ConditionalValue(index == table.count(phaseGates), 1, index + 1)
+        ASSERT(nextIndex >= 1)
+        ASSERT(nextIndex <= table.count(phaseGates))
+        return phaseGates[nextIndex]
         
     end
     
-    local function ComputeDestinationLocationId(self)
+    return nil
+    
+end
 
-        local destLocationId = Entity.invalidId
-        
-        local destGate = GetDestinationGate(self)
-        if destGate then
-        
-            local location = GetLocationForPoint(destGate:GetOrigin())
-            if location then
-                destLocationId = location:GetId()
-            end
-            
+local function ComputeDestinationLocationId(self, destGate)
+
+    local destLocationId = Entity.invalidId
+    if destGate then
+    
+        local location = GetLocationForPoint(destGate:GetOrigin())
+        if location then
+            destLocationId = location:GetId()
         end
-        
-        return destLocationId
         
     end
     
-    function PhaseGate:Update()
+    return destLocationId
     
-        local destinationPhaseGate = GetDestinationGate(self)
-        if destinationPhaseGate ~= nil then
-            self.destinationEndpoint = destinationPhaseGate:GetOrigin()
-        else
-            self.destinationEndpoint = nil
-        end
-        
-        if destinationPhaseGate ~= nil and GetCanPhase(destinationPhaseGate) and GetCanPhase(self) then
+end
 
-            local players = GetEntitiesForTeamWithinRange("Marine", self:GetTeamNumber(), self:GetOrigin(), 1)
-            
-            for p = 1, #players do
-            
-                local player = players[p]
-                if player.GetCanPhase and player:GetCanPhase() then
-                
-                    // check for free place
-                    local destOrigin = GetDestinationOrigin(destinationPhaseGate:GetOrigin(), destinationPhaseGate:GetCoords().zAxis, destinationPhaseGate, player:GetExtents())
-                    
-                    // Don't bother checking if destination is clear, rely on pushing away entities
-                    self:TriggerEffects("phase_gate_player_enter")
-                    
-                    player:TriggerEffects("teleport")
-                    
-                    TransformPlayerCoordsForPhaseGate(player, self:GetCoords(), destinationPhaseGate:GetCoords())
+function PhaseGate:Phase(user)
 
-                    player:SetOrigin(destOrigin)
-                    
-                    destinationPhaseGate:TriggerEffects("phase_gate_player_exit")
-                    
-                    self.timeOfLastPhase = Shared.GetTime()
-                    destinationPhaseGate.timeOfLastPhase = Shared.GetTime()
-                    
-                    player:SetTimeOfLastPhase(self.timeOfLastPhase)
-                    
-                    break
-                    
-                end
-                
-            end
+    if HasMixin(user, "PhaseGateUser") and self.linked then
 
-        end
+        // Don't bother checking if destination is clear, rely on pushing away entities
+        user:TriggerEffects("phase_gate_player_enter")        
+        user:TriggerEffects("teleport")
         
-        // Update network variable state
-        self.linked = GetIsUnitActive(self) and self.deployed and (destinationPhaseGate ~= nil) and destinationPhaseGate.deployed
-        self.phase = (self.timeOfLastPhase ~= nil) and (Shared.GetTime() < (self.timeOfLastPhase + 0.3))
+        local destinationCoords = Angles(0, self.targetYaw, 0):GetCoords()
+        destinationCoords.origin = self.destinationEndpoint
         
-        // Update destination id for displaying in description
-        self.destLocationId = ComputeDestinationLocationId(self)
+        TransformPlayerCoordsForPhaseGate(user, self:GetCoords(), destinationCoords)
+
+        user:SetOrigin(self.destinationEndpoint)
+        // trigger exit effect at destination
+        user:TriggerEffects("phase_gate_player_exit")
+        
+        self.timeOfLastPhase = Shared.GetTime()
         
         return true
         
     end
     
-    function PhaseGate:GetConnectionStartPoint()
-        return self:GetOrigin()
-    end
-    
-    function PhaseGate:GetConnectionEndPoint()
+    return false
 
-        if GetIsUnitActive(self) then
-            return self.destinationEndpoint
-        end    
+end
 
-    end
+if Server then
+
+    function PhaseGate:Update()
     
+        self.phase = (self.timeOfLastPhase ~= nil) and (Shared.GetTime() < (self.timeOfLastPhase + 0.3))
+
+        local destinationPhaseGate = GetDestinationGate(self)
+        if destinationPhaseGate ~= nil and GetIsUnitActive(self) and self.deployed and destinationPhaseGate.deployed then        
+        
+            self.destinationEndpoint = destinationPhaseGate:GetOrigin()
+            self.linked = true
+            self.targetYaw = destinationPhaseGate:GetAngles().yaw
+            self.destLocationId = ComputeDestinationLocationId(self, destinationPhaseGate)
+            
+        else
+            self.linked = false
+            self.targetYaw = 0
+            self.destLocationId = Entity.invalidId
+        end
+
+        return true
+        
+    end
+
+end
+
+function PhaseGate:GetConnectionStartPoint()
+    return self:GetOrigin()
+end
+
+function PhaseGate:GetConnectionEndPoint()
+
+    if GetIsUnitActive(self) and self.linked then
+        return self.destinationEndpoint
+    end
+
 end
 
 function PhaseGate:OnTag(tagName)
@@ -431,9 +414,8 @@ function PhaseGate:OnUpdateAnimationInput(modelMixin)
     
 end
 
-local kPhaseGateHealthbarOffset = Vector(0, 1.2, 0)
 function PhaseGate:GetHealthbarOffset()
-    return kPhaseGateHealthbarOffset
+    return 1.2
 end 
 
 local function GetDestinationLocationName(self)
@@ -445,6 +427,10 @@ local function GetDestinationLocationName(self)
         return location:GetName()
     end
 
+end
+
+function PhaseGate:GetIsDeployed()
+    return self.deployed
 end
 
 function PhaseGate:GetUnitNameOverride(viewer)

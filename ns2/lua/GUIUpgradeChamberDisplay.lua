@@ -16,7 +16,7 @@ class 'GUIUpgradeChamberDisplay' (GUIScript)
 local kMinBioMass = 0
 local kMaxBioMass = 9
 
-local kBackgroundPos = GUIScale(Vector(32, 180, 0))
+local kBackgroundPos = GUIScale(Vector(32, 290, 0))
 local kBackgroundColor = Color(0, 0, 0, 0)
 
 local kIconSize = GUIScale(58)

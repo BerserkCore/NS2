@@ -15,6 +15,12 @@ function JetpackMarine:AttemptToBuy(techIds)
         return false
     end
     
+    /*
+    if kIsExoTechId[techIds[1]] then
+        return false
+    end
+    */
+    
     return Marine.AttemptToBuy(self, techIds)
     
 end

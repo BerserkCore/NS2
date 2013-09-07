@@ -25,6 +25,7 @@ Embryo.kXExtents = .25
 Embryo.kYExtents = .25
 Embryo.kZExtents = .25
 Embryo.kEvolveSpawnOffset = 0.2
+Embryo.gFastEvolveCheat = false
 
 local kMinGestationTime = 5
 
@@ -124,12 +125,14 @@ local function UpdateGestation(self)
                 
             end
             
-            local healthScalar = self:GetHealth() / self:GetMaxHealth()
-            local armorScalar = self:GetMaxArmor() == 0 and 1 or self:GetArmor() / self:GetMaxArmor()
+            local healthScalar = self.storedHealthScalar or 1
+            local armorScalar = self.storedArmoryScalar or 1
 
             newPlayer:SetHealth(healthScalar * LookupTechData(self.gestationTypeTechId, kTechDataMaxHealth))
             newPlayer:SetArmor(armorScalar * LookupTechData(self.gestationTypeTechId, kTechDataMaxArmor))
             newPlayer:UpdateArmorAmount()
+            newPlayer:SetHatched()
+            newPlayer:TriggerEffects("egg_death")
             
             if self.resOnGestationComplete then
                 newPlayer:AddResources(self.resOnGestationComplete)
@@ -205,9 +208,8 @@ function Embryo:GetPreventCameraPenetration()
     return true
 end
 
-local kEmbryoHealthbarOffset = Vector(0, 0.7, 0)
 function Embryo:GetHealthbarOffset()
-    return kEmbryoHealthbarOffset
+    return 0.7
 end
 
 function Embryo:GetShowHealthFor(player)
@@ -345,21 +347,31 @@ function Embryo:SetGestationData(techIds, previousTechId, healthScalar, armorSca
     end
     
     self.gestationTime = math.max(kMinGestationTime, self.gestationTime)
+
+    if Embryo.gFastEvolveCheat then
+        self.gestationTime = 5
+    end
     
     self.evolveTime = 0
+    
+    local maxHealth = LookupTechData(self.gestationTypeTechId, kTechDataMaxHealth) * 0.3 + 100
+    maxHealth = math.round(maxHealth * 0.1) * 10
 
-    self.maxHealth = LookupTechData(self.gestationTypeTechId, kTechDataMaxHealth)
-    self:SetHealth(self.maxHealth* healthScalar)
-    self.maxArmor = LookupTechData(self.gestationTypeTechId, kTechDataMaxArmor) * 0.1
-    self:SetArmor(self.maxArmor* armorScalar)
+    self:SetMaxHealth(maxHealth)
+    self:SetHealth(maxHealth * healthScalar)
+    self:SetMaxArmor(0)
+    self:SetArmor(0)
     
     // Use this amount of health when we're done evolving
-    self.healthScalar = healthScalar
-    self.armorScalar = armorScalar
+    self.storedHealthScalar = healthScalar
+    self.storedArmorScalar = armorScalar
     
     // we reset the upgrades entirely and set them again, simplifies the code
     self:ClearUpgrades()
     
+end
+
+function Embryo:UpdateHealthAmount()
 end
 
 function Embryo:GetEvolutionTime()

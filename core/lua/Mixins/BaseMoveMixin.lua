@@ -120,18 +120,11 @@ local kSmoothRate = 28
 function BaseMoveMixin:OnProcessMove(input)
 
     local velocityGoal = self.velocity
-    /*
-    if self.OverrideVelocityGoal then
-        
-        velocityGoal = Vector(self.velocity)
-        self:OverrideVelocityGoal(velocityGoal)
-        
-    end
-    */
+    local smoothRate = self.GetVelocitySmoothRate ~= nil and self:GetVelocitySmoothRate() or kSmoothRate
 
-    self.smoothedVelocity.x = Slerp(self.smoothedVelocity.x, velocityGoal.x, input.time * kSmoothRate)
-    self.smoothedVelocity.y = Slerp(self.smoothedVelocity.y, velocityGoal.y, input.time * kSmoothRate)
-    self.smoothedVelocity.z = Slerp(self.smoothedVelocity.z, velocityGoal.z, input.time * kSmoothRate)
+    self.smoothedVelocity.x = Slerp(self.smoothedVelocity.x, velocityGoal.x, input.time * smoothRate)
+    self.smoothedVelocity.y = Slerp(self.smoothedVelocity.y, velocityGoal.y, input.time * smoothRate)
+    self.smoothedVelocity.z = Slerp(self.smoothedVelocity.z, velocityGoal.z, input.time * smoothRate)
     
     // update the low-resolution polar coordinates
     local v = self.smoothedVelocity

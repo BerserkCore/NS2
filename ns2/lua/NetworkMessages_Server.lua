@@ -190,6 +190,16 @@ local function OnChatReceived(client, message)
         
     end
     
+    // handle tournament mode commands
+    if client then  
+  
+        local player = client:GetControllingPlayer()
+        if player then        
+            ProcessSayCommand(player, chatMessage)
+        end
+    
+    end
+    
 end
 
 local function OnCommandCommPing(client, message)
@@ -258,6 +268,9 @@ function CreateVoiceMessage(player, voiceId)
     if soundData then
     
         local soundName = soundData.Sound
+        if HasMixin(player, "PlayerVariant") and player:GetSex() == "female" then
+            soundName = soundData.SoundFemale
+        end
         
         if soundData.Function then            
             soundName = soundData.Function(player) or soundName    
@@ -294,26 +307,34 @@ local function OnVoiceMessage(client, message)
 
 end
 
-local function OnConnectMessage(client, message)
+local function UpdatePlayerVariant(client, armorType, isMale)
 
-    local armorType = ParseConnectMessage(message)
     if client then
     
         local allowed = armorType == kArmorType.Green or
                        (armorType == kArmorType.Black and GetHasBlackArmor(client)) or
                        (armorType == kArmorType.Deluxe and GetHasDeluxeEdition(client))
-                        
+        
         if allowed then
             client.armorType = armorType
         end
+        
+        client.sexType = isMale and "male" or "female"
         
         local player = client:GetControllingPlayer()
         if player then
             player:OnClientUpdated(client)
         end
-    
+        
     end
+    
+end
 
+local function OnConnectMessage(client, message)
+
+    local armorType, isMale = ParseConnectMessage(message)
+    UpdatePlayerVariant(client, armorType, isMale)
+    
 end
 
 local function OnSetNameMessage(client, message)
@@ -386,6 +407,11 @@ local function OnSwitchFirstPersonSpectatePlayer(client, message)
     
 end
 Server.HookNetworkMessage("SwitchFirstPersonSpectatePlayer", OnSwitchFirstPersonSpectatePlayer)
+
+local function OnSetPlayerVariant(client, message)
+    UpdatePlayerVariant(client, message.armorId, message.isMale)
+end
+Server.HookNetworkMessage("SetPlayerVariant", OnSetPlayerVariant)
 
 Server.HookNetworkMessage("SelectUnit", OnCommandSelectUnit)
 Server.HookNetworkMessage("SelectHotkeyGroup", OnCommandParseSelectHotkeyGroup)

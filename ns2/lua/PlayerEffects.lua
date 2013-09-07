@@ -9,13 +9,29 @@
 kPlayerEffectData = 
 {
 
+    eject_exo_begin =
+    {
+        effects =
+        {
+            {player_sound = "sound/NS2.fev/marine/common/pickup_heavy", done = true}
+        }
+    },
+
+    spawn_exo =
+    {
+        effects =
+        {
+            {cinematic = "cinematics/marine/structures/spawn_building_big.cinematic", done = true},
+        }
+    },
+
     // TODO: hook up correct sound
     exo_thruster_start =
     {
         exoThrusterStartEffects =
         {
             {cinematic = "cinematics/marine/jetpack/impact.cinematic"},
-            {sound = "sound/NS2.fev/marine/common/pickup_jetpack", done = true},
+            {parented_sound = "sound/NS2.fev/marine/heavy/thrusters", done = true},
         }    
     },
     
@@ -24,7 +40,7 @@ kPlayerEffectData =
     {
         exoThrusterEndEffects =
         {
-            {sound = "sound/NS2.fev/marine/common/pickup_heavy", done = true},
+            {stop_sound = "sound/NS2.fev/marine/heavy/thrusters", done = true},
         }    
     },
 
@@ -87,6 +103,14 @@ kPlayerEffectData =
         {
             {sound = "", silenceupgrade = true, done = true},
             {player_sound = "sound/NS2.fev/alien/skulk/jump_good", classname = "Skulk", done = true},
+        }
+    },
+    
+    strafe_jump =
+    {
+        effects =
+        {
+            {player_sound = "sound/NS2.fev/marine/common/sprint_start", done = true},
         }
     },
         
@@ -308,6 +332,7 @@ kPlayerEffectData =
             {sound = "sound/NS2.fev/alien/lerk/taunt", classname = "Lerk", done = true},
             {sound = "sound/NS2.fev/alien/fade/taunt", classname = "Fade", done = true},
             {sound = "sound/NS2.fev/alien/onos/taunt", classname = "Onos", done = true},
+            {sound = "sound/NS2.fev/marine/voiceovers/taunt_female", classname = "Marine", sex = "female", done = true},
             {sound = "sound/NS2.fev/marine/voiceovers/taunt", classname = "Marine", done = true},
 
         }

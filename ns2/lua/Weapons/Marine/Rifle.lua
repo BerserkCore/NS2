@@ -18,7 +18,7 @@ class 'Rifle' (ClipWeapon)
 Rifle.kMapName = "rifle"
 
 Rifle.kModelName = PrecacheAsset("models/marine/rifle/rifle.model")
-local kViewModelName = PrecacheAsset("models/marine/rifle/rifle_view.model")
+local kViewModels = GenerateMarineViewModelPaths("rifle")
 local kAnimationGraph = PrecacheAsset("models/marine/rifle/rifle_view.animation_graph")
 
 local kRange = 250
@@ -187,41 +187,28 @@ function Rifle:OnPrimaryAttack(player)
 
 end
 
-function Rifle:OnSecondaryAttack(player)
-
-    if not self.blockingSecondary and not player:GetIsSprinting() then
-        ClipWeapon.OnSecondaryAttack(self, player)
-    end
-    
-end
-
-function Rifle:OnSecondaryAttackEnd(player)
-
-    self.secondaryAttacking = false
-    
-end
-
 function Rifle:OnHolster(player)
 
-    DestroyMuzzleEffect(self)  
-    DestroyShellEffect(self)  
+    DestroyMuzzleEffect(self)
+    DestroyShellEffect(self)
     ClipWeapon.OnHolster(self, player)
     
 end
 
 function Rifle:OnHolsterClient()
+
     DestroyMuzzleEffect(self)
     DestroyShellEffect(self)
     ClipWeapon.OnHolsterClient(self)
+    
 end
-
 
 function Rifle:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function Rifle:GetViewModelName()
-    return kViewModelName
+function Rifle:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function Rifle:GetDeathIconIndex()
@@ -239,10 +226,6 @@ end
 
 function Rifle:GetClipSize()
     return kRifleClipSize
-end
-
-function Rifle:GetReloadTime()
-    return kRifleReloadTime
 end
 
 function Rifle:GetSpread()
@@ -265,20 +248,11 @@ function Rifle:GetSecondaryCanInterruptReload()
     return true
 end
 
-function Rifle:GetBarrelSmokeEffect()
-    return Rifle.kBarrelSmokeEffect
-end
-
-function Rifle:GetShellEffect()
-    return chooseWeightedEntry ( Rifle.kShellEffectTable )
-end
-
 function Rifle:PerformMeleeAttack(player)
 
-    self:TriggerEffects("rifle_alt_attack")
-
-    // Perform melee attack
-    local didHit, hitObject, endPoint, surface = AttackMeleeCapsule(self, player, kRifleMeleeDamage, kButtRange, nil, true)
+    player:TriggerEffects("rifle_alt_attack")
+    
+    AttackMeleeCapsule(self, player, kRifleMeleeDamage, kButtRange, nil, true)
     
 end
 

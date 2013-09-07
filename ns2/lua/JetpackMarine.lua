@@ -15,7 +15,6 @@ class 'JetpackMarine' (Marine)
 JetpackMarine.kMapName = "jetpackmarine"
 
 JetpackMarine.kModelName = PrecacheAsset("models/marine/male/male.model")
-JetpackMarine.kBlackArmorModelName = PrecacheAsset("models/marine/male/male_special.model")
 
 JetpackMarine.kJetpackStart = PrecacheAsset("sound/NS2.fev/marine/common/jetpack_start")
 JetpackMarine.kJetpackEnd = PrecacheAsset("sound/NS2.fev/marine/common/jetpack_end")
@@ -35,7 +34,7 @@ elseif Client then
     Script.Load("lua/JetpackMarine_Client.lua")
 end
 
-JetpackMarine.kJetpackFuelReplenishDelay = .8
+JetpackMarine.kJetpackFuelReplenishDelay = .4
 JetpackMarine.kJetpackGravity = -16
 JetpackMarine.kJetpackTakeOffTime = .39
 
@@ -51,7 +50,7 @@ local networkVars =
     // time since change has the kJetpackFuelReplenishDelay subtracted if not jetpacking
     // jpFuel = Clamp(jetpackFuelOnChange + time since change * gain/loss rate, 0, 1)
     // If jetpack is currently active and affecting our movement. If active, use loss rate, if inactive use gain rate
-    jetpacking = "boolean",
+    jetpacking = "compensated boolean",
     // when we last changed state of jetpack
     timeJetpackingChanged = "time",
     // amount of fuel when we last changed jetpacking state
@@ -63,8 +62,9 @@ local networkVars =
     jetpackMode = "enum JetpackMarine.kJetpackMode",
     
     jetpackLoopId = "entityid",
+
+    jumpedInAir = "private compensated boolean"
     
-    hasFuelUpgrade = "private boolean"
 }
 
 function JetpackMarine:OnCreate()
@@ -137,13 +137,20 @@ end
 function JetpackMarine:GetFuel()
 
     local dt = Shared.GetTime() - self.timeJetpackingChanged
-    local rate = self.hasFuelUpgrade and -kUpgradedJetpackUseFuelRate or -kJetpackUseFuelRate
+    local rate = -kJetpackUseFuelRate
     
     if not self.jetpacking then
         rate = kJetpackReplenishFuelRate
         dt = math.max(0, dt - JetpackMarine.kJetpackFuelReplenishDelay)
     end
     return Clamp(self.jetpackFuelOnChange + rate * dt, 0, 1)
+    
+end
+
+function JetpackMarine:SetFuel(fuel)
+    
+    self.timeJetpackingChanged = Shared.GetTime()
+    self.jetpackFuelOnChange = Clamp(fuel, 0, 1)
     
 end
 
@@ -246,18 +253,28 @@ function JetpackMarine:GetMaxBackwardSpeedScalar()
     return Player.GetMaxBackwardSpeedScalar(self)
 end
 
-function JetpackMarine:UpdateJetpack(input)
+function JetpackMarine:OnJumpRequest()
 
-    if Server then
-        self.hasFuelUpgrade = GetHasTech(self, kTechId.JetpackFuelTech, true) == true
+    if not self:GetIsOnGround() then
+        self.jumpedInAir = true
     end
     
-    local jumpPressed = (bit.band(input.commands, Move.Jump) ~= 0)
+end
+
+function JetpackMarine:UpdateJetpack(input)
     
+    local jumpPressed = (bit.band(input.commands, Move.Jump) ~= 0)
+    if self:GetIsOnGround() then
+        self.jumpedInAir = false
+    end
+    
+    local enoughTimePassed = not self:GetIsOnGround() and self:GetTimeGroundTouched() + 0.3 <= Shared.GetTime() or false
+    local usingJetpack = (enoughTimePassed or self.jumpedInAir) and jumpPressed
+
     self:UpdateJetpackMode()
     
     // handle jetpack start, ensure minimum wait time to deal with sound errors
-    if not self.jetpacking and (Shared.GetTime() - self.timeJetpackingChanged > 0.2) and jumpPressed and self:GetFuel()> 0 then
+    if not self.jetpacking and (Shared.GetTime() - self.timeJetpackingChanged > 0.2) and usingJetpack and self:GetFuel()> 0 then
     
         self:HandleJetpackStart()
         
@@ -268,7 +285,7 @@ function JetpackMarine:UpdateJetpack(input)
     end
     
     // handle jetpack stop, ensure minimum flight time to deal with sound errors
-    if self.jetpacking and (Shared.GetTime() - self.timeJetpackingChanged) > 0.2 and (self:GetFuel()== 0 or not jumpPressed) then
+    if self.jetpacking and (Shared.GetTime() - self.timeJetpackingChanged) > 0.2 and (self:GetFuel()== 0 or not usingJetpack) then
         self:HandleJetPackEnd()
     end
     
@@ -276,7 +293,13 @@ function JetpackMarine:UpdateJetpack(input)
     
         local jetpackLoop = Shared.GetEntity(self.jetpackLoopId)
         if jetpackLoop then
-            jetpackLoop:SetParameter("fuel", self:GetFuel(), 1)
+        
+            local fuel = self:GetFuel()
+            if self:GetIsWebbed() then
+                fuel = 0
+            end
+        
+            jetpackLoop:SetParameter("fuel", fuel, 1)
         end
         
     end
@@ -314,7 +337,10 @@ end
 
 function JetpackMarine:ModifyGravityForce(gravityTable)
 
-    gravityTable.gravity = JetpackMarine.kJetpackGravity
+    if self:GetIsJetpacking() or self:FallingAfterJetpacking() then
+        gravityTable.gravity = JetpackMarine.kJetpackGravity
+    end
+    
     Marine.ModifyGravityForce(self, gravityTable)
     
 end
@@ -322,14 +348,12 @@ end
 function JetpackMarine:ModifyVelocity(input, velocity, deltaTime)
 
     if self:GetIsJetpacking() then
-    
-        if self.onGround then
-            velocity:Scale(0.6)
-            velocity.y = 2
-        end
         
         local verticalAccel = 22
-        if input.move:GetLength() == 0 then
+        
+        if self:GetIsWebbed() then
+            verticalAccel = 5
+        elseif input.move:GetLength() == 0 then
             verticalAccel = 26
         end
     
@@ -343,7 +367,9 @@ function JetpackMarine:ModifyVelocity(input, velocity, deltaTime)
     
         // do XZ acceleration
         local prevXZSpeed = velocity:GetLengthXZ()
-        local maxSpeed = math.max(kFlySpeed, prevXZSpeed)
+        local maxSpeedTable = { maxSpeed = math.max(kFlySpeed, prevXZSpeed) }
+        self:ModifyMaxSpeed(maxSpeedTable)
+        local maxSpeed = maxSpeedTable.maxSpeed        
         
         if not self:GetIsJetpacking() then
             maxSpeed = prevXZSpeed
@@ -380,14 +406,6 @@ function JetpackMarine:OverrideUpdateOnGround(onGround)
     return onGround and not self:GetIsJetpacking()
 end
 
-function JetpackMarine:GetCanJump()
-    return false
-end
-
-function JetpackMarine:ModifyJump(input, velocity, jumpVelocity)
-    jumpVelocity.y = 4
-end
-
 function JetpackMarine:GetCrouchSpeedScalar()
 
     if self:GetIsJetpacking() then
@@ -396,10 +414,6 @@ function JetpackMarine:GetCrouchSpeedScalar()
     
     return Player.kCrouchSpeedScalar
     
-end
-
-function JetpackMarine:GetIsTakingOffFromGround()
-    return self.startedFromGround and (self.timeJetpackingChanged + JetpackMarine.kJetpackTakeOffTime > Shared.GetTime())
 end
 
 function JetpackMarine:UpdateJetpackMode()
@@ -428,6 +442,14 @@ end
 function JetpackMarine:GetJetPackMode()
 
     return self.jetpackMode
+
+end
+
+function JetpackMarine:ModifyJump(input, velocity, jumpVelocity)
+
+    jumpVelocity.y = jumpVelocity.y * 0.8
+
+    Marine.ModifyJump(self, input, velocity, jumpVelocity)
 
 end
 
@@ -486,4 +508,4 @@ function JetpackMarine:GetIsStunAllowed()
     return self:GetIsOnGround() and Marine.GetIsStunAllowed(self)
 end
 
-Shared.LinkClassToMap("JetpackMarine", JetpackMarine.kMapName, networkVars)
+Shared.LinkClassToMap("JetpackMarine", JetpackMarine.kMapName, networkVars, true)

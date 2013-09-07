@@ -9,8 +9,10 @@
 Script.Load("lua/Weapons/BulletsMixin.lua")
 Script.Load("lua/Weapons/Marine/ExoWeaponSlotMixin.lua")
 Script.Load("lua/TechMixin.lua")
-Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 Script.Load("lua/TeamMixin.lua")
+Script.Load("lua/PointGiverMixin.lua")
+Script.Load("lua/EffectsMixin.lua")
+Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 
 class 'Railgun' (Entity)
 
@@ -18,10 +20,13 @@ Railgun.kMapName = "railgun"
 
 local kChargeTime = 2
 // The Railgun will automatically shoot if it is charged for too long.
-local kChargeForceShootTime = 3
+local kChargeForceShootTime = 2.2
 local kRailgunRange = 400
 local kRailgunSpread = Math.Radians(0)
 local kBulletSize = 0.3
+local kRailgunMovementSlowdown = 0.8
+
+local kRailgunChargeTime = 1.4
 
 local kChargeSound = PrecacheAsset("sound/NS2.fev/marine/heavy/railgun_charge")
 
@@ -49,6 +54,8 @@ function Railgun:OnCreate()
     InitMixin(self, DamageMixin)
     InitMixin(self, BulletsMixin)
     InitMixin(self, ExoWeaponSlotMixin)
+    InitMixin(self, PointGiverMixin)
+    InitMixin(self, EffectsMixin)
     
     self.timeChargeStarted = 0
     self.railgunAttacking = false
@@ -87,15 +94,41 @@ end
 
 function Railgun:OnPrimaryAttack(player)
 
-    if not self.lockCharging then
+    if not self.lockCharging and self.timeOfLastShot + kRailgunChargeTime <= Shared.GetTime() then
     
         if not self.railgunAttacking then
+        
             self.timeChargeStarted = Shared.GetTime()
+            
+            // lock the second gun
+            
+            local exoWeaponHolder = player:GetActiveWeapon()
+            if exoWeaponHolder then
+            
+                local otherSlotWeapon = self:GetExoWeaponSlot() == ExoWeaponHolder.kSlotNames.Left and exoWeaponHolder:GetRightSlotWeapon() or exoWeaponHolder:GetLeftSlotWeapon()
+                if otherSlotWeapon and otherSlotWeapon:isa("Railgun") and not otherSlotWeapon.railgunAttacking then
+                    otherSlotWeapon:LockGun()
+                end
+            
+            end
+            
         end
         self.railgunAttacking = true
         
     end
     
+end
+
+function Railgun:ModifyMaxSpeed(maxSpeedTable)
+
+    if self.railgunAttacking then
+        maxSpeedTable.maxSpeed = maxSpeedTable.maxSpeed * kRailgunMovementSlowdown
+    end
+
+end
+
+function Railgun:GetIsThrusterAllowed()
+    return not self.railgunAttacking
 end
 
 function Railgun:GetWeight()
@@ -172,7 +205,7 @@ local function TriggerSteamEffect(self, player)
 end
 
 function Railgun:GetIsAffectedByWeaponUpgrades()
-    return false
+    return true
 end
 
 local function ExecuteShot(self, startPoint, endPoint, player)
@@ -226,6 +259,10 @@ local function ExecuteShot(self, startPoint, endPoint, player)
     
 end
 
+function Railgun:LockGun()
+    self.timeOfLastShot = Shared.GetTime()
+end
+
 local function Shoot(self, leftSide)
 
     local player = self:GetParent()
@@ -250,8 +287,7 @@ local function Shoot(self, leftSide)
             TriggerSteamEffect(self, player)
         end
         
-        self.timeOfLastShot = Shared.GetTime()
-        
+        self:LockGun()
         self.lockCharging = true
         
     end
@@ -396,24 +432,8 @@ if Client then
     local kRailgunMuzzleEffectRate = 0.5
     local kAttachPoints = { [ExoWeaponHolder.kSlotNames.Left] = "fxnode_l_railgun_muzzle", [ExoWeaponHolder.kSlotNames.Right] = "fxnode_r_railgun_muzzle" }
     local kMuzzleEffectName = PrecacheAsset("cinematics/marine/railgun/muzzle_flash.cinematic")
-    
-    function Railgun:GetIsActive()
-        return true
-    end
-    
-    function Railgun:GetPrimaryEffectRate()
-        return kRailgunMuzzleEffectRate
-    end
-    
-    function Railgun:GetPrimaryAttacking()
-        return (Shared.GetTime() - self.timeOfLastShot) <= kRailgunMuzzleEffectRate
-    end
-    
-    function Railgun:GetSecondaryAttacking()
-        return false
-    end
-    
-    function Railgun:OnClientPrimaryAttacking()
+
+    function Railgun:OnClientPrimaryAttackEnd()
     
         local parent = self:GetParent()
         
@@ -421,6 +441,18 @@ if Client then
             CreateMuzzleCinematic(self, kMuzzleEffectName, kMuzzleEffectName, kAttachPoints[self:GetExoWeaponSlot()] , parent)
         end
         
+    end
+    
+    function Railgun:GetSecondaryAttacking()
+        return false
+    end
+    
+    function Railgun:GetIsActive()
+        return true
+    end    
+    
+    function Railgun:GetPrimaryAttacking()
+        return self.railgunAttacking
     end
     
     function Railgun:OnProcessMove(input)

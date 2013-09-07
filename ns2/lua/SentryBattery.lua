@@ -34,6 +34,7 @@ Script.Load("lua/PowerConsumerMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'SentryBattery' (ScriptActor)
 SentryBattery.kMapName = "sentrybattery"
@@ -67,6 +68,7 @@ AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function SentryBattery:OnCreate()
 
@@ -92,6 +94,7 @@ function SentryBattery:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -123,6 +126,7 @@ function SentryBattery:OnInitialized()
     elseif Client then
     
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
         
     end
     
@@ -140,6 +144,29 @@ end
 
 function SentryBattery:GetRequiresPower()
     return false
+end
+
+function GetSentryBatteryInRoom(origin)
+
+    local location = GetLocationForPoint(origin)
+    local locationName = location and location:GetName() or nil
+    
+    if locationName then
+    
+        local batteries = Shared.GetEntitiesWithClassname("SentryBattery")
+        for b = 0, batteries:GetSize() - 1 do
+        
+            local battery = batteries:GetEntityAtIndex(b)
+            if battery:GetLocationName() == locationName then
+                return battery
+            end
+            
+        end
+        
+    end
+    
+    return nil
+    
 end
 
 function GetRoomHasNoSentryBattery(techId, origin, normal, commander)

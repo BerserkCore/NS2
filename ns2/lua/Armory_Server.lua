@@ -187,6 +187,21 @@ function Armory:ResupplyPlayers()
 
 end
 
+function Armory:UpdateResearch()
+
+    local researchId = self:GetResearchingId()
+
+    if researchId == kTechId.AdvancedArmoryUpgrade then
+    
+        local techTree = self:GetTeam():GetTechTree()    
+        local researchNode = techTree:GetTechNode(kTechId.AdvancedArmory)    
+        researchNode:SetResearchProgress(self.researchProgress)
+        techTree:SetTechNodeChanged(researchNode, string.format("researchProgress = %.2f", self.researchProgress)) 
+        
+    end
+
+end
+
 local function AddChildModel(self)
 
     local scriptActor = CreateEntity(ArmoryAddon.kMapName, nil, self:GetTeamNumber())
@@ -206,6 +221,39 @@ function Armory:OnResearch(researchId)
         
     end
     
+end
+
+function Armory:OnResearchCancel(researchId)
+
+    if researchId == kTechId.AdvancedArmoryUpgrade then
+    
+        local team = self:GetTeam()
+        
+        if team then
+        
+            local techTree = team:GetTechTree()
+            local researchNode = techTree:GetTechNode(kTechId.AdvancedArmory)
+            if researchNode then
+            
+                researchNode:ClearResearching()
+                techTree:SetTechNodeChanged(researchNode, string.format("researchProgress = %.2f", 0))   
+         
+            end
+            
+            for i = 0, self:GetNumChildren() - 1 do
+            
+                local child = self:GetChildAtIndex(i)
+                if child:isa("ArmoryAddon") then
+                    DestroyEntity(child)
+                    break
+                end
+                
+            end  
+
+        end  
+    
+    end
+
 end
 
 // Called when research or upgrade complete

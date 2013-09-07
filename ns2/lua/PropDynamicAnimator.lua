@@ -44,7 +44,7 @@ local function OnAnimateMessage(self)
     
         local value = self.inputValue
         local valLower = string.lower(value)
-        value = (valLower == "true" and true) or (valueLower == "false" and false) or value
+        value = (valLower == "true" and true) or value
         nearbyProps[p]:SetAnimationInput(self.inputName, value)
         
     end

@@ -73,9 +73,26 @@ kMarineWeaponEffects =
             {player_sound = "sound/NS2.fev/marine/flamethrower/draw", classname = "Flamethrower", done = true},
             {player_sound = "sound/NS2.fev/marine/shotgun/deploy", classname = "Shotgun", done = true},
             {player_sound = "sound/NS2.fev/marine/welder/deploy", classname = "Welder", done = true},
+            {player_sound = "sound/NS2.fev/marine/grenades/draw", classname = "GrenadeThrower", done = true},
             
         },
 
+    },
+    
+    grenade_throw =
+    {
+        effects = 
+        {
+            {player_sound = "sound/NS2.fev/marine/grenades/throw"},
+        }
+    },
+    
+    grenade_pull_pin =
+    {
+        effects = 
+        {
+            {player_sound = "sound/NS2.fev/marine/grenades/pin"},
+        }
     },
     
     exo_login =
@@ -111,7 +128,6 @@ kMarineWeaponEffects =
         emptySounds =
         {
             {player_sound = "sound/NS2.fev/marine/shotgun/fire_empty", classname = "Shotgun", done = true},
-            {player_sound = "sound/NS2.fev/marine/shotgun/fire_empty", classname = "NadeLauncher", done = true},
             {player_sound = "sound/NS2.fev/marine/common/empty", classname = "Rifle", done = true},
             {player_sound = "sound/NS2.fev/marine/common/empty", classname = "Flamethrower", done = true},
             {player_sound = "sound/NS2.fev/marine/common/empty", classname = "GrenadeLauncher", done = true},
@@ -124,7 +140,8 @@ kMarineWeaponEffects =
     {
         rifleAltAttackEffects = 
         {
-            {player_sound = "sound/NS2.fev/marine/rifle/alt_swing"},
+            { player_sound = "sound/NS2.fev/marine/rifle/alt_swing_female", sex = "female", done = true },
+            { player_sound = "sound/NS2.fev/marine/rifle/alt_swing" },
         },
     },
     
@@ -148,24 +165,50 @@ kMarineWeaponEffects =
     {
         axeAttackEffects = 
         {
-            {player_sound = "sound/NS2.fev/marine/axe/attack"},
+            { player_sound = "sound/NS2.fev/marine/axe/attack_female", sex = "female", done = true },
+            { player_sound = "sound/NS2.fev/marine/axe/attack" },
         },
+    },
+    
+    shotgun_attack_sound_last =
+    {
+        effects =
+        {
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire_last"},
+        }
+    },
+    
+    shotgun_attack_sound = 
+    {
+        effects =
+        {
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire"},
+        }
+    },
+    
+    shotgun_attack_sound_medium = 
+    {
+        effects =
+        {
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire_upgrade_1"},
+        }
+    },
+    
+    shotgun_attack_sound_max = 
+    {
+        effects =
+        {
+            {player_sound = "sound/NS2.fev/marine/shotgun/fire_upgrade_3"},
+        }
     },
 
     shotgun_attack = 
     {
         shotgunAttackEffects = 
         {
-            {player_sound = "sound/NS2.fev/marine/shotgun/fire", empty = false},
-            
             {viewmodel_cinematic = "cinematics/marine/shotgun/muzzle_flash.cinematic", attach_point = "fxnode_shotgunmuzzle"},
             {weapon_cinematic = "cinematics/marine/shotgun/muzzle_flash.cinematic", attach_point = "fxnode_shotgunmuzzle"},
             {weapon_cinematic = "cinematics/marine/shotgun/shell.cinematic", attach_point = "fxnode_shotguncasing"} ,
-        },
-
-        shotgunAttackEmptyEffects = 
-        {
-            {player_sound = "sound/NS2.fev/marine/shotgun/fire_last", empty = true},
         },
     },
     
@@ -281,14 +324,6 @@ kMarineWeaponEffects =
         },
     },
     
-    flamethrower_pilot =
-    {
-        flamethrowerPilotEffects =
-        {
-            {viewmodel_cinematic = "cinematics/marine/flamethrower/pilot.cinematic", attach_point = "fxnode_flamethrowermuzzle", empty = false},
-        }
-    },
-    
     mine_spawn =
     {
         mineSpawn =
@@ -321,7 +356,7 @@ kMarineWeaponEffects =
         releaseNerveGasEffects = 
         {
             {parented_cinematic = "cinematics/marine/grenades/nerve_explo.cinematic"},
-            {sound = "sound/NS2.fev/marine/flamethrower/attack"},
+            {sound = "sound/NS2.fev/marine/grenades/gas/explode"},
         },    
     },
 
@@ -369,7 +404,7 @@ kMarineWeaponEffects =
     {
         grenadeExplodeEffects =
         {  
-            {sound = "sound/NS2.fev/marine/common/explode"},
+            {sound = "sound/NS2.fev/marine/grenades/cluster/primary_explode"},
             {cinematic = "cinematics/marine/grenades/cluster_main_explo.cinematic", done = true}
         }
     },
@@ -378,7 +413,7 @@ kMarineWeaponEffects =
     {
         grenadeExplodeEffects =
         {  
-            {sound = "sound/NS2.fev/marine/common/explode"},
+            {sound = "sound/NS2.fev/marine/grenades/cluster/secondary_explode"},
             {cinematic = "cinematics/marine/grenades/cluster_small_explos.cinematic", done = true}
         }
     },
@@ -395,7 +430,7 @@ kMarineWeaponEffects =
     {
         pulseGrenadeEffects =
         {   
-            {sound = "sound/NS2.fev/marine/heavy/railgun_fire"},
+            {sound = "sound/NS2.fev/marine/grenades/pulse/explode"},
             {cinematic = "cinematics/marine/grenades/pulse_explo.cinematic", done = true},
         },
     },

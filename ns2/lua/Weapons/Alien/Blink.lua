@@ -17,10 +17,12 @@ class 'Blink' (Ability)
 
 Blink.kMapName = "blink"
 
+local kVortexTeleport = PrecacheAsset("cinematics/alien/fade/vortex_end_1p.cinematic")
+
 // initial force added when starting blink
 local kEtherealForce = 13.5
 // always add a little above top speed
-local kBlinkAddForce = 0.5
+local kBlinkAddForce = 1
 local kEtherealVerticalForce = 2
 
 local networkVars =
@@ -92,6 +94,57 @@ function Blink:GetPrimaryAttackAllowed()
     return not self:GetIsBlinking()
 end
 
+function Blink:ConsumeVortex(player)
+
+    local vortexAbility = player:GetWeapon(Vortex.kMapName)
+    if vortexAbility and vortexAbility.etherealGateId then
+        
+        local gate = Shared.GetEntity(vortexAbility.etherealGateId)
+        if gate then
+            
+            player:TriggerEffects("vortexed_end")
+            player:SetOrigin(gate:GetOrigin())
+            
+            local newVelocity = player:GetVelocity()
+            newVelocity.x = 0
+            newVelocity.z = 0
+            newVelocity.y = math.max(0, newVelocity.y)
+            
+            player:SetVelocity(newVelocity)
+            player:TriggerEffects("vortexed_end")
+            
+            player.timeOfLastPhase = Shared.GetTime()
+            player.timeOfLastPhaseClient = Shared.GetTime()
+            player.hasEtherealGate = false
+            
+            if gate.fadeCrouched then
+                
+                player.crouching = true
+                player.timeOfCrouchChange = Shared.GetTime() - 1
+                
+            end
+            
+            if Server then
+
+                DestroyEntity(gate)
+                
+            elseif Client then     
+       
+                if Client.GetLocalPlayer() == player and player:GetIsFirstPerson() then
+                    
+                    local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
+                    cinematic:SetCinematic(kVortexTeleport)
+                    
+                end
+                
+            end
+            
+        end
+        
+    end
+
+end
+
 function Blink:GetSecondaryEnergyCost(player)
     return kStartBlinkEnergyCost
 end
@@ -100,7 +153,7 @@ function Blink:OnSecondaryAttack(player)
 
     local minTimePassed = not player:GetRecentlyBlinked()
     local hasEnoughEnergy = player:GetEnergy() > kStartBlinkEnergyCost
-    if not player.etherealStartTime or minTimePassed and hasEnoughEnergy and self:GetBlinkAllowed() then
+    if not player.etherealStartTime or minTimePassed and hasEnoughEnergy and player:GetBlinkAllowed() then
     
         // Enter "ether" fast movement mode, but don't keep going ethereal when button still held down after
         // running out of energy.
@@ -149,13 +202,14 @@ function Blink:SetEthereal(player, state)
 
             local celerityLevel = GetHasCelerityUpgrade(player) and GetSpurLevel(player:GetTeamNumber()) or 0
             local oldSpeed = player:GetVelocity():GetLength()
-            local newSpeed = math.max(oldSpeed, kEtherealForce + celerityLevel * 1)
+            local oldVelocity = player:GetVelocity()
+            oldVelocity.y = 0
+            local newSpeed = math.max(oldSpeed, kEtherealForce + celerityLevel * 0.5)
 
             // need to handle celerity different for the fade. blink is a big part of the basic movement, celerity wont be significant enough if not considered here
-            local celerityMultiplier = 1 + celerityLevel * 0.5
+            local celerityMultiplier = 1 + celerityLevel * 0.3
 
-            
-            local newVelocity = player:GetViewCoords().zAxis * (kEtherealForce + celerityLevel * 1) + player:GetVelocity()
+            local newVelocity = player:GetViewCoords().zAxis * (kEtherealForce + celerityLevel * 0.5) + oldVelocity
             if newVelocity:GetLength() > newSpeed then
                 newVelocity:Scale(newSpeed / newVelocity:GetLength())
             end
@@ -178,8 +232,7 @@ function Blink:SetEthereal(player, state)
         end
         
         player.ethereal = state        
-        player:SetEthereal(state)
-        
+
         // Give player initial velocity in direction we're pressing, or forward if not pressing anything.
         if player.ethereal then
         
@@ -187,7 +240,12 @@ function Blink:SetEthereal(player, state)
             player:DeductAbilityEnergy(kStartBlinkEnergyCost)
             player:TriggerBlink()
             
-        else
+        -- A case where OnBlinkEnd() does not exist is when a Fade becomes Commanders and
+        -- then a new ability becomes available through research which calls AddWeapon()
+        -- which calls OnHolster() which calls this function. The Commander doesn't have
+        -- a OnBlinkEnd() function but the new ability is still added to the Commander for
+        -- when they log out and become a Fade again.
+        elseif player.OnBlinkEnd then
             player:OnBlinkEnd()
         end
         

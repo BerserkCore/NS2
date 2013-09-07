@@ -1,0 +1,56 @@
+<shader>
+
+	<inputs>
+		<input name="emissiveMap1" type="texture" address="wrap" srgb="true"/>
+		<input name="emissiveMap2" type="texture" address="wrap" srgb="true"/>
+		
+		<input name="refractMap" type="texture" address="wrap" srgb="true"/>
+
+		<input name="tint" type="float3" />  
+		<input name="em1Coord" type="float4" />  
+	   
+		<input name="em2Coord" type="float4" /> 
+		
+		<input name="normCoord" type="float4" /> 
+		
+		<input name="normIntensity" type="float">0.10</input> 
+		<input name="fresnelPower" type="float"></input>
+		
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">true</param>		
+	</params>
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			float4 emiss1 = tex2D(emissiveMap1, input.texCoord * float2(em1Coord.r, em1Coord.g) + float2( time * em1Coord.b, time * em1Coord.a)+ (DecodeNormal( tex2D(refractMap, input.texCoord * float2(normCoord.r, normCoord.g) + float2(time * normCoord.b, time * normCoord.a)) ).xy * normIntensity ));	
+			
+
+
+			float4 emiss2 = tex2D(emissiveMap2, input.texCoord * float2(em2Coord.r, em2Coord.g) + float2( time * em2Coord.b, time * em2Coord.a) + (DecodeNormal( tex2D(refractMap, input.texCoord * float2(normCoord.r, normCoord.g) + float2(time * normCoord.b, time * normCoord.a)) ).xy * normIntensity ));	
+			
+			
+			float fresnel =  pow(max(-input.vsNormal.z, 0), fresnelPower);
+
+
+			material.emissive 	=  (emiss1.rgb  * emiss2.rgb * input.color.rgb) * tint  *fresnel ;
+	
+			
+		}
+	]]>
+	</code>
+
+</shader>

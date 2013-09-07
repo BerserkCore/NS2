@@ -1,9 +1,9 @@
 settings = 
-	[
-		{ name="shadows" 			default="true" }
-		{ name="fog" 				default="true" }
-	]
-	
+    [
+        { name="shadows"             default="true" }
+        { name="fog"                 default="true" }
+    ]
+    
 // The G-Buffer is stored as:
 //
 //      R G     - view space depth, object ID
@@ -13,99 +13,88 @@ settings =
 //
 // This leaves one 8-bit component free in the albedo map and one 2-bit
 // component free in the normal map.
-	
+    
 resources =
-	[
-		// G-buffer
-		{ name="depth" 					format="G16R16F" 		x_scale=1 y_scale=1 }
-		{ name="albedo" 				format="A8R8G8B8" 		x_scale=1 y_scale=1 }
-		{ name="specular_gloss" 		format="A8R8G8B8" 		x_scale=1 y_scale=1 }
-		{ name="normal" 				format="A2R10G10B10" 	x_scale=1 y_scale=1 }
-		
-		// Stores a copy of the final lit scene which is fed into the refraction pass
-		{ name="refraction"				format="A16B16G16R16F"	x_scale=1 y_scale=1 }
-	]
-	
+    [
+        // G-buffer
+        { name="depth"                  format="G16R16F"        x_scale=1 y_scale=1 }
+        { name="albedo"                 format="R8G8B8A8"       x_scale=1 y_scale=1 srgb=true }
+        { name="specular_gloss"         format="R8G8B8A8"       x_scale=1 y_scale=1 srgb=true }
+        { name="normal"                 format="A2R10G10B10"    x_scale=1 y_scale=1 }
+        
+    ]
+    
 layers =
-	[
-	
-		// Fill in the G-buffer.
-		{
-			name							= "gbuffer"
-			color_targets					= "albedo normal specular_gloss depth"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "WriteDeferred"
-			clear							= "color depth stencil"
-			generator						= "objects"
-			objects_mask					= "~decal"
-		}
-		
-		//  Render the decals into the G-buffer.
-		{
-			name							= "gbuffer_decals"
-			color_targets					= "albedo normal specular_gloss"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "Decal"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}		
+    [
+    
+        // Fill in the G-buffer.
+        {
+            name                            = "gbuffer"
+            color_targets                   = "albedo normal specular_gloss depth"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "WriteDeferred"
+            clear                           = "color depth stencil"
+            generator                       = "objects"
+            objects_mask                    = "~decal"
+        }
+        
+        //  Render the decals into the G-buffer.
+        {
+            name                            = "gbuffer_decals"
+            color_targets                    = "albedo normal specular_gloss"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                        = "Decal"
+            parameters                        = { depthTexture = "depth" }
+            generator                        = "objects"
+            objects_mask                    = "decal"
+        }        
 
-		// Generate the shadow maps.
-		{
-			name							= "shadow_mapping"
-			conditions						= { shadows = "true" }
-			generator						= "shadow_mapping"
-			technique						= "WriteShadowMap"
-		}
-		
-		// Render the lighting passes.
-		{ 
-			name							= "lighting"
-			color_targets					= "back_buffer"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			clear							= "color stencil"
-			generator						= "deferred_shading"
-			shader							= "renderer/RenderDeferred.fx"
-			parameters 						= {
-					albedoTexture 			= "albedo"
-					normalTexture 			= "normal"
-					specularGlossTexture 	= "specular_gloss"
-					depthTexture 			= "depth"
-				}
-		}
-/*
-		// Add in the fog.
-		{
-			name							= "fog"
-			conditions						= { fog = "true" }
-			color_targets					= "back_buffer"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			generator						= "fog"
-			shader							= "renderer/RenderDeferred.fx"
-			parameters 						= { depthTexture = "depth" }
-		}
-	*/	
-		// Add in the emissive pass.
-		{
-			name							= "emissive"
-			color_targets					= "back_buffer"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "WriteEmissive"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "~ decal particles"
-		}
-		
-		// Add in the emissive pass for the decals.
-		{
-			name							= "emissive_decals"
-			color_targets					= "back_buffer"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "DecalEmissive"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}
-		
-	]
+        // Generate the shadow maps.
+        {
+            name                            = "shadow_mapping"
+            conditions                        = { shadows = "true" }
+            generator                        = "shadow_mapping"
+            technique                        = "WriteShadowMap"
+        }
+        
+        // Render the lighting passes.
+        { 
+            name                            = "lighting"
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            clear                           = "color"
+            generator                       = "deferred_shading"
+            shader                          = "renderer/DeferredShading.shader"
+            volume_shader                   = "renderer/LightVolume.shader"
+            volume_technique                = "StencilTwoSided"
+            parameters                      = {
+                    albedoTexture           = "albedo"
+                    normalTexture           = "normal"
+                    specularGlossTexture    = "specular_gloss"
+                    depthTexture            = "depth"
+                }
+        } 
+
+        // Add in the emissive pass.
+        {
+            name                            = "emissive"
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "WriteEmissive"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "~ decal particles"
+        }
+        
+        // Add in the emissive pass for the decals.
+        {
+            name                            = "emissive_decals"
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "DecalEmissive"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "decal"
+        }
+        
+    ]

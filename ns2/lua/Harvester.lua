@@ -21,6 +21,7 @@ Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/BiomassMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Harvester' (ResourceTower)
 Harvester.kMapName = "harvester"
@@ -39,6 +40,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(HiveVisionMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Harvester:OnCreate()
 
@@ -84,6 +86,8 @@ function Harvester:OnInitialized()
         self.glowIntensity = ConditionalValue(self:GetIsBuilt(), 1, 0)
         
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -132,9 +136,8 @@ if Client then
 
 end
 
-local kHarvesterHealthbarOffset = Vector(0, 2.2, 0)
 function Harvester:GetHealthbarOffset()
-    return kHarvesterHealthbarOffset
+    return 2.2
 end 
 
 function Harvester:GetCanBeUsed(player, useSuccessTable)

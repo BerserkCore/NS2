@@ -27,7 +27,7 @@ VortexAbleMixin.optionalCallbacks =
 
 VortexAbleMixin.networkVars =
 {
-    vortexed = "boolean"
+    vortexed = "boolean"    
 }
 
 function VortexAbleMixin:__initmixin()

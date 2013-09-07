@@ -27,7 +27,8 @@ local defaultConfig = {
                                 end_round_on_team_unbalance_after_warning_time = 30,
                                 auto_kick_afk_time = 300,
                                 auto_kick_afk_capacity = 0.5,
-                                voting = { votekickplayer = true, votechangemap = true, voteresetgame = true, voterandomizerr = true }
+                                voting = { votekickplayer = true, votechangemap = true, voteresetgame = true, voterandomizerr = true },
+                                reserved_slots = { amount = 0, ids = { } }
                             },
                         tags = { "rookie" }
                       }
@@ -72,9 +73,7 @@ function Server.GetHasTag(tag)
 end
 
 function Server.GetIsRookieFriendly()
-
-    return Server.GetHasTag("rookie");
-
+    return Server.GetHasTag("rookie")
 end
 
 /**
@@ -83,6 +82,10 @@ end
  */
 function Server.SetConfigSetting(name, setting)
     config.settings[name] = setting
+end
+
+function Server.SaveConfigSettings()
+    SaveConfigFile(configFileName, config)
 end
 
 /**

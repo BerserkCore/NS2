@@ -26,6 +26,7 @@ Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/UpgradableMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Extractor' (ResourceTower)
 
@@ -49,6 +50,7 @@ AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(HiveVisionMixin, networkVars)
 AddMixinNetworkVars(UpgradableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Extractor:OnCreate()
 
@@ -91,6 +93,8 @@ function Extractor:OnInitialized()
     elseif Client then
         InitMixin(self, UnitStatusMixin)
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -110,9 +114,8 @@ if Server then
     
 end
 
-local kExtractorHealthbarOffset = Vector(0, 2.0, 0)
 function Extractor:GetHealthbarOffset()
-    return kExtractorHealthbarOffset
+    return 2.0
 end 
 
 function Extractor:GetUnitNameOverride()

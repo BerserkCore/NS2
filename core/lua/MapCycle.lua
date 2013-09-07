@@ -159,7 +159,7 @@ end
 function MapCycle_TestCycleMap()
 
     // time is stored as minutes so convert to seconds.
-    if Shared.GetTime() < (cycle.time * 60) then
+    if cycle.time == 0 or Shared.GetTime() < (cycle.time * 60) then
         // We haven't been on the current map for long enough.
         return false
     end

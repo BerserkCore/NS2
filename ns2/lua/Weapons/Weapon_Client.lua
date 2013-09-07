@@ -57,6 +57,8 @@ function Weapon:OnGetIsVisible(visTable)
                 visTable.Visible = not GetAreEnemies(localPlayer, self)
             end
             
+            visTable.Visible = visTable.Visible and self.weaponWorldState == true
+            
         end
         
     end

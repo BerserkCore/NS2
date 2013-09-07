@@ -12,13 +12,13 @@ function Skulk:InitWeapons()
     
     self:GiveItem(BiteLeap.kMapName)
     self:GiveItem(Parasite.kMapName)
-
-    self:SetActiveWeapon(BiteLeap.kMapName)
+    
+    self:SetActiveWeapon(BiteLeap.kMapName)    
     
 end
 
 function Skulk:GetTierTwoTechId()
-    return kTechId.Leap
+    return kTechId.None
 end
 
 function Skulk:GetTierThreeTechId()

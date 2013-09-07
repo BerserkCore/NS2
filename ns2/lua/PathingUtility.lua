@@ -12,6 +12,7 @@ Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
 gDebugPathing = false
+local gPathingInitialized = false
 
 // Script based pathing flags
 
@@ -56,11 +57,26 @@ function GetPathingOptions()
     return gPathingOptions
 end
 
+function GetIsPathingMeshInitialized()
+    return gPathingInitialized
+end
+
 // Function that does everything for the building of the mesh
 function InitializePathing()
 
     Pathing.SetOptions(GetPathingOptions())
     Pathing.BuildMesh()
+    
+    gPathingInitialized = true
+    
+    local obstacles = GetEntitiesWithMixin("Obstacle")
+    
+    for i = 1, #obstacles do
+    
+        local obstacle = obstacles[i]
+        obstacle:OnPathingMeshInitialized() 
+    
+    end
     
 end
 

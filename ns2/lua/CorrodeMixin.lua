@@ -33,7 +33,7 @@ local function CorrodeOnInfestation(self)
         
     end
 
-    if self:GetGameEffectMask(kGameEffect.OnInfestation) and self:GetCanTakeDamage() then
+    if self:GetGameEffectMask(kGameEffect.OnInfestation) and self:GetCanTakeDamage() and (not HasMixin(self, "GhostStructure") or not self:GetIsGhostStructure()) then
     
         self:DeductHealth(kInfestationCorrodeDamagePerSecond, nil, nil, false, true, true)
         self:SetCorroded()
@@ -51,7 +51,7 @@ function CorrodeMixin:__initmixin()
         self.isCorroded = false
         self.timeCorrodeStarted = 0
         
-        if not self:isa("Player") and not self:isa("MAC") and kCorrodeMarineStructureArmorOnInfestation then
+        if not self:isa("Player") and not self:isa("MAC") and not self:isa("Exosuit") and kCorrodeMarineStructureArmorOnInfestation then
         
             self:AddTimedCallback(CorrodeOnInfestation, 1)
             self.updateInitialInfestationCorrodeState = true

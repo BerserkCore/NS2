@@ -13,41 +13,51 @@ Script.Load("lua/GUIScript.lua")
 
 class 'GUIMinimapButtons' (GUIScript)
 
-local kMinimapButtonTexture = "ui/minimap_buttons.dds"
-local kPingIconTexture = "ui/ping_icon.dds"
-local kPingIconTextureAlien = "ui/ping_icon_alien.dds"
+local kButtonBackgroundTexture =
+{
+    [kMarineTeamType] = "ui/marine_buildmenu_buttonbg.dds",
+    [kAlienTeamType] = "ui/alien_buildmenu_buttonbg.dds",
+}
 
-local kBackgroundSize = GUIScale(Vector(40, 160, 0))
 local kBackgroundPos = GUIScale(Vector(16, -6, 0))
-local kBackgroundTexCoords = { 0, 0, 128, 386 }
+local kButtonSize = GUIScale(Vector(60, 60, 0))
 
-local kButtonSize = GUIScale(Vector(60, 50, 0))
-local kPingButtonTexCoords = { 128, 0, 128 + 80, 80 }
-local kPingButtonActiveTexCoords = { 128, 80, 128 + 80, 160 }
+local kIconTexture = "ui/buildmenu.dds"
+
+local function CreateButtonBackground(self, position, child)
+
+    local buttonBackground = GetGUIManager():CreateGraphicItem()
+    buttonBackground:SetTexture(kButtonBackgroundTexture[PlayerUI_GetTeamType()])
+    buttonBackground:SetPosition(position)
+    buttonBackground:SetSize(kButtonSize)
+    buttonBackground:AddChild(child)
+    
+    self.background:AddChild(buttonBackground)
+
+end
 
 function GUIMinimapButtons:Initialize()
 
     self.pingButtonActive = false
     
-    local texture = kPingIconTexture
-    
-    if PlayerUI_GetTeamType() == kAlienTeamType then
-        texture = kPingIconTextureAlien
-    end
+    self.teamType = PlayerUI_GetTeamType()
     
     self.background = GetGUIManager():CreateGraphicItem()
     self.background:SetPosition(kBackgroundPos)
-    self.background:SetSize(kBackgroundSize)
     self.background:SetAnchor(GUIItem.Right, GUIItem.Top)
-    self.background:SetTexture(kMinimapButtonTexture)
     self.background:SetColor(Color(1,1,1,0))
-    self.background:SetTexturePixelCoordinates(unpack(kBackgroundTexCoords))
   
     self.pingButton = GetGUIManager():CreateGraphicItem()
     self.pingButton:SetSize(kButtonSize)
-    self.pingButton:SetTexture(texture)
-    
-    self.background:AddChild(self.pingButton)
+    self.pingButton:SetTexture(kIconTexture)
+    self.pingButton:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(kTechId.PingLocation)))   
+    CreateButtonBackground(self, Vector(0,0,0), self.pingButton)
+
+    self.techMapButton = GetGUIManager():CreateGraphicItem()
+    self.techMapButton:SetSize(kButtonSize)
+    self.techMapButton:SetTexture(kIconTexture)
+    self.techMapButton:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(kTechId.Research)))  
+    CreateButtonBackground(self, Vector(0, kButtonSize.y, 0), self.techMapButton)
     
 end
 
@@ -68,24 +78,29 @@ end
 
 function GUIMinimapButtons:Update(deltaTime)
 
-    local alpha = GetCommanderPingEnabled() and 1 or 0.7
-    
-    local useColor = kNeutralTeamColor
-    
-    if PlayerUI_IsOnAlienTeam() then
-        useColor = Color(kAlienTeamColorFloat)
-    elseif PlayerUI_IsOnMarineTeam() then
-        useColor = Color(kMarineTeamColorFloat)
-    end
-    
-    useColor.a = alpha
+    local teamColor = kIconColors[self.teamType]    
+    local useColor = Color(
+        teamColor.r,
+        teamColor.g,
+        teamColor.b,
+        GetCommanderPingEnabled() and 1 or 0.7
+    )
     
     self.pingButton:SetColor(useColor)
+    
+    local techMapScript = ClientUI.GetScript("GUITechMap")
+    if techMapScript then
+   
+        local mapActive = techMapScript.background:GetIsVisible() 
+        useColor.a = mapActive and 1 or 0.7
+        self.techMapButton:SetColor(useColor)
+        
+    end    
     
 end
 
 function GUIMinimapButtons:ContainsPoint(pointX, pointY)
-    return GUIItemContainsPoint(self.pingButton, pointX, pointY)
+    return GUIItemContainsPoint(self.pingButton, pointX, pointY) or GUIItemContainsPoint(self.techMapButton, pointX, pointY)
 end
 
 function GUIMinimapButtons:SendKeyEvent(key, down)
@@ -99,8 +114,36 @@ function GUIMinimapButtons:SendKeyEvent(key, down)
             SetCommanderPingEnabled(true)
             return true
             
+        elseif GUIItemContainsPoint(self.techMapButton, mouseX, mouseY) then
+        
+            local techMapScript = ClientUI.GetScript("GUITechMap")
+            if techMapScript and not down then
+                
+                local showMap = not techMapScript.background:GetIsVisible()
+                techMapScript:ShowTechMap(showMap)
+                
+            end
+            
+            return true
+            
         end
         
+    elseif key == InputKey.Escape or (GetIsBinding(key, "ShowTechMap") and not down) then
+    
+        local showingMap = false 
+        local techMapScript = ClientUI.GetScript("GUITechMap")
+        if techMapScript and techMapScript.background:GetIsVisible() then
+        
+            techMapScript:ShowTechMap(false)
+            return true
+            
+        elseif GetCommanderPingEnabled() then
+        
+            SetCommanderPingEnabled(false)
+            return true
+            
+        end
+    
     end
     
 end

@@ -21,11 +21,16 @@ function MarineBuy_GetWeaponDescription(techId)
         gWeaponDescription[kTechId.GrenadeLauncher] = "WEAPON_DESC_GRENADELAUNCHER"
         gWeaponDescription[kTechId.Welder] = "WEAPON_DESC_WELDER"
         gWeaponDescription[kTechId.LayMines] = "WEAPON_DESC_MINE"
+        gWeaponDescription[kTechId.ClusterGrenade] = "WEAPON_DESC_CLUSTER_GRENADE"
+        gWeaponDescription[kTechId.GasGrenade] = "WEAPON_DESC_GAS_GRENADE"
+        gWeaponDescription[kTechId.PulseGrenade] = "WEAPON_DESC_PULSE_GRENADE"
         gWeaponDescription[kTechId.Jetpack] = "WEAPON_DESC_JETPACK"
         gWeaponDescription[kTechId.Exosuit] = "WEAPON_DESC_EXO"
         gWeaponDescription[kTechId.DualMinigunExosuit] = "WEAPON_DESC_DUALMINIGUN_EXO"
+        gWeaponDescription[kTechId.UpgradeToDualMinigun] = "WEAPON_DESC_DUALMINIGUN_EXO"
         gWeaponDescription[kTechId.ClawRailgunExosuit] = "WEAPON_DESC_CLAWRAILGUN_EXO"
         gWeaponDescription[kTechId.DualRailgunExosuit] = "WEAPON_DESC_DUALRAILGUN_EXO"
+        gWeaponDescription[kTechId.UpgradeToDualRailgun] = "WEAPON_DESC_DUALRAILGUN_EXO"
         
     end
     
@@ -135,6 +140,9 @@ local function GetDisplayTechId(techId)
         gDisplayTechs[kTechId.Flamethrower] = true
         gDisplayTechs[kTechId.GrenadeLauncher] = true
         gDisplayTechs[kTechId.Welder] = true
+        gDisplayTechs[kTechId.ClusterGrenade] = true
+        gDisplayTechs[kTechId.GasGrenade] = true
+        gDisplayTechs[kTechId.PulseGrenade] = true
         gDisplayTechs[kTechId.LayMines] = true
         gDisplayTechs[kTechId.Jetpack] = true
         gDisplayTechs[kTechId.Exosuit] = true

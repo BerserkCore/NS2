@@ -11,7 +11,7 @@ Script.Load("lua/ConfigFileUtility.lua")
 local consistencyConfigFileName = "ConsistencyConfig.json"
 
 // Write out the default file if it doesn't exist.
-local defaultConfig = { check = { "game_setup.xml", "*.lua", "*.fx", "*.screenfx", "*.surface_shader", "*.fxh", "*.render_setup", "*.shader_template", "*.level",
+local defaultConfig = { check = { "game_setup.xml", "*.lua", "*.hlsl", "*.shader", "*.screenfx", "*.surface_shader", "*.fxh", "*.render_setup", "*.shader_template", "*.level",
                                   "*.dds", "*.jpg", "*.png", "*.cinematic", "*.material", "*.model", "*.animation_graph", "*.polygons", "*.fev", "*.fsb" },
                         ignore = { "ui/*.dds", "*_view*.dds", "*_view*.material", "*_view*.model", "models/marine/hands/*"  } }
 WriteDefaultConfigFile(consistencyConfigFileName, defaultConfig)

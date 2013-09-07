@@ -65,7 +65,11 @@ function TechTree:GetRequiredTechIds()
         local prereq2 = node:GetPrereq2()
         if prereq2 and prereq2 ~= kTechId.None then
             requiredTechIds[prereq2] = true
-        end    
+        end
+        
+        if node.isRequired then
+            requiredTechIds[node:GetTechId()] = true
+        end
     
     end
 
@@ -80,20 +84,10 @@ function TechTree:GetTechAvailable(techId)
     else
     
         local techNode = self:GetTechNode(techId)
-        if(techNode == nil) then
-        
-            if not silenceError then
-                local msg = "TechTree:GetTechAvailable(kTechId.%s): Couldn't find tech node (%s)"
-                Print(msg, EnumToString(kTechId, techId), GetDisplayNameForTechId(techId))
-            end
-            
-            return false
-        end
-        
-        return techNode:GetAvailable()
+        return techNode and techNode:GetAvailable() or false
         
     end
-
+    
 end
 
 // Check if active structures on our team that support this technology. These are
@@ -119,9 +113,15 @@ function TechTree:GetHasTech(techId)
 
                 if techInheritance[1] == techId then
                 
-                    node = self:GetTechNode(techInheritance[2])
-                    if node then
-                        hasTech = node:GetHasTech()
+                    local childNode = self:GetTechNode(techInheritance[2])
+                    if childNode then
+                    
+                        hasTech = childNode:GetHasTech()
+                        
+                        if hasTech then
+                            break
+                        end
+                        
                     end
                     
                 end
@@ -257,22 +257,15 @@ end
 // Return array of tech ids that are addons for specified tech id
 function TechTree:GetAddOnsForTechId(techId)
 
-    local addons = {}
+    local addons = { }
     
-    for index, techNode in pairs(self.nodeList) do    
-        
+    for index, techNode in pairs(self.nodeList) do
+    
         if techNode ~= nil and techNode:isa("TechNode") then
         
             if techNode:GetAddOnTechId() == techId then
-            
                 table.insert(addons, techNode:GetTechId())
-                
             end
-            
-        else
-        
-            local formatString = "TechTree:GetAddOnsForTechId(%d) - Couldn't find tech node with id %d (%s)"
-            Print(formatString, techId, id, SafeClassName(techNode))
             
         end
         
@@ -351,5 +344,29 @@ function GetTechAvailable(callingEntity, techId)
     end
     
     return false
+
+end
+
+function GetIsTechUnlocked(player, techId)
+
+    local techTree = GetTechTree(player:GetTeamNumber())
+    local isUnlocked = false
+    
+    if techTree then
+    
+        local techNode = techTree:GetTechNode(techId)
+        if techNode then
+        
+            if techNode:GetIsResearch() then
+                return techNode:GetHasTech()
+            else
+                return techNode:GetAvailable()
+            end   
+ 
+        end
+    
+    end
+    
+    return isUnlocked    
 
 end

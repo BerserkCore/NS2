@@ -251,7 +251,7 @@ end
 
 function Spectator:OnShowMap(show)
 
-    self.minimapVisible = down
+    self.minimapVisible = false
     UpdateMapDisplay(self, show)
     
 end

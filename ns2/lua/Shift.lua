@@ -49,6 +49,7 @@ Script.Load("lua/RepositioningMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
 Script.Load("lua/BiomassMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Shift' (ScriptActor)
 
@@ -59,6 +60,7 @@ Shift.kModelName = PrecacheAsset("models/alien/shift/shift.model")
 local kAnimationGraph = PrecacheAsset("models/alien/shift/shift.animation_graph")
 
 Shift.kEchoTargetSound = PrecacheAsset("sound/NS2.fev/alien/structures/shift/energize")
+Shift.kShiftEchoSound2D = PrecacheAsset("sound/NS2.fev/alien/structures/shift/energize_player")
 
 Shift.kEnergizeSoundEffect = PrecacheAsset("sound/NS2.fev/alien/structures/shift/energize")
 Shift.kEnergizeTargetSoundEffect = PrecacheAsset("sound/NS2.fev/alien/structures/shift/energize_player")
@@ -72,6 +74,8 @@ Shift.kEnergizeLargeTargetEffect = PrecacheAsset("cinematics/alien/shift/energiz
 Shift.kEchoMaxRange = 20
 
 local kNumEggSpotsPerShift = 20
+
+local kEchoCooldown = 1
 
 local networkVars =
 {
@@ -114,6 +118,7 @@ AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 local function GetIsTeleport(techId)
 
@@ -291,6 +296,8 @@ function Shift:OnInitialized()
         InitMixin(self, HiveVisionMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -343,7 +350,7 @@ function Shift:PreventTurning()
 end
 
 function Shift:OverrideRepositioningSpeed()
-    return kShiftMoveSpeed * 2.5
+    return kAlienStructureMoveSpeed * 2.5
 end
 
 function Shift:GetTechAllowed(techId, techNode, player)
@@ -412,7 +419,7 @@ function Shift:GetTechButtons(techId)
     else
 
         techButtons = { kTechId.ShiftEcho, kTechId.Move, kTechId.ShiftEnergize, kTechId.None, 
-                        kTechId.GorgeTunnelTech, kTechId.Leap, kTechId.Xenocide, kTechId.None }
+                        kTechId.UpgradeLerk, kTechId.None, kTechId.None, kTechId.None }
                         
         if self.moving then
             techButtons[2] = kTechId.Stop
@@ -435,7 +442,7 @@ function Shift:OnUpdateAnimationInput(modelMixin)
 end
 
 function Shift:GetMaxSpeed()
-    return kShiftMoveSpeed
+    return kAlienStructureMoveSpeed
 end
 
 function Shift:OnUpdate(deltaTime)
@@ -454,7 +461,7 @@ function Shift:OnUpdate(deltaTime)
             
         end
         
-        self.echoActive = self.timeLastEcho + TeleportMixin.kDefaultDelay > Shared.GetTime()
+        self.echoActive = self.timeLastEcho + kEchoCooldown > Shared.GetTime()
     
     end
         
@@ -524,6 +531,7 @@ if Server then
             success = self:TriggerEcho(techId, position)
             if success then
                 UpdateShiftButtons(self)
+                Shared.PlayPrivateSound(commander, Shift.kShiftEchoSound2D, nil, 1.0, self:GetOrigin())                
             end
             
         end

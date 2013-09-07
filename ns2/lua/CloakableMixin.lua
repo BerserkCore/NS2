@@ -237,7 +237,7 @@ elseif Client then
         // Only draw models when mostly uncloaked
         local albedoVisibility = 1 - Clamp(self.cloakFraction * 5, 0, 1)
         
-        if player and ((player.GetDarkVisionEnabled and player:GetDarkVisionEnabled()) or player:isa("AlienCommander") )then
+        if player and player:isa("AlienCommander") then
             albedoVisibility = 1
         end
     

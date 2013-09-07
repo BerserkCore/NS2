@@ -53,6 +53,7 @@ Event.Hook("Console_r_atmospherics",    RenderConsoleHandler("atmospherics", "gr
 Event.Hook("Console_r_aa",              RenderConsoleHandler("anti_aliasing", "graphics/display/anti-aliasing") )
 Event.Hook("Console_r_bloom",           RenderConsoleHandler("bloom", "graphics/display/bloom") )
 Event.Hook("Console_r_fog",             RenderConsoleHandler("fog", "graphics/display/fog") )
+Event.Hook("Console_r_glass",           RenderConsoleHandler("glass", "graphics/display/glass") )
 
 Event.Hook("Console_r_pq",
 function(arg)

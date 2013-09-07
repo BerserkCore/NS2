@@ -53,7 +53,19 @@ end
 
 function PickupableMixin:_GetNearbyRecipient()
 
-    local potentialRecipients = GetEntitiesWithinRange(self:GetMixinConstants().kRecipientType, self:GetOrigin(), kPickupRange)
+    local recipientTypes = self:GetMixinConstants().kRecipientType
+    local potentialRecipients = {}
+
+    if type(recipientTypes) == "string" then    
+        potentialRecipients = GetEntitiesWithinRange(self:GetMixinConstants().kRecipientType, self:GetOrigin(), kPickupRange)
+        
+    elseif type(recipientTypes) == "table" then
+        
+        for _, recipientType in ipairs(recipientTypes) do        
+            table.copy(GetEntitiesWithinRange(recipientType, self:GetOrigin(), kPickupRange), potentialRecipients, true)
+        end
+        
+    end    
     
     for index, recipient in pairs(potentialRecipients) do
     

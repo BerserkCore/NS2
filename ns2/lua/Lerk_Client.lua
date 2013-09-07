@@ -12,9 +12,8 @@ Lerk.kCameraRollTilt_YawModifier = 0.4
 Lerk.kCameraRollTilt_StrafeModifier = 0.05
 Lerk.kCameraRollSpeedModifier = 0.8
 
-local kLerkHealthbarOffset = Vector(0, 0.7, 0)
 function Lerk:GetHealthbarOffset()
-    return kLerkHealthbarOffset
+    return 0.7
 end
 
 function Lerk:UpdateMisc(input)

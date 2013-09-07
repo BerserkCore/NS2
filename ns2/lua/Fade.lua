@@ -16,6 +16,7 @@
 
 Script.Load("lua/Utility.lua")
 Script.Load("lua/Weapons/Alien/SwipeBlink.lua")
+Script.Load("lua/Weapons/Alien/StabBlink.lua")
 Script.Load("lua/Weapons/Alien/Vortex.lua")
 Script.Load("lua/Alien.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
@@ -28,6 +29,7 @@ Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Fade' (Alien)
 
@@ -47,7 +49,6 @@ Fade.kArmor = kFadeArmor
 // ~350 pounds.
 local kMass = 158
 local kJumpHeight = 1.4
-local kMaxSpeed = 5.2
 
 local kFadeScanDuration = 4
 
@@ -56,7 +57,11 @@ local kShadowStepForce = 4
 
 local kShadowStepSpeed = 30
 
-local kBlinkSpeed = 14.8
+local kMaxSpeed = 6.2
+local kBlinkSpeed = 14
+local kBlinkAcceleration = 40
+local kBlinkAddAcceleration = 1
+local kStabSpeed = 3
 
 // Delay before you can blink again after a blink.
 local kMinEnterEtherealTime = 0.4
@@ -84,6 +89,12 @@ local networkVars =
     ethereal = "boolean",
     
     landedAfterBlink = "private compensated boolean",  
+    
+    timeOfLastPhase = "time",
+    hasEtherealGate = "boolean",
+    
+    hasShadowStep = "private boolean"
+    
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -95,6 +106,7 @@ AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Fade:OnCreate()
 
@@ -143,12 +155,18 @@ function Fade:OnInitialized()
     
         self.blinkDissolve = 0
         
-        self:AddHelpWidget("GUIFadeShadowStepHelp", 2)
         self:AddHelpWidget("GUIFadeBlinkHelp", 2)
+        self:AddHelpWidget("GUIFadeShadowStepHelp", 2)
         self:AddHelpWidget("GUITunnelEntranceHelp", 1)
         
     end
     
+    InitMixin(self, IdleMixin)
+    
+end
+
+function Fade:GetShowElectrifyEffect()
+    return self.hasEtherealGate or self.electrified
 end
 
 function Fade:ModifyJump(input, velocity, jumpVelocity)
@@ -238,11 +256,11 @@ function Fade:GetPerformsVerticalMove()
 end
 
 function Fade:GetAcceleration()
-    return 20
+    return 11
 end
 
 function Fade:GetGroundFriction()
-    return 5
+    return 9
 end  
 
 function Fade:GetAirControl()
@@ -250,7 +268,7 @@ function Fade:GetAirControl()
 end   
 
 function Fade:GetAirFriction()
-    return 0.03
+    return self:GetIsBlinking() and 0 or (0.17  - (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.01)
 end 
 
 function Fade:ModifyVelocity(input, velocity, deltaTime)
@@ -264,7 +282,7 @@ function Fade:ModifyVelocity(input, velocity, deltaTime)
         local maxSpeed = math.max(prevSpeed, maxSpeedTable.maxSpeed)
         local maxSpeed = math.min(25, maxSpeed)    
         
-        velocity:Add(wishDir * 40 * deltaTime)
+        velocity:Add(wishDir * kBlinkAcceleration * deltaTime)
         
         if velocity:GetLength() > maxSpeed then
 
@@ -274,14 +292,21 @@ function Fade:ModifyVelocity(input, velocity, deltaTime)
         end 
         
         // additional acceleration when holding down blink to exceed max speed
-        velocity:Add(wishDir * 0.3 * deltaTime)
+        velocity:Add(wishDir * kBlinkAddAcceleration * deltaTime)
         
     end
 
 end
 
+local function GetIsStabbing(self)
+
+    local stabWeapon = self:GetWeapon(StabBlink.kMapName)
+    return stabWeapon ~= nil and stabWeapon:GetIsStabbing()    
+
+end
+
 function Fade:GetCanJump()
-    return self:GetIsOnGround() and not self:GetIsBlinking()
+    return self:GetIsOnGround() and not self:GetIsBlinking() and not GetIsStabbing(self)
 end
 
 function Fade:GetIsShadowStepping()
@@ -296,6 +321,8 @@ function Fade:GetMaxSpeed(possible)
     
     if self:GetIsBlinking() then
         return kBlinkSpeed
+    elseif GetIsStabbing(self) then
+        return kStabSpeed
     end
     
     // Take into account crouching.
@@ -319,6 +346,10 @@ function Fade:GetRecentlyBlinked(player)
     return Shared.GetTime() - self.etherealEndTime < kMinEnterEtherealTime
 end
 
+function Fade:GetHasShadowStepAbility()
+    return self.hasShadowStep
+end
+
 function Fade:GetHasShadowStepCooldown()
     return self.timeShadowStep + kShadowStepCooldown > Shared.GetTime() or self:GetIsBlinking()
 end
@@ -328,7 +359,7 @@ function Fade:GetMovementSpecialTechId()
 end
 
 function Fade:GetHasMovementSpecial()
-    return self:GetTeamNumber() == kTeamReadyRoom or self.twoHives
+    return self.hasShadowStep or self:GetTeamNumber() == kTeamReadyRoom
 end
 
 function Fade:GetMovementSpecialEnergyCost()
@@ -358,9 +389,11 @@ function Fade:TriggerShadowStep(direction)
 
     if not self:GetIsBlinking() and not self:GetHasShadowStepCooldown() and self:GetEnergy() > kFadeShadowStepCost then
     
+        local celerityAddSpeed = (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.7
+    
         // add small force in the direction we are stepping
-        local currentSpeed = self:GetVelocity():GetLength()
-        local shadowStepStrength = math.max(currentSpeed, 11) + 0.5
+        local currentSpeed = movementDirection:DotProduct(self:GetVelocity())
+        local shadowStepStrength = math.max(currentSpeed, 11 + celerityAddSpeed) + 0.5
         self:SetVelocity(movementDirection * shadowStepStrength * self:GetSlowSpeedModifier())
         
         self.timeShadowStep = Shared.GetTime()
@@ -401,6 +434,8 @@ function Fade:OnProcessMove(input)
         if self.isScanned and self.timeLastScan + kFadeScanDuration < Shared.GetTime() then
             self.isScanned = false
         end
+        
+        self.hasShadowStep = GetIsTechUnlocked(self, kTechId.ShadowStep) == true or GetGamerules():GetAllTech()
         
     end
     
@@ -453,6 +488,25 @@ function Fade:OnProcessMove(input)
     
 end
 
+function Fade:GetBlinkAllowed()
+
+    local weapons = self:GetWeapons()
+    for i = 1, #weapons do
+    
+        if not weapons[i]:GetBlinkAllowed() then
+            return false
+        end
+        
+    end
+
+    return true
+
+end
+
+function Fade:GetHasBiomassHealth()
+    return GetHasTech(self, kTechId.UpgradeFade)
+end
+
 function Fade:OnScan()
 
     if Server then
@@ -491,6 +545,16 @@ function Fade:SetDetected(state)
     
 end
 
+function Fade:OnUpdateAnimationInput(modelMixin)
+
+    Alien.OnUpdateAnimationInput(self, modelMixin)
+
+    if self.timeOfLastPhase + 0.5 > Shared.GetTime() then
+        modelMixin:SetAnimationInput("move", "teleport")
+    end
+
+end
+
 function Fade:TriggerBlink()
     self.ethereal = true
     self.landedAfterBlink = false
@@ -516,37 +580,12 @@ function Fade:GetEngagementPointOverride()
     return self:GetOrigin() + Vector(0, 0.8, 0)
 end
 
-if Server then
-
-    function Fade:InitWeapons()
-
-        Alien.InitWeapons(self)
-        
-        self:GiveItem(SwipeBlink.kMapName)
-        self:SetActiveWeapon(SwipeBlink.kMapName)
-        
-    end
-
-    function Fade:GetTierTwoTechId()
-        return kTechId.ShadowStep
-    end
-
-    function Fade:GetTierThreeTechId()
-        return kTechId.Vortex
-    end
-
-end
-
 /*
 function Fade:ModifyHeal(healTable)
     Alien.ModifyHeal(self, healTable)
     healTable.health = healTable.health * 1.7
 end
 */
-
-function Fade:GetAllowJumpAnimation()
-    return not self:GetIsBlinking()
-end
 
 function Fade:OverrideVelocityGoal(velocityGoal)
     
@@ -576,4 +615,4 @@ function Fade:OnGroundChanged(onGround, impactForce, normal, velocity)
     
 end
 
-Shared.LinkClassToMap("Fade", Fade.kMapName, networkVars)
+Shared.LinkClassToMap("Fade", Fade.kMapName, networkVars, true)

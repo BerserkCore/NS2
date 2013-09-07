@@ -33,6 +33,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 local kAnimationGraph = PrecacheAsset("models/marine/prototype_lab/prototype_lab.animation_graph")
 
@@ -80,6 +81,7 @@ AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function PrototypeLab:OnCreate()
 
@@ -105,6 +107,7 @@ function PrototypeLab:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -156,7 +159,10 @@ function PrototypeLab:OnInitialized()
         InitMixin(self, InfestationTrackerMixin)
         
     elseif Client then
+    
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
+        
     end
     
 end
@@ -169,10 +175,19 @@ end
 function PrototypeLab:GetRequiresPower()
     return true
 end
+/* // dont allow jp marines to use the prototype lab
+function PrototypeLab:GetCanBeUsed(player, useSuccessTable)
+
+    if (not self:GetIsBuilt() and player:isa("Exo")) or (player:isa("Exo") and player:GetHasDualGuns()) or (player:isa("JetpackMarine") and self:GetIsBuilt()) then
+        useSuccessTable.useSuccess = false
+    end
+    
+end
+*/
 
 function PrototypeLab:GetCanBeUsed(player, useSuccessTable)
 
-    if player:isa("Exo") then
+    if (not self:GetIsBuilt() and player:isa("Exo")) or (player:isa("Exo") and player:GetHasDualGuns()) then
         useSuccessTable.useSuccess = false
     end
     
@@ -239,13 +254,22 @@ function PrototypeLab:OnUpdate(deltaTime)
     
 end
 
-function PrototypeLab:GetItemList()
-    return { kTechId.Jetpack, kTechId.Exosuit, kTechId.DualMinigunExosuit, kTechId.ClawRailgunExosuit } // kTechId.DualRailgunExosuit
-end
+function PrototypeLab:GetItemList(forPlayer)
 
-// { { TechName, UpgradeList, Max number of upgrades, upgrades mutual exlusive } }
-function PrototypeLab:GetUpgradeList()
-    return { { kTechId.Exosuit, { kTechId.Minigun, kTechId.Railgun }, 2, false } }
+    if forPlayer:isa("Exo") then
+    
+        if forPlayer:GetHasDualGuns() then
+            return {}
+        elseif forPlayer:GetHasRailgun() then
+            return { kTechId.UpgradeToDualRailgun }    
+        elseif forPlayer:GetHasMinigun() then
+            return { kTechId.UpgradeToDualMinigun }
+        end    
+
+    end    
+
+    return { kTechId.Jetpack, kTechId.Exosuit, kTechId.ClawRailgunExosuit, }
+    
 end
 
 function PrototypeLab:GetReceivesStructuralDamage()

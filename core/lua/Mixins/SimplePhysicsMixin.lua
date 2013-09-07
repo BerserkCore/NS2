@@ -7,7 +7,7 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
 SimplePhysicsMixin = { }
-SimplePhysicsMixin.type = "BaseMove"
+SimplePhysicsMixin.type = "SimplePhysics"
 
 kSimplePhysicsBodyType = enum({'Sphere', 'Cylinder', 'Box'})
 

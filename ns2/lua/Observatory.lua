@@ -37,14 +37,14 @@ Script.Load("lua/GhostStructureMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'Observatory' (ScriptActor)
 
 Observatory.kMapName = "observatory"
 
 Observatory.kModelName = PrecacheAsset("models/marine/observatory/observatory.model")
-
-Observatory.kScanSound = PrecacheAsset("sound/NS2.fev/marine/structures/observatory_scan")
 Observatory.kCommanderScanSound = PrecacheAsset("sound/NS2.fev/marine/commander/scan_com")
 
 local kDistressBeaconSoundMarine = PrecacheAsset("sound/NS2.fev/marine/common/distress_beacon_marine")
@@ -80,6 +80,8 @@ AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function Observatory:OnCreate()
 
@@ -121,6 +123,7 @@ function Observatory:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -154,8 +157,11 @@ function Observatory:OnInitialized()
     elseif Client then
     
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -223,10 +229,10 @@ end
 
 local function TriggerMarineBeaconEffects(self)
 
-    for index, marine in ipairs(GetEntitiesForTeam("Marine", self:GetTeamNumber())) do
+    for index, player in ipairs(GetEntitiesForTeam("Player", self:GetTeamNumber())) do
     
-        if marine:GetIsAlive() then
-            marine:TriggerEffects("player_beacon")
+        if player:GetIsAlive() and (player:isa("Marine") or player:isa("Exo")) then
+            player:TriggerEffects("player_beacon")
         end
     
     end
@@ -300,7 +306,7 @@ local function GetPlayersToBeacon(self, toOrigin)
     for index, player in ipairs(self:GetTeam():GetPlayers()) do
     
         // Don't affect Commanders or Heavies
-        if player:isa("Marine") then
+        if player:isa("Marine") or player:isa("Exo") then
         
             // Don't respawn players that are already nearby.
             if not GetIsPlayerNearby(self, player, toOrigin) then
@@ -319,7 +325,7 @@ end
 local function RespawnPlayer(self, player, distressOrigin)
 
     // Always marine capsule (player could be dead/spectator)
-    local extents = LookupTechData(kTechId.Marine, kTechDataMaxExtents)
+    local extents = HasMixin(player, "Extents") and player:GetExtents() or LookupTechData(kTechId.Marine, kTechDataMaxExtents)
     local capsuleHeight, capsuleRadius = GetTraceCapsuleFromExtents(extents)
     local range = Observatory.kDistressBeaconRange
     local spawnPoint = GetRandomSpawnForCapsule(capsuleHeight, capsuleRadius, distressOrigin, 2, range, EntityFilterAll())
@@ -327,7 +333,9 @@ local function RespawnPlayer(self, player, distressOrigin)
     if spawnPoint then
     
         player:SetOrigin(spawnPoint)
-        player:TriggerEffects("distress_beacon_spawn")
+        if player.TriggerBeaconEffects then
+            player:TriggerBeaconEffects()
+        end
         
     else
         Print("Observatory:RespawnPlayer(): Couldn't find space to respawn player.")
@@ -466,9 +474,8 @@ if Server then
     
 end    
 
-local kObservatoryHealthbarOffset = Vector(0, .9, 0)
 function Observatory:GetHealthbarOffset()
-    return kObservatoryHealthbarOffset
+    return 0.9
 end 
 
 

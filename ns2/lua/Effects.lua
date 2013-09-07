@@ -90,13 +90,14 @@ kEffectFilterDeployed               = "deployed"            // When entity is in
 kEffectFilterCloaked                = "cloaked"
 kEffectFilterEnemy                  = "enemy"
 kEffectFilterSilenceUpgrade         = "silenceupgrade"
+kEffectFilterSex                    = "sex"
 
 kEffectFilters =
 {
     kEffectFilterClassName, kEffectFilterDoerName, kEffectFilterDamageType, kEffectFilterIsAlien, kEffectFilterIsMarine, kEffectFilterBuilt, kEffectFilterFlinchSevere,
     kEffectFilterInAltMode, kEffectFilterOccupied, kEffectFilterEmpty, kEffectFilterVariant, kEffectFilterFrom, kEffectFilterFromAnimation, 
     kEffectFilterFrom, kEffectFilterLeft, kEffectFilterSprinting, kEffectFilterForward, kEffectFilterCrouch, kEffectFilterActive, kEffectFilterHitSurface,
-    kEffectFilterDeployed, kEffectFilterCloaked, kEffectFilterEnemy, kEffectFilterSilenceUpgrade
+    kEffectFilterDeployed, kEffectFilterCloaked, kEffectFilterEnemy, kEffectFilterSilenceUpgrade, kEffectFilterSex
 }
 
 // Load effect data, adding to effect manager

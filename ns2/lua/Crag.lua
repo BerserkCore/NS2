@@ -49,6 +49,7 @@ Script.Load("lua/RepositioningMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
 Script.Load("lua/BiomassMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Crag' (ScriptActor)
 
@@ -69,7 +70,7 @@ Crag.kHealEffectInterval = 1
 
 Crag.kHealWaveDuration = 8
 
-Crag.kHealPercentage = 0.045
+Crag.kHealPercentage = 0.06
 Crag.kMinHeal = 10
 Crag.kMaxHeal = 60
 Crag.kHealWaveMultiplier = 1.5
@@ -106,6 +107,7 @@ AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Crag:OnCreate()
 
@@ -184,6 +186,8 @@ function Crag:OnInitialized()
         
     end
     
+    InitMixin(self, IdleMixin)
+    
 end
 
 function Crag:PreventTurning()
@@ -219,7 +223,7 @@ function Crag:GetDamagedAlertId()
 end
 
 function Crag:GetCanSleep()
-    return not healingActive
+    return not self.healingActive
 end
 
 local function GetHealTargets(self)
@@ -368,7 +372,7 @@ end
 function Crag:GetTechButtons(techId)
 
     local techButtons = { kTechId.HealWave, kTechId.Move, kTechId.CragHeal, kTechId.None,
-                          kTechId.BileBomb, kTechId.Umbra, kTechId.Stomp, kTechId.None }
+                          kTechId.UpgradeOnos, kTechId.None, kTechId.None, kTechId.None }
     
     if self.moving then
         techButtons[2] = kTechId.Stop

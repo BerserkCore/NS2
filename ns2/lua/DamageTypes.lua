@@ -56,7 +56,7 @@ end
 
 
 // Use this function to change damage according to current upgrades
-function NS2Gamerules_GetUpgradedDamage(attacker, doer, damage, damageType)
+function NS2Gamerules_GetUpgradedDamage(attacker, doer, damage, damageType, hitPoint)
 
     local damageScalar = 1
 
@@ -91,7 +91,7 @@ function Gamerules_GetDamageMultiplier()
     
 end
 
-kDamageType = enum( {'Normal', 'Light', 'Heavy', 'Puncture', 'Structural', 'Splash', 'Gas',
+kDamageType = enum( {'Normal', 'Light', 'Heavy', 'Puncture', 'Structural', 'StructuralHeavy', 'Splash', 'Gas', 'NerveGas',
            'StructuresOnly', 'Falling', 'Door', 'Flame', 'Infestation', 'Corrode', 'ArmorOnly', 'Biological', 'StructuresOnlyLight', 'Spreading' } )
 
 // Describe damage types for tooltips
@@ -101,7 +101,9 @@ kDamageTypeDesc = {
     "Heavy damage: extra vs. armor",
     "Puncture damage: extra vs. players",
     "Structural damage: Double vs. structures",
+    "StructuralHeavy damage: Double vs. structures and double vs. armor",
     "Gas damage: affects breathing targets only",
+    "NerveGas damage: affects biological units, player will take only armor damage",
     "Structures only: Doesn't damage players or AI units",
     "Falling damage: Ignores armor for humans, no damage for aliens",
     "Door: Can also affect Doors",
@@ -117,24 +119,24 @@ kSpreadingDamageScalar = 0.75
 kBaseArmorUseFraction = 0.7
 kExosuitArmorUseFraction = 1 // exos have no health
 kStructuralDamageScalar = 2
-kPuncturePlayerDamageScalar = 1.5
+kPuncturePlayerDamageScalar = 2
 
 kLightHealthPerArmor = 4
 kHealthPointsPerArmor = 2
 kHeavyHealthPerArmor = 1
 
-kFlameableMultiplier = 3
+kFlameableMultiplier = 2.5
 kCorrodeDamagePlayerArmorScalar = 0.28
-kCorrodeDamageExoArmorScalar = 0.23
+kCorrodeDamageExoArmorScalar = 0.3
 
 // deal only 60% of damage to friendlies
 kFriendlyFireScalar = 0.6
 
-local function ApplyDefaultArmorUseFraction(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function ApplyDefaultArmorUseFraction(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return damage, kBaseArmorUseFraction, healthPerArmor
 end
 
-local function ApplyHighArmorUseFractionForExos(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function ApplyHighArmorUseFractionForExos(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     
     if target:isa("Exo") then
         armorFractionUsed = kExosuitArmorUseFraction
@@ -144,25 +146,25 @@ local function ApplyHighArmorUseFractionForExos(target, attacker, doer, damage, 
     
 end
 
-local function ApplyDefaultHealthPerArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function ApplyDefaultHealthPerArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return damage, armorFractionUsed, kHealthPointsPerArmor
 end
 
-local function DoubleHealthPerArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function DoubleHealthPerArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return damage, armorFractionUsed, healthPerArmor * (kLightHealthPerArmor / kHealthPointsPerArmor)
 end
 
-local function HalfHealthPerArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function HalfHealthPerArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return damage, armorFractionUsed, healthPerArmor * (kHeavyHealthPerArmor / kHealthPointsPerArmor)
 end
 
-local function ApplyAttackerModifiers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function ApplyAttackerModifiers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
 
-    damage = NS2Gamerules_GetUpgradedDamage(attacker, doer, damage, damageType)
+    damage = NS2Gamerules_GetUpgradedDamage(attacker, doer, damage, damageType, hitPoint)
     damage = damage * Gamerules_GetDamageMultiplier()
     
     if attacker and attacker.ComputeDamageAttackerOverride then
-        damage = attacker:ComputeDamageAttackerOverride(attacker, damage, damageType, doer)
+        damage = attacker:ComputeDamageAttackerOverride(attacker, damage, damageType, doer, hitPoint)
     end
     
     if doer and doer.ComputeDamageAttackerOverride then
@@ -170,35 +172,35 @@ local function ApplyAttackerModifiers(target, attacker, doer, damage, armorFract
     end
     
     if attacker and attacker.ComputeDamageAttackerOverrideMixin then
-        damage = attacker:ComputeDamageAttackerOverrideMixin(attacker, damage, damageType, doer)
+        damage = attacker:ComputeDamageAttackerOverrideMixin(attacker, damage, damageType, doer, hitPoint)
     end
     
     if doer and doer.ComputeDamageAttackerOverrideMixin then
-        damage = doer:ComputeDamageAttackerOverrideMixin(attacker, damage, damageType, doer)
+        damage = doer:ComputeDamageAttackerOverrideMixin(attacker, damage, damageType, doer, hitPoint)
     end
     
     return damage, armorFractionUsed, healthPerArmor
 
 end
 
-local function ApplyTargetModifiers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor,  damageType)
+local function ApplyTargetModifiers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor,  damageType, hitPoint)
 
     // The host can provide an override for this function.
     if target.ComputeDamageOverride then
-        damage = target:ComputeDamageOverride(attacker, damage, damageType)
+        damage = target:ComputeDamageOverride(attacker, damage, damageType, hitPoint)
     end
 
     // Used by mixins.
     if target.ComputeDamageOverrideMixin then
-        damage = target:ComputeDamageOverrideMixin(attacker, damage, damageType)
+        damage = target:ComputeDamageOverrideMixin(attacker, damage, damageType, hitPoint)
     end
     
     if target.GetArmorUseFractionOverride then
-        armorFractionUsed = target:GetArmorUseFractionOverride(damageType, armorFractionUsed)
+        armorFractionUsed = target:GetArmorUseFractionOverride(damageType, armorFractionUsed, hitPoint)
     end
     
     if target.GetHealthPerArmorOverride then
-        healthPerArmor = target:GetHealthPerArmorOverride(damageType, healthPerArmor)
+        healthPerArmor = target:GetHealthPerArmorOverride(damageType, healthPerArmor, hitPoint)
     end
     
     local damageTable = {}
@@ -207,14 +209,14 @@ local function ApplyTargetModifiers(target, attacker, doer, damage, armorFractio
     damageTable.healthPerArmor = healthPerArmor
     
     if target.ModifyDamageTaken then
-        target:ModifyDamageTaken(damageTable, attacker, doer, damageType)
+        target:ModifyDamageTaken(damageTable, attacker, doer, damageType, hitPoint)
     end
     
     return damageTable.damage, damageTable.armorFractionUsed, damageTable.healthPerArmor
 
 end
 
-local function ApplyFriendlyFireModifier(target, attacker, doer, damage, armorFractionUsed, healthPerArmor,  damageType)
+local function ApplyFriendlyFireModifier(target, attacker, doer, damage, armorFractionUsed, healthPerArmor,  damageType, hitPoint)
 
     if target and attacker and target ~= attacker and HasMixin(target, "Team") and HasMixin(attacker, "Team") and target:GetTeamNumber() == attacker:GetTeamNumber() then
         damage = damage * kFriendlyFireScalar
@@ -223,15 +225,15 @@ local function ApplyFriendlyFireModifier(target, attacker, doer, damage, armorFr
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function IgnoreArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function IgnoreArmor(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return damage, 0, healthPerArmor
 end
 
-local function MaximizeArmorUseFraction(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function MaximizeArmorUseFraction(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return damage, 1, healthPerArmor
 end
 
-local function MultiplyForStructures(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function MultiplyForStructures(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if target.GetReceivesStructuralDamage and target:GetReceivesStructuralDamage(damageType) then
         damage = damage * kStructuralDamageScalar
     end
@@ -239,11 +241,11 @@ local function MultiplyForStructures(target, attacker, doer, damage, armorFracti
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function MultiplyForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
-    return ConditionalValue(target:isa("Player"), damage * kPuncturePlayerDamageScalar, damage), armorFractionUsed, healthPerArmor
+local function MultiplyForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
+    return ConditionalValue(target:isa("Player") or target:isa("Exosuit"), damage * kPuncturePlayerDamageScalar, damage), armorFractionUsed, healthPerArmor
 end
 
-local function ReducedDamageAgainstSmall(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function ReducedDamageAgainstSmall(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
 
     if target.GetIsSmallTarget and target:GetIsSmallTarget() then
         damage = damage * kSpreadingDamageScalar
@@ -252,7 +254,7 @@ local function ReducedDamageAgainstSmall(target, attacker, doer, damage, armorFr
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function IgnoreHealthForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function IgnoreHealthForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if target:isa("Player") then    
         local maxDamagePossible = healthPerArmor * target.armor
         damage = math.min(damage, maxDamagePossible) 
@@ -262,7 +264,7 @@ local function IgnoreHealthForPlayers(target, attacker, doer, damage, armorFract
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function IgnoreHealthForPlayersUnlessExo(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function IgnoreHealthForPlayersUnlessExo(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if target:isa("Player") and not target:isa("Exo") then
         local maxDamagePossible = healthPerArmor * target.armor
         damage = math.min(damage, maxDamagePossible) 
@@ -272,15 +274,15 @@ local function IgnoreHealthForPlayersUnlessExo(target, attacker, doer, damage, a
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function IgnoreHealth(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)  
+local function IgnoreHealth(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)  
     local maxDamagePossible = healthPerArmor * target.armor
     damage = math.min(damage, maxDamagePossible)
     
     return damage, 1, healthPerArmor
 end
 
-local function ReduceGreatlyForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
-    if target:isa("Exo") then
+local function ReduceGreatlyForPlayers(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
+    if target:isa("Exo") or target:isa("Exosuit") then
         damage = damage * kCorrodeDamageExoArmorScalar
     elseif target:isa("Player") then
         damage = damage * kCorrodeDamagePlayerArmorScalar
@@ -288,15 +290,19 @@ local function ReduceGreatlyForPlayers(target, attacker, doer, damage, armorFrac
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function IgnorePlayersUnlessExo(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function IgnorePlayersUnlessExo(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return ConditionalValue(target:isa("Player") and not target:isa("Exo") , 0, damage), armorFractionUsed, healthPerArmor
 end
 
-local function DamagePlayersOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
-    return ConditionalValue(target:isa("Player"), damage, 0), healthPerArmor
+local function DamagePlayersOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
+    return ConditionalValue(target:isa("Player") or target:isa("Exosuit"), damage, 0), armorFractionUsed, healthPerArmor
 end
 
-local function DamageStructuresOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function DamageAlienOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
+    return ConditionalValue(HasMixin(target, "Team") and target:GetTeamType() == kAlienTeamType, damage, 0), armorFractionUsed, healthPerArmor
+end
+
+local function DamageStructuresOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if not target.GetReceivesStructuralDamage or not target:GetReceivesStructuralDamage(damageType) then
         damage = 0
     end
@@ -304,11 +310,11 @@ local function DamageStructuresOnly(target, attacker, doer, damage, armorFractio
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function IgnoreDoors(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function IgnoreDoors(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     return ConditionalValue(target:isa("Door"), 0, damage), armorFractionUsed, healthPerArmor
 end
 
-local function DamageBiologicalOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function DamageBiologicalOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if not target.GetReceivesBiologicalDamage or not target:GetReceivesBiologicalDamage(damageType) then
         damage = 0
     end
@@ -316,7 +322,7 @@ local function DamageBiologicalOnly(target, attacker, doer, damage, armorFractio
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function DamageBreathingOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function DamageBreathingOnly(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if not target.GetReceivesVaporousDamage or not target:GetReceivesVaporousDamage(damageType) then
         damage = 0
     end
@@ -324,7 +330,7 @@ local function DamageBreathingOnly(target, attacker, doer, damage, armorFraction
     return damage, armorFractionUsed, healthPerArmor
 end
 
-local function MultiplyFlameAble(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+local function MultiplyFlameAble(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     if target.GetIsFlameAble and target:GetIsFlameAble(damageType) then
         damage = damage * kFlameableMultiplier
     end
@@ -354,60 +360,56 @@ local function BuildDamageTypeRules()
     
     // normal damage rules
     kDamageTypeRules[kDamageType.Normal] = {}
-    table.insert(kDamageTypeRules[kDamageType.Normal], IgnoreDoors)
     
     // light damage rules
     kDamageTypeRules[kDamageType.Light] = {}
-    table.insert(kDamageTypeRules[kDamageType.Light], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Light], DoubleHealthPerArmor)
     // ------------------------------
     
     // heavy damage rules
     kDamageTypeRules[kDamageType.Heavy] = {}
-    table.insert(kDamageTypeRules[kDamageType.Heavy], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Heavy], HalfHealthPerArmor)
     // ------------------------------
 
     // Puncture damage rules
     kDamageTypeRules[kDamageType.Puncture] = {}
-    table.insert(kDamageTypeRules[kDamageType.Puncture], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Puncture], MultiplyForPlayers)
     // ------------------------------
     
     // Spreading damage rules
     kDamageTypeRules[kDamageType.Spreading] = {}
-    table.insert(kDamageTypeRules[kDamageType.Spreading], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Spreading], ReducedDamageAgainstSmall)
     // ------------------------------
 
     // structural rules
     kDamageTypeRules[kDamageType.Structural] = {}
-    table.insert(kDamageTypeRules[kDamageType.Structural], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Structural], MultiplyForStructures)
+    // ------------------------------ 
+    
+    // structural heavy rules
+    kDamageTypeRules[kDamageType.StructuralHeavy] = {}
+    table.insert(kDamageTypeRules[kDamageType.StructuralHeavy], HalfHealthPerArmor)
+    table.insert(kDamageTypeRules[kDamageType.StructuralHeavy], MultiplyForStructures)
     // ------------------------------ 
     
     // gas damage rules
     kDamageTypeRules[kDamageType.Gas] = {}
-    table.insert(kDamageTypeRules[kDamageType.Gas], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Gas], IgnoreArmor)
     table.insert(kDamageTypeRules[kDamageType.Gas], DamageBreathingOnly)
     // ------------------------------
    
     // structures only rules
     kDamageTypeRules[kDamageType.StructuresOnly] = {}
-    table.insert(kDamageTypeRules[kDamageType.StructuresOnly], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.StructuresOnly], DamageStructuresOnly)
     // ------------------------------
     
      // Splash rules
     kDamageTypeRules[kDamageType.Splash] = {}
-    table.insert(kDamageTypeRules[kDamageType.Splash], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Splash], DamageStructuresOnly)
     // ------------------------------
  
     // fall damage rules
     kDamageTypeRules[kDamageType.Falling] = {}
-    table.insert(kDamageTypeRules[kDamageType.Falling], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Falling], IgnoreArmor)
     // ------------------------------
 
@@ -419,44 +421,44 @@ local function BuildDamageTypeRules()
     
     // Flame damage rules
     kDamageTypeRules[kDamageType.Flame] = {}
-    table.insert(kDamageTypeRules[kDamageType.Flame], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Flame], MultiplyFlameAble)
     table.insert(kDamageTypeRules[kDamageType.Flame], MultiplyForStructures)
     // ------------------------------
     
     // Corrode damage rules
     kDamageTypeRules[kDamageType.Corrode] = {}
-    table.insert(kDamageTypeRules[kDamageType.Corrode], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Corrode], ReduceGreatlyForPlayers)
     table.insert(kDamageTypeRules[kDamageType.Corrode], IgnoreHealthForPlayersUnlessExo)
+    
+    // ------------------------------
+    // nerve gas rules
+    kDamageTypeRules[kDamageType.NerveGas] = {}
+    table.insert(kDamageTypeRules[kDamageType.NerveGas], DamageAlienOnly)
+    table.insert(kDamageTypeRules[kDamageType.NerveGas], IgnoreHealth)
     // ------------------------------
     
     // StructuresOnlyLight damage rules
     kDamageTypeRules[kDamageType.StructuresOnlyLight] = {}
-    table.insert(kDamageTypeRules[kDamageType.StructuresOnlyLight], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.StructuresOnlyLight], DoubleHealthPerArmor)
     table.insert(kDamageTypeRules[kDamageType.StructuresOnlyLight], DamageStructuresOnly)
     // ------------------------------
     
     // ArmorOnly damage rules
     kDamageTypeRules[kDamageType.ArmorOnly] = {}
-    table.insert(kDamageTypeRules[kDamageType.ArmorOnly], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.ArmorOnly], ReduceGreatlyForPlayers)
     table.insert(kDamageTypeRules[kDamageType.ArmorOnly], IgnoreHealth)    
     // ------------------------------
     
     // Biological damage rules
     kDamageTypeRules[kDamageType.Biological] = {}
-    table.insert(kDamageTypeRules[kDamageType.Biological], IgnoreDoors)
     table.insert(kDamageTypeRules[kDamageType.Biological], DamageBiologicalOnly)
     // ------------------------------
-    
 
 
 end
 
 // applies all rules and returns damage, armorUsed, healthUsed
-function GetDamageByType(target, attacker, doer, damage, damageType)
+function GetDamageByType(target, attacker, doer, damage, damageType, hitPoint)
 
     assert(target)
     
@@ -476,12 +478,12 @@ function GetDamageByType(target, attacker, doer, damage, damageType)
     
     // apply global rules at first
     for _, rule in ipairs(kDamageTypeGlobalRules) do
-        damage, armorFractionUsed, healthPerArmor = rule(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+        damage, armorFractionUsed, healthPerArmor = rule(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     end
     
     // apply damage type specific rules
     for _, rule in ipairs(kDamageTypeRules[damageType]) do
-        damage, armorFractionUsed, healthPerArmor = rule(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType)
+        damage, armorFractionUsed, healthPerArmor = rule(target, attacker, doer, damage, armorFractionUsed, healthPerArmor, damageType, hitPoint)
     end
     
     if damage > 0 and healthPerArmor > 0 then

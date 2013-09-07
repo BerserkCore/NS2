@@ -7,6 +7,21 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 kAlienStructureEffects = 
 {
+    web_create =
+    {
+        effects = 
+        {
+            {cinematic = "cinematics/alien/webs/fallingslime.cinematic"},
+        }
+    },
+    
+    web_destroy =
+    {
+        effects = 
+        {
+            {cinematic = "cinematics/alien/webs/kill.cinematic"},
+        }
+    },
 
     construction_complete =
     {
@@ -38,7 +53,7 @@ kAlienStructureEffects =
         shiftEchoEffects =
         {
             {cinematic = "cinematics/alien/shift/echo_target.cinematic", done = true},
-            {sound = "sound/NS2.fev/alien/structures/shift/energize", done = true},
+            {parented_sound = "sound/NS2.fev/alien/structures/shift/energize", done = true},
         }    
     },
     
@@ -86,8 +101,9 @@ kAlienStructureEffects =
         {        
             // Plays the first effect that evalutes to true
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Clog", done = true},
-            {cinematic = "cinematics/alien/structures/death_hive.cinematic", classname = "Hive", done = true},
-            {cinematic = "cinematics/alien/structures/death_large.cinematic", classname = "Whip", done = true},
+            {cinematic = "cinematics/alien/hive/explode_residue.cinematic", classname = "Hive"},
+            {cinematic = "cinematics/alien/hive/explode.cinematic", classname = "Hive", done = true},
+            {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Whip", done = true},
             
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Veil", done = true},
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Shell", done = true},
@@ -104,6 +120,7 @@ kAlienStructureEffects =
             {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "TunnelEntrance", done = true},
             
             {cinematic = "cinematics/alien/infestationspike/death.cinematic", classname = "BoneWall", done = true},
+            {cinematic = "cinematics/alien/structures/death_small.cinematic", classname = "Contamination", done = true},
         },
         
         alienStructureDeathSounds =
@@ -111,10 +128,11 @@ kAlienStructureEffects =
             
             {sound = "sound/NS2.fev/alien/structures/harvester_death", classname = "Harvester"},
             {sound = "sound/NS2.fev/alien/structures/hive_death", classname = "Hive"},
-            {sound = "sound/NS2.fev/alien/structures/death_grenade", classname = "Structure", doer = "Grenade", isalien = true, done = true},
-            {sound = "sound/NS2.fev/alien/structures/death_axe", classname = "Structure", doer = "Axe", isalien = true, done = true},            
-            {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Structure", isalien = true, done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_grenade", doer = "Grenade", isalien = true, done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_axe", doer = "Axe", isalien = true, done = true},            
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Clog", done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_axe", classname = "Contamination", done = true},
+            {sound = "sound/NS2.fev/alien/structures/death_axe", classname = "Web", done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "Cyst", done = true},
             {sound = "sound/NS2.fev/alien/structures/death_small", classname = "TunnelEntrance", done = true},
             
@@ -175,8 +193,6 @@ kAlienStructureEffects =
         harvesterCollectEffect =
         {
             {sound = "sound/NS2.fev/alien/structures/harvester_harvested"},
-            //{cinematic = "cinematics/alien/harvester/resource_collect.cinematic"},
-            {animation = {{.4, "active1"}, {.7, "active2"}}, force = false},
         },
     },
     
@@ -410,7 +426,7 @@ kAlienStructureEffects =
         teleportStartEffects =
         {
             {sound = "sound/NS2.fev/alien/structures/deploy_large" },
-            {cinematic = "cinematics/alien/shift/teleport_start.cinematic", classname = "Structure", done = true}, 
+            {cinematic = "cinematics/alien/shift/teleport_start.cinematic", done = true}, 
         },
     }, 
     

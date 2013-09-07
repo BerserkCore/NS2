@@ -20,6 +20,11 @@ Alien.kCelerityViewCinematic = PrecacheAsset("cinematics/alien/high_speed_1p.cin
 local kRegenerationViewCinematic = PrecacheAsset("cinematics/alien/regeneration_1p.cinematic")
 Alien.kFirstPersonDeathEffect = PrecacheAsset("cinematics/alien/death_1p_alien.cinematic")
 
+Alien.kElectrifiedViewMaterialName = "cinematics/vfx_materials/pulse_gre_elec.material"
+Alien.kElectrifiedThirdpersonMaterialName = "cinematics/vfx_materials/pulse_gre_elec.material"
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/pulse_gre_elec.surface_shader")
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/pulse_gre_elec.surface_shader")
+
 local kAlienFirstPersonHitEffectName = PrecacheAsset("cinematics/alien/hit_1p.cinematic")
 
 local kEnzymeEffectInterval = 0.2
@@ -291,14 +296,6 @@ function PlayerUI_GetAdrenalineMaxEnergy()
 
 end
 
-function Alien:OnKillClient()
-
-    Player.OnKillClient(self)
-    
-    self:DestroyGUI()
-    
-end
-
 function Alien:UpdateEnzymeEffect(isLocal)
 
     if self.enzymedClient ~= self.enzymed then
@@ -360,8 +357,74 @@ function Alien:UpdateEnzymeEffect(isLocal)
 end
 
 function Alien:GetDarkVisionEnabled()
-    return self.darkVisionOn
+
+    if Client.GetIsControllingPlayer() then
+        return self.darkVisionOn
+    else
+        return self.darkVisionSpectatorOn
+    end    
+
 end
+
+function Alien:GetShowElectrifyEffect()
+    return self.electrified
+end
+
+function Alien:UpdateElectrified(isLocal)
+
+    local electrified = self:GetShowElectrifyEffect()
+
+    if self.electrifiedClient ~= electrified then
+
+        if isLocal then
+        
+            local viewModel= nil        
+            if self:GetViewModelEntity() then
+                viewModel = self:GetViewModelEntity():GetRenderModel()  
+            end
+                
+            if viewModel then
+   
+                if electrified then
+                    self.electrifiedViewMaterial = AddMaterial(viewModel, Alien.kElectrifiedViewMaterialName)
+                else
+                
+                    if RemoveMaterial(viewModel, self.electrifiedViewMaterial) then
+                        self.electrifiedViewMaterial = nil
+                    end
+  
+                end
+            
+            end
+        
+        end
+        
+        local thirdpersonModel = self:GetRenderModel()
+        if thirdpersonModel then
+        
+            if electrified then
+                self.electrifiedMaterial = AddMaterial(thirdpersonModel, Alien.kElectrifiedThirdpersonMaterialName)
+            else
+            
+                if RemoveMaterial(thirdpersonModel, self.electrifiedMaterial) then
+                    self.electrifiedMaterial = nil
+                end
+
+            end
+        
+        end
+        
+        self.electrifiedClient = electrified
+        
+    end
+
+end
+
+local alienVisionEnabled = true
+local function ToggleAlienVision(enabled)
+    alienVisionEnabled = enabled ~= "false"
+end
+Event.Hook("Console_alienvision", ToggleAlienVision)
 
 function Alien:UpdateClientEffects(deltaTime, isLocal)
 
@@ -373,32 +436,46 @@ function Alien:UpdateClientEffects(deltaTime, isLocal)
     end
     
     self:UpdateEnzymeEffect(isLocal)
+    self:UpdateElectrified(isLocal)
     
     if isLocal and self:GetIsAlive() then
     
         local darkVisionFadeAmount = 1
         local darkVisionFadeTime = 0.2
         local darkVisionPulseTime = 4
+        local darkVisionState = self:GetDarkVisionEnabled()
+
+        if self.lastDarkVisionState ~= darkVisionState then
+
+            if darkVisionState then
+            
+                self.darkVisionTime = Shared.GetTime()
+                self:TriggerEffects("alien_vision_on") 
+                
+            else
+            
+                self.darkVisionEndTime = Shared.GetTime()
+                self:TriggerEffects("alien_vision_off")
+                
+            end
+            
+            self.lastDarkVisionState = darkVisionState
         
-        if not self.darkVisionOn then
+        end
+        
+        if not darkVisionState then
             darkVisionFadeAmount = math.max(1 - (Shared.GetTime() - self.darkVisionEndTime) / darkVisionFadeTime, 0)
         end
         
         if Player.screenEffects.darkVision then
         
-            Player.screenEffects.darkVision:SetActive(self.darkVisionOn or darkVisionFadeAmount > 0)
-            
+            Player.screenEffects.darkVision:SetActive(alienVisionEnabled)            
             Player.screenEffects.darkVision:SetParameter("startTime", self.darkVisionTime)
             Player.screenEffects.darkVision:SetParameter("time", Shared.GetTime())
             Player.screenEffects.darkVision:SetParameter("amount", darkVisionFadeAmount)
             
         end
         
-        // Blur alien vision if they are using the buy menu or are stunned.
-        local stunned = HasMixin(self, "Stun") and self:GetIsStunned()
-        self:SetBlurEnabled(self:GetBuyMenuIsDisplaying() or stunned or self:GetIsMinimapVisible())
-        
-        //self:UpdateCelerityEffect()
         self:UpdateRegenerationEffect()
         
     end
@@ -407,18 +484,6 @@ end
 
 function Alien:GetFirstPersonDeathEffect()
     return Alien.kFirstPersonDeathEffect
-end
-
-function Alien:UpdateCelerityEffect()
-
-    if Player.screenEffects.celerityFX then
-    
-        local celeritySpeedScalar = self.celeritySpeedScalar
-        Player.screenEffects.celerityFX:SetActive(GetHasCelerityUpgrade(self))
-        Player.screenEffects.celerityFX:SetParameter("amount", celeritySpeedScalar / 2)
-        
-    end
-    
 end
 
 function Alien:UpdateRegenerationEffect()
@@ -455,28 +520,6 @@ function Alien:UpdateMisc(input)
         end
         
     end
-    
-end
-
-function Alien:CloseMenu()
-
-    if self.buyMenu then
-    
-        self.buyMenu:OnClose()
-        
-        GetGUIManager():DestroyGUIScript(self.buyMenu)
-        self.buyMenu = nil
-        
-        MouseTracker_SetIsVisible(false)
-        
-        // Quick work-around to not fire weapon when closing menu.
-        self.timeClosedMenu = Shared.GetTime()
-        
-        return true
-        
-    end
-    
-    return false
     
 end
 
@@ -574,8 +617,8 @@ function AlienUI_GetUpgradesForCategory(category)
     if techTree then
     
         for _, upgradeId in ipairs(techTree:GetAddOnsForTechId(kTechId.AllAliens)) do
-        
-            if GetHiveTypeForUpgrade(upgradeId) == category then        
+
+            if LookupTechData(upgradeId, kTechDataCategory, kTechId.None) == category then        
                 table.insert(upgrades, upgradeId)
             end
             

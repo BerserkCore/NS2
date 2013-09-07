@@ -73,7 +73,7 @@ function TechTree:AddTechInheritance(parentTech, childTech)
 end
 
 // Contains a bunch of tech nodes
-function TechTree:AddBuildNode(techId, prereq1, prereq2)
+function TechTree:AddBuildNode(techId, prereq1, prereq2, isRequired)
 
     assert(techId)
     
@@ -81,6 +81,7 @@ function TechTree:AddBuildNode(techId, prereq1, prereq2)
 
     techNode:Initialize(techId, kTechType.Build, prereq1, prereq2)
     techNode.requiresTarget = true
+    techNode.isRequired = isRequired
     
     self:AddNode(techNode)    
     
@@ -98,7 +99,7 @@ function TechTree:AddEnergyBuildNode(techId, prereq1, prereq2)
     
 end
 
-function TechTree:AddManufactureNode(techId, prereq1, prereq2)
+function TechTree:AddManufactureNode(techId, prereq1, prereq2, isRequired)
 
     local techNode = TechNode()
 
@@ -106,6 +107,7 @@ function TechTree:AddManufactureNode(techId, prereq1, prereq2)
     
     local buildTime = LookupTechData(techId, kTechDataBuildTime, kDefaultBuildTime)
     techNode.time = ConditionalValue(buildTime ~= nil, buildTime, 0)
+    techNode.isRequired = isRequired
     
     self:AddNode(techNode)  
 
@@ -272,11 +274,11 @@ function TechTree:AddSpecial(techId, prereq1, prereq2, requiresTarget)
 
 end
 
-function TechTree:AddPassive(techId)
+function TechTree:AddPassive(techId, prereq1, prereq2)
 
     local techNode = TechNode()
     
-    techNode:Initialize(techId, kTechType.Passive, kTechId.None, kTechId.None)
+    techNode:Initialize(techId, kTechType.Passive, prereq1, prereq2)
     techNode.requiresTarget = false
     
     self:AddNode(techNode)  
@@ -398,8 +400,8 @@ function TechTree:ComputeHasTech(structureTechIdList, techIdCount)
                 // Pre-reqs must be defined already
                 local prereq1 = node:GetPrereq1()
                 local prereq2 = node:GetPrereq2()
-                ASSERT(prereq1 == kTechId.None or (prereq1 < techId), string.format("Prereq %s bigger then %s", EnumToString(kTechId, prereq1), EnumToString(kTechId, techId)))
-                ASSERT(prereq2 == kTechId.None or (prereq2 < techId), string.format("Prereq %s bigger then %s", EnumToString(kTechId, prereq1), EnumToString(kTechId, techId)))
+                assert(prereq1 == kTechId.None or (prereq1 < techId), string.format("Prereq %s bigger then %s", EnumToString(kTechId, prereq1), EnumToString(kTechId, techId)))
+                assert(prereq2 == kTechId.None or (prereq2 < techId), string.format("Prereq %s bigger then %s", EnumToString(kTechId, prereq2), EnumToString(kTechId, techId)))
                 
                 hasTech =   node:GetResearched() and 
                             self:GetHasTech(node:GetPrereq1()) and 

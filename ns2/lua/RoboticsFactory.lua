@@ -35,6 +35,8 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
+Script.Load("lua/HiveVisionMixin.lua")
 
 class 'RoboticsFactory' (ScriptActor)
 
@@ -79,6 +81,8 @@ AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
+AddMixinNetworkVars(HiveVisionMixin, networkVars)
 
 function RoboticsFactory:OnCreate()
 
@@ -106,6 +110,7 @@ function RoboticsFactory:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -125,6 +130,7 @@ function RoboticsFactory:OnInitialized()
     
     InitMixin(self, WeldableMixin)
     InitMixin(self, NanoShieldMixin)
+    InitMixin(self, HiveVisionMixin)
     
     self:SetModel(RoboticsFactory.kModelName, RoboticsFactory.kAnimationGraph)
     
@@ -321,11 +327,9 @@ function RoboticsFactory:OnOverrideOrder(order)
     
 end
 
-local kRoboticsFactoryHealthbarOffset = Vector(0, 1., 0)
 function RoboticsFactory:GetHealthbarOffset()
-    return kRoboticsFactoryHealthbarOffset
+    return 1
 end 
-
 
 Shared.LinkClassToMap("RoboticsFactory", RoboticsFactory.kMapName, networkVars, true)
 

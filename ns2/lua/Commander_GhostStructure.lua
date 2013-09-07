@@ -119,6 +119,8 @@ function GetCommanderGhostStructureCoords()
                 
                 ghostStructureCoords = coords
                 
+            else
+                ghostStructureCoords = nil
             end
             
         end
@@ -131,7 +133,7 @@ end
 
 function CommanderGhostStructureLeftMouseButtonDown(x, y)
 
-    if ghostStructureValid then
+    if ghostStructureValid and ghostStructureCoords ~= nil then
     
         local commander = Client.GetLocalPlayer()
         local normalizedPickRay = CreatePickRay(commander, x, y)
@@ -157,7 +159,7 @@ function CommanderGhostStructureLeftMouseButtonDown(x, y)
             
         end
         
-    elseif errorMessage and string.len(errorMessage) > 0 then
+    elseif errorMessage and string.len(errorMessage) > 0 and ghostStructureCoords ~= nil then
         Client.AddWorldMessage(kWorldTextMessageType.CommanderError, Locale.ResolveString(errorMessage), ghostStructureCoords.origin)
     end
     

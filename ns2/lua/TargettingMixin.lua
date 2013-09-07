@@ -89,7 +89,7 @@ local function ValidateTarget(self, target)
                 else
                 
                     // check for geometry or entities blocking
-                    local trace = Shared.TraceRay(eyePos, targetOrigin, CollisionRep.Damage, PhysicsMask.All, EntityFilterOne(seeingEntity))
+                    local trace = Shared.TraceRay(eyePos, targetOrigin, CollisionRep.Damage, PhysicsMask.All)
                     if trace.entity == target then
                         //Print("no obstacles to %s", ToString(target))
                         return true

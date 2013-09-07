@@ -15,17 +15,13 @@ CatPack.kMapName = "catpack"
 CatPack.kModelName = PrecacheAsset("models/marine/catpack/catpack.model")
 CatPack.kPickupSound = PrecacheAsset("sound/NS2.fev/marine/common/catalyst")
 
-CatPack.kDuration = 6
-CatPack.kAttackSpeedModifier = 1.3
-CatPack.kMoveSpeedScalar = 1.5
-
 function CatPack:OnInitialized()
 
     DropPack.OnInitialized(self)
     
     self:SetModel(CatPack.kModelName)
     
-    InitMixin(self, PickupableMixin, { kRecipientType = "Marine" })
+    InitMixin(self, PickupableMixin, { kRecipientType = {"Marine", "Exo"} })
     
     if Server then
         self:_CheckForPickup()
@@ -35,7 +31,7 @@ end
 
 function CatPack:OnTouch(recipient)
 
-    StartSoundEffectAtOrigin(CatPack.kPickupSound, recipient:GetOrigin())
+    StartSoundEffectAtOrigin(CatPack.kPickupSound, self:GetOrigin())
     recipient:ApplyCatPack()
     
 end
@@ -44,7 +40,7 @@ end
  * Any Marine is a valid recipient.
  */
 function CatPack:GetIsValidRecipient(recipient)
-    return not GetIsVortexed(recipient) and (recipient.GetHasCatpackBoost and not recipient:GetHasCatpackBoost())    
+    return not GetIsVortexed(recipient) and (recipient.GetCanUseCatPack and recipient:GetCanUseCatPack())    
 end
 
 Shared.LinkClassToMap("CatPack", CatPack.kMapName)

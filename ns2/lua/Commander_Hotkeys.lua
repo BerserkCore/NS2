@@ -29,6 +29,7 @@ function Commander:HandleCommanderHotkeys(input)
                     
                     self:SetHotkeyHit(index)
                     self.lastHotkeyIndex = index
+                    CommanderUI_OnButtonClicked()
                     
                     break
                     

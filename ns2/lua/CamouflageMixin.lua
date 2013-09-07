@@ -8,8 +8,6 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
-Script.Load("lua/FunctionContracts.lua")
-
 CamouflageMixin = CreateMixin( CamouflageMixin )
 CamouflageMixin.type = "Camouflage"
 CamouflageMixin.kVelocityThreshold = kCamouflageVelocity

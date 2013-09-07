@@ -192,6 +192,14 @@ function GUIVoteMenu:Update(deltaTime)
     
     if visible then
     
+        if self.yesText then
+            self.yesText:SetText(StringReformat(Locale.ResolveString("VOTE_YES"), { key = GetPrettyInputName("VoteYes") }))
+        end
+
+        if self.noText then
+            self.noText:SetText(StringReformat(Locale.ResolveString("VOTE_NO"), { key = GetPrettyInputName("VoteNo") }))
+        end
+    
         if self.votedYes ~= nil then
         
             if self.votedYes then

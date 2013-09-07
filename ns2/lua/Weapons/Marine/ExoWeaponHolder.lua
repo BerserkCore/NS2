@@ -6,6 +6,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/Weapons/Weapon.lua")
+
 class 'ExoWeaponHolder' (Weapon)
 
 ExoWeaponHolder.kMapName = "exo_weapon_holder"
@@ -205,12 +207,8 @@ function ExoWeaponHolder:OnUpdateRender()
             local dissolveAmount = math.min(1, (Shared.GetTime() - self.screenDissolveStart) / kScreenDissolveSpeed)
             SetViewModelParameter(self, "dissolveAmount", dissolveAmount)
             
-            if dissolveAmount == 1 then
-                self.screenDissolveStart = false
-            end
-            
         else
-            SetViewModelParameter(self, "dissolveAmount", 1)
+            SetViewModelParameter(self, "dissolveAmount", 0)
         end
 		
         if self.closeStart then

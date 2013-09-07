@@ -59,9 +59,9 @@ function Commander:CopyPlayerDataFrom(player)
     Player.CopyPlayerDataFrom(self, player)
     self:SetIsAlive(player:GetIsAlive())
     
-    self.health = player.health
-    self.maxHealth = player.maxHealth
-    self.maxArmor = player.maxArmor
+    self:SetHealth(player.health)
+    self:SetMaxHealth(player.maxHealth)
+    self:SetMaxArmor(player.maxArmor)
     
     self.parasited = player.parasited
     self.timeParasited = player.timeParasited
@@ -257,8 +257,6 @@ function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, is
                     team:AddTeamResources(-cost)                    
                 end
                 
-                Shared.PlayPrivateSound(self, self:GetSpendTeamResourcesSoundName(), nil, 1.0, self:GetOrigin())
-                
             end
             
         else
@@ -309,6 +307,10 @@ function Commander:ProcessTechTreeActionForEntity(techNode, position, normal, is
             
         end
         
+    end
+    
+    if techNode:GetResourceType() == kResourceType.Team then
+        Shared.PlayPrivateSound(self, self:GetSpendTeamResourcesSoundName(), nil, 1.0, self:GetOrigin())
     end
     
     return success, keepProcessing

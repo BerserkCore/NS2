@@ -39,6 +39,9 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
 Script.Load("lua/SoftTargetMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/WebableMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'MAC' (ScriptActor)
 
@@ -111,6 +114,9 @@ AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(WebableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 local function GetIsWeldedByOtherMAC(self, target)
 
@@ -169,6 +175,8 @@ function MAC:OnCreate()
     InitMixin(self, CombatMixin)
     InitMixin(self, CorrodeMixin)
     InitMixin(self, SoftTargetMixin)
+    InitMixin(self, WebableMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Server then
     
@@ -211,7 +219,9 @@ function MAC:OnInitialized()
         self.jetsSound:SetParent(self)
 
     elseif Client then
-        InitMixin(self, UnitStatusMixin)      
+    
+        InitMixin(self, UnitStatusMixin)     
+        InitMixin(self, HiveVisionMixin) 
 
         // Setup movement effects
         self.jetsCinematics = {}
@@ -235,6 +245,8 @@ function MAC:OnInitialized()
     self.moving = false
     
     self:SetModel(MAC.kModelName, MAC.kAnimationGraph)
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -260,7 +272,7 @@ local function GetAutomaticOrder(self)
             primaryTarget = Shared.GetEntity(currentOrder:GetParam())
         end
 
-        if primaryTarget and (HasMixin(primaryTarget, "Weldable") and primaryTarget:GetWeldPercentage() < 0.95) and not primaryTarget:isa("MAC") then
+        if primaryTarget and (HasMixin(primaryTarget, "Weldable") and primaryTarget:GetWeldPercentage() < 1) and not primaryTarget:isa("MAC") then
             
             target = primaryTarget
             orderType = kTechId.AutoWeld
@@ -291,7 +303,7 @@ local function GetAutomaticOrder(self)
                     local weldable = weldables[w]
                     // There are cases where the weldable's weld percentage is very close to
                     // 100% but not exactly 100%. This second check prevents the MAC from being so pedantic.
-                    if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 0.95 and not GetIsWeldedByOtherMAC(self, weldable) and not weldable:isa("MAC") then
+                    if weldable:GetCanBeWelded(self) and weldable:GetWeldPercentage() < 1 and not GetIsWeldedByOtherMAC(self, weldable) and not weldable:isa("MAC") then
                     
                         target = weldable
                         orderType = kTechId.AutoWeld
@@ -468,14 +480,10 @@ end
 
 function MAC:GetMoveSpeed()
 
-    local moveSpeed = GetDevScalar(MAC.kMoveSpeed, 8)
-    local techNode = self:GetTeam():GetTechTree():GetTechNode(kTechId.MACSpeedTech)
+    local maxSpeedTable = { maxSpeed = MAC.kMoveSpeed }
+    self:ModifyMaxSpeed(maxSpeedTable)
 
-    if techNode and techNode:GetResearched() then
-        moveSpeed = moveSpeed * MAC.kSpeedUpgradePercent
-    end
-
-    return moveSpeed
+    return maxSpeedTable.maxSpeed
     
 end
 
@@ -500,8 +508,8 @@ function MAC:ProcessWeldOrder(deltaTime, orderTarget, orderLocation, autoWeld)
         // The Commander is not Weldable but the Order correctly updated to the
         // new entity Id of the Commander. In this case, the order will simply be completed.
         if orderTarget and HasMixin(orderTarget, "Weldable") then
-
-            local toTarget = (orderLocation - Vector(self:GetOrigin()))
+        
+            local toTarget = (orderLocation - self:GetOrigin())
             local distanceToTarget = toTarget:GetLength()
             canBeWeldedNow = orderTarget:GetCanBeWelded(self)
             
@@ -541,9 +549,11 @@ function MAC:ProcessWeldOrder(deltaTime, orderTarget, orderLocation, autoWeld)
     end
     
     // Continuously turn towards the target. But don't mess with path finding movement if it was done.
-    if not self.moving and orderPosition then
-        local toOrder = (orderPosition - Vector(self:GetOrigin()))
+    if not self.moving and orderLocation then
+    
+        local toOrder = (orderLocation - self:GetOrigin())
         self:SmoothTurn(deltaTime, GetNormalizedVector(toOrder), 0)
+        
     end
     
     return orderStatus
@@ -906,6 +916,10 @@ function MAC:OnOverrideDoorInteraction(inEntity)
     return true, 4
 end
 
+function MAC:GetIdleSoundInterval()
+    return 25
+end
+
 function MAC:UpdateIncludeRelevancyMask()
     SetAlwaysRelevantToCommander(self, true)
 end
@@ -967,9 +981,12 @@ function MAC:GetShowHitIndicator()
     return false
 end
 
-local kMACHealthbarOffset = Vector(0, 1.4, 0)
+function MAC:GetPlayIdleSound()
+    return not self:GetHasOrder() and GetIsUnitActive(self)
+end
+
 function MAC:GetHealthbarOffset()
-    return kMACHealthbarOffset
+    return 1.4
 end 
 
 function MAC:OnDestroy()

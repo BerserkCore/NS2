@@ -12,6 +12,8 @@ Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/JumpMoveMixin.lua")
 Script.Load("lua/Mixins/CrouchMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
+Script.Load("lua/ScoringMixin.lua")
+Script.Load("lua/PlayerVariantMixin.lua")
 
 /**
  * ReadyRoomPlayer is a simple Player class that adds the required Move type mixin
@@ -30,6 +32,8 @@ AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(JumpMoveMixin, networkVars)
 AddMixinNetworkVars(CrouchMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
+AddMixinNetworkVars(ScoringMixin, networkVars)
+AddMixinNetworkVars(PlayerVariantMixin, networkVars)
 
 function ReadyRoomPlayer:OnCreate()
 
@@ -38,6 +42,8 @@ function ReadyRoomPlayer:OnCreate()
     InitMixin(self, JumpMoveMixin)
     InitMixin(self, CrouchMoveMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kDefaultFov })
+    InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
+    InitMixin(self, PlayerVariantMixin)
     
     Player.OnCreate(self)
     
@@ -47,7 +53,7 @@ function ReadyRoomPlayer:OnInitialized()
 
     Player.OnInitialized(self)
     
-    self:SetModel(Marine.kModelName, kAnimationGraph)
+    self:SetModel(Marine.kModelNames["male"]["green"], kAnimationGraph)
     
 end
 
@@ -65,18 +71,15 @@ if Client then
     
 end
 
-local kReadyRoomHealthbarOffset = Vector(0, .8, 0)
 function ReadyRoomPlayer:GetHealthbarOffset()
-    return kReadyRoomHealthbarOffset
+    return 0.8
 end
 
-function ReadyRoomPlayer:MakeSpecialEdition()
-    self:SetModel(Marine.kBlackArmorModelName, Marine.kMarineAnimationGraph)
-end
+function ReadyRoomPlayer:OnVariantUpdated()
 
-function ReadyRoomPlayer:MakeDeluxeEdition()
-    self:SetModel(Marine.kSpecialEditionModelName, Marine.kMarineAnimationGraph)
+    local modelName = Marine.kModelNames[self:GetSex()][self:GetVariant()]
+    self:SetModel(modelName, Marine.kMarineAnimationGraph)
+    
 end
-
 
 Shared.LinkClassToMap("ReadyRoomPlayer", ReadyRoomPlayer.kMapName, networkVars)

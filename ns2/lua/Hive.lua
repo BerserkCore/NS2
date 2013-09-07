@@ -14,7 +14,6 @@ Script.Load("lua/CommandStructure.lua")
 Script.Load("lua/InfestationMixin.lua")
 Script.Load("lua/FireMixin.lua")
 Script.Load("lua/CatalystMixin.lua")
-Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/UmbraMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
@@ -23,9 +22,7 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/TeleportMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/BiomassMixin.lua")
-
-Script.Load("lua/CommAbilities/Alien/NutrientMist.lua")
-Script.Load("lua/CommAbilities/Alien/BoneWall.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Hive' (CommandStructure)
 
@@ -37,7 +34,6 @@ local networkVars =
 
 AddMixinNetworkVars(CloakableMixin, networkVars)
 AddMixinNetworkVars(CatalystMixin, networkVars)
-AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
@@ -46,6 +42,7 @@ AddMixinNetworkVars(TeleportMixin, networkVars)
 AddMixinNetworkVars(HiveVisionMixin, networkVars)
 AddMixinNetworkVars(DetectableMixin, networkVars)
 AddMixinNetworkVars(InfestationMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 kResearchToHiveType =
 {
@@ -55,6 +52,8 @@ kResearchToHiveType =
 }
 
 Hive.kMapName = "hive"
+
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/hive_frag.surface_shader")
 
 Hive.kModelName = PrecacheAsset("models/alien/hive/hive.model")
 local kAnimationGraph = PrecacheAsset("models/alien/hive/hive.animation_graph")
@@ -72,9 +71,6 @@ Hive.kSpecksEffect = PrecacheAsset("cinematics/alien/hive/specks.cinematic")
 Hive.kCompleteSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/hive_complete")
 Hive.kUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/hive_under_attack")
 Hive.kDyingSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/hive_dying")
-
-Hive.kTriggerCatalyst2DSound = PrecacheAsset("sound/NS2.fev/alien/commander/catalyze_2D")
-Hive.kTriggerCatalystSound = PrecacheAsset("sound/NS2.fev/alien/commander/catalyze_3D")
 
 Hive.kHealRadius = 12.7     // From NS1
 Hive.kHealthPercentage = .08
@@ -95,7 +91,6 @@ function Hive:OnCreate()
     InitMixin(self, FireMixin)
     InitMixin(self, CatalystMixin)
     InitMixin(self, UmbraMixin)
-    InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
     InitMixin(self, TeleportMixin)
@@ -155,6 +150,8 @@ function Hive:OnInitialized()
         self.glowIntensity = ConditionalValue(self:GetIsBuilt(), 1, 0)
         
     end
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -231,31 +228,6 @@ function Hive:GetCystParentRange()
     return kHiveCystParentRange
 end
 
-function Hive:GetMainMenuButtons()
-
-    local techButtons = { kTechId.Drifter, kTechId.ShiftHatch, kTechId.None, kTechId.None,
-                          kTechId.None, kTechId.None, kTechId.None, kTechId.None }
-
-    if self:GetTechId() == kTechId.Hive then
-    
-        techButtons[5] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToCragHive), kTechId.UpgradeToCragHive, kTechId.None)
-        techButtons[6] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShadeHive), kTechId.UpgradeToShadeHive, kTechId.None)
-        techButtons[7] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShiftHive), kTechId.UpgradeToShiftHive, kTechId.None)
-    
-    end
-    
-    if self.bioMassLevel <= 1 then
-        techButtons[3] = kTechId.ResearchBioMassOne
-    end
-    
-    if self.bioMassLevel <= 2 then
-        techButtons[4] = kTechId.ResearchBioMassTwo 
-    end
-    
-    return techButtons
-
-end
-
 function Hive:GetTechAllowed(techId, techNode, player)
 
     local allowed, canAfford = CommandStructure.GetTechAllowed(self, techId, techNode, player)
@@ -284,59 +256,23 @@ function Hive:GetCanResearchOverride(techId)
 
 end
 
-local function GetLifeFormButtons(self)
-
-    local upgrades =
-    {
-        kTechId.Leap, kTechId.GorgeTunnelTech, kTechId.Umbra, kTechId.None,
-        kTechId.ShadowStep, kTechId.Stomp, kTechId.None, kTechId.RootMenu,
-    }
-    
-    local teamNum = self:GetTeamNumber()
-
-    if teamNum then
-    
-        if GetIsTechResearched(teamNum, kTechId.Leap) then
-            upgrades[1] = kTechId.Xenocide
-        end  
-        if GetIsTechResearched(teamNum, kTechId.GorgeTunnelTech) then
-            upgrades[2] = kTechId.BileBomb
-        end
-  
-        if GetIsTechResearched(teamNum, kTechId.Umbra) then
-            upgrades[3] = kTechId.Spores
-        end   
-        /*
-        if GetIsTechResearched(teamNum, kTechId.BoneShield) then
-            upgrades[6] = kTechId.Stomp
-        end 
-        */         
-        if GetIsTechResearched(teamNum, kTechId.ShadowStep) then
-            upgrades[5] = kTechId.Vortex
-        end  
-
-    end
-    
-    return upgrades
-
-end
-
-function Hive:GetMenuTechIdFor(techId)
-
-    if table.contains(GetLifeFormButtons(self), techId) then
-        return kTechId.LifeFormMenu
-    end    
-
-end
-
 function Hive:GetTechButtons(techId)
 
-    local techButtons = nil
+    local techButtons = { kTechId.ShiftHatch, kTechId.None, kTechId.GorgeTunnelTech, kTechId.UpgradeGorge,
+                          kTechId.None, kTechId.None, kTechId.None, kTechId.None }
+
+    if self:GetTechId() == kTechId.Hive then
     
-    if techId == kTechId.RootMenu then
-        techButtons = self:GetMainMenuButtons()
-    elseif techId == kTechId.LifeFormMenu then
-        techButtons = GetLifeFormButtons(self)
+        techButtons[5] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToCragHive), kTechId.UpgradeToCragHive, kTechId.None)
+        techButtons[6] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShadeHive), kTechId.UpgradeToShadeHive, kTechId.None)
+        techButtons[7] = ConditionalValue(GetHiveTypeResearchAllowed(self, kTechId.UpgradeToShiftHive), kTechId.UpgradeToShiftHive, kTechId.None)
+    
+    end
+    
+    if self.bioMassLevel <= 1 then
+        techButtons[2] = kTechId.ResearchBioMassOne
+    elseif self.bioMassLevel <= 2 then
+        techButtons[2] = kTechId.ResearchBioMassTwo 
     end
     
     return techButtons
@@ -356,9 +292,8 @@ function Hive:OnSighted(sighted)
 
 end
 
-local kHiveHealthbarOffset = Vector(0, .8, 0)
 function Hive:GetHealthbarOffset()
-    return kHiveHealthbarOffset
+    return 0.8
 end 
 
 // Don't show objective after we become cloaked
@@ -369,6 +304,10 @@ function Hive:OnCloak()
         attached.showObjective = false
     end
     
+end
+
+function Hive:OverrideVisionRadius()
+    return 20
 end
 
 function Hive:OnUpdatePoseParameters()

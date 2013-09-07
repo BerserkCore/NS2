@@ -55,7 +55,7 @@ function CragBabblers:OnCreate()
     InitMixin(self, SelectableMixin)
     
     local babblerHealth = LookupTechData(kTechId.Babbler, kTechDataMaxHealth, 100) * CragBabblers.kNumBabblers
-    self.maxHealth = babblerHealth
+    self:SetMaxHealth(babblerHealth)
     self.health = babblerHealth
     self.maxArmor = 0
     self.armor = 0

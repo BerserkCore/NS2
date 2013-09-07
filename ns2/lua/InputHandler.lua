@@ -31,7 +31,8 @@ local _keyBinding =
     Use = InputKey.E,
     Drop = InputKey.G,
     Buy = InputKey.B,
-    ShowMap = InputKey.M,
+    Eject = InputKey.I,
+    ShowMap = InputKey.C,
     VoiceChat = InputKey.LeftAlt,
     TextChat = InputKey.Y,
     TeamChat = InputKey.Return,
@@ -299,6 +300,9 @@ local function GenerateMove()
         if _keyState[ _keyBinding.Buy ] then
             move.commands = bit.bor(move.commands, Move.Buy)
         end
+        if _keyState[ _keyBinding.Eject ] then
+            move.commands = bit.bor(move.commands, Move.Eject)
+        end
         
         if _keyState[ _keyBinding.MoveForward ] then
             move.move.z = move.move.z + 1
@@ -342,9 +346,6 @@ local function GenerateMove()
         if _keyPressed[ _keyBinding.ToggleSayings ] then
             move.commands = bit.bor(move.commands, Move.ToggleSayings)
         end
-        if _keyPressed[ _keyBinding.ToggleVoteMenu ] then
-            move.commands = bit.bor(move.commands, Move.ToggleVoteMenu)
-        end
 
         // FPS action relevant to spectator
         if _keyPressed[ _keyBinding.NextWeapon ] ~= nil then
@@ -373,34 +374,29 @@ local function GenerateMove()
         if _keyPressed[ _keyBinding.QuickSwitch ] then
             move.commands = bit.bor(move.commands, Move.QuickSwitch)
         end
-        
-        // Process FPS actions only if mouse captured
-        if not Client.GetMouseVisible() then
-        
-            if _keyState[ _keyBinding.Use ] then
-                move.commands = bit.bor(move.commands, Move.Use)
-            end
-            if _keyPressed[ _keyBinding.ToggleFlashlight ] then
-                move.commands = bit.bor(move.commands, Move.ToggleFlashlight)
-            end
-            if _keyState[ _keyBinding.PrimaryAttack ] then
-                move.commands = bit.bor(move.commands, Move.PrimaryAttack)
-            end
-            if _keyState[ _keyBinding.SecondaryAttack ] then
-                move.commands = bit.bor(move.commands, Move.SecondaryAttack)
-            end
-            if _keyState[ _keyBinding.Reload ] then
-                move.commands = bit.bor(move.commands, Move.Reload)
-            end
-                
-            if _keyPressed[ _keyBinding.Drop ] then
-                move.commands = bit.bor(move.commands, Move.Drop)
-            end
-          
-            if _keyPressed[ _keyBinding.Taunt ] then
-                move.commands = bit.bor(move.commands, Move.Taunt)
-            end
 
+        if _keyState[ _keyBinding.Use ] then
+            move.commands = bit.bor(move.commands, Move.Use)
+        end
+        if _keyPressed[ _keyBinding.ToggleFlashlight ] then
+            move.commands = bit.bor(move.commands, Move.ToggleFlashlight)
+        end
+        if _keyState[ _keyBinding.PrimaryAttack ] then
+            move.commands = bit.bor(move.commands, Move.PrimaryAttack)
+        end
+        if _keyState[ _keyBinding.SecondaryAttack ] then
+            move.commands = bit.bor(move.commands, Move.SecondaryAttack)
+        end
+        if _keyState[ _keyBinding.Reload ] then
+            move.commands = bit.bor(move.commands, Move.Reload)
+        end
+            
+        if _keyPressed[ _keyBinding.Drop ] then
+            move.commands = bit.bor(move.commands, Move.Drop)
+        end
+      
+        if _keyPressed[ _keyBinding.Taunt ] then
+            move.commands = bit.bor(move.commands, Move.Taunt)
         end
         
         // Handle the hot keys used for commander mode.

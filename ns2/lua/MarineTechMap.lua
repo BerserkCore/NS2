@@ -24,13 +24,13 @@ kMarineTechMap =
         { kTechId.GrenadeTech, 2, 3 },{ kTechId.MinesTech, 3, 3 },{ kTechId.ShotgunTech, 4, 3 },{ kTechId.Welder, 5, 3 },
         
         { kTechId.Armory, 3.5, 4 }, 
-                
-        { kTechId.AdvancedArmory, 3.5, 5.5 }, { kTechId.AdvancedWeaponry, 2.5, 5.5 },
+         
+        { kTechId.AdvancedWeaponry, 2.5, 5.5 }, { kTechId.AdvancedArmory, 3.5, 5.5 },
         
         { kTechId.PrototypeLab, 3.5, 7 },
 
         { kTechId.ExosuitTech, 3, 8 },{ kTechId.JetpackTech, 4, 8 }, 
-        { kTechId.DualMinigunTech, 3, 9 },
+        { kTechId.DualMinigunTech, 3, 9 },{ kTechId.TwoCommandStations, 5, 9 },
         
         
         { kTechId.ArmsLab, 9, 7 },{ kTechId.Weapons1, 10, 6.5 },{ kTechId.Weapons2, 11, 6.5 },{ kTechId.Weapons3, 12, 6.5 },
@@ -38,9 +38,9 @@ kMarineTechMap =
                                   
                                   
         { kTechId.NanoShieldTech, 8, 4.5 },
+        { kTechId.CatPackTech, 8, 5.5 },
 
-
-        { kTechId.Observatory, 6, 5.5 },{ kTechId.PhaseTech, 6, 6.5 },{ kTechId.PhaseGate, 6, 7.5 },
+        { kTechId.Observatory, 6, 5 },{ kTechId.PhaseTech, 6, 6 },{ kTechId.PhaseGate, 6, 7 },
                  
 
 }
@@ -52,9 +52,13 @@ kMarineLines =
     
     { 7, 1, 7, 7 },
     { 7, 4, 3.5, 4 },
-    { 6, 5.5, 7, 5.5 },
+    // observatory:
+    { 6, 5, 7, 5 },
     { 7, 7, 9, 7 },
+    // nano shield:
     { 7, 4.5, 8, 4.5},
+    // cat pack tech:
+    { 7, 5.5, 8, 5.5},
     
     GetLinePositionForTechMap(kMarineTechMap, kTechId.Armory, kTechId.GrenadeTech),
     GetLinePositionForTechMap(kMarineTechMap, kTechId.Armory, kTechId.MinesTech),
@@ -66,8 +70,9 @@ kMarineLines =
     GetLinePositionForTechMap(kMarineTechMap, kTechId.AdvancedArmory, kTechId.PrototypeLab),
     
     GetLinePositionForTechMap(kMarineTechMap, kTechId.PrototypeLab, kTechId.ExosuitTech),
-    GetLinePositionForTechMap(kMarineTechMap, kTechId.ExosuitTech, kTechId.DualMinigunTech),
     GetLinePositionForTechMap(kMarineTechMap, kTechId.PrototypeLab, kTechId.JetpackTech),
+    GetLinePositionForTechMap(kMarineTechMap, kTechId.ExosuitTech, kTechId.DualMinigunTech),
+    GetLinePositionForTechMap(kMarineTechMap, kTechId.DualMinigunTech, kTechId.TwoCommandStations),
     
     GetLinePositionForTechMap(kMarineTechMap, kTechId.Observatory, kTechId.PhaseTech),
     GetLinePositionForTechMap(kMarineTechMap, kTechId.PhaseTech, kTechId.PhaseGate),

@@ -56,7 +56,7 @@ local networkVars = {
     ownerId = "entityid",
     allowDigest = "boolean",
     destLocationId = "entityid",
-    otherSideInfested = "boolean"
+    //otherSideInfested = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -163,7 +163,7 @@ function TunnelEntrance:OnCreate()
     self.timeLastInteraction = 0
     self.timeLastExited = 0
     self.destLocationId = Entity.invalidId
-    self.otherSideInfested = false
+    //self.otherSideInfested = false
     
 end
 
@@ -184,7 +184,7 @@ function TunnelEntrance:OnInitialized()
         end
         
         self.onNormalInfestation = false
-        self:AddTimedCallback(UpdateInfestationStatus, 1)
+        //self:AddTimedCallback(UpdateInfestationStatus, 1)
         
     elseif Client then
     
@@ -213,7 +213,7 @@ function TunnelEntrance:GetInfestationRadius()
 end
 
 function TunnelEntrance:GetInfestationMaxRadius()
-    return self.otherSideInfested and kTunnelInfestationRadius or 0
+    return kTunnelInfestationRadius // self.otherSideInfested and kTunnelInfestationRadius or 0
 end
 
 if not Server then
@@ -240,6 +240,10 @@ function TunnelEntrance:SetOwner(owner)
     
         local client = Server.GetOwner(owner)    
         self.ownerClientId = client:GetUserId()
+
+        if Server then
+            self:UpdateConnectedTunnel()
+        end
     
         if self.tunnelId and self.tunnelId ~= Entity.invalidId then
         
@@ -388,10 +392,14 @@ if Server then
     
     end
 
-    function TunnelEntrance:OnConstructionComplete()
+    function TunnelEntrance:UpdateConnectedTunnel()
 
-        local owner = self:GetOwner()
- 
+        local hasValidTunnel = self.tunnelId ~= nil and Shared.GetEntity(self.tunnelId) ~= nil
+
+        if hasValidTunnel or self:GetOwnerClientId() == nil or not self:GetIsBuilt() then
+            return
+        end
+
         // register if a tunnel entity already exists or a free tunnel has been found
         for index, tunnel in ientitylist( Shared.GetEntitiesWithClassname("Tunnel") ) do
         
@@ -413,6 +421,10 @@ if Server then
         self.tunnelId = tunnel:GetId()
 
     end
+
+    function TunnelEntrance:OnConstructionComplete()
+        self:UpdateConnectedTunnel()
+    end
     
     function TunnelEntrance:OnKill(attacker, doer, point, direction)
 
@@ -429,9 +441,8 @@ if Server then
 
 end
 
-local kTunnelEntranceHealthbarOffset = Vector(0, 1, 0)
 function TunnelEntrance:GetHealthbarOffset()
-    return kTunnelEntranceHealthbarOffset
+    return 1
 end
 
 function TunnelEntrance:GetCanBeUsed(player, useSuccessTable)

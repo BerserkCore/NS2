@@ -12,7 +12,8 @@ function Weapon:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
-    self:SetWeaponWorldState(true)
+    self:SetWeaponWorldState(true, true)
+    self:SetRelevancy(false)
     
 end
 
@@ -40,7 +41,7 @@ function Weapon:Dropped(prevOwner)
 end
 
 // Set to true for being a world weapon, false for when it's carried by a player
-function Weapon:SetWeaponWorldState(state)
+function Weapon:SetWeaponWorldState(state, preventExpiration)
 
     if state ~= self.weaponWorldState then
     
@@ -56,26 +57,30 @@ function Weapon:SetWeaponWorldState(state)
                 self.physicsModel:SetCCDEnabled(true)
             end
             
-            self.weaponWorldStateTime = Shared.GetTime()
+            if not preventExpiration then
             
-            local function DestroyWorldWeapon()
-            
-                // We need to make sure this callback is still valid. It is possible
-                // for this weapon to be dropped and picked up before this callback fires off
-                // and then be dropped again, in which case this callback should be ignored and
-                // the next callback will destroy the weapon.
+                self.weaponWorldStateTime = Shared.GetTime()
                 
-                // $AU: i would suggest to not use TimedCallbacks here. I noticed sometimes weapons won't disappear (not commander dropped, marine dropped),
-                // and also the callback table gets blown up when you spam drop/pickup constantly.
+                local function DestroyWorldWeapon()
                 
-                local enoughTimePassed = (Shared.GetTime() - self.weaponWorldStateTime) >= kItemStayTime
-                if self:GetWeaponWorldState() and enoughTimePassed then
-                    DestroyEntity(self)
+                    // We need to make sure this callback is still valid. It is possible
+                    // for this weapon to be dropped and picked up before this callback fires off
+                    // and then be dropped again, in which case this callback should be ignored and
+                    // the next callback will destroy the weapon.
+                    
+                    // $AU: i would suggest to not use TimedCallbacks here. I noticed sometimes weapons won't disappear (not commander dropped, marine dropped),
+                    // and also the callback table gets blown up when you spam drop/pickup constantly.
+                    
+                    local enoughTimePassed = (Shared.GetTime() - self.weaponWorldStateTime) >= kItemStayTime
+                    if self:GetWeaponWorldState() and enoughTimePassed then
+                        DestroyEntity(self)
+                    end
+                    
                 end
                 
+                self:AddTimedCallback(DestroyWorldWeapon, kItemStayTime)
+                
             end
-            
-            self:AddTimedCallback(DestroyWorldWeapon, kItemStayTime)
             
             self:SetIsVisible(true)
             

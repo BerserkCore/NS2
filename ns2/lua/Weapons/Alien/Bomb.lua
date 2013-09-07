@@ -72,8 +72,6 @@ if Server then
     function Bomb:ProcessHit(targetHit, surface, normal)
 
         if (not self:GetOwner() or targetHit ~= self:GetOwner()) and not self.detonated then
-    
-            self:TriggerEffects("bilebomb_hit")
             
             local dotMarker = CreateEntity(DotMarker.kMapName, self:GetOrigin() + normal * 0.2, self:GetTeamNumber())
             dotMarker:SetDamageType(kBileBombDamageType)
@@ -86,6 +84,8 @@ if Server then
             dotMarker:SetDeathIconIndex(kDeathMessageIcon.BileBomb)
             dotMarker:SetOwner(self:GetOwner())
             dotMarker:SetFallOffFunc(SineFalloff)
+            
+            dotMarker:TriggerEffects("bilebomb_hit")
 
             DestroyEntity(self)
             

@@ -10,15 +10,28 @@
 Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
+function DestroyEntitiesWithinRange(className, origin, range, filterFunc)
+
+    for index, entity in ipairs(GetEntitiesWithinRange(className, origin, range)) do
+        if not filterFunc or not filterFunc(entity) then
+            DestroyEntity(entity)
+        end
+    end
+
+end
+
 function OnCommanderLogOut(commander)
-/*
+
     local client = Server.GetOwner(commander)
+    if client then
     
-    local addTime = math.max(0, 60 - GetGamerules():GetGameTimeChanged())
+        local addTime = math.max(0, 30 - GetGamerules():GetGameTimeChanged())
+        
+        client.timeUntilResourceBlock = Shared.GetTime() + addTime + kCommanderResourceBlockTime
+        client.blockPersonalResources = true
     
-    client.timeUntilResourceBlock = Shared.GetTime() + addTime + kCommanderResourceBlockTime
-    client.blockPersonalResources = true
-*/
+    end
+
 end
 
 function SetAlwaysRelevantToCommander(unit, relevant)
@@ -452,7 +465,7 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
         local team = forAlien:GetTeam()
         if team and team.GetTechTree then
         
-            local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetHasTech(forAlien, tierTwoTechId))
+            local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierTwoTechId))
             local hadTwoHives = forAlien.twoHives
             // Don't lose abilities unless you die.
             forAlien.twoHives = forAlien.twoHives or hasTwoHivesNow
@@ -463,7 +476,7 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
                 LockAbility(forAlien, tierTwoTechId)
             end
             
-            local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetHasTech(forAlien, tierThreeTechId))
+            local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierThreeTechId))
             local hadThreeHives = forAlien.threeHives
             // Don't lose abilities unless you die.
             forAlien.threeHives = forAlien.threeHives or hasThreeHivesNow

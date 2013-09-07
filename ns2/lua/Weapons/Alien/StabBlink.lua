@@ -1,41 +1,29 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\Weapons\Alien\StabBlink.lua
 //
-//    Created by:   Charlie Cleveland (charlie@unknownworlds.com) and
-//                  Max McGuire (max@unknownworlds.com)
-//
-// Left-click to stab (with both claws), right-click to do the massive rising up and 
-// downward attack, with both claws. Insta-kill.
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/Weapons/Alien/Blink.lua")
 
 class 'StabBlink' (Blink)
-
 StabBlink.kMapName = "stab"
 
 local networkVars =
 {
-    primaryAttacking = "boolean",
-    primaryBlocked = "boolean"
+    stabbing = "compensated boolean"
 }
 
-// Balance
-StabBlink.kDamage = kStabDamage
-StabBlink.kPrimaryEnergyCost = kStabEnergyCost
-StabBlink.kDamageType = kStabDamageType
-StabBlink.kRange = 2.6
-StabBlink.kStabDuration = 1
+local kRange = 1.9
 
 local kAnimationGraph = PrecacheAsset("models/alien/fade/fade_view.animation_graph")
 
 function StabBlink:OnCreate()
 
     Blink.OnCreate(self)
-    
-    self.primaryBlocked = false
+
     self.primaryAttacking = false
 
 end
@@ -44,58 +32,53 @@ function StabBlink:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function StabBlink:GetPrimaryEnergyCost(player)
-    return StabBlink.kPrimaryEnergyCost
+function StabBlink:GetEnergyCost(player)
+    return kStabEnergyCost
 end
 
 function StabBlink:GetHUDSlot()
-    return 2
+    return 3
+end
+
+function StabBlink:GetPrimaryAttackRequiresPress()
+    return false
+end
+
+function StabBlink:GetMeleeBase()
+    local parent = self:GetParent()
+    if parent and parent.GetIsEnzymed and parent:GetIsEnzymed() then
+        return 1, 1.2
+    end
+    return .7, 1
 end
 
 function StabBlink:GetDeathIconIndex()
     return kDeathMessageIcon.Swipe
 end
 
+function StabBlink:GetSecondaryTechId()
+    return kTechId.Blink
+end
+
 function StabBlink:GetBlinkAllowed()
-    return not self.primaryBlocked
-end
-
-function StabBlink:ConstrainMoveVelocity(moveVelocity)
-
-    if self.primaryBlocked then
-        moveVelocity:Scale(0.2)
-    end
-    
-end
-
-// prevent jumping during stab to prevent exploiting
-function StabBlink:GetCanJump()
-    return not self.primaryBlocked
-end
-
-function StabBlink:GetCanShadowStep()
-    return not self.primaryBlocked
-end
-
-function StabBlink:OnProcessMove(input)
-
-    Blink.OnProcessMove(self, input)
-    
-    // We need to clear this out in OnProcessMove (rather than ProcessMoveOnWeapon)
-    // since this will get called after the view model has been updated from
-    // Player:OnProcessMove. 
-    self.primaryAttacking = false
-
+    return not self.stabbing
 end
 
 function StabBlink:OnPrimaryAttack(player)
 
-    if not self:GetIsBlinking() and Shared.GetTime() - self.etherealEndTime > 1 and player:GetEnergy() >= self:GetEnergyCost() then
-    
+    if not self:GetIsBlinking() and player:GetEnergy() >= self:GetEnergyCost() then
         self.primaryAttacking = true
-        self.primaryBlocked = true
-        
+    else
+        self.primaryAttacking = false
     end
+    
+end
+
+function StabBlink:OnPrimaryAttackEnd()
+    
+    Blink.OnPrimaryAttackEnd(self)
+    
+    self.primaryAttacking = false
     
 end
 
@@ -104,44 +87,52 @@ function StabBlink:OnHolster(player)
     Blink.OnHolster(self, player)
     
     self.primaryAttacking = false
-    self.primaryBlocked = false
+    self.stabbing = false
     
 end
 
-local function PerformMeleeAttack(self)
+function StabBlink:OnDraw(player,previousWeaponMapName)
 
-    local player = self:GetParent()
-    if player then
-        local didHit, hitObject, endPoint, surface = AttackMeleeCapsule(self, player, StabBlink.kDamage, StabBlink.kRange)
-    end
+    Blink.OnDraw(self, player, previousWeaponMapName)
     
+    self.primaryAttacking = false
+    self.stabbing = false
+    
+end
+
+function StabBlink:GetIsStabbing()
+    return self.stabbing
 end
 
 function StabBlink:OnTag(tagName)
 
-    PROFILE("StabBlink:OnTag")
-
-    if self.primaryBlocked then
+    PROFILE("SwipeBlink:OnTag")
     
-        if tagName == "start" then
-        
-            local player = self:GetParent()
-            if player then
-                player:DeductAbilityEnergy(self:GetEnergyCost())
-            end
-            
-            self:TriggerEffects("stab_attack")
-            
-        elseif tagName == "attack_end" then
-            self.primaryBlocked = false
+    if tagName == "stab_start" then
+    
+        self:TriggerEffects("stab_attack")
+        self.stabbing = true
+    
+        local player = self:GetParent()
+        if player then
+            player:DeductAbilityEnergy(self:GetEnergyCost())
+        end
+    
+    elseif tagName == "hit" and self.stabbing then
+    
+        self:TriggerEffects("stab_hit")
+        self.stabbing = false
+    
+        local player = self:GetParent()
+        if player then
+
+            AttackMeleeCapsule(self, player, kStabDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))            
+            self:ConsumeVortex(player)
+          
         end
         
     end
-    
-    if tagName == "hit" then
-        PerformMeleeAttack(self)
-    end
-    
+
 end
 
 function StabBlink:OnUpdateAnimationInput(modelMixin)

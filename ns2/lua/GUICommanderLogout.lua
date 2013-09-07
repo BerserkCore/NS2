@@ -59,6 +59,7 @@ function GUICommanderLogout:Initialize()
     self.background:SetSize(Vector(GUICommanderLogout.kBackgroundWidth, GUICommanderLogout.kBackgroundHeight, 0))
     self.background:SetAnchor(GUIItem.Right, GUIItem.Top)
     self.background:SetPosition(Vector(-GUICommanderLogout.kBackgroundWidth - GUICommanderLogout.kLogoutOffset, GUICommanderLogout.kLogoutOffset, 0))
+    self.background:SetLayer(kGUILayerPlayerHUD)
 
     if CommanderUI_IsAlienCommander() then
         self.background:SetTexture(GUICommanderLogout.kLogoutAlienTextureName)
@@ -86,6 +87,7 @@ function GUICommanderLogout:InitSmokeyBackground()
     self.smokeyBackground = GUIManager:CreateGraphicItem()
     self.smokeyBackground:SetAnchor(GUIItem.Right, GUIItem.Top)
     self.smokeyBackground:SetSize(kSmokeyBackgroundSize)
+    self.smokeyBackground:SetLayer(kGUILayerPlayerHUDBackground)
     
     local backgroundPos = Vector(-GUICommanderLogout.kBackgroundWidth - GUICommanderLogout.kLogoutOffset, GUICommanderLogout.kLogoutOffset, 0)
     self.smokeyBackground:SetPosition(backgroundPos)

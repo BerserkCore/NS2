@@ -35,6 +35,8 @@ Script.Load("lua/PowerSourceMixin.lua")
 Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 local kDefaultUpdateRange = 100
 
@@ -140,6 +142,8 @@ AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(PowerSourceMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function PowerPoint:OnCreate()
 
@@ -161,6 +165,7 @@ function PowerPoint:OnCreate()
     InitMixin(self, PowerSourceMixin)
     InitMixin(self, NanoShieldMixin)
     InitMixin(self, WeldableMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -231,8 +236,11 @@ function PowerPoint:OnInitialized()
     elseif Client then
     
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -273,9 +281,8 @@ function PowerPoint:GetWeldPercentageOverride()
     
 end
 
-local kPowerPointHealthbarOffset = Vector(0, 0.8, 0)
 function PowerPoint:GetHealthbarOffset()
-    return kPowerPointHealthbarOffset
+    return 0.8
 end 
 
 function PowerPoint:GetCanBeHealedOverride()
@@ -367,6 +374,12 @@ function PowerPoint:GetTimeOfLightModeChange()
 end
 
 function PowerPoint:GetCanBeUsed(player, useSuccessTable)
+
+    if player:isa("Exo") then
+        useSuccessTable.useSuccess = false
+        return
+    end
+
     useSuccessTable.useSuccess = not GetPowerPointRecentlyDestroyed(self) and self.powerState ~= PowerPoint.kPowerState.unsocketed and (not self:GetIsBuilt() or (self:GetIsBuilt() and self:GetHealthScalar() < 1))
 end
 
@@ -472,8 +485,8 @@ if Server then
             self.health = kPowerPointHealth
             self.armor = kPowerPointArmor
             
-            self.maxHealth = kPowerPointHealth
-            self.maxArmor = kPowerPointArmor
+            self:SetMaxHealth(kPowerPointHealth)
+            self:SetMaxArmor(kPowerPointArmor)
             
             self.alive = true
             
@@ -494,8 +507,8 @@ if Server then
         self.health = kPowerPointHealth
         self.armor = kPowerPointArmor
         
-        self.maxHealth = kPowerPointHealth
-        self.maxArmor = kPowerPointArmor
+        self:SetMaxHealth(kPowerPointHealth)
+        self:SetMaxArmor(kPowerPointArmor)
         
         self.alive = true
         

@@ -10,6 +10,7 @@
 Script.Load("lua/Gamerules.lua")
 Script.Load("lua/dkjson.lua")
 Script.Load("lua/ServerSponitor.lua")
+Script.Load("lua/PlayerRanking.lua")
 
 if Client then
     Script.Load("lua/NS2ConsoleCommands_Client.lua")
@@ -163,6 +164,8 @@ if Server then
         self.sponitor = ServerSponitor()
         self.sponitor:Initialize(self)
         
+        self.playerRanking = PlayerRanking()
+        
         self.techPointRandomizer = Randomizer()
         self.techPointRandomizer:randomseed(Shared.GetSystemTime())
         
@@ -188,6 +191,8 @@ if Server then
         self.allTech = false
         self.orderSelf = false
         self.autobuild = false
+        self.teamsReady = false
+        self.tournamentMode = false
         
         self:SetIsVisible(false)
         self:SetPropagate(Entity.Propagate_Never)
@@ -369,6 +374,8 @@ if Server then
      */
     function NS2Gamerules:ResetGame()
     
+        TournamentModeOnReset()
+    
         // save commanders for later re-login
         local team1CommanderClientIndex = self.team1:GetCommander() and self.team1:GetCommander().clientIndex or nil
         local team2CommanderClientIndex = self.team2:GetCommander() and self.team2:GetCommander().clientIndex or nil
@@ -442,6 +449,11 @@ if Server then
         local resourcePoints = Shared.GetEntitiesWithClassname("ResourcePoint")
         if resourcePoints:GetSize() < 2 then
             Print("Warning -- Found only %d %s entities.", resourcePoints:GetSize(), ResourcePoint.kPointMapName)
+        end
+        
+        // add obstacles for resource points back in
+        for index, resourcePoint in ientitylist(resourcePoints) do        
+            resourcePoint:AddToMesh()        
         end
         
         local team1TechPoint = nil
@@ -931,11 +943,43 @@ if Server then
         
     end
     
+    local kPlayerSkillUpdateRate = 10
+    local function UpdatePlayerSkill(self)
+    
+        self.lastTimeUpdatedPlayerSkill = self.lastTimeUpdatedPlayerSkill or 0
+        if Shared.GetTime() - self.lastTimeUpdatedPlayerSkill > kPlayerSkillUpdateRate then
+        
+            self.lastTimeUpdatedPlayerSkill = Shared.GetTime()
+            
+            -- Remove the player skill old tag.
+            local tags = { }
+            Server.GetTags(tags)
+            for t = 1, #tags do
+            
+                if string.find(tags[t], "P_S") then
+                    Server.RemoveTag(tags[t])
+                end
+                
+            end
+            
+            local averageSkill, marineAverageSkill, alienAverageSKill = self.playerRanking:GetAveragePlayerSkill()
+            Server.AddTag("P_S" .. math.floor(averageSkill))
+            
+            self.gameInfo:SetAveragePlayerSkill(averageSkill)
+            
+        end
+        
+        self.playerRanking:OnUpdate()
+        
+    end
+    
     function NS2Gamerules:OnUpdate(timePassed)
     
         PROFILE("NS2Gamerules:OnUpdate")
         
         GetEffectManager():OnUpdate(timePassed)
+        
+        UpdatePlayerSkill(self)
         
         if Server then
         
@@ -1025,9 +1069,21 @@ if Server then
             Shared.ConsoleCommand("p_endlog")
 
             self.sponitor:OnEndMatch(winningTeam)
+            self.playerRanking:EndGame(winningTeam)
+            TournamentModeOnGameEnd()
 
         end
         
+    end
+    
+    function NS2Gamerules:OnTournamentModeEnabled()
+        self.tournamentMode = true
+        self.sponitor.tournamentMode = true
+    end
+    
+    function NS2Gamerules:OnTournamentModeDisabled()
+        self.tournamentMode = false
+        self.sponitor.tournamentMode = false
     end
     
     function NS2Gamerules:DrawGame()
@@ -1276,6 +1332,23 @@ if Server then
         self.preventGameEnd = state
     end
     
+    function NS2Gamerules:SetTeamsReady(ready)
+    
+        self.teamsReady = ready
+        
+        // unstart the game without tracking statistics
+        if self.tournamentMode and not ready and self:GetGameStarted() then
+            self:ResetGame()
+        end
+        
+    end
+    
+    function NS2Gamerules:SetPaused()    
+    end
+    
+    function NS2Gamerules:DisablePause()
+    end
+    
     function NS2Gamerules:CheckGameStart()
     
         if self:GetGameState() == kGameState.NotStarted or self:GetGameState() == kGameState.PreGame then
@@ -1284,7 +1357,7 @@ if Server then
             local team1Commander = self.team1:GetCommander()
             local team2Commander = self.team2:GetCommander()
             
-            if (team1Commander and team2Commander) or Shared.GetCheatsEnabled() then
+            if ((team1Commander and team2Commander) or Shared.GetCheatsEnabled()) and (not self.tournamentMode or self.teamsReady) then
             
                 if self:GetGameState() == kGameState.NotStarted then
                     self:SetGameState(kGameState.PreGame)
@@ -1296,7 +1369,7 @@ if Server then
                     self:SetGameState(kGameState.NotStarted)
                 end
                 
-                if not self.nextGameStartMessageTime or Shared.GetTime() > self.nextGameStartMessageTime then
+                if (not team1Commander or not team2Commander) and not self.nextGameStartMessageTime or Shared.GetTime() > self.nextGameStartMessageTime then
                 
                     SendTeamMessage(self.team1, kTeamMessageTypes.GameStartCommanders)
                     SendTeamMessage(self.team2, kTeamMessageTypes.GameStartCommanders)
@@ -1477,6 +1550,8 @@ if Server then
                 
                 self:SetGameState(kGameState.Started)
                 self.sponitor:OnStartMatch()
+                self.playerRanking:StartGame()
+                
             end
             
         end

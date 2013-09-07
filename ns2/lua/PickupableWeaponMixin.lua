@@ -18,7 +18,7 @@ function PickupableWeaponMixin:__initmixin()
 end
 
 function PickupableWeaponMixin:GetIsValidRecipient(recipient)
-    return self:GetParent() == nil and not GetIsVortexed(recipient)
+    return recipient:isa("Marine") and self.weaponWorldState == true
 end
 
 function PickupableWeaponMixin:OnUpdate(deltaTime)

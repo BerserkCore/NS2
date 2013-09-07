@@ -56,6 +56,7 @@ function BuildServerEntry(serverIndex)
     serverEntry.ping = Client.GetServerPing(serverIndex)
     serverEntry.address = Client.GetServerAddress(serverIndex)
     serverEntry.requiresPassword = Client.GetServerRequiresPassword(serverIndex)
+    serverEntry.playerSkill = GetServerPlayerSkill(serverIndex)
     serverEntry.rookieFriendly = Client.GetServerHasTag(serverIndex, "rookie")
     serverEntry.friendsOnServer = false
     serverEntry.lanServer = false

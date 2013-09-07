@@ -50,13 +50,11 @@ TeamInfo.kRelevantTechIdsMarine =
     kTechId.ShotgunTech,
     kTechId.MinesTech,
     kTechId.WelderTech,
+    kTechId.GrenadeTech,
     
     kTechId.AdvancedArmory,
     kTechId.AdvancedArmoryUpgrade,
     kTechId.AdvancedWeaponry,
-    
-    kTechId.DetonationTimeTech,
-    kTechId.FlamethrowerRangeTech,
 
     kTechId.Weapons1,
     kTechId.Weapons2,
@@ -69,8 +67,6 @@ TeamInfo.kRelevantTechIdsMarine =
     kTechId.JetpackTech,
     kTechId.ExosuitTech,
     kTechId.DualMinigunTech,
-    kTechId.ClawRailgunTech,
-    kTechId.DualRailgunTech,
 
     kTechId.ARCRoboticsFactory,
     kTechId.UpgradeRoboticsFactory,
@@ -80,23 +76,13 @@ TeamInfo.kRelevantTechIdsMarine =
     kTechId.Observatory,
     kTechId.PhaseTech,
     
-    kTechId.TransformResources
+    kTechId.CatPackTech,
+    kTechId.NanoShieldTech,
     
 }
 
 TeamInfo.kRelevantTechIdsAlien =
 {
-    
-    kTechId.Leap,
-    kTechId.BileBomb,
-    kTechId.Spores,
-    kTechId.ShadowStep,
-    
-    kTechId.Xenocide,
-    kTechId.WebTech,
-    kTechId.Umbra,
-    kTechId.Vortex,
-    kTechId.Stomp,
     
     kTechId.GorgeTunnelTech,
     
@@ -122,7 +108,11 @@ TeamInfo.kRelevantTechIdsAlien =
     kTechId.ResearchBioMassOne,
     kTechId.ResearchBioMassTwo,
     
-    kTechId.TransformResources
+    kTechId.UpgradeSkulk,
+    kTechId.UpgradeGorge,
+    kTechId.UpgradeLerk,
+    kTechId.UpgradeFade,
+    kTechId.UpgradeOnos
 
 }
 

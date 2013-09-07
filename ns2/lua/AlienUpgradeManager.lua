@@ -86,12 +86,10 @@ end
 local function GetCostRecuperationFor(self, upgradeId)
 
     local costRecuperation = 0
-    local categoryId = LookupTechData(currentUpgradeId, kTechDataCategory)
+    local categoryId = LookupTechData(upgradeId, kTechDataCategory)
     
     if LookupTechData(upgradeId, kTechDataGestateName) and not table.contains(self.initialUpgrades, self.lifeFormTechId) then
-        
         costRecuperation = GetCostForTech(self.lifeFormTechId)
-
     elseif categoryId then
     
         for _, currentUpgradeId in ipairs(self.upgrades) do
@@ -99,13 +97,13 @@ local function GetCostRecuperationFor(self, upgradeId)
             if LookupTechData(currentUpgradeId, kTechDataCategory) == categoryId and not table.contains(self.initialUpgrades, currentUpgradeId) then
                 costRecuperation = costRecuperation + GetCostForTech(currentUpgradeId)
             end
-        
+            
         end
-    
+        
     end
     
     return costRecuperation
-
+    
 end
 
 local function GetCostForUpgrade(self, upgradeId)
@@ -114,18 +112,18 @@ local function GetCostForUpgrade(self, upgradeId)
         cost = 0
     else
         cost = LookupTechData(self.lifeFormTechId, kTechDataUpgradeCost, 0)
-    end  
-
+    end
+    
     return cost
     
 end
 
 function AlienUpgradeManager:GetCanAffordUpgrade(upgradeId)
 
-    local availableResources = self.availableResources + GetCostRecuperationFor(self, upgradeId)   
+    local availableResources = self.availableResources + GetCostRecuperationFor(self, upgradeId)
     local cost = GetCostForUpgrade(self, upgradeId)
     return cost <= availableResources
-
+    
 end
 
 function AlienUpgradeManager:GetIsUpgradeAllowed(upgradeId, override)
@@ -168,11 +166,11 @@ end
 
 local function RemoveAbilities(self)
 
-    local oldUpgrades = {}
+    local oldUpgrades = { }
     table.copy(self.upgrades, oldUpgrades)
     
     for _, upgradeId in ipairs(oldUpgrades) do
-        
+    
         if LookupTechData(upgradeId, kTechDataAbilityType) then
             self:RemoveUpgrade(upgradeId)
         end
@@ -187,10 +185,10 @@ local function RestoreAbilities(self)
     
         if LookupTechData(initialUpgradeId, kTechDataAbilityType) then
             table.insertunique(self.upgrades, initialUpgradeId)
-        end    
-    
+        end
+        
     end
-
+    
 end
 
 local function RestoreUpgrades(self)
@@ -199,25 +197,25 @@ local function RestoreUpgrades(self)
     
         if not LookupTechData(initialUpgradeId, kTechDataAbilityType) and not LookupTechData(initialUpgradeId, kTechDataGestateName) then
             table.insertunique(self.upgrades, initialUpgradeId)
-        end        
-            
+        end
+        
     end
-
+    
 end
 
 local function RemoveUpgrades(self)
 
     local oldUpgrades = self.upgrades
-    self.upgrades = {}
+    self.upgrades = { }
     
     for _, upgradeId in ipairs(oldUpgrades) do
     
-        if LookupTechData(initialUpgradeId, kTechDataAbilityType) or LookupTechData(initialUpgradeId, kTechDataGestateName) then
+        if LookupTechData(upgradeId, kTechDataAbilityType) or LookupTechData(upgradeId, kTechDataGestateName) then
             table.insertunique(self.upgrades, upgradeId)
         end
         
     end
-
+    
 end
 
 function AlienUpgradeManager:GetHasChanged()

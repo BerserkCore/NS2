@@ -52,7 +52,7 @@ local function NetworkDebug(entity)
     
     // clean up
     if stage == "dump" then
-        entity._prevNetworkState = null
+        entity._prevNetworkState = nil
     end
     
     return diffCount

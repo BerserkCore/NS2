@@ -18,7 +18,7 @@ class 'Welder' (Weapon)
 Welder.kMapName = "welder"
 
 Welder.kModelName = PrecacheAsset("models/marine/welder/welder.model")
-local kViewModelName = PrecacheAsset("models/marine/welder/welder_view.model")
+local kViewModels = GenerateMarineViewModelPaths("welder")
 local kAnimationGraph = PrecacheAsset("models/marine/welder/welder_view.animation_graph")
 
 kWelderHUDSlot = 3
@@ -92,8 +92,8 @@ function Welder:GetIsValidRecipient(recipient)
     
 end
 
-function Welder:GetViewModelName()
-    return kViewModelName
+function Welder:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function Welder:GetAnimationGraphName()

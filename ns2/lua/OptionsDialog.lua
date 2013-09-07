@@ -9,16 +9,16 @@
 
 Script.Load("lua/Globals.lua")
 
-function BuildDisplayModesList()
+function BuildResolutionList()
 
-    local modes = { }
-    local numModes = Client.GetNumDisplayModes()
+    local resolutions = { }
+    local numResolutions = Client.GetNumResolutions()
     
-    for modeIndex = 1, numModes do
-        modes[modeIndex] = Client.GetDisplayMode(modeIndex)
+    for resolutionIndex = 1, numResolutions do
+        resolutions[resolutionIndex] = Client.GetResolution(resolutionIndex)
     end
 
-    return modes
+    return resolutions
     
 end
 
@@ -45,6 +45,33 @@ function OptionsDialogUI_SetMouseSensitivity(sensitivity)
     Client.SetMouseSensitivity( sensitivity  )
 end
 
+function OptionsDialogUI_GetDisplays()
+
+    local displays = { "DEFAULT" }
+    local numDisplays = Client.GetNumDisplays()
+    
+    for index = 1, numDisplays do
+        table.insert(displays, 'DISPLAY ' .. index)
+    end    
+    
+    return displays
+    
+end
+
+function OptionsDialogUI_GetWindowModes()
+
+    local modeNames = { "WINDOWED", "FULLSCREEN", "FULLSCREEN WINDOWED" }
+    local numWindowModes = Client.GetNumWindowModes()
+    local result = {}
+        
+    for index = 1, numWindowModes do
+        table.insert(result, modeNames[Client.GetWindowMode(index) + 1])
+    end
+
+    return result
+    
+end
+
 /**
  * Get linear array of screen resolutions (strings)
  */
@@ -53,23 +80,23 @@ function OptionsDialogUI_GetScreenResolutions()
     // Determine the aspect ratio of the monitor based on the startup resolution.
     // We use this to flag modes that have the same aspect ratio.
     
-    local mode = Client.GetStartupDisplayMode()
-    local nativeAspect = mode.xResolution / mode.yResolution
+    local resolution = Client.GetStartupResolution()
+    local nativeAspect = resolution.xResolution / resolution.yResolution
 
     local resolutions = { }
     
-    for modeIndex = 1, table.maxn(displayModes) do
+    for resolutionIndex = 1, table.maxn(gResolutions) do
     
-        local mode = displayModes[modeIndex]
-        local aspect = mode.xResolution / mode.yResolution
+        local resolution = gResolutions[resolutionIndex]
+        local aspect = resolution.xResolution / resolution.yResolution
         
-        local resolution = string.format('%dx%d', mode.xResolution, mode.yResolution)
+        local resolution = string.format('%dx%d', resolution.xResolution, resolution.yResolution)
         
         if (aspect == nativeAspect) then
             resolution = resolution .. " *"
         end
         
-        resolutions[modeIndex] = resolution
+        resolutions[resolutionIndex] = resolution
         
     end
 
@@ -99,12 +126,12 @@ function OptionsDialogUI_GetScreenResolutionsIndex()
     local xResolution = Client.GetOptionInteger( kGraphicsXResolutionOptionsKey, 1280 )
     local yResolution = Client.GetOptionInteger( kGraphicsYResolutionOptionsKey, 800 )
 
-    for modeIndex = 1, table.maxn(displayModes) do
+    for resolutionIndex = 1, table.maxn(gResolutions) do
     
-        local mode = displayModes[modeIndex]
+        local resolution = gResolutions[resolutionIndex]
         
-        if (mode.xResolution == xResolution and mode.yResolution == yResolution) then
-            return modeIndex
+        if (resolution.xResolution == xResolution and resolution.yResolution == yResolution) then
+            return resolutionIndex
         end
     
     end
@@ -172,6 +199,7 @@ end
  * Get all the values from the form
  * nickname - string for nick
  * mouseSens - 0 - 100
+ * display - 0 - ?  index of the display to use (0 = primary)
  * screenResIdx - 1 - ? index of choice
  * visualDetailIdx - 1 - ? index of choice
  * soundVol - 0 - 100 - sound volume
@@ -179,15 +207,17 @@ end
  * windowed - true/false run in windowed mode
  * invMouse - true/false (true == mouse is inverted)
  */
-function OptionsDialogUI_SetValues(nickname, mouseSens, screenResIdx, visualDetailIdx, soundVol, musicVol, windowMode, shadows, bloom, atmospherics, anisotropicFiltering, antiAliasing, invMouse, voiceVol)
+function OptionsDialogUI_SetValues(nickname, mouseSens, display, screenResIdx, visualDetailIdx, soundVol, musicVol, windowMode, shadows, bloom, atmospherics, anisotropicFiltering, antiAliasing, invMouse, voiceVol)
 
     Client.SetOptionString( kNicknameOptionsKey, nickname )
     
     OptionsDialogUI_SetMouseSensitivity( mouseSens )
     
+    Client.SetOptionInteger( kDisplayOptionsKey, display )
+    
     // Save screen res and visual detail
-    Client.SetOptionInteger( kGraphicsXResolutionOptionsKey, displayModes[screenResIdx].xResolution )
-    Client.SetOptionInteger( kGraphicsYResolutionOptionsKey, displayModes[screenResIdx].yResolution )
+    Client.SetOptionInteger( kGraphicsXResolutionOptionsKey, gResolutions[screenResIdx].xResolution )
+    Client.SetOptionInteger( kGraphicsYResolutionOptionsKey, gResolutions[screenResIdx].yResolution )
     Client.SetOptionInteger( kDisplayQualityOptionsKey, visualDetailIdx - 1 )     // set the value as 0-based index
 
     // Save sound and music options 
@@ -224,10 +254,13 @@ end
 
 function OptionsDialogUI_OnInit()
 
-    displayModes = BuildDisplayModesList()
+    gResolutions = BuildResolutionList()
     
 end
 
+function OptionsDialogUI_GetDisplay()
+    return Client.GetOptionInteger( kDisplayOptionsKey, 0 )
+end
 
 /**
  * Get windowed or not

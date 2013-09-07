@@ -11,6 +11,7 @@ Script.Load("lua/Balance.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
+Script.Load("lua/PointGiverMixin.lua")
 
 class 'Shotgun' (ClipWeapon)
 
@@ -26,7 +27,7 @@ local networkVars =
 AddMixinNetworkVars(LiveMixin, networkVars)
 
 // higher numbers reduces the spread
-local kSpreadDistance = 9.5
+local kSpreadDistance = 10
 local kStartOffset = 0
 local kSpreadVectors =
 {
@@ -55,7 +56,7 @@ local kSpreadVectors =
 }
 
 Shotgun.kModelName = PrecacheAsset("models/marine/shotgun/shotgun.model")
-local kViewModelName = PrecacheAsset("models/marine/shotgun/shotgun_view.model")
+local kViewModels = GenerateMarineViewModelPaths("shotgun")
 local kAnimationGraph = PrecacheAsset("models/marine/shotgun/shotgun_view.animation_graph")
 
 local kMuzzleEffect = PrecacheAsset("cinematics/marine/shotgun/muzzle_flash.cinematic")
@@ -67,6 +68,7 @@ function Shotgun:OnCreate()
     
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
+    InitMixin(self, PointGiverMixin)
     
     self.emptyPoseParam = 0
 
@@ -86,8 +88,8 @@ function Shotgun:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function Shotgun:GetViewModelName()
-    return kViewModelName
+function Shotgun:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function Shotgun:GetDeathIconIndex()
@@ -106,19 +108,8 @@ function Shotgun:GetBulletsPerShot()
     return kShotgunBulletsPerShot
 end
 
-function Shotgun:GetSpread(bulletNum)
-
-    // NS1 was 20 degrees for half the shots and 20 degrees plus 7 degrees for half the shots
-    if bulletNum < (kShotgunBulletsPerShot / 2) then
-        return Math.Radians(10)
-    else
-        return Math.Radians(20)
-    end
-    
-end
-
 function Shotgun:GetRange()
-    return kShotgunRange
+    return 1000
 end
 
 // Only play weapon effects every other bullet to avoid sonic overload
@@ -162,11 +153,13 @@ end
 function Shotgun:OnTag(tagName)
 
     PROFILE("Shotgun:OnTag")
-
-    continueReloading = false
+    
+    local continueReloading = false
     if self:GetIsReloading() and tagName == "reload_end" then
+    
         continueReloading = true
         self.reloading = false
+        
     end
     
     if tagName == "end" then
@@ -196,14 +189,18 @@ function Shotgun:OnTag(tagName)
     
 end
 
+// used for last effect
+function Shotgun:GetEffectParams(tableParams)
+    tableParams[kEffectFilterEmpty] = self.clip == 1
+end
+
 function Shotgun:FirePrimary(player)
 
     local viewAngles = player:GetViewAngles()
     viewAngles.roll = NetworkRandom() * math.pi * 2
     
     local shootCoords = viewAngles:GetCoords()
-    
-    
+
     // Filter ourself out of the trace so that we don't hit ourselves.
     local filter = EntityFilterTwo(player, self)
     local range = self:GetRange()
@@ -214,7 +211,22 @@ function Shotgun:FirePrimary(player)
     
     local numberBullets = self:GetBulletsPerShot()
     local startPoint = player:GetEyePos()
+    /*
+    local weaponUpgradeLevel = player.GetWeaponUpgradeLevel and player:GetWeaponUpgradeLevel() or 0
+    local soundEffectName = "shotgun_attack_sound"
     
+    if self.clip == 1 then
+        soundEffectName = "shotgun_attack_sound_last"
+    elseif weaponUpgradeLevel == 3 then
+        soundEffectName = "shotgun_attack_sound_max"
+    elseif weaponUpgradeLevel == 2 then
+        soundEffectName = "shotgun_attack_sound_medium"
+    end
+    
+    DebugPrint("shotgun soundEffectName %s", soundEffectName)
+    */
+    
+    self:TriggerEffects("shotgun_attack_sound")
     self:TriggerEffects("shotgun_attack")
     
     for bullet = 1, math.min(numberBullets, #kSpreadVectors) do

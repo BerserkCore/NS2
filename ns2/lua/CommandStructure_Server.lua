@@ -179,7 +179,7 @@ function CommandStructure:OnUse(player, elapsedTime, useSuccessTable)
     
     if teamNum == 0 or teamNum == player:GetTeamNumber() then
     
-        if self:GetIsBuilt() then
+        if self:GetIsBuilt() and (player:isa("Marine") or player:isa("Alien")) then
         
             // Make sure player wasn't ejected early in the game from either team's command
             local playerSteamId = Server.GetOwner(player):GetUserId()
@@ -274,12 +274,9 @@ function CommandStructure:Logout()
         returnPlayer.timeParasited = parasiteTime
         returnPlayer.hasAdrenalineUpgrade = GetHasAdrenalineUpgrade(returnPlayer)
         
-        // Restore previous alien energy, but let us recuperate at the regular rate while we're in the hive
-        if previousAlienEnergy and returnPlayer.SetEnergy and timeStartedCommanderMode then
-        
-            local timePassedSinceStartedComm = Shared.GetTime() - timeStartedCommanderMode
-            returnPlayer:SetEnergy(previousAlienEnergy + Alien.kEnergyRecuperationRate * timePassedSinceStartedComm)
-            
+        // Restore previous alien energy
+        if previousAlienEnergy and returnPlayer.SetEnergy then
+            returnPlayer:SetEnergy(previousAlienEnergy)            
         end
         
         returnPlayer:UpdateArmorAmount()

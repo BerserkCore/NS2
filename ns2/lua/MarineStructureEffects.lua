@@ -18,21 +18,6 @@ kMarineStructureEffects =
         }
     },
 
-    disrupt_start =
-    {
-        disruptStartEffects =
-        {
-            {cinematic = "cinematics/alien/onos/stomp_hit.cinematic", classname = "Structure", done = true},
-            {cinematic = "cinematics/alien/onos/stomp_hit.cinematic", classname = "ARC", done = true},
-        },
-        
-        disruptStartSounds =
-        {
-            {sound = "sound/NS2.fev/marine/structures/power_down", classname = "Structure", done = true},
-            {sound = "sound/NS2.fev/marine/structures/power_down", classname = "ARC", done = true},
-        }        
-    },
-
     ghoststructure_destroy =
     {
         ghostStructureDestroyEffects =
@@ -286,7 +271,6 @@ kMarineStructureEffects =
         arcHitStopEffects = 
         {
             {stop_effects = ""},
-            //{sound = "sound/NS2.fev/marine/structures/power_down"},
         },
     },
     
@@ -303,7 +287,6 @@ kMarineStructureEffects =
         extractorCollectEffect =
         {
             {sound = "sound/NS2.fev/marine/structures/extractor_harvested"},
-            //{cinematic = "cinematics/marine/extractor/collection_effect.cinematic"},
         },
     },
     
@@ -396,8 +379,8 @@ kMarineStructureEffects =
     {
         pgSpawnEffect =
         {
-            {sound = "sound/NS2.fev/marine/structures/phase_gate_teleport"},
-            {cinematic = "cinematics/marine/infantryportal/player_spawn.cinematic"},            
+            {player_sound = "sound/NS2.fev/marine/structures/phase_gate_teleport"},
+            {player_cinematic = "cinematics/marine/infantryportal/player_spawn.cinematic"},            
         },
     }, 
 
@@ -406,8 +389,8 @@ kMarineStructureEffects =
     {
         pgSpawnEffect =
         {
-            {sound = "sound/NS2.fev/marine/structures/phase_gate_teleport"},
-            {cinematic = "cinematics/marine/infantryportal/player_spawn.cinematic"},            
+            {player_sound = "sound/NS2.fev/marine/structures/phase_gate_teleport"},
+            {player_cinematic = "cinematics/marine/infantryportal/player_spawn.cinematic"},            
         },
     },
     
@@ -418,7 +401,6 @@ kMarineStructureEffects =
         {
             // Play spin for spinning infantry portal
             {looping_cinematic = "cinematics/marine/phasegate/phasegate.cinematic"},
-            {parented_sound = "sound/NS2.fev/marine/structures/phase_gate_active"},
         },
     },
     
@@ -427,7 +409,6 @@ kMarineStructureEffects =
         pgLinkedEffects = 
         {
             // Destroy it if not spinning
-            {stop_sound = "sound/NS2.fev/marine/structures/phase_gate_active"},
             {stop_cinematic = "cinematics/marine/phasegate/phasegate.cinematic", done = true},            
         },
     },
@@ -466,24 +447,6 @@ kMarineStructureEffects =
         },
     },
     
-    macmine_alert =
-    {
-        MACMineAlert =
-        {
-            {sound = "sound/NS2.fev/marine/common/scan"}
-        }
-    },
-    
-    macmine_detonate =
-    {
-        MACMineDetonate =
-        {
-            {sound = "sound/NS2.fev/marine/common/explode"},
-            {cinematic = "cinematics/marine/mac/mine_explode.cinematic"},
-        }
-            
-    },
-    
     sentry_single_attack =
     {
         sentrySingleAttackEffects = 
@@ -497,18 +460,8 @@ kMarineStructureEffects =
         sentryAttackEffects = 
         {
             {parented_cinematic = "cinematics/marine/sentry/fire.cinematic", attach_point = "fxnode_sentrymuzzle"},
-            //{parented_cinematic = "cinematics/marine/sentry/muzzle_smoke.cinematic", attach_point = "fxnode_sentrymuzzle"}
         }    
     },
-    
-    disrupt =
-    {
-        disruptEffects =
-        {
-            {cinematic = "cinematics/marine/structures/disrupt.cinematic", classname = "ARC", done = true},
-            {cinematic = "cinematics/marine/structures/disrupt.cinematic", classname = "Structure", done = true}
-        }
-    }
     
 }
 

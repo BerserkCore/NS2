@@ -169,8 +169,8 @@ function CommandStructure:OnUpdateAnimationInput(modelMixin)
     
 end
 
-function CommandStructure:GetCanBeUsedConstructed()
-    return not self:GetIsOccupied()
+function CommandStructure:GetCanBeUsedConstructed(byPlayer)
+    return not self:GetIsOccupied() and not byPlayer:isa("Exo")
 end
 
 // allow players to enter the hives before game start to signal that they want to command

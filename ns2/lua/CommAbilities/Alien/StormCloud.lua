@@ -16,7 +16,7 @@ StormCloud.kMapName = "stormcloud"
 
 StormCloud.kSplashEffect = PrecacheAsset("cinematics/alien/drifter/stormcloud.cinematic")
 StormCloud.kType = CommanderAbility.kType.Repeat
-StormCloud.kLifeSpan = 6
+StormCloud.kLifeSpan = 3
 StormCloud.kThinkTime = 0.2
 
 local kUnitSpeedBoostDuration = 1
@@ -29,7 +29,8 @@ function StormCloud:OnInitialized()
     
     if Server then
         // sound feedback
-        self:TriggerEffects("enzyme_cloud")    
+        self:TriggerEffects("enzyme_cloud")
+        DestroyEntitiesWithinRange("StormCloud", self:GetOrigin(), 25, EntityFilterOne(self)) 
     end
     
     CommanderAbility.OnInitialized(self)

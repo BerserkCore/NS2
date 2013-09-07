@@ -90,6 +90,7 @@ AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(OverheadMoveMixin, networkVars)
 AddMixinNetworkVars(MinimapMoveMixin, networkVars)
 AddMixinNetworkVars(HotkeyMoveMixin, networkVars)
+AddMixinNetworkVars(ScoringMixin, networkVars)
 
 function Commander:OnCreate()
 
@@ -116,10 +117,9 @@ function Commander:OnInitialized()
     if Client then
     
         self.drawResearch = false
-        
-        // Start in build menu (more useful then command station menu)
+
         if self:GetIsLocalPlayer() then
-            self:SetCurrentTech(kTechId.BuildMenu)
+            self:SetCurrentTech(kTechId.RootMenu)
         end
         
     end
@@ -237,7 +237,7 @@ end
 
 // Returns true if it set our position
 function Commander:ProcessNumberKeysMove(input, newPosition)
-    return setPosition
+    return false
 end
 
 local function DeleteHotkeyGroup(self, number)
@@ -357,27 +357,31 @@ function Commander:GetCurrentTechButtons(techId, entity)
                 
             end
             
-            if (HasMixin(entity, "Research") and entity:GetIsResearching()) or (HasMixin(entity, "GhostStructure") and entity:GetIsGhostStructure()) then
+            if techId == kTechId.RootMenu then
             
-                local foundCancel = false
-                for b = 1, #techButtons do
+                if (HasMixin(entity, "Research") and entity:GetIsResearching()) or (HasMixin(entity, "GhostStructure") and entity:GetIsGhostStructure()) then
                 
-                    if techButtons[b] == kTechId.Cancel then
+                    local foundCancel = false
+                    for b = 1, #techButtons do
                     
-                        foundCancel = true
-                        break
+                        if techButtons[b] == kTechId.Cancel then
+                        
+                            foundCancel = true
+                            break
+                            
+                        end
                         
                     end
                     
-                end
+                    if not foundCancel then
+                        techButtons[kRecycleCancelButtonIndex] = kTechId.Cancel
+                    end
                 
-                if not foundCancel then
-                    techButtons[kRecycleCancelButtonIndex] = kTechId.Cancel
+                // add recycle button if not researching / ghost structure mode
+                elseif HasMixin(entity, "Recycle") and not entity:GetIsResearching() and entity:GetCanRecycle() and not entity:GetIsRecycled() then
+                    techButtons[kRecycleCancelButtonIndex] = kTechId.Recycle
                 end
             
-            // add recycle button if not researching / ghost structure mode
-            elseif HasMixin(entity, "Recycle") and not entity:GetIsResearching() and entity:GetCanRecycle() and not entity:GetIsRecycled() then
-                techButtons[kRecycleCancelButtonIndex] = kTechId.Recycle
             end
         
         end

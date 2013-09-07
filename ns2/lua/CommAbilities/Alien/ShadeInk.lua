@@ -14,11 +14,11 @@ class 'ShadeInk' (CommanderAbility)
 
 ShadeInk.kMapName = "shadeink"
 
-ShadeInk.kShadeInkMarineEffect = PrecacheAsset("cinematics/alien/Shade/shade_ink.cinematic")
-ShadeInk.kShadeInkAlienEffect = PrecacheAsset("cinematics/alien/Shade/shade_ink_alien.cinematic")
-ShadeInk.kFakeShadeEffect = PrecacheAsset("cinematics/alien/Shade/fake_shade.cinematic")
-ShadeInk.kFakeShadeAlienEffect = PrecacheAsset("cinematics/alien/Shade/fake_shade_alien.cinematic")
-ShadeInk.kStartEffect = PrecacheAsset("cinematics/alien/Shade/shade_ink_start.cinematic")
+ShadeInk.kShadeInkMarineEffect = PrecacheAsset("cinematics/alien/shade/shade_ink.cinematic")
+ShadeInk.kShadeInkAlienEffect = PrecacheAsset("cinematics/alien/shade/shade_ink_alien.cinematic")
+ShadeInk.kFakeShadeEffect = PrecacheAsset("cinematics/alien/shade/fake_shade.cinematic")
+ShadeInk.kFakeShadeAlienEffect = PrecacheAsset("cinematics/alien/shade/fake_shade_alien.cinematic")
+ShadeInk.kStartEffect = PrecacheAsset("cinematics/alien/shade/shade_ink_start.cinematic")
 ShadeInk.kNumFakeShades = 3
 
 local kUpdateTime = 2
@@ -37,47 +37,47 @@ ShadeInk.kPhantomEffects =
 {
     OneHive =
     {
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade1.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_skulk2.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_skulk3.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_skulk4.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_gorge5.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_skulk5.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_skulk6.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_gorge1.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_skulk1.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_gorge4.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade3.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_gorge6.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk1.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk1.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk2.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk3.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk7.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade1.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_skulk2.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_skulk3.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_skulk4.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_gorge5.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_skulk5.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_skulk6.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_gorge1.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_skulk1.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_gorge4.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade3.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_gorge6.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk1.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk1.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk2.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk3.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk7.cinematic"),
     },
     
     TwoHive =
     {
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_gorge2.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_gorge3.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade2.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade3.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade4.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk6.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade5.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_fade6.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk4.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_lerk5.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_gorge2.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_gorge3.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade2.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade3.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade4.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk6.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade5.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_fade6.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk4.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_lerk5.cinematic"),
     },
     
     ThreeHive =
     {
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_onos1.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_onos2.cinematic"),
-        PrecacheAsset("cinematics/alien/Shade/phantom/phantom_onos3.cinematic"),
-        //PrecacheAsset("cinematics/alien/Shade/phantom/phantom_onos4.cinematic"),
-        //PrecacheAsset("cinematics/alien/Shade/phantom/phantom_onos5.cinematic"),
-        //PrecacheAsset("cinematics/alien/Shade/phantom/phantom_onos6.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_onos1.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_onos2.cinematic"),
+        PrecacheAsset("cinematics/alien/shade/phantom/phantom_onos3.cinematic"),
+        //PrecacheAsset("cinematics/alien/shade/phantom/phantom_onos4.cinematic"),
+        //PrecacheAsset("cinematics/alien/shade/phantom/phantom_onos5.cinematic"),
+        //PrecacheAsset("cinematics/alien/shade/phantom/phantom_onos6.cinematic"),
     }
 }
 

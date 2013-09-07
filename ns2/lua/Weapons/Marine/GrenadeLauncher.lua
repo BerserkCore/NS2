@@ -12,8 +12,11 @@ Script.Load("lua/PickupableWeaponMixin.lua")
 Script.Load("lua/Weapons/Marine/Grenade.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/LiveMixin.lua")
+Script.Load("lua/PointGiverMixin.lua")
 
 class 'GrenadeLauncher' (ClipWeapon)
+
+local kGrenadeSpeed = 25
 
 GrenadeLauncher.kMapName = "grenadelauncher"
 
@@ -26,7 +29,7 @@ local networkVars =
 AddMixinNetworkVars(LiveMixin, networkVars)
 
 GrenadeLauncher.kModelName = PrecacheAsset("models/marine/grenadelauncher/grenadelauncher.model")
-local kViewModelName = PrecacheAsset("models/marine/grenadelauncher/grenadelauncher_view.model")
+local kViewModels = GenerateMarineViewModelPaths("grenadelauncher")
 local kAnimationGraph = PrecacheAsset("models/marine/grenadelauncher/grenadelauncher_view.animation_graph")
 
 function GrenadeLauncher:OnCreate()
@@ -35,6 +38,7 @@ function GrenadeLauncher:OnCreate()
     
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
+    InitMixin(self, PointGiverMixin)
     
     self.emptyPoseParam = 0
     
@@ -44,8 +48,8 @@ function GrenadeLauncher:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function GrenadeLauncher:GetViewModelName()
-    return kViewModelName
+function GrenadeLauncher:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function GrenadeLauncher:GetDeathIconIndex()
@@ -109,10 +113,12 @@ function GrenadeLauncher:OnTag(tagName)
 
     PROFILE("GrenadeLauncher:OnTag")
     
-    continueReloading = false
+    local continueReloading = false
     if self:GetIsReloading() and tagName == "reload_end" then
+    
         continueReloading = true
         self.reloading = false
+        
     end
     
     if tagName == "end" then
@@ -162,37 +168,19 @@ local function ShootGrenade(self, player)
 
     if Server or (Client and Client.GetIsControllingPlayer()) then
 
-        local viewAngles = player:GetViewAngles()
-        local viewCoords = viewAngles:GetCoords()
+        local viewCoords = player:GetViewCoords()
+        local eyePos = player:GetEyePos()
+
+        local startPointTrace = Shared.TraceCapsule(eyePos, eyePos + viewCoords.zAxis, 0.2, 0, CollisionRep.Move, PhysicsMask.PredictedProjectileGroup, EntityFilterTwo(self, player))
+        local startPoint = startPointTrace.endPoint
+
+        local direction = viewCoords.zAxis
         
-        // Make sure start point isn't on the other side of a wall or object
-        local startPoint = player:GetEyePos() - (viewCoords.zAxis * 0.2)
-        local trace = Shared.TraceRay(startPoint, startPoint + viewCoords.zAxis * 25, CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
-        
-        // make sure the grenades flies to the crosshairs target
-        local grenadeStartPoint = player:GetEyePos() + viewCoords.zAxis * 0.65 - viewCoords.xAxis * 0.35 - viewCoords.yAxis * 0.25
-        
-        // if we would hit something use the trace endpoint, otherwise use the players view direction (for long range shots)
-        local grenadeDirection = ConditionalValue(trace.fraction ~= 1, trace.endPoint - grenadeStartPoint, viewCoords.zAxis)
-        grenadeDirection:Normalize()
-        
-        // Inherit player velocity?
-        local startVelocity = grenadeDirection
-        
-        if GetIsVortexed(player) then
-            startVelocity = startVelocity * 10
-        else
-            startVelocity = startVelocity * 20
+        if startPointTrace.fraction ~= 1 then
+            direction = GetNormalizedVector(direction:GetProjection(startPointTrace.normal))
         end
-        
-        startVelocity.y = startVelocity.y + 3
-        
-        local grenade = player:CreatePredictedProjectile("Grenade", grenadeStartPoint, startVelocity, 0.6)
-        
-        // grenade entity is only created on the server
-        if GetIsVortexed(player) and grenade then
-            grenade:SetVortexDuration(player.remainingVortexDuration)
-        end
+
+        local grenade = player:CreatePredictedProjectile("Grenade", startPoint, direction * kGrenadeSpeed, 0.7, 0.45)
     
     end
     

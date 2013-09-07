@@ -323,6 +323,15 @@ function GetTeamHasCommander(teamNumber)
     
 end
 
+function GetIsCloseToMenuStructure(player)
+    
+    local ptlabs = GetEntitiesForTeamWithinRange("PrototypeLab", player:GetTeamNumber(), player:GetOrigin(), PrototypeLab.kResupplyUseRange)
+    local armories = GetEntitiesForTeamWithinRange("Armory", player:GetTeamNumber(), player:GetOrigin(), Armory.kResupplyUseRange)
+    
+    return (ptlabs and #ptlabs > 0) or (armories and #armories > 0)
+
+end
+
 function GetPlayerCanUseEntity(player, target)
 
     local useSuccessTable = { useSuccess = false }
@@ -499,7 +508,7 @@ end
 /**
  * Returns the spawn point on success, nil on failure.
  */
-local function ValidateSpawnPoint(spawnPoint, capsuleHeight, capsuleRadius, filter, origin)
+function ValidateSpawnPoint(spawnPoint, capsuleHeight, capsuleRadius, filter, origin)
 
     local center = Vector(0, capsuleHeight * 0.5 + capsuleRadius, 0)
     local spawnPointCenter = spawnPoint + center
@@ -1398,18 +1407,6 @@ local kUpVector = Vector(0, 1, 0)
 
 function SetPlayerPoseParameters(player, viewModel, headAngles)
 
-    //DebugDrawAngles( headAngles, player:GetOrigin(), 5.0, 0.5, 0.0 )
-
-    if not player or not player:isa("Player") then
-        Log("SetPlayerPoseParameters: player %s is not a player", player)
-    end
-    ASSERT(player and player:isa("Player"))
-    
-    if viewmodel and not viewmodel:isa("Viewmodel") then
-        Log("SetPlayerPoseParameters: player %s s viewmodel is a %s", player, viewmodel)
-    end
-    ASSERT(not viewmodel or viewmodel:isa("Viewmodel"))
-    
     local coords = player:GetCoords()
     
     local pitch = -Math.Wrap(Math.Degrees(headAngles.pitch), -180, 180)
@@ -2157,6 +2154,8 @@ end
 function BuildClassToGrid()
 
     local ClassToGrid = { }
+    
+    ClassToGrid["Undefined"] = { 5, 8 }
 
     ClassToGrid["TechPoint"] = { 1, 1 }
     ClassToGrid["ResourcePoint"] = { 2, 1 }
@@ -2167,6 +2166,7 @@ function BuildClassToGrid()
     ClassToGrid["PowerPoint"] = { 7, 1 }
     
     ClassToGrid["Scan"] = { 6, 8 }
+    ClassToGrid["HighlightWorld"] = { 4, 6 }
 
     ClassToGrid["ReadyRoomPlayer"] = { 1, 2 }
     ClassToGrid["Marine"] = { 1, 2 }
@@ -2189,8 +2189,6 @@ function BuildClassToGrid()
     ClassToGrid["Kill"] = { 8, 3 }
 
     ClassToGrid["CommandStation"] = { 1, 4 }
-    ClassToGrid["CommandStationL2"] = { 2, 4 }
-    ClassToGrid["CommandStationL3"] = { 3, 4 }
     ClassToGrid["Extractor"] = { 4, 4 }
     ClassToGrid["Sentry"] = { 5, 4 }
     ClassToGrid["ARC"] = { 6, 4 }
@@ -2234,6 +2232,7 @@ function BuildClassToGrid()
     ClassToGrid["AttackOrder"] = { 2, 8 }
     
     ClassToGrid["SensorBlip"] = { 5, 8 }
+    ClassToGrid["EtherealGate"] = { 8, 1 }
     
     ClassToGrid["Player"] = { 7, 8 }
     
@@ -2248,8 +2247,10 @@ function GetSpriteGridByClass(class, classToGrid)
 
     // This really shouldn't happen but lets return something just in case.
     if not classToGrid[class] then
-        return 8, 1
-    end  
+        Print("No sprite defined for minimap icon %s", class)
+        Print(debug.traceback())
+        return 8, 8
+    end
     
     return unpack(classToGrid[class])
     
@@ -2459,6 +2460,7 @@ function GetTexCoordsForTechId(techId)
         
         // marine weapons
         gTechIdPosition[kTechId.Rifle] = kDeathMessageIcon.Rifle
+        gTechIdPosition[kTechId.HeavyRifle] = kDeathMessageIcon.Rifle
         gTechIdPosition[kTechId.Pistol] = kDeathMessageIcon.Pistol
         gTechIdPosition[kTechId.Axe] = kDeathMessageIcon.Axe
         gTechIdPosition[kTechId.Shotgun] = kDeathMessageIcon.Shotgun
@@ -2466,6 +2468,9 @@ function GetTexCoordsForTechId(techId)
         gTechIdPosition[kTechId.GrenadeLauncher] = kDeathMessageIcon.Grenade
         gTechIdPosition[kTechId.Welder] = kDeathMessageIcon.Welder
         gTechIdPosition[kTechId.LayMines] = kDeathMessageIcon.Mine
+        gTechIdPosition[kTechId.ClusterGrenade] = kDeathMessageIcon.ClusterGrenade
+        gTechIdPosition[kTechId.GasGrenade] = kDeathMessageIcon.GasGrenade
+        gTechIdPosition[kTechId.PulseGrenade] = kDeathMessageIcon.PulseGrenade
         
         // alien abilities
         gTechIdPosition[kTechId.Bite] = kDeathMessageIcon.Bite
@@ -2485,11 +2490,13 @@ function GetTexCoordsForTechId(techId)
         gTechIdPosition[kTechId.Umbra] = kDeathMessageIcon.Umbra
         
         gTechIdPosition[kTechId.Swipe] = kDeathMessageIcon.Swipe
+        gTechIdPosition[kTechId.Stab] = kDeathMessageIcon.Swipe
         gTechIdPosition[kTechId.Blink] = kDeathMessageIcon.Blink
         gTechIdPosition[kTechId.Vortex] = kDeathMessageIcon.Vortex
         
         gTechIdPosition[kTechId.Gore] = kDeathMessageIcon.Gore
         gTechIdPosition[kTechId.Stomp] = kDeathMessageIcon.Stomp
+        gTechIdPosition[kTechId.BoneShield] = kDeathMessageIcon.BoneShield
         
         gTechIdPosition[kTechId.GorgeTunnelTech] = kDeathMessageIcon.GorgeTunnel
         

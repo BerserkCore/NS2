@@ -43,6 +43,7 @@ MarineCommander.kWeldOrderSound = PrecacheAsset("sound/NS2.fev/marine/structures
 MarineCommander.kDefendTargetSound = PrecacheAsset("sound/NS2.fev/marine/voiceovers/commander/defend")
 MarineCommander.kCommanderEjectedSoundName = PrecacheAsset("sound/NS2.fev/marine/voiceovers/commander/commander_ejected")
 MarineCommander.kCommandStationCompletedSoundName = PrecacheAsset("sound/NS2.fev/marine/voiceovers/commander/online")
+MarineCommander.kTriggerNanoShieldSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_shield")
 
 MarineCommander.kOrderClickedEffect = PrecacheAsset("cinematics/marine/order.cinematic")
 MarineCommander.kSelectSound = PrecacheAsset("sound/NS2.fev/marine/commander/select")
@@ -80,10 +81,10 @@ local gMarineMenuButtons =
                                kTechId.SentryBattery, kTechId.None, kTechId.None, kTechId.None },
 
     [kTechId.AssistMenu] = { kTechId.AmmoPack, kTechId.MedPack, kTechId.NanoShield, kTechId.Scan,
-                             kTechId.PowerSurge, kTechId.WeaponsMenu, kTechId.None, kTechId.None },  // WeaponsMenu
+                             kTechId.PowerSurge, kTechId.CatPack, kTechId.WeaponsMenu, kTechId.None, },
                              
     [kTechId.WeaponsMenu] = { kTechId.DropShotgun, kTechId.DropGrenadeLauncher, kTechId.DropFlamethrower, kTechId.DropWelder,
-                              kTechId.DropMines, kTechId.DropJetpack, kTechId.DropExosuit, kTechId.AssistMenu}
+                              kTechId.DropMines, kTechId.DropJetpack, kTechId.None, kTechId.AssistMenu}
 
 
 }

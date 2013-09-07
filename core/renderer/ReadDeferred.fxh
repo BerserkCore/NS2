@@ -29,70 +29,14 @@ struct PS_DeferredPass_Input
     half2 texCoord         : TEXCOORD1;
 };  
 
-texture     depthTexture;        	// G-buffer component.
-texture		normalTexture;			// G-buffer component.
-texture     albedoTexture;        	// G-buffer component.
-texture     specularGlossTexture;   // G-buffer component.
-
 float2      imagePlaneSize;
 float2 		rcpFrame;				// 1/xSize, 1/ySize
 float4 		rcpFrameOpt;
 
-sampler albedoTextureSampler = sampler_state
-    {
-        texture       = (albedoTexture);
-        AddressU      = Clamp;
-        AddressV      = Clamp;
-        MinFilter     = Point;
-        MagFilter     = Point;
-        MipFilter     = None;
-		SRGBTexture   = True;				
-    };	
-
-sampler specularGlossTextureSampler = sampler_state
-    {
-        texture       = (specularGlossTexture);
-        AddressU      = Clamp;
-        AddressV      = Clamp;
-        MinFilter     = Point;
-        MagFilter     = Point;
-        MipFilter     = None;
-		SRGBTexture   = True;				
-    };		
-	
-sampler depthTextureSampler = sampler_state
-    {
-        texture       = (depthTexture);
-        AddressU      = Clamp;
-        AddressV      = Clamp;
-        MinFilter     = Point;
-        MagFilter     = Point;
-        MipFilter     = None;
-		SRGBTexture   = False;
-    };			
-
-// Used for AO to remove artifacts for distant glancing angles
-sampler linearDepthTextureSampler = sampler_state
-    {
-        texture       = (depthTexture);
-        AddressU      = Clamp;
-        AddressV      = Clamp;
-        MinFilter     = Linear;
-        MagFilter     = Linear;
-        MipFilter     = None;
-		SRGBTexture   = False;
-    };			
-	
-sampler normalTextureSampler = sampler_state
-    {
-        texture       = (normalTexture);
-        AddressU      = Clamp;
-        AddressV      = Clamp;
-        MinFilter     = Point;
-        MagFilter     = Point;
-        MipFilter     = None;
-		SRGBTexture   = False;
-    };			
+sampler     depthTextureSampler             : register(s0);     // G-buffer component.
+sampler		normalTextureSampler            : register(s1);     // G-buffer component.
+sampler     albedoTextureSampler            : register(s2);     // G-buffer component.
+sampler     specularGlossTextureSampler     : register(s3);     // G-buffer component.
 
 /**
  * Extracts the view-space normal from the G-buffer.

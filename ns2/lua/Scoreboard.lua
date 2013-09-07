@@ -102,7 +102,7 @@ function Scoreboard_OnClientDisconnect(clientIndex)
     
 end
 
-function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator)
+function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists)
 
     // Lookup record for player and update it
     for i = 1, table.maxn(playerData) do
@@ -117,6 +117,7 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
             playerRecord.EntityTeamNumber = teamNumber
             playerRecord.Score = score
             playerRecord.Kills = kills
+            playerRecord.Assists = assists
             playerRecord.Deaths = deaths
             playerRecord.IsCommander = isCommander
             playerRecord.IsRookie = isRookie
@@ -140,6 +141,7 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
     playerRecord.EntityTeamNumber = teamNumber
     playerRecord.Score = score
     playerRecord.Kills = kills
+    playerRecord.Assists = assists
     playerRecord.Deaths = deaths
     playerRecord.IsCommander = isCommander
     playerRecord.IsRookie = isRookie

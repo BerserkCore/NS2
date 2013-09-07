@@ -27,6 +27,8 @@ local networkVars =
     autoSpawnTime = "private float"
 }
 
+AddMixinNetworkVars(ScoringMixin, networkVars)
+
 local function UpdateQueuePosition(self)
 
     if self:GetIsDestroyed() then

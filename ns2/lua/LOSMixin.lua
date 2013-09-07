@@ -31,6 +31,7 @@ local kLOSTimeout = 1
 
 LOSMixin.networkVars =
 {
+    sighted = "boolean",
     visibleClient = "boolean"
 }
 
@@ -329,7 +330,7 @@ if Server then
         if not self.dirtyLOS and self.prevViewLOSYaw ~= yaw then
         
             self.dirtyLOS = true
-            self.prevViewLOSYaw = newAngles
+            self.prevViewLOSYaw = yaw
             
         end
         

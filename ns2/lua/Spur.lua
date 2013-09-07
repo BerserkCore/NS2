@@ -134,9 +134,8 @@ function Spur:GetBioMassLevel()
     return kSpurBiomass
 end
 
-local kSpurHealthbarOffset = Vector(0, 0.6, 0)
 function Spur:GetHealthbarOffset()
-    return kSpurHealthbarOffset
+    return 0.6
 end
 
 function Spur:GetMaturityRate()

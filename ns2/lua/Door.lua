@@ -9,13 +9,7 @@
 
 Script.Load("lua/ScriptActor.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
-Script.Load("lua/GameEffectsMixin.lua")
-Script.Load("lua/OrdersMixin.lua")
-Script.Load("lua/SelectableMixin.lua")
 Script.Load("lua/PathingMixin.lua")
-Script.Load("lua/TeamMixin.lua")
-Script.Load("lua/LiveMixin.lua")
-Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 
 class 'Door' (ScriptActor)
@@ -47,10 +41,6 @@ local kModelNameDestroyed = PrecacheAsset("models/misc/door/door_destroyed.model
 
 local kDoorAnimationGraph = PrecacheAsset("models/misc/door/door.animation_graph")
 
-if Server then
-    Script.Load("lua/Door_Server.lua")
-end
-
 local networkVars =
 {
     weldedPercentage = "float",
@@ -63,11 +53,6 @@ local networkVars =
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
-AddMixinNetworkVars(GameEffectsMixin, networkVars)
-AddMixinNetworkVars(OrdersMixin, networkVars)
-AddMixinNetworkVars(TeamMixin, networkVars)
-AddMixinNetworkVars(LiveMixin, networkVars)
-AddMixinNetworkVars(SelectableMixin, networkVars)
 
 local kDoorLockTimeout = 6
 local kDoorLockDuration = 4
@@ -94,29 +79,26 @@ local function UpdateAutoOpen(self, timePassed)
     local state = self:GetState()
     
     if state == Door.kState.Open or state == Door.kState.Close then
+    
+        local desiredOpenState = false
 
-        local desiredOpenState = self:GetHasLockTimeout()
-        
-        if not desiredOpenState then
-        
-            local entities = Shared.GetEntitiesWithTagInRange("Door", self:GetOrigin(), DoorMixin.kMaxOpenDistance)
-            for index = 1, #entities do
+        local entities = Shared.GetEntitiesWithTagInRange("Door", self:GetOrigin(), DoorMixin.kMaxOpenDistance)
+        for index = 1, #entities do
+            
+            local entity = entities[index]
+            local opensForEntity, openDistance = entity:GetCanDoorInteract(self)
+            if opensForEntity then
+            
+                local distSquared = self:GetDistanceSquared(entity)
+                if (not HasMixin(entity, "Live") or entity:GetIsAlive()) and entity:GetIsVisible() and distSquared < (openDistance * openDistance) then
                 
-                local entity = entities[index]
-                local opensForEntity, openDistance = entity:GetCanDoorInteract(self)
-                if opensForEntity then
-                
-                    local distSquared = self:GetDistanceSquared(entity)
-                    if (not HasMixin(entity, "Live") or entity:GetIsAlive()) and entity:GetIsVisible() and distSquared < (openDistance * openDistance) then
-                    
-                        desiredOpenState = true
-                        break
-                    
-                    end
+                    desiredOpenState = true
+                    break
                 
                 end
-                
+            
             end
+            
         end
         
         if desiredOpenState and self:GetState() == Door.kState.Close then
@@ -137,20 +119,12 @@ function Door:OnCreate()
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
-    InitMixin(self, GameEffectsMixin)
-    InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     InitMixin(self, PathingMixin)
-    InitMixin(self, SelectableMixin)
-    InitMixin(self, TeamMixin)
-    InitMixin(self, LiveMixin)
     
     if Server then
     
         self:AddTimedCallback(UpdateAutoUnlock, kUpdateAutoUnlockRate)
         self:AddTimedCallback(UpdateAutoOpen, kUpdateAutoOpenRate)
-        
-        self.timeLastLockTrigger = 0
-        self.lockTimeOut = 0
         
     end
     
@@ -172,8 +146,6 @@ function Door:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
-    InitMixin(self, WeldableMixin)
-    
     InitModel(self)
     
     if Server then
@@ -182,9 +154,6 @@ function Door:OnInitialized()
         
         self:SetPhysicsGroup(PhysicsGroup.CommanderUnitGroup)
         
-        // Doors always belong to the Marine team.
-        self:SetTeamNumber(kTeam1Index)
-        
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
@@ -192,29 +161,16 @@ function Door:OnInitialized()
         
     end
     
-    self.weldedPercentage = 0
-    
     self:SetState(Door.kState.Close)
     
 end
 
 function Door:Reset()
-
-    // Restore original origin, angles, etc. as it could have been rag-dolled
-    self:SetOrigin(self.savedOrigin)
-    self:SetAngles(self.savedAngles)
     
     self:SetPhysicsType(PhysicsType.Kinematic)
     self:SetPhysicsGroup(0)
     
     self:SetState(Door.kState.Close)
-    
-    self.damageBackPose = 0
-    self.damageFrontPose = 0
-    
-    self.weldedPercentage = 0
-    self:SetHealth(self:GetMaxHealth())
-    self:SetArmor(self:GetMaxArmor())
     
     InitModel(self)
     
@@ -232,34 +188,6 @@ function Door:GetIsWeldedShut()
     return self:GetState() == Door.kState.Welded
 end
 
-// Only hackable by marine commander
-function Door:PerformActivation(techId, position, normal, commander)
-
-    local success = nil
-    local state = self:GetState()
-    
-    // Set success to false if action specifically not allowed
-    if techId == kTechId.DoorClose then
-    
-        if state == Door.kState.Open then
-        
-            self:TriggerDoorLock()
-            success = true
-            
-        else
-            success = false
-        end
-        
-    end
-    
-    if success == false then
-        self:PlaySound(Door.kInoperableSound)
-    end
-    
-    return success, true
-    
-end
-
 function Door:GetDescription()
 
     local doorName = GetDisplayNameForTechId(self:GetTechId())
@@ -272,40 +200,6 @@ function Door:GetDescription()
     end
     
     return doorDescription
-    
-end
-
-function Door:GetTechAllowed(techId, techNode, player)
-
-    local state = self:GetState()
-    
-    local allowed, canAfford = ScriptActor.GetTechAllowed(self, techId, techNode, player)
-    
-    if techId == kTechId.DoorOpen then
-        allowed = state == Door.kState.Close
-    elseif techId == kTechId.DoorClose then
-        allowed = state == Door.kState.Open
-    end
-
-    return allowed, canAfford
-
-end
-
-function Door:GetTechButtons(techId, teamType)
-
-    if(techId == kTechId.RootMenu) then   
-        // $AS - Aliens do not get tech on doors they can just select them
-        if not (teamType == kAlienTeamType) then
-            return  {kTechId.None, kTechId.None, kTechId.None, kTechId.None, // add kTechId.DoorClose to enable closing for commanders
-                     kTechId.None, kTechId.None, kTechId.None, kTechId.None }
-        else            
-            return  {kTechId.None, kTechId.None, kTechId.None, kTechId.None,
-                     kTechId.None, kTechId.None, kTechId.None, kTechId.None }
-        end
-        
-    end
-    
-    return nil
     
 end
 
@@ -338,96 +232,8 @@ function Door:GetState()
     return self.state
 end
 
-function Door:GetCanBeWeldedOverride()
-    return (self:GetState() == Door.kState.Locked or self:GetState() == Door.kState.Welded) and self.weldedPercentage < 1.0, true
-end
-
-function Door:GetWeldPercentageOverride()
-
-    if (self:GetState() == Door.kState.Locked or self:GetState() == Door.kState.Welded) and self.weldedPercentage < 1.0 then
-        return self.weldedPercentage//self:GetHealthScalar()
-    end    
-
-    return 0
-    
-end
-
-function Door:OnWeldOverride(doer, elapsedTime)
-
-    self.weldedPercentage = self.weldedPercentage + kWeldPercentagePerSecond * elapsedTime
-
-    /*
-    local max = self:GetMaxHealth() + self:GetMaxArmor() * kHealthPointsPerArmor
-    if self:GetState() == Door.kState.Locked then
-        self:SetState(Door.kState.Welded)
-        self:SetHealth(max * 0.1)
-        self:SetArmor(0)
-    end
-    
-    local max = self:GetMaxHealth() + self:GetMaxArmor() * kHealthPointsPerArmor
-    self:AddHealth(elapsedTime * kHealthPercentagePerSecond * max)
-    */
-
-     if self.weldedPercentage >= 1.0 then
-        self.weldedPercentage = 1.0
-        self:SetState(Door.kState.Welded)
-     end
-     
-     -- Trigger a voiceover
-     
-     // refresh the lock trigger
-     self.timeLastLockTrigger = Shared.GetTime()
-    
-end
-
-function Door:TriggerDoorLock()
-
-    self:SetState(Door.kState.Locked)
-    self.timeLastLockTrigger = Shared.GetTime()
-
-end
-
-/*
-function Door:GetUsablePoints()
-    return { self:GetAttachPointOrigin("keypad_front"), self:GetAttachPointOrigin("keypad_back") }
-end
-*/
-
-function Door:GetHasLockTimeout()
-    return self.lockTimeOut > Shared.GetTime()
-end
-
 function Door:GetCanBeUsed(player, useSuccessTable)
     useSuccessTable.useSuccess = false    
-end
-
-function Door:OnKill(attacker, doer, point, direction)
-
-    // compute correct direction for animation (back or front)
-    direction = self:GetOrigin() - attacker:GetOrigin()
-    if direction:DotProduct(self:GetAngles():GetCoords().zAxis) < 0 then
-    
-        self:SetState(Door.kState.DestroyedBack)
-        self:TriggerEffects("destroydoor_back")
-        
-    else
-    
-        self:SetState(Door.kState.DestroyedFront)
-        self:TriggerEffects("destroydoor_front")
-        
-    end
-    
-    self:SetModel(kModelNameDestroyed)
-    
-end
-
-function Door:OnUpdatePoseParameters()
-
-    PROFILE("Door:OnUpdatePoseParameters")
-    
-    self:SetPoseParam("damage_f", self.damageFrontPose)
-    self:SetPoseParam("damage_b", self.damageBackPose)
-    
 end
 
 function Door:OnUpdateAnimationInput(modelMixin)
@@ -436,13 +242,9 @@ function Door:OnUpdateAnimationInput(modelMixin)
     
     local open = self.state == Door.kState.Open
     local lock = self.state == Door.kState.Locked or self.state == Door.kState.Welded
-    local break_f = self.state == Door.kState.DestroyedFront
-    local break_b = self.state == Door.kState.DestroyedBack
     
     modelMixin:SetAnimationInput("open", open)
     modelMixin:SetAnimationInput("lock", lock)
-    modelMixin:SetAnimationInput("break_f", break_f)
-    modelMixin:SetAnimationInput("break_b", break_b)
     
 end
 

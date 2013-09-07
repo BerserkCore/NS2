@@ -26,12 +26,12 @@ local kLines =
 }
 local kLineColors =
 {
-    [kMarineTeamType] = Color(0, 0.3, 0.8, 1),
-    [kAlienTeamType] = Color(0.8, 0.3, 0, 1),
+    [kMarineTeamType] = Color(0, 0.8, 1, 0.5),
+    [kAlienTeamType] = Color(1, 0.4, 0, 0.5),
 }
 
-local kGrey = Color(0.4, 0.4, 0.4, 1)
-local kAllowedColor = Color(1, 0.0, 0.0, 1)
+local kGrey = Color(0.2, 0.2, 0.2, 1)
+local kAllowedColor = Color(0.5, 0.5, 0.5, 1)
 
 local kTechMapIconColors =
 {
@@ -56,7 +56,7 @@ local kProgressMeterSize = Vector(kIconSize.x, GUIScale(10), 0)
 class 'GUITechMap' (GUIScript)
 
 
-local function CreateTechIcon(self, techId, position, teamType, modFunction)
+local function CreateTechIcon(self, techId, position, teamType, modFunction, text)
 
     local icon = GetGUIManager():CreateGraphicItem()
     icon:SetSize(kIconSize)
@@ -68,7 +68,23 @@ local function CreateTechIcon(self, techId, position, teamType, modFunction)
     
     self.background:AddChild(icon)
     
-    return { Icon = icon, TechId = techId, ModFunction = modFunction }
+    local textItem
+    
+    if text then
+    
+        textItem = GetGUIManager():CreateTextItem()
+        textItem:SetFontSize(GUIScale(15))
+        textItem:SetText(text)    
+        textItem:SetAnchor(GUIItem.Right, GUIItem.Bottom)
+        textItem:SetTextAlignmentX(GUIItem.Align_Max)
+        textItem:SetTextAlignmentY(GUIItem.Align_Max)
+        textItem:SetLayer(2)
+        
+        icon:AddChild(textItem)
+    
+    end
+    
+    return { Icon = icon, TechId = techId, ModFunction = modFunction, Text = textItem }
 
 end
 
@@ -123,6 +139,9 @@ end
 
 function GUITechMap:Initialize()
 
+    self.showtechMap = false
+    self.techMapButton = false
+
     self.techIcons = {}
     self.lines = {}
     
@@ -144,7 +163,7 @@ function GUITechMap:Initialize()
         if entry[1] and entry[1] ~= kTechId.None then
 
             local position = Vector(entry[2], entry[3] + offset, 0)
-            table.insert(self.techIcons, CreateTechIcon(self, entry[1], position, self.teamType, entry[4]))
+            table.insert(self.techIcons, CreateTechIcon(self, entry[1], position, self.teamType, entry[4], entry[5]))
         
         end
     
@@ -158,6 +177,8 @@ function GUITechMap:Initialize()
         table.insert(self.lines, CreateLine(self, startPoint, endPoint, self.teamType))
     
     end
+    
+    
 
 end
 
@@ -173,15 +194,61 @@ function GUITechMap:Uninitialize()
 
 end
 
-function GUITechMap:Update(deltaTime)
+function GUITechMap:SendKeyEvent(key, down)
+
+    if GetIsBinding(key, "ShowTechMap") then
     
-    local showMap = PlayerUI_GetShowTechMap()
+        self.techMapButton = down
+        
+    end
+
+end
+
+function GUITechMap:ShowTechMap(show)
+    self.showtechMap = show
+end
+
+function GUITechMap:GetIsVisible()
+    return self.background ~= nil and self.background:GetIsVisible()
+end
+
+function GUITechMap:Update(deltaTime)
+
+    self.hoverTechId = nil
+    
+    local commanderClicked = false
+    local player = Client.GetLocalPlayer()
+    if player and not player:isa("Commander") then
+        self.showtechMap = false
+    end
+    
+    if player:isa("Commander") and not self.registered then
+        
+        local script = GetGUIManager():GetGUIScriptSingle("GUICommanderTooltip")
+        if script then
+            script:Register(self)
+            self.registered = true
+        end
+        
+    end
+    
+    local showMap = self.techMapButton or self.showtechMap
+    
     self.background:SetIsVisible(showMap)
 
     if showMap then
     
+        local animation = 0.65 + 0.35 * (1 + math.sin(Shared.GetTime() * 5)) * 0.5
+    
+        local baseColor = kIconColors[self.teamType]
+        self.researchingColor = Color(
+            baseColor.r * animation,
+            baseColor.g * animation,
+            baseColor.b * animation, 1)
+    
         local techTree = GetTechTree()
         local useColors = kTechMapIconColors[self.teamType]
+        local mouseX, mouseY = Client.GetCursorPosScreen()
         
         if techTree then
     
@@ -233,7 +300,7 @@ function GUITechMap:Update(deltaTime)
                     status = kTechStatus.Available                
                 end
                 
-                techIcon.Icon:SetColor(useColors[status])
+                local useColor = useColors[status]
                 
                 if progressing then
                     
@@ -244,12 +311,20 @@ function GUITechMap:Update(deltaTime)
                     techIcon.ProgressMeterBackground:SetIsVisible(true)
                     techIcon.ProgressMeter:SetSize(Vector((kProgressMeterSize.x - 2) * researchProgress, kProgressMeterSize.y - 2, 0))
                     
+                    useColor = self.researchingColor
+                    
                 elseif techIcon.ProgressMeterBackground then
                     techIcon.ProgressMeterBackground:SetIsVisible(false)
                 end
                 
                 if techIcon.ModFunction then
-                    techIcon.ModFunction(techIcon.Icon, techIcon.TechId)
+                    techIcon.ModFunction(techIcon.Icon, techIcon.TechId, techIcon.Text)
+                end
+                
+                techIcon.Icon:SetColor(useColor)
+                
+                if not self.hoveTechId and GUIItemContainsPoint(techIcon.Icon, mouseX, mouseY) then
+                    self.hoverTechId = techIcon.TechId
                 end
             
             end
@@ -257,5 +332,15 @@ function GUITechMap:Update(deltaTime)
         end
     
     end
+
+end
+
+function GUITechMap:GetTooltipData()
+
+    if self.hoverTechId then
+        return PlayerUI_GetTooltipDataFromTechId(self.hoverTechId)
+    end    
+
+    return nil
 
 end

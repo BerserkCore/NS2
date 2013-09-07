@@ -6,8 +6,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-kAlienStructureMoveSpeed = 0.5
-kShiftMoveSpeed = 0.6
+kAlienStructureMoveSpeed = 1.5
 kShiftStructurespeedScalar = 1
 
 kPoisonDamageThreshhold = 5
@@ -41,13 +40,15 @@ kRTsPerTechpoint = 3
 kEMPBlastEnergyDamage = 50
 
 kEnzymeAttackSpeed = 1.25
+kElectrifiedAttackSpeed = 0.8
+kElectrifiedDuration = 5
 
 kHallucinationHealthFraction = 0.33
 kHallucinationArmorFraction = 0
 kHallucinationMaxHealth = 700
 
 // set to -1 for no time limit
-kParasiteDuration = 24
+kParasiteDuration = 44
 
 // increases max speed by 1.5 m/s
 kCelerityAddSpeed = 1.5
@@ -140,7 +141,10 @@ kEchoRange = 8
 kSprayDouseOnFireChance = .5
 
 // Players get energy back at this rate when on fire 
-kOnFireEnergyRecuperationScalar = .6
+kOnFireEnergyRecuperationScalar = 1
+
+// Players get energy back at this rate when electrified
+kElectrifiedEnergyRecuperationScalar = .7
 
 // Infestation
 kStructureInfestationRadius = 2
@@ -236,37 +240,41 @@ kUmbraRetainTime = 0.25
 
 kBellySlideCost = 25
 kLerkFlapEnergyCost = 3
-kFadeShadowStepCost = 15
-kChargeEnergyCost = 34 // per second
+kFadeShadowStepCost = 11
+kChargeEnergyCost = 38 // per second
 
 kAbilityMaxEnergy = 100
 kAdrenalineAbilityMaxEnergy = 130
 
-kPistolWeight = 0.09
+kPistolWeight = 0.0
 kRifleWeight = 0.13
+kHeavyRifleWeight = 0.25
 kGrenadeLauncherWeight = 0.15
-kFlamethrowerWeight = 0.12
+kFlamethrowerWeight = 0.14
 kShotgunWeight = 0.14
+
+kHandGrenadeWeight = 0.1
+kLayMineWeight = 0.19
 
 kClawWeight = 0.01
 kMinigunWeight = 0.11
-kRailgunWeight = 0.05
+kRailgunWeight = 0.08
 
 kDropStructureEnergyCost = 20
 
 kMinWebLength = 0.5
 kMaxWebLength = 8
 
-kMACSupply = 5
+kMACSupply = 10
 kArmorySupply = 5
-kARCSupply = 20
+kARCSupply = 15
 kSentrySupply = 10
 kRoboticsFactorySupply = 5
 kInfantryPortalSupply = 0
 kPhaseGateSupply = 0
 
-kDrifterSupply = 5
-kWhipSupply = 10
-kCragSupply = 15
-kShadeSupply = 10
-kShiftSupply = 10
+kDrifterSupply = 10
+kWhipSupply = 5
+kCragSupply = 5
+kShadeSupply = 5
+kShiftSupply = 5

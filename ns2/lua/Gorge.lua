@@ -24,6 +24,7 @@ Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
 Script.Load("lua/Weapons/PredictedProjectile.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Gorge' (Alien)
 
@@ -36,7 +37,8 @@ local networkVars =
     bellyYaw = "private float",
     timeSlideEnd = "private time",
     startedSliding = "private boolean",
-    sliding = "boolean"
+    sliding = "boolean",
+    hasBellySlide = "private boolean"
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -48,6 +50,7 @@ AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 Gorge.kMapName = "gorge"
 
@@ -128,6 +131,8 @@ function Gorge:OnInitialized()
         
     end
     
+    InitMixin(self, IdleMixin)
+    
 end
 
 function Gorge:GetAirControl()
@@ -140,9 +145,8 @@ end
 
 if Client then
 
-    local kGorgeHealthbarOffset = Vector(0, 0.7, 0)
     function Gorge:GetHealthbarOffset()
-        return kGorgeHealthbarOffset
+        return 0.7
     end  
 
     function Gorge:OverrideInput(input)
@@ -212,6 +216,10 @@ local function GetIsSlidingDesired(self, input)
     end
     
     if self.crouching then
+        return false
+    end
+    
+    if not self:GetHasMovementSpecial() then
         return false
     end
     
@@ -352,6 +360,14 @@ function Gorge:OnUpdateAnimationInput(modelMixin)
     
 end
 
+function Gorge:GetMovementSpecialTechId()
+    return kTechId.BellySlide
+end
+
+function Gorge:GetHasMovementSpecial()
+    return true // self.hasBellySlide or self:GetTeamNumber() == kTeamReadyRoom
+end
+
 function Gorge:ModifyVelocity(input, velocity, deltaTime)
     
     // Give a little push forward to make sliding useful
@@ -418,6 +434,10 @@ function Gorge:GetDesiredAngles()
     
     return desiredAngles
 
+end
+
+function Gorge:GetHasBiomassHealth()
+    return GetHasTech(self, kTechId.UpgradeGorge)
 end
 
 function Gorge:PreUpdateMove(input, runningPrediction)
@@ -518,4 +538,17 @@ function Gorge:GetEngagementPointOverride()
     return self:GetOrigin() + Vector(0, 0.28, 0)
 end
 
-Shared.LinkClassToMap("Gorge", Gorge.kMapName, networkVars)
+if Server then
+
+    function Gorge:OnProcessMove(input)
+    
+        Alien.OnProcessMove(self, input)
+        
+        self.hasBellySlide = GetIsTechAvailable(self:GetTeamNumber(), kTechId.BellySlide) == true or GetGamerules():GetAllTech()
+    
+    end
+
+end
+
+
+Shared.LinkClassToMap("Gorge", Gorge.kMapName, networkVars, true)

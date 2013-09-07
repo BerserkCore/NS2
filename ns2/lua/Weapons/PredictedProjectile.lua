@@ -16,17 +16,20 @@ function PredictedProjectileShooterMixin:__initmixin()
     self.predictedProjectiles = {}
 end
 
-function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, startPoint, velocity, bounce, friction, gravity, clearOnImpact)
+function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, startPoint, velocity, bounce, friction, gravity)
 
     if Predict or (not Server and _G[className].kUseServerPosition) then
         return nil
     end
     
+    local clearOnImpact = _G[className].kClearOnImpact
+    local detonateWithTeam = _G[className].kClearOnEnemyImpact and GetEnemyTeamNumber(self:GetTeamNumber()) or -1
+    
     local minLifeTime = _G[className].kMinLifeTime
 
     local projectile = nil
     local projectileController = ProjectileController()
-    projectileController:Initialize(startPoint, velocity, _G[className].kRadius, self, bounce, friction, gravity, GetEnemyTeamNumber(self:GetTeamNumber()), clearOnImpact, minLifeTime)
+    projectileController:Initialize(startPoint, velocity, _G[className].kRadius, self, bounce, friction, gravity, detonateWithTeam, clearOnImpact, minLifeTime)
     projectileController.projectileId = self.nextProjectileId
     projectileController.modelName = _G[className].kModelName
     
@@ -78,9 +81,13 @@ function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, st
     
     self.predictedProjectiles[self.nextProjectileId] = { Controller = projectileController, Model = projectileModel, EntityId = projectileEntId, CreationTime = Shared.GetTime(), Cinematic = projectileCinematic }
     
-    self.nextProjectileId = self.nextProjectileId + 1
-    if self.nextProjectileId > kMaxNumProjectiles then
-        self.nextProjectileId = 1
+    if not _G[className].kUseServerPosition then
+    
+        self.nextProjectileId = self.nextProjectileId + 1
+        if self.nextProjectileId > kMaxNumProjectiles then
+            self.nextProjectileId = 1
+        end
+    
     end
     
     return projectile
@@ -158,7 +165,7 @@ local function DestroyProjectiles(self)
         local projectile = Shared.GetEntity(entry.EntityId)
         if projectile then
         
-            projectile:SetProjectileController(entry.Controller)
+            projectile:SetProjectileController(entry.Controller, true)
             if entry.Model then
                 Client.DestroyRenderModel(entry.Model)
             end
@@ -497,8 +504,9 @@ function PredictedProjectile:GetVelocity()
     
 end
 
-function PredictedProjectile:SetProjectileController(controller)
+function PredictedProjectile:SetProjectileController(controller, selfUpdate)
     self.projectileController = controller
+    self.selfUpdate = selfUpdate
 end
 
 if Server then
@@ -507,13 +515,22 @@ if Server then
     
         if self.projectileController then
         
-            local coords = Coords.GetLookIn(self.projectileController:GetPosition(), GetNormalizedVector(self.projectileController.velocity))
-            self:SetCoords(coords)
+            if self.selfUpdate then
+                self.projectileController:Update(deltaTime)
+            end
+        
+            local vel = self.projectileController.velocity
+            if vel:GetLengthSquared() > 0 then
+            
+                local coords = Coords.GetLookIn(self.projectileController:GetPosition(), GetNormalizedVector(vel))
+                self:SetCoords(coords)
                 
+            end
+            
         end
-    
+        
     end
-
+    
 end
 
 function PredictedProjectile:OnUpdateRender()

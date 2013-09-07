@@ -150,7 +150,7 @@ if Server then
         end
         
         local assetIndex = Shared.GetCinematicIndex(effectName)
-        if assertIndex == 0 then
+        if assetIndex == 0 then
         
             Shared.Message("Effect " .. effectName .. " wasn't precached")
             return

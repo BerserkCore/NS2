@@ -16,14 +16,12 @@ PulseGrenade.kMapName = "pulsegrenadeprojectile"
 PulseGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
 
 PulseGrenade.kRadius = 0.17
+PulseGrenade.kClearOnImpact = false
+PulseGrenade.kClearOnEnemyImpact = true
 
 local networkVars = { }
 
-local kLifeTime = 3
-
-kPulseGrenadeDamageRadius = 7
-kPulseGrenadeDamage = 120
-kPulseGrenadeEnergyDamage = 95
+local kLifeTime = 1.2
 
 local kGrenadeCameraShakeDistance = 15
 local kGrenadeMinShakeIntensity = 0.01
@@ -48,10 +46,6 @@ function PulseGrenade:OnCreate()
         
     end
     
-end
-
-function PulseGrenade:GetProjectileModel()
-    return PulseGrenade.kModelName
 end
 
 function PulseGrenade:ProcessHit(targetHit)
@@ -90,13 +84,17 @@ local function EnergyDamage(hitEntities, origin, radius, damage)
         
         end
     
+        if entity.SetElectrified then
+            entity:SetElectrified(kElectrifiedDuration)
+        end
+    
     end
 
 end
 
 function PulseGrenade:Detonate(targetHit)
 
-    local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kPulseGrenadeDamageRadius)
+    local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kPulseGrenadeEnergyDamageRadius)
     table.removevalue(hitEntities, self)
 
     if targetHit then
@@ -104,8 +102,8 @@ function PulseGrenade:Detonate(targetHit)
         table.removevalue(hitEntities, targetHit)
         self:DoDamage(kPulseGrenadeDamage, targetHit, targetHit:GetOrigin(), GetNormalizedVector(targetHit:GetOrigin() - self:GetOrigin()), "none")
         
-        if targetHit.GetEnergy and targetHit.SetEnergy then
-            targetHit:SetEnergy(targetHit:GetEnergy() - kPulseGrenadeEnergyDamage)
+        if targetHit.SetElectrified then
+            targetHit:SetElectrified(kElectrifiedDuration)
         end
         
     end
@@ -116,7 +114,7 @@ function PulseGrenade:Detonate(targetHit)
     end
     
     RadiusDamage(hitEntities, self:GetOrigin(), kPulseGrenadeDamageRadius, kPulseGrenadeDamage, self)
-    EnergyDamage(hitEntities, self:GetOrigin(), kPulseGrenadeDamageRadius, kPulseGrenadeEnergyDamage)
+    EnergyDamage(hitEntities, self:GetOrigin(), kPulseGrenadeEnergyDamageRadius, kPulseGrenadeEnergyDamage)
 
     local surface = GetSurfaceFromEntity(targetHit)
     
@@ -135,6 +133,10 @@ function PulseGrenade:Detonate(targetHit)
  
     DestroyEntity(self)
 
+end
+
+function PulseGrenade:GetDeathIconIndex()
+    return kDeathMessageIcon.PulseGrenade
 end
 
 Shared.LinkClassToMap("PulseGrenade", PulseGrenade.kMapName, networkVars)

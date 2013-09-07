@@ -166,15 +166,17 @@ gWindowManager = CreateWindowManager()
 
 function WindowManager:Uninitialize()
 
-    for index, windowLayers in ipairs(self.windowLayers) do
+    for index, windowLayer in ipairs(self.windowLayers) do
+    
         for index, window in ipairs(windowLayer.windows) do
             window:Destroy()
         end
+        
     end
     
     self.windowLayers = nil
     self.layerOrder = nil
-
+    
 end
 
 function WindowManager:GetActiveWindow()

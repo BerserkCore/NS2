@@ -118,7 +118,7 @@ function FireMixin:GetIsOnFire()
     if Client then
         return self.isOnFire
     end
-
+    
     return self:GetGameEffectMask(kGameEffect.OnFire)
     
 end
@@ -126,11 +126,11 @@ end
 function FireMixin:GetCanBeSetOnFire()
 
     if self.OnOverrideCanSetFire then
-        return self:OnOverrideCanSetFire(attacker, doer)
+        return self:OnOverrideCanSetFire()
     else
         return true
     end
-  
+    
 end
 
 function UpdateFireMaterial(self)
@@ -192,7 +192,7 @@ local function SharedUpdate(self, deltaTime)
     
     if Server then
     
-        if not self.timeLastFireDamageUpdate or self.timeLastFireDamageUpdate + kBurnUpdateRate <= Shared.GetTime() then
+        if self:GetIsAlive() and (not self.timeLastFireDamageUpdate or self.timeLastFireDamageUpdate + kBurnUpdateRate <= Shared.GetTime()) then
     
             local damageOverTime = kBurnUpdateRate * kBurnDamagePerSecond
             if self.GetIsFlameAble and self:GetIsFlameAble() then

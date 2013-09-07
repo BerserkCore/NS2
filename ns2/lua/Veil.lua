@@ -198,9 +198,8 @@ if Server then
 
 end
 
-local kVeilHealthbarOffset = Vector(0, 1, 0)
 function Veil:GetHealthbarOffset()
-    return kVeilHealthbarOffset
+    return 1
 end
 
 function Veil:GetCanBeUsed(player, useSuccessTable)

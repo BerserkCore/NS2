@@ -134,9 +134,9 @@ end
 
 function Slider:SetLength(newLength)
 
-    self.maxLength = newMaxLength
+    self.maxLength = newLength
     // TODO resize the bar
-
+    
 end
 
 function Slider:SetValue(value)

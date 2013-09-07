@@ -233,7 +233,8 @@ end
 //  
 //----------------------------------------
 local function GetIsUseOrder(order)
-    return order:GetType() == kTechId.Construct
+    return order:GetType() == kTechId.Construct 
+            or order:GetType() == kTechId.AutoConstruct
             or order:GetType() == kTechId.Build
             or order:GetType() == kTechId.Weld
 end

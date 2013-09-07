@@ -35,8 +35,8 @@ end
 
 function GUIMainMenuNews:Uninitialize()
 
-    GUI.DestroyItem(mainMenu.newsView.webContainer)
-    mainMenu.newsView.webContainer = nil
+    GUI.DestroyItem(self.webContainer)
+    self.webContainer = nil
     
     Client.DestroyWebView(self.webView)
     self.webView = nil

@@ -39,7 +39,8 @@ function GUIFadeShadowStepHelp:Update(dt)
     local player = Client.GetLocalPlayer()
     if player then
     
-        if not self.shadowStepped and not self.keyBackground:GetIsVisible() then
+        local hasAbility = player:GetHasShadowStepAbility()
+        if hasAbility and not self.shadowStepped and not self.keyBackground:GetIsVisible() then
             HelpWidgetAnimateIn(self.shadowImage)
         end
         
@@ -50,7 +51,7 @@ function GUIFadeShadowStepHelp:Update(dt)
             
         end
         
-        self.keyBackground:SetIsVisible(not self.shadowStepped)
+        self.keyBackground:SetIsVisible(hasAbility and not self.shadowStepped)
         
     end
     

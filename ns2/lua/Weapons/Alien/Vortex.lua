@@ -14,8 +14,11 @@ class 'Vortex' (Blink)
 
 Vortex.kMapName = "vortex"
 
+local kCreateVortex = PrecacheAsset("cinematics/alien/fade/use_vortex.cinematic")
+
 local networkVars =
 {
+    etherealGateId = "entityid"
 }
 
 local kRange = 35
@@ -42,9 +45,22 @@ end
 function Vortex:OnEntityChange(oldId, newId)
 
     if oldId == self.etherealGateId then
+    
         self.etherealGateId = Entity.invalidId
-    elseif oldId == self.vortexTargetId then
-        self.vortexTargetId = Entity.invalidId
+        
+        local player = self:GetParent()
+        if player then
+            player.hasEtherealGate = false
+        end
+        
+    end
+    
+end
+
+function Vortex:GetEtherealGate()
+    
+    if self.etherealGateId then
+        return Shared.GetEntity(self.etherealGateId)
     end
     
 end
@@ -118,51 +134,14 @@ function Vortex:OnHolster(player)
     
 end
 
-function Vortex:FreeOldTarget(newTarget)
-
-    if self.vortexTargetId ~= Entity.invalidId then
-    
-        local oldTarget = Shared.GetEntity(self.vortexTargetId)
-        if oldTarget and HasMixin(oldTarget, "VortexAble") and oldTarget ~= newTarget then
-            oldTarget:FreeVortexed()
-        end
-        
-        self.vortexTargetId = Entity.invalidId
-        
-    end
-
-end
-
 local function PerformVortex(self, player)
 
-    local player = self:GetParent()  
+    self:DestroyOldGate()  
     
-    local viewCoords = player:GetViewAngles():GetCoords()
-    local startPoint = player:GetEyePos()
-
-    // double trace; first as a ray to allow us to hit through narrow openings, then as a fat box if the first one misses
-    local trace = Shared.TraceRay(startPoint, startPoint + viewCoords.zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
-
-    if not trace.entity then
-        local extents = GetDirectedExtentsForDiameter(viewCoords.zAxis, 0.2)
-        trace = Shared.TraceBox(extents, startPoint, startPoint + viewCoords.zAxis * kRange, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterOneAndIsa(player, "Babbler"))
-    end
-    
-    //self:DestroyOldGate()
-    self:FreeOldTarget(trace.entity)
-
-    if trace.entity and HasMixin(trace.entity, "VortexAble") and not trace.entity:GetIsVortexed() and trace.entity:GetCanBeVortexed() then   
-
-        trace.entity:SetVortexDuration(kVortexDuration)
-        self.vortexTargetId = trace.entity:GetId()
-        
-    end    
-    /*    
-    else
-        local gate = CreateEntity(EtherealGate.kMapName, endPoint, player:GetTeamNumber())
-        self.etherealGateId = gate:GetId()
-    end
-    */
+    local gate = CreateEntity(EtherealGate.kMapName, player:GetOrigin(), player:GetTeamNumber())
+    self.etherealGateId = gate:GetId()
+    player.hasEtherealGate = true
+    gate.fadeCrouched = player:GetCrouching()
     
 end
 
@@ -170,14 +149,23 @@ function Vortex:OnTag(tagName)
 
     PROFILE("Vortex:OnTag")
 
-    if Server and tagName == "hit" then
+    if tagName == "hit" then
     
         local player = self:GetParent()
         if player then
         
             player:DeductAbilityEnergy(self:GetPrimaryEnergyCost())
-            self:TriggerEffects("stab_attack")
-            PerformVortex(self, player)
+
+            if Server then
+                PerformVortex(self, player)
+            end            
+            
+            if Client and Client.GetLocalPlayer() == player and player:GetIsFirstPerson() then
+                
+                local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
+                cinematic:SetCinematic(kCreateVortex)
+                
+            end
             
         end
         

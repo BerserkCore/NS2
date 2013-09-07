@@ -150,9 +150,8 @@ function Shell:GetMatureMaxHealth()
     return kMatureShellHealth
 end 
 
-local kShellHealthbarOffset = Vector(0, 0.45, 0)
 function Shell:GetHealthbarOffset()
-    return kShellHealthbarOffset
+    return 0.45
 end
 
 function Shell:GetMatureMaxArmor()

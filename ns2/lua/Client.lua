@@ -289,8 +289,11 @@ function OnMapLoadEntity(className, groupName, values)
         
         local repeatStyle = Cinematic.Repeat_None
         
+        -- 0 is Repeat_None but Repeat_None is not supported here because it would
+        -- cause the cinematic to kill itself but the cinematic would not be
+        -- removed from the Client.cinematics list which would cause errors.
         if values.repeatStyle == 0 then
-            repeatStyle = Cinematic.Repeat_None
+            repeatStyle = Cinematic.Repeat_Loop
         elseif values.repeatStyle == 1 then
             repeatStyle = Cinematic.Repeat_Loop
         elseif values.repeatStyle == 2 then
@@ -499,7 +502,8 @@ function OnUpdateClient(deltaTime)
     if not optionsSent then
     
         local armorType = StringToEnum(kArmorType, Client.GetOptionString("armorType", "Green"))
-        Client.SendNetworkMessage("ConnectMessage", BuildConnectMessage(armorType), true)
+        local isMale = Client.GetOptionString("sexType", "Male") == "Male"
+        Client.SendNetworkMessage("ConnectMessage", BuildConnectMessage(armorType, isMale), true)
         
         optionsSent = true
         
@@ -637,6 +641,8 @@ function OnMapPreLoad()
     Client.ResetSoundSystem()
     
     Shared.PreLoadSetGroupNeverVisible(kCollisionGeometryGroupName)   
+    Shared.PreLoadSetGroupNeverVisible(kMovementCollisionGroupName)   
+    Shared.PreLoadSetGroupNeverVisible(kInvisibleCollisionGroupName)
     Shared.PreLoadSetGroupPhysicsId(kNonCollisionGeometryGroupName, 0)
 
     Shared.PreLoadSetGroupNeverVisible(kCommanderBuildGroupName)   
@@ -649,6 +655,7 @@ function OnMapPreLoad()
     
     // Don't have bullets collide with collision geometry
     Shared.PreLoadSetGroupPhysicsId(kCollisionGeometryGroupName, PhysicsGroup.CollisionGeometryGroup)
+    Shared.PreLoadSetGroupPhysicsId(kMovementCollisionGroupName, PhysicsGroup.CollisionGeometryGroup)
     
     // Pathing mesh
     Shared.PreLoadSetGroupNeverVisible(kPathingLayerName)
@@ -1051,6 +1058,31 @@ local function OnLoadComplete()
     Client.SendNetworkMessage("SetName", { name = playerName }, true)
 
     SendAddBotCommands()
+    
+    //----------------------------------------
+    //  Stuff for first-time optimization dialog
+    //----------------------------------------
+
+    // Remember the build number of when we last loaded a map
+    Client.SetOptionInteger("lastLoadedBuild", Shared.GetBuildNumber())
+
+    if Client.GetOptionBoolean("immediateDisconnect", false) then
+        Client.SetOptionBoolean("immediateDisconnect", false)
+        Shared.ConsoleCommand("disconnect")
+    end
+
+    //----------------------------------------
+    //  Stuff for sandbox mode
+    //----------------------------------------
+    if Client.GetOptionBoolean("sandboxMode", false) then
+        Client.SetOptionBoolean("sandboxMode", false)
+        Shared.ConsoleCommand("cheats 1")
+        Shared.ConsoleCommand("autobuild")
+        Shared.ConsoleCommand("alltech")
+        Shared.ConsoleCommand("fastevolve")
+        Shared.ConsoleCommand("allfree")
+        Shared.ConsoleCommand("sandbox")
+    end
     
 end
 

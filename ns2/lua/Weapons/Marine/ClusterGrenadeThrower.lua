@@ -19,11 +19,16 @@ class 'ClusterGrenadeThrower' (GrenadeThrower)
 
 ClusterGrenadeThrower.kMapName = "clustergrenade"
 
-ClusterGrenadeThrower.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster_view.model")
-local kAnimationGraph = PrecacheAsset("models/marine/grenades/gr_cluster_view.animation_graph")
+local kModelName = PrecacheAsset("models/marine/grenades/gr_cluster.model")
+local kViewModels = GenerateMarineGrenadeViewModelPaths("gr_cluster")
+local kAnimationGraph = PrecacheAsset("models/marine/grenades/grenade_view.animation_graph")
 
-function ClusterGrenadeThrower:GetViewModelName()
-    return ClusterGrenadeThrower.kModelName
+function ClusterGrenadeThrower:GetThirdPersonModelName()
+    return kModelName
+end
+
+function ClusterGrenadeThrower:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function ClusterGrenadeThrower:GetAnimationGraphName()

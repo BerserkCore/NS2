@@ -176,6 +176,19 @@ local function CreateTeamBackground(self, teamNumber)
     
     currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
     
+    // Assist text item.
+    local assistsItem = GUIManager:CreateTextItem()
+    assistsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
+    assistsItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    assistsItem:SetTextAlignmentX(GUIItem.Align_Min)
+    assistsItem:SetTextAlignmentY(GUIItem.Align_Min)
+    assistsItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
+    assistsItem:SetColor(color)
+    assistsItem:SetText(Locale.ResolveString("SB_ASSISTS"))
+    teamItem:AddChild(assistsItem)
+    
+    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
+    
     // Deaths text item.
     local deathsItem = GUIManager:CreateTextItem()
     deathsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
@@ -518,6 +531,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         local clientIndex = playerRecord.ClientIndex
         local score = playerRecord.Score
         local kills = playerRecord.Kills
+        local assists = playerRecord.Assists
         local deaths = playerRecord.Deaths
         local isCommander = playerRecord.IsCommander
         local isRookie = playerRecord.IsRookie
@@ -566,6 +580,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         player["Voice"]:SetColor(playerVoiceColor)
         player["Score"]:SetText(tostring(score))
         player["Kills"]:SetText(tostring(kills))
+        player["Assists"]:SetText(tostring(assists))
         player["Deaths"]:SetText(tostring(deaths))
         player["Status"]:SetText(playerStatus)
         player["Resources"]:SetText(resourcesStr)
@@ -575,6 +590,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         
             player["Score"]:SetColor(GUIScoreboard.kCommanderFontColor)
             player["Kills"]:SetColor(GUIScoreboard.kCommanderFontColor)
+            player["Assists"]:SetColor(GUIScoreboard.kCommanderFontColor)
             player["Deaths"]:SetColor(GUIScoreboard.kCommanderFontColor)
             player["Status"]:SetColor(GUIScoreboard.kCommanderFontColor)
             player["Resources"]:SetColor(GUIScoreboard.kCommanderFontColor)
@@ -595,6 +611,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         
             player["Score"]:SetColor(GUIScoreboard.kWhiteColor)
             player["Kills"]:SetColor(GUIScoreboard.kWhiteColor)
+            player["Assists"]:SetColor(GUIScoreboard.kWhiteColor)
             player["Deaths"]:SetColor(GUIScoreboard.kWhiteColor)
             player["Status"]:SetColor(GUIScoreboard.kWhiteColor)
             player["Resources"]:SetColor(GUIScoreboard.kWhiteColor)
@@ -721,6 +738,18 @@ function GUIScoreboard:CreatePlayerItem()
     
     currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
     
+    // assists text item.
+    local assistsItem = GUIManager:CreateTextItem()
+    assistsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
+    assistsItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    assistsItem:SetTextAlignmentX(GUIItem.Align_Min)
+    assistsItem:SetTextAlignmentY(GUIItem.Align_Min)
+    assistsItem:SetPosition(Vector(currentColumnX, 5, 0))
+    assistsItem:SetColor(Color(1, 1, 1, 1))
+    playerItem:AddChild(assistsItem)
+    
+    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
+    
     // Deaths text item.
     local deathsItem = GUIManager:CreateTextItem()
     deathsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
@@ -755,7 +784,7 @@ function GUIScoreboard:CreatePlayerItem()
     pingItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(pingItem)
     
-    return { Background = playerItem, Index = playerIndexItem, Name = playerNameItem, Voice = playerVoiceIcon, Status = statusItem, Score = scoreItem, Kills = killsItem, Deaths = deathsItem, Resources = resItem, Ping = pingItem }
+    return { Background = playerItem, Index = playerIndexItem, Name = playerNameItem, Voice = playerVoiceIcon, Status = statusItem, Score = scoreItem, Kills = killsItem, Assists = assistsItem, Deaths = deathsItem, Resources = resItem, Ping = pingItem }
     
 end
 
@@ -805,6 +834,7 @@ function GUIScoreboard:SendKeyEvent(key, down)
             else
                 HandlePlayerVoiceClicked(self)
             end
+            return true
             
         end
         

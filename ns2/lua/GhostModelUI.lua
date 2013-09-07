@@ -50,7 +50,7 @@ function GhostModelUI_GetNearestAttachPointDirection()
     if player then
     
         local attachClass = LookupTechData(player.currentTechId, kStructureAttachClass)
-        if attachClass then
+        if attachClass and player:GetGhostModelCoords() then
         
             local ghostOrigin = player:GetGhostModelCoords().origin
             local nearestAttachEnt = GetNearestFreeAttachEntity(player.currentTechId, ghostOrigin)

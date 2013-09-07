@@ -61,10 +61,11 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
         
         local armorUsed = 0
         local healthUsed = 0
+        local damageDone = 0
         
         if target and HasMixin(target, "Live") and damage > 0 then  
 
-            damage, armorUsed, healthUsed = GetDamageByType(target, attacker, doer, damage, damageType)
+            damage, armorUsed, healthUsed = GetDamageByType(target, attacker, doer, damage, damageType, point)
 
             // check once the damage
             if damage > 0 then
@@ -72,16 +73,18 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                 if not direction then
                     direction = Vector(0, 0, 1)
                 end
+                
+                killedFromDamage, damageDone = target:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType)
                                 
                 // Many types of damage events are server-only, such as grenades.
                 // Send the player a message so they get feedback about what damage they've done.
                 // We use messages to handle multiple-hits per frame, such as splash damage from grenades.
                 if Server and attacker:isa("Player") then
                 
-                    local showNumbers = GetAreEnemies(attacker,target) and target:GetIsAlive()
+                    local showNumbers = GetAreEnemies(attacker,target) and target:GetIsAlive() and damageDone > 0
                     if showNumbers then
                     
-                        local msg = BuildDamageMessage(target, damage, point)
+                        local msg = BuildDamageMessage(target, damageDone, point)
                         Server.SendNetworkMessage(attacker, "Damage", msg, false)
                         
                         for _, spectator in ientitylist(Shared.GetEntitiesWithClassname("Spectator")) do
@@ -100,8 +103,6 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                     end
                     
                 end
-                
-                killedFromDamage = target:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType)
                 
                 if self.OnDamageDone then
                     self:OnDamageDone(doer, target)
@@ -148,7 +149,11 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
 
                 // define metal_thin, rock, or other
                 if target.GetSurfaceOverride then
-                    surface = target:GetSurfaceOverride()
+                    surface = target:GetSurfaceOverride(damageDone) or surface
+                    
+                    if surface == "none" then
+                        return killedFromDamage
+                    end
                     
                 elseif GetAreEnemies(self, target) then
 
@@ -195,7 +200,12 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                         
                     end
                     
-                    table.removevalue(toPlayers, attacker)
+                    -- No need to send to the attacker if this is a child of the attacker.
+                    -- Children such as weapons are simulated on the Client as well so they will
+                    -- already see the hit effect.
+                    if attacker and self:GetParent() == attacker then
+                        table.removevalue(toPlayers, attacker)
+                    end
                     
                     for _, player in ipairs(toPlayers) do
                         Server.SendNetworkMessage(player, "HitEffect", message, false) 
@@ -211,7 +221,7 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
                 if target then
                 
                     if (point - attacker:GetOrigin()):GetLength() > 5 then
-                        attacker:TriggerEffects("hit_effect_local", tableParams)
+                        attacker:TriggerEffects("hit_effect_local")
                     end
                     
                 end

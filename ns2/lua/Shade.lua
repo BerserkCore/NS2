@@ -58,6 +58,7 @@ Script.Load("lua/RepositioningMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
 Script.Load("lua/BiomassMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Shade' (ScriptActor)
 
@@ -99,6 +100,7 @@ AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(OrdersMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
         
 function Shade:OnCreate()
 
@@ -169,6 +171,8 @@ function Shade:OnInitialized()
         InitMixin(self, HiveVisionMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -207,7 +211,7 @@ end
 function Shade:GetTechButtons(techId)
 
     local techButtons = { kTechId.ShadeInk, kTechId.Move, kTechId.ShadeCloak, kTechId.None, 
-                          kTechId.ShadowStep, kTechId.Vortex, kTechId.Spores, kTechId.None}
+                          kTechId.UpgradeFade, kTechId.None, kTechId.None, kTechId.None }
                           
     if self.moving then
         techButtons[2] = kTechId.Stop

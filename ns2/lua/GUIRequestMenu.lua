@@ -469,7 +469,7 @@ function GUIRequestMenu:SendKeyEvent(key, down)
     
     local success = false
     
-    if GetIsBinding(key, "RequestMenu") then
+    if GetIsBinding(key, "RequestMenu") and PlayerUI_GetCanDisplayRequestMenu() then
     
         if self.requestMenuKeyDown ~= down then
             self:SetIsVisible(down)

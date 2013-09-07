@@ -30,10 +30,6 @@ function Onos:UpdateClientEffects(deltaTime, isLocal)
     
 end
 
-function Onos:GetIdleSoundName()
-    return Onos.kLocalIdleSound
-end
-
 function Onos:PlayFootstepEffects(scalar)
 
     if not Shared.GetIsRunningPrediction() then

@@ -15,7 +15,8 @@ GameInfo.kMapName = "gameinfo"
 local networkVars =
 {
     state = "enum kGameState",
-    startTime = "time"
+    startTime = "time",
+    averagePlayerSkill = "integer"
 }
 
 function GameInfo:OnCreate()
@@ -29,6 +30,7 @@ function GameInfo:OnCreate()
         
         self.state = kGameState.NotStarted
         self.startTime = 0
+        self.averagePlayerSkill = 0
         
     end
     
@@ -46,6 +48,10 @@ function GameInfo:GetState()
     return self.state
 end
 
+function GameInfo:GetAveragePlayerSkill()
+    return self.averagePlayerSkill
+end
+
 if Server then
 
     function GameInfo:SetStartTime(startTime)
@@ -54,6 +60,10 @@ if Server then
     
     function GameInfo:SetState(state)
         self.state = state
+    end
+    
+    function GameInfo:SetAveragePlayerSkill(skill)
+        self.averagePlayerSkill = skill
     end
     
 end

@@ -14,7 +14,7 @@ class 'Builder' (Weapon)
 Builder.kMapName = "builder"
 
 local kModelName = PrecacheAsset("models/marine/welder/builder.model")
-local kViewModelName = PrecacheAsset("models/marine/welder/welder_view.model")
+local kViewModels = GenerateMarineViewModelPaths("welder")
 local kAnimationGraph = PrecacheAsset("models/marine/welder/welder_view.animation_graph")
 
 local kRange = 1.4
@@ -75,8 +75,8 @@ function Builder:OverrideWeaponName()
     return "builder"
 end
 
-function Builder:GetViewModelName()
-    return kViewModelName
+function Builder:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function Builder:GetAnimationGraphName()

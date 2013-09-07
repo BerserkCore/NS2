@@ -144,7 +144,6 @@ function PlayingTeam:OnInitialized()
     
     self.teamResources = 0
     self.totalTeamResourcesCollected = 0
-    self.totalTeamResFromTowers = 0
     self:AddTeamResources(kPlayingTeamInitialTeamRes)
     
     self.ejectCommVoteManager:Reset()
@@ -241,9 +240,11 @@ function PlayingTeam:InitTechTree()
     // Orders
     self.techTree:AddOrder(kTechId.Default)
     self.techTree:AddOrder(kTechId.Move)
+    self.techTree:AddOrder(kTechId.Patrol)
     self.techTree:AddOrder(kTechId.Attack)
     self.techTree:AddOrder(kTechId.Build)
     self.techTree:AddOrder(kTechId.Construct)
+    self.techTree:AddOrder(kTechId.AutoConstruct)
     self.techTree:AddAction(kTechId.HoldPosition)
     
     self.techTree:AddAction(kTechId.Cancel)
@@ -273,9 +274,9 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.ShotgunTech] = 2
         relevantResearchIds[kTechId.GrenadeLauncherTech] = 2
         relevantResearchIds[kTechId.AdvancedWeaponry] = 2
-        relevantResearchIds[kTechId.RifleUpgradeTech] = 2
         relevantResearchIds[kTechId.FlamethrowerTech] = 2
         relevantResearchIds[kTechId.WelderTech] = 2
+        relevantResearchIds[kTechId.GrenadeTech] = 2
         relevantResearchIds[kTechId.MinesTech] = 2
         relevantResearchIds[kTechId.ShotgunTech] = 2
         relevantResearchIds[kTechId.ExosuitTech] = 3
@@ -295,13 +296,18 @@ local function GetIsResearchRelevant(techId)
         relevantResearchIds[kTechId.Weapons2] = 1
         relevantResearchIds[kTechId.Weapons3] = 1
         
+        relevantResearchIds[kTechId.UpgradeSkulk] = 1
+        relevantResearchIds[kTechId.UpgradeGorge] = 1
+        relevantResearchIds[kTechId.UpgradeLerk] = 1
+        relevantResearchIds[kTechId.UpgradeFade] = 1
+        relevantResearchIds[kTechId.UpgradeOnos] = 1
+        
         relevantResearchIds[kTechId.GorgeTunnelTech] = 1
         
         relevantResearchIds[kTechId.Leap] = 1
         relevantResearchIds[kTechId.BileBomb] = 1
         relevantResearchIds[kTechId.Spores] = 1
-        relevantResearchIds[kTechId.Blink] = 1
-        relevantResearchIds[kTechId.ShadowStep] = 1
+        relevantResearchIds[kTechId.Stab] = 1
         relevantResearchIds[kTechId.Stomp] = 1
         
         relevantResearchIds[kTechId.Xenocide] = 1
@@ -502,9 +508,9 @@ function PlayingTeam:GetTeamResources()
     return self.teamResources
 end
 
-function PlayingTeam:AddTeamResources(amount)
+function PlayingTeam:AddTeamResources(amount, isIncome)
 
-    if amount > 0 then
+    if amount > 0 and isIncome then
         self.totalTeamResourcesCollected = self.totalTeamResourcesCollected + amount
     end
     
@@ -514,10 +520,6 @@ end
 
 function PlayingTeam:GetTotalTeamResources()
     return self.totalTeamResourcesCollected
-end
-
-function PlayingTeam:GetTotalTeamResourcesFromTowers()
-    return self.totalTeamResFromTowers
 end
 
 function PlayingTeam:GetHasTeamLost()
@@ -682,19 +684,15 @@ function PlayingTeam:RespawnPlayer(player, origin, angles)
         // Compute random spawn location
         local capsuleHeight, capsuleRadius = player:GetTraceCapsule()
         local spawnOrigin = GetRandomSpawnForCapsule(capsuleHeight, capsuleRadius, initialTechPoint:GetOrigin(), 2, 15, EntityFilterAll())
-        if spawnOrigin ~= nil then
         
-            // Orient player towards tech point
-            local lookAtPoint = initialTechPoint:GetOrigin() + Vector(0, 5, 0)
-            local toTechPoint = GetNormalizedVector(lookAtPoint - spawnOrigin)
-            success = Team.RespawnPlayer(self, player, spawnOrigin, Angles(GetPitchFromVector(toTechPoint), GetYawFromVector(toTechPoint), 0))
-            
-        else
-        
-            Print("PlayingTeam:RespawnPlayer: Couldn't compute random spawn for player.\n")
-            Print(Script.CallStack())
-            
+        if not spawnOrigin then
+            spawnOrigin = initialTechPoint:GetOrigin() + Vector(0.01, 0.2, 0)
         end
+        
+        // Orient player towards tech point
+        local lookAtPoint = initialTechPoint:GetOrigin() + Vector(0, 5, 0)
+        local toTechPoint = GetNormalizedVector(lookAtPoint - spawnOrigin)
+        success = Team.RespawnPlayer(self, player, spawnOrigin, Angles(GetPitchFromVector(toTechPoint), GetYawFromVector(toTechPoint), 0))
         
     else
         Print("PlayingTeam:RespawnPlayer(): No initial tech point.")
@@ -1050,15 +1048,12 @@ function PlayingTeam:SplitPres(resAwarded)
 
 end
 
-// add resources to player and split overflow amongst the team
 function PlayingTeam:AwardPersonalResources(min, max, pointOwner)
 
     local resAwarded = math.random(min, max) 
-    resAwarded = resAwarded - pointOwner:AwardResForKill(resAwarded)
+    resAwarded = pointOwner:AwardResForKill(resAwarded)
     
-    if resAwarded > 0 then
-        self:SplitPres(resAwarded)
-    end
+    return resAwarded
 
 end
 

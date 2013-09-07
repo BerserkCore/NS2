@@ -33,6 +33,8 @@ Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'Armory' (ScriptActor)
 
@@ -98,6 +100,8 @@ AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function Armory:OnCreate()
 
@@ -124,6 +128,7 @@ function Armory:OnCreate()
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, CombatMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -196,8 +201,11 @@ function Armory:OnInitialized()
     
         self:OnInitClient()        
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -209,8 +217,8 @@ function Armory:GetCanBeUsed(player, useSuccessTable)
     
 end
 
-function Armory:GetCanBeUsedConstructed()
-    return true
+function Armory:GetCanBeUsedConstructed(byPlayer)
+    return not byPlayer:isa("Exo")
 end    
 
 function Armory:GetRequiresPower()
@@ -239,7 +247,7 @@ function Armory:GetTechButtons(techId)
 
     local techButtons = nil
 
-    techButtons = { kTechId.ShotgunTech, kTechId.MinesTech, kTechId.None, kTechId.None,
+    techButtons = { kTechId.ShotgunTech, kTechId.MinesTech, kTechId.GrenadeTech, kTechId.None,
                     kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
     // Show button to upgraded to advanced armory
@@ -255,7 +263,7 @@ function Armory:GetTechAllowed(techId, techNode, player)
 
     local allowed, canAfford = ScriptActor.GetTechAllowed(self, techId, techNode, player)
     
-    if techId == kTechId.DetonationTimeTech or techId == kTechId.FlamethrowerRangeTech then
+    if techId == kTechId.HeavyRifleTech then
         allowed = allowed and self:GetTechId() == kTechId.AdvancedArmory
     end
     
@@ -344,12 +352,15 @@ function Armory:GetDamagedAlertId()
     return kTechId.MarineAlertStructureUnderAttack
 end
 
-function Armory:GetItemList()
+function Armory:GetItemList(forPlayer)
     
     local itemList = {   
         kTechId.LayMines, 
         kTechId.Shotgun,
         kTechId.Welder,
+        kTechId.ClusterGrenade,
+        kTechId.GasGrenade,
+        kTechId.PulseGrenade
     }
     
     if self:GetTechId() == kTechId.AdvancedArmory then
@@ -358,6 +369,9 @@ function Armory:GetItemList()
 	        kTechId.LayMines,
 	        kTechId.Shotgun,
 	        kTechId.Welder,
+            kTechId.ClusterGrenade,
+            kTechId.GasGrenade,
+            kTechId.PulseGrenade,
 	        kTechId.GrenadeLauncher,
 	        kTechId.Flamethrower,
 	    }
@@ -451,9 +465,8 @@ function ArmoryAddon:OnGetIsVisible(visibleTable, viewerTeamNumber)
     
 end
 
-local kArmoryHealthbarOffset = Vector(0, 1.5, 0)
 function Armory:GetHealthbarOffset()
-    return kArmoryHealthbarOffset
+    return 1.5
 end 
 
 Shared.LinkClassToMap("ArmoryAddon", ArmoryAddon.kMapName, addonNetworkVars)

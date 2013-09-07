@@ -249,16 +249,20 @@ local function GetEntitiesInCylinder(self, player, viewCoords, range, width)
     
     for _, entity in ipairs( GetEntitiesWithMixinWithinRange("Live", startPoint, range) ) do
     
-        relativePos = entity:GetOrigin() - startPoint
-        local yDistance = viewCoords.yAxis:DotProduct(relativePos)
-        local xDistance = viewCoords.xAxis:DotProduct(relativePos)
-        local zDistance = viewCoords.zAxis:DotProduct(relativePos)
+        if entity:GetIsAlive() then
+    
+            relativePos = entity:GetOrigin() - startPoint
+            local yDistance = viewCoords.yAxis:DotProduct(relativePos)
+            local xDistance = viewCoords.xAxis:DotProduct(relativePos)
+            local zDistance = viewCoords.zAxis:DotProduct(relativePos)
 
-        local xyDistance = math.sqrt(yDistance * yDistance + xDistance * xDistance)
+            local xyDistance = math.sqrt(yDistance * yDistance + xDistance * xDistance)
 
-        // could perform a LOS check here or simply keeo the code a bit more tolerant. healspray is kinda gas and it would require complex calculations to make this check be exact
-        if xyDistance <= width and zDistance >= 0 then
-            table.insert(ents, entity)
+            // could perform a LOS check here or simply keeo the code a bit more tolerant. healspray is kinda gas and it would require complex calculations to make this check be exact
+            if xyDistance <= width and zDistance >= 0 then
+                table.insert(ents, entity)
+            end
+            
         end
     
     end

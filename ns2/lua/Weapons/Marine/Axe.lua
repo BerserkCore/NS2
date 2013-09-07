@@ -14,7 +14,8 @@ class 'Axe' (Weapon)
 Axe.kMapName = "axe"
 
 Axe.kModelName = PrecacheAsset("models/marine/axe/axe.model")
-Axe.kViewModelName = PrecacheAsset("models/marine/axe/axe_view.model")
+
+local kViewModels = GenerateMarineViewModelPaths("axe")
 local kAnimationGraph = PrecacheAsset("models/marine/axe/axe_view.animation_graph")
 
 local kRange = 1
@@ -29,7 +30,7 @@ function Axe:OnCreate()
     Weapon.OnCreate(self)
     
     self.sprintAllowed = true
-
+    
 end
 
 function Axe:OnInitialized()
@@ -37,11 +38,11 @@ function Axe:OnInitialized()
     Weapon.OnInitialized(self)
     
     self:SetModel(Axe.kModelName)
-
+    
 end
 
-function Axe:GetViewModelName()
-    return Axe.kViewModelName
+function Axe:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function Axe:GetAnimationGraphName()
@@ -106,7 +107,12 @@ function Axe:OnTag(tagName)
     PROFILE("Axe:OnTag")
 
     if tagName == "swipe_sound" then
-        self:TriggerEffects("axe_attack")
+    
+        local player = self:GetParent()
+        if player then
+            player:TriggerEffects("axe_attack")
+        end
+        
     elseif tagName == "hit" then
     
         local player = self:GetParent()

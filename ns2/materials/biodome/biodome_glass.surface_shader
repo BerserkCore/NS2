@@ -1,0 +1,26 @@
+<shader>
+	
+	<inputs>
+	</inputs>
+    
+    <params>
+        <param name="translucent">true</param>
+    </params>
+	
+	<code>
+	<![CDATA[
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			
+			material.albedo 	= float3(0, 0, 0);
+			material.tsNormal 	= float3(0, 0, 1);
+			material.specular	= float3(2, 2, 2);
+			material.gloss		= 0.25;
+			material.emissive   = float3(0.001, 0.001, 0.001);
+            material.opacity    = 1;
+			
+		}
+	]]>		
+	</code>
+
+</shader>

@@ -75,11 +75,10 @@ if Server then
         
     end
     
-    function GhostStructureMixin:OnKill()
+    function GhostStructureMixin:OnTakeDamage()
     
-        if self:GetIsGhostStructure() then
-            self:TriggerEffects("ghoststructure_destroy")
-            DestroyEntity(self)
+        if self:GetIsGhostStructure() and self:GetHealthFraction() < 0.25 then        
+            ClearGhostStructure(self)
         end
     
     end

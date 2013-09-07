@@ -10,6 +10,7 @@ Script.Load("lua/Weapons/Weapon.lua")
 Script.Load("lua/Weapons/Marine/Flame.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
 Script.Load("lua/LiveMixin.lua")
+Script.Load("lua/PointGiverMixin.lua")
 
 class 'Flamethrower' (ClipWeapon)
 
@@ -20,61 +21,19 @@ end
 Flamethrower.kMapName = "flamethrower"
 
 Flamethrower.kModelName = PrecacheAsset("models/marine/flamethrower/flamethrower.model")
-local kViewModelName = PrecacheAsset("models/marine/flamethrower/flamethrower_view.model")
+local kViewModels = GenerateMarineViewModelPaths("flamethrower")
 local kAnimationGraph = PrecacheAsset("models/marine/flamethrower/flamethrower_view.animation_graph")
-
-local kFlameFullCinematic = PrecacheAsset("cinematics/marine/flamethrower/flame_trail_full.cinematic")
-local kFlameHalfCinematic = PrecacheAsset("cinematics/marine/flamethrower/flame_trail_half.cinematic")
-local kFlameShortCinematic = PrecacheAsset("cinematics/marine/flamethrower/flame_trail_short.cinematic")
-local kFlameImpactCinematic = PrecacheAsset("cinematics/marine/flamethrower/flame_impact3.cinematic")
-local kFlameSmokeCinematic = PrecacheAsset("cinematics/marine/flamethrower/flame_trail_light.cinematic")
 
 local kFireLoopingSound = PrecacheAsset("sound/NS2.fev/marine/flamethrower/attack_loop")
 
 local kRange = kFlamethrowerRange
 local kUpgradedRange = kFlamethrowerUpgradedRange
 
-local kParticleEffectRate = .05
-local kSmokeEffectRate = 1.5
-local kImpactEffectRate = 0.3
-local kPilotEffectRate = 0.3
-local kTrailLength = 9.5
 local kConeWidth = 0.17
-
-local kFirstPersonTrailCinematics =
-{
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part1.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part3.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_1p_part3.cinematic"),
-}
-
-local kTrailCinematics =
-{
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part1.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part3.cinematic"),
-}
-
-local kFirstPersonFadeOutCinematicNames =
-{
-    PrecacheAsset("cinematics/marine/flamethrower/flame_residue_1p_part1.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_residue_1p_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_residue_1p_part2.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_residue_1p_part3.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_residue_1p_part3.cinematic"),
-    PrecacheAsset("cinematics/marine/flamethrower/flame_residue_1p_part3.cinematic"),
-}
 
 local networkVars =
 { 
     createParticleEffects = "boolean",
-    createImpactEffects = "boolean",
     animationDoneTime = "float",
     loopingSoundEntId = "entityid",
     range = "integer (0 to 11)"
@@ -91,7 +50,6 @@ function Flamethrower:OnCreate()
     if Server then
     
         self.createParticleEffects = false
-        self.createImpactEffects = false
         self.animationDoneTime = 0
         
         self.loopingFireSound = Server.CreateEntity(SoundEffect.kMapName)
@@ -108,6 +66,7 @@ function Flamethrower:OnCreate()
     
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
+    InitMixin(self, PointGiverMixin)
 
 end
 
@@ -123,6 +82,11 @@ function Flamethrower:OnDestroy()
         if self.trailCinematic then
             Client.DestroyTrailCinematic(self.trailCinematic)
             self.trailCinematic = nil
+        end
+        
+        if self.pilotCinematic then
+            Client.DestroyCinematic(self.pilotCinematic)
+            self.pilotCinematic = nil
         end
         
     end
@@ -142,16 +106,14 @@ function Flamethrower:OnHolster(player)
     ClipWeapon.OnHolster(self, player)
     
     self.createParticleEffects = false
-    self.createImpactEffects = false
     
 end
 
 function Flamethrower:OnDraw(player, previousWeaponMapName)
 
-    ClipWeapon.OnDraw(self, player, previousWeaponName)
+    ClipWeapon.OnDraw(self, player, previousWeaponMapName)
     
     self.createParticleEffects = false
-    self.createImpactEffects = false
     self.animationDoneTime = Shared.GetTime()
     
 end
@@ -171,12 +133,8 @@ function Flamethrower:GetRange()
     return self.range
 end
 
-function Flamethrower:GetWarmupTime()
-    return 0.7
-end
-
-function Flamethrower:GetViewModelName()
-    return kViewModelName
+function Flamethrower:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 local function BurnSporesAndUmbra(self, startPoint, endPoint)
@@ -329,6 +287,10 @@ local function ApplyConeDamage(self, player)
                 ent:SetOnFire(player, self)
             end
             
+            if ent.GetEnergy and ent.SetEnergy then
+                ent:SetEnergy(ent:GetEnergy() - kFlameThrowerEnergyDamage)
+            end
+            
             if Server and ent:isa("Alien") then
                 ent:CancelEnzyme()
             end
@@ -403,7 +365,6 @@ function Flamethrower:OnPrimaryAttack(player)
             end
         
             self.createParticleEffects = true
-            self.createImpactEffects = true
             
             if Server and not self.loopingFireSound:GetIsPlaying() then
                 self.loopingFireSound:Start()
@@ -414,7 +375,6 @@ function Flamethrower:OnPrimaryAttack(player)
         if self.createParticleEffects and self:GetClip() == 0 then
         
             self.createParticleEffects = false
-            self.createImpactEffects = false
             
             if Server then
                 self.loopingFireSound:Stop()
@@ -440,7 +400,6 @@ function Flamethrower:OnPrimaryAttackEnd(player)
     ClipWeapon.OnPrimaryAttackEnd(self, player)
 
     self.createParticleEffects = false
-    self.createImpactEffects = false
         
     if Server then    
         self.loopingFireSound:Stop()        
@@ -455,7 +414,6 @@ function Flamethrower:OnReload(player)
         if Server then
         
             self.createParticleEffects = false
-            self.createImpactEffects = false
             self.loopingFireSound:Stop()
         
         end
@@ -486,7 +444,6 @@ function Flamethrower:Dropped(prevOwner)
     if Server then
     
         self.createParticleEffects = false
-        self.createImpactEffects = false
         self.loopingFireSound:Stop()
         
     elseif Client then
@@ -502,201 +459,6 @@ end
 
 function Flamethrower:GetAmmoPackMapName()
     return FlamethrowerAmmo.kMapName
-end
-
-// client side only effects:
-
-if Client then
-
-    local function UpdateClientFlameEffects(self, deltaTime)
-    
-        // check if we have the correct effects loaded
-        if (self:GetParent() == Client.GetLocalPlayer() and not self.loadedFirstPersonEffect) or not self.trailCinematic then
-        
-            if self.trailCinematic then
-                Client.DestroyTrailCinematic(self.trailCinematic)
-                self.trailCinematic = nil
-            end
-            
-            self:InitTrailCinematic()            
-        end
-    
-        local drawWorld = true
-        local firstPerson = false
-        
-        local parent = self:GetParent()
-        
-        if parent then
-            firstPerson = not parent:GetIsThirdPerson()
-            drawWorld = ((Client.GetLocalPlayer() ~= parent) or not firstPerson) and parent:GetIsVisible() and not GetIsVortexed(parent)
-        end
-        
-        local effectsVisible = self.createParticleEffects and ( drawWorld or firstPerson )
-        
-        self.trailCinematic:SetIsVisible(effectsVisible)
-        
-        if self.createImpactEffects and effectsVisible then
-            self:CreateImpactEffect(self:GetParent())
-        end
-        
-        return true
-
-    end
-    
-    local function UpdatePilotEffect(self, deltaTime)
-    
-        local isDrawn = self.animationDoneTime < Shared.GetTime()
-        local player = self:GetParent()
-        
-        if self:GetIsActive() and self:GetClip() > 0 and isDrawn then
-            self:TriggerEffects("flamethrower_pilot")  
-        end
-        
-        return true
-        
-    end
-    
-    function Flamethrower:InitTrailCinematic()
-    
-        self.trailCinematic = Client.CreateTrailCinematic(RenderScene.Zone_Default)
-        
-        local minHardeningValue = 0.5
-        local trailLengthMod = 0
-
-        if self:GetParent() == Client.GetLocalPlayer() then
-        
-            self.trailCinematic:SetCinematicNames(kFirstPersonTrailCinematics)
-            self.trailCinematic:SetFadeOutCinematicNames(kFirstPersonFadeOutCinematicNames)
-            trailLengthMod = -1
-        
-            // set an attach function which returns the player view coords if we are the local player 
-            self.trailCinematic:AttachToFunc(self, TRAIL_ALIGN_Z, Vector(-0.09, -0.08, 0.5),
-                function (attachedEntity, deltaTime)
-                
-                    local player = Client.GetLocalPlayer()
-                    return player:GetViewCoords()
-                
-                end
-            )
-            
-            self.loadedFirstPersonEffect = true
-
-        else
-        
-            self.trailCinematic:SetCinematicNames(kTrailCinematics)
-        
-            // attach to third person fx node otherwise with an X offset since we align it along the X-Axis (the attackpoint is oriented in the model like that)
-            self.trailCinematic:AttachTo(self, TRAIL_ALIGN_X,  Vector(0.3, 0, 0), "fxnode_flamethrowermuzzle")
-            minHardeningValue = 0.1
-            
-            self.loadedFirstPersonEffect = false
-        
-        end
-        
-        self.trailCinematic:SetIsVisible(false)
-        self.trailCinematic:SetRepeatStyle(Cinematic.Repeat_Endless)
-        self.trailCinematic:SetOptions( {
-                numSegments = 6,
-                collidesWithWorld = true,
-                visibilityChangeDuration = 0.2,
-                fadeOutCinematics = true,
-                stretchTrail = false,
-                trailLength = kTrailLength + trailLengthMod,
-                minHardening = minHardeningValue,
-                maxHardening = 2,
-                hardeningModifier = 0.8,
-                trailWeight = 0.2
-            } )
-    
-    end
-    
-    function Flamethrower:OnInitialized()
-    
-        ClipWeapon.OnInitialized(self)
-        
-        if self.trailCinematic == nil then
-            self:InitTrailCinematic()
-        end
-        
-        self:AddTimedCallback(UpdateClientFlameEffects, kParticleEffectRate)
-
-        if Client.GetLocalPlayer() == self:GetParent() then
-            self:AddTimedCallback(UpdatePilotEffect, kPilotEffectRate)
-        end
-    
-    end
-    
-    function Flamethrower:CreateSmokeEffect(player)
-    
-        if not self.timeLastLightningEffect or self.timeLastLightningEffect + kSmokeEffectRate < Shared.GetTime() then
-        
-            self.timeLastLightningEffect = Shared.GetTime()
-            
-            local viewAngles = player:GetViewAngles()
-            local viewCoords = viewAngles:GetCoords()
-            
-            viewCoords.origin = self:GetBarrelPoint(player) + viewCoords.zAxis * 1 + viewCoords.xAxis * (-0.4) + viewCoords.yAxis * (-0.3)
-            
-            local cinematic = kFlameSmokeCinematic
-            
-            local effect = Client.CreateCinematic(RenderScene.Zone_Default)    
-            effect:SetCinematic(cinematic)
-            effect:SetCoords(viewCoords)
-            
-        end
-    
-    end
-    
-    function Flamethrower:CreateImpactEffect(player)
-    
-        if (not self.timeLastImpactEffect or self.timeLastImpactEffect + kImpactEffectRate < Shared.GetTime()) and player then
-        
-            self.timeLastImpactEffect = Shared.GetTime()
-        
-	        local viewAngles = player:GetViewAngles()
-            local viewCoords = viewAngles:GetCoords()
-    
-            viewCoords.origin = self:GetBarrelPoint(player) + viewCoords.zAxis * (-0.4) + viewCoords.xAxis * (-0.2)
-            local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * self:GetRange()
-
-            local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
-    
-            local range = (trace.endPoint - viewCoords.origin):GetLength()
-            if range < 0 then
-                range = range * (-1)
-            end
-    
-            if trace.endPoint ~= endPoint and trace.entity == nil then
-
-                local angles = Angles(0,0,0)
-                angles.yaw = GetYawFromVector(trace.normal)
-                angles.pitch = GetPitchFromVector(trace.normal) + (math.pi/2)
-        
-                local normalCoords = angles:GetCoords()
-                normalCoords.origin = trace.endPoint            
-               
-                Shared.CreateEffect(nil, kFlameImpactCinematic, nil, normalCoords)
-                
-            end
-            
-        end
-        
-	end
-    
-    function Flamethrower:TriggerImpactCinematic(coords)
-    
-        local cinematic = kFlameImpactCinematic
-        
-        local effect = Client.CreateCinematic(RenderScene.Zone_Default)    
-        effect:SetCinematic(cinematic)    
-        effect:SetCoords(coords)
-        
-    end
-    
-    function Flamethrower:GetUIDisplaySettings()
-        return { xSize = 128, ySize = 256, script = "lua/GUIFlamethrowerDisplay.lua" }
-    end
-    
 end
 
 function Flamethrower:GetNotifiyTarget()
@@ -737,6 +499,14 @@ if Server then
 
     end
     
+end
+
+if Client then
+
+    function Flamethrower:GetUIDisplaySettings()
+        return { xSize = 128, ySize = 256, script = "lua/GUIFlamethrowerDisplay.lua" }
+    end
+
 end
 
 Shared.LinkClassToMap("Flamethrower", Flamethrower.kMapName, networkVars)

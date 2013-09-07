@@ -144,7 +144,6 @@ function PlayerBot:GenerateMove()
 
     self:_LazilyInitBrain()
 
-    local player = self:GetPlayer()
     local move = Move()
 
     // Brain will modify move.commands and send desired motion to self.motion
@@ -159,21 +158,26 @@ function PlayerBot:GenerateMove()
 
     // Now do look/wasd
 
-    local viewDir, moveDir, doJump = self:GetMotion():OnGenerateMove(self:GetPlayer())
+    local player = self:GetPlayer()
+    if player ~= nil then
 
-    move.yaw = GetYawFromVector(viewDir) - player:GetBaseViewAngles().yaw
-    move.pitch = GetPitchFromVector(viewDir)
+        local viewDir, moveDir, doJump = self:GetMotion():OnGenerateMove(player)
 
-    moveDir.y = 0
-    moveDir = moveDir:GetUnit()
-    local zAxis = Vector(viewDir.x, 0, viewDir.z):GetUnit()
-    local xAxis = zAxis:CrossProduct(Vector(0, -1, 0))
-    local moveZ = moveDir:DotProduct(zAxis)
-    local moveX = moveDir:DotProduct(xAxis)
-    move.move = GetNormalizedVector(Vector(moveX, 0, moveZ))
+        move.yaw = GetYawFromVector(viewDir) - player:GetBaseViewAngles().yaw
+        move.pitch = GetPitchFromVector(viewDir)
 
-    if doJump then
-        move.commands = AddMoveCommand(move.commands, Move.Jump)
+        moveDir.y = 0
+        moveDir = moveDir:GetUnit()
+        local zAxis = Vector(viewDir.x, 0, viewDir.z):GetUnit()
+        local xAxis = zAxis:CrossProduct(Vector(0, -1, 0))
+        local moveZ = moveDir:DotProduct(zAxis)
+        local moveX = moveDir:DotProduct(xAxis)
+        move.move = GetNormalizedVector(Vector(moveX, 0, moveZ))
+
+        if doJump then
+            move.commands = AddMoveCommand(move.commands, Move.Jump)
+        end
+
     end
     
     return move

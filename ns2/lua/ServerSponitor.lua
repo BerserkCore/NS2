@@ -96,6 +96,7 @@ function ServerSponitor:Initialize( game )
     self.sincePlayerCountCheck = 0.0
     self.serverPerfThrottle = 0.0005
     self.sincePerfCheck = 0.0
+    self.tournamentMode = false
 
 end
 
@@ -213,7 +214,8 @@ function ServerSponitor:OnStartMatch()
         map = Shared.GetMapName(),
         serverIp = IPAddressToString(Server.GetIpAddress()),
         isRookieServer = Server.GetIsRookieFriendly(),
-        modIds = CollectActiveModIds()
+        modIds = CollectActiveModIds(),
+        tournamentMode = self.tournamentMode,
     })
     
     SendSponitorRequest(kSponitor2Url.."matchStart", "POST", { data = jsonData },
@@ -232,6 +234,16 @@ function ServerSponitor:OnJoinTeam( player, team )
 
     // We were gonna track unique steam IDs here, but could not figure out how to
 
+end
+
+function ServerSponitor:ResetMatch()
+    /*
+    self.matchId = nil
+
+    for teamType, stats in pairs(self.teamStats) do
+        ResetTeamStats(stats, stats.team)
+    end
+    */
 end
 
 //----------------------------------------
@@ -270,8 +282,8 @@ function ServerSponitor:OnEndMatch(winningTeam)
             avgPlayers2 = stats2.avgNumPlayersSum / stats2.numPlayerCountSamples,
             avgRookies1 = stats1.avgNumRookiesSum / stats1.numPlayerCountSamples,
             avgRookies2 = stats2.avgNumRookiesSum / stats2.numPlayerCountSamples,
-            totalTResMined1 = stats1.team:GetTotalTeamResourcesFromTowers(),
-            totalTResMined2 = stats2.team:GetTotalTeamResourcesFromTowers(),
+            totalTResMined1 = stats1.team:GetTotalTeamResources(),
+            totalTResMined2 = stats2.team:GetTotalTeamResources(),
         })
         
         SendSponitorRequest(kSponitor2Url .. "matchEnd", "POST", { data = jsonData })

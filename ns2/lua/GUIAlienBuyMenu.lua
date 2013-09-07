@@ -296,17 +296,21 @@ end
 
 local function CreateAbilityIcons(self, alienGraphicItem, alienType)
 
-    local availableAbilities = AlienBuy_GetAbilitiesFor(IndexToAlienTechId(alienType.Index))
+    local lifeFormTechId = IndexToAlienTechId(alienType.Index)
+    local availableAbilities = GetTechForCategory(lifeFormTechId)
+
     local numAbilities = #availableAbilities
     
-    for i, techId in ipairs(availableAbilities) do
+    for i = 1, numAbilities do
     
+        local techId = availableAbilities[#availableAbilities - i + 1]
         local ability = CreateAbilityIcon(self, alienGraphicItem, techId)
-        local xPos = -numAbilities * GUIAlienBuyMenu.kUpgradeButtonSize + (i - 1) * GUIAlienBuyMenu.kUpgradeButtonSize
+        local xPos = ((i-1) % 3 + 1) * -GUIAlienBuyMenu.kUpgradeButtonSize
+        local yPos = (math.ceil(i/3)) * -GUIAlienBuyMenu.kUpgradeButtonSize
         
-        ability.Icon:SetPosition(Vector(xPos, -GUIAlienBuyMenu.kUpgradeButtonSize, 0))    
+        ability.Icon:SetPosition(Vector(xPos, yPos, 0))    
         table.insert(self.abilityIcons, ability)
-        
+    
     end
 
 end
@@ -587,16 +591,6 @@ function GUIAlienBuyMenu:_InitializeUpgradeButtons()
             // Render above the Alien image.
             buttonIcon:SetLayer(kGUILayerPlayerHUDForeground3)
             self.background:AddChild(buttonIcon)
-            
-            // The background is visible only inside the embryo.
-            /*
-            local buttonBackground = GUIManager:CreateGraphicItem()
-            buttonBackground:SetSize(Vector(GUIAlienBuyMenu.kUpgradeButtonSize, GUIAlienBuyMenu.kUpgradeButtonSize, 0))
-            buttonBackground:SetTexture(GUIAlienBuyMenu.kBuyMenuTexture)
-            buttonBackground:SetTexturePixelCoordinates(unpack(GUIAlienBuyMenu.kUpgradeButtonBackgroundTextureCoordinates))
-            buttonBackground:SetStencilFunc(GUIItem.NotEqual)
-            buttonIcon:AddChild(buttonBackground)
-            */
 
             local unselectedPosition = Vector( math.cos(angle) * GUIAlienBuyMenu.kUpgradeButtonDistance - GUIAlienBuyMenu.kUpgradeButtonSize * .5, math.sin(angle) * GUIAlienBuyMenu.kUpgradeButtonDistance - GUIAlienBuyMenu.kUpgradeButtonSize * .5, 0 )
             
@@ -608,7 +602,7 @@ function GUIAlienBuyMenu:_InitializeUpgradeButtons()
             end
             
 
-            table.insert(self.upgradeButtons, { Background = buttonBackground, Icon = buttonIcon, TechId = techId, Category = category,
+            table.insert(self.upgradeButtons, { Background = nil, Icon = buttonIcon, TechId = techId, Category = category,
                                                 Selected = purchased, SelectedMovePercent = 0, Cost = 0, Purchased = purchased, Index = nil, 
                                                 UnselectedPosition = unselectedPosition, SelectedPosition = self.slots[i].Graphic:GetPosition()  })
         
@@ -622,11 +616,15 @@ end
 function GUIAlienBuyMenu:_UninitializeUpgradeButtons()
 
     for i, currentButton in ipairs(self.upgradeButtons) do
+    
         GUI.DestroyItem(currentButton.Icon)
-        GUI.DestroyItem(currentButton.Background)
+        if currentButton.Background then
+            GUI.DestroyItem(currentButton.Background)
+        end
+        
     end
     self.upgradeButtons = { }
-
+    
 end
 
 function GUIAlienBuyMenu:_InitializeEvolveButton()
@@ -1154,23 +1152,22 @@ function GUIAlienBuyMenu:_UpdateAbilityIcons()
 
     for index, abilityItem in ipairs(self.abilityIcons) do
     
-        if AlienBuy_GetHasTech(abilityItem.TechId) then
-        
-            abilityItem.Icon:SetIsVisible(true)
-            local mouseOver = self:_GetIsMouseOver(abilityItem.Icon)    
-            abilityItem.HighLight:SetIsVisible(mouseOver)
-            
-            if mouseOver then
-            
-                local abilityInfoText = Locale.ResolveString(LookupTechData(abilityItem.TechId, kTechDataDisplayName, ""))
-                local tooltip = Locale.ResolveString(LookupTechData(abilityItem.TechId, kTechDataTooltipInfo, ""))
-                
-                self:_ShowMouseOverInfo(abilityInfoText, tooltip)
-                
-            end
-            
+        if GetIsTechUnlocked(Client.GetLocalPlayer(), abilityItem.TechId) then        
+            abilityItem.Icon:SetColor(kIconColors[kAlienTeamType])            
         else
-            abilityItem.Icon:SetIsVisible(false)
+            abilityItem.Icon:SetColor(Color(0,0,0,1))
+        end
+        
+        local mouseOver = self:_GetIsMouseOver(abilityItem.Icon)    
+        abilityItem.HighLight:SetIsVisible(mouseOver)
+        
+        if mouseOver then
+        
+            local abilityInfoText = Locale.ResolveString(LookupTechData(abilityItem.TechId, kTechDataDisplayName, ""))
+            local tooltip = Locale.ResolveString(LookupTechData(abilityItem.TechId, kTechDataTooltipInfo, ""))
+            
+            self:_ShowMouseOverInfo(abilityInfoText, tooltip)
+            
         end
         
     end

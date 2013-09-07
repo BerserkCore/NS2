@@ -294,7 +294,7 @@ local function UpdateTeamGraphs(time, teamIndex)
     if currentKills ~= previousKills then
     
         maxKills = math.max(maxKills, currentKills)
-        table.insert(team.KillPoints, Vector(time, maxKills, 0))
+        table.insert(team.KillPoints, Vector(time, currentKills, 0))
         team.Kills = currentKills
     
     end

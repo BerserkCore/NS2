@@ -1,18 +1,19 @@
 settings = 
-	[
-		{ name="mode" 				default="lit"  }
-		{ name="ambient_occlusion" 	default="true" }
-		{ name="bloom" 				default="true" }
-		{ name="atmospherics" 		default="true" }
-		{ name="anti_aliasing" 		default="true" }
-		{ name="shadows" 			default="true" }
-		{ name="fog" 				default="true" }
-		{ name="infestation" 		default="rich" }
-		{ name="particles" 	    	default="high" }
-		{ name="infestation_scale" }
-		{ name="reflections"		default="true" }
-	]
-	
+    [
+        { name="mode"               default="lit"  }
+        { name="ambient_occlusion"  default="false" }
+        { name="bloom"              default="true" }
+        { name="atmospherics"       default="true" }
+        { name="anti_aliasing"      default="true" }
+        { name="shadows"            default="true" }
+        { name="fog"                default="true" }
+        { name="infestation"        default="rich" }
+        { name="particles"          default="high" }
+        { name="infestation_scale" }
+        { name="reflections"        default="true" }
+        { name="glass"              default="true" }
+    ]
+    
 // The G-Buffer is stored as:
 //
 //      R G     - view space depth, object ID
@@ -22,924 +23,881 @@ settings =
 //
 // This leaves one 8-bit component free in the albedo map and one 2-bit
 // component free in the normal map.
-	
+    
 resources =
-	[
-		// G-buffer
-		{ name="depth" 					format="G16R16F" 		x_scale=1 y_scale=1 }
-		{ name="albedo" 				format="A8R8G8B8" 		x_scale=1 y_scale=1 }
-		{ name="specular_gloss" 		format="A8R8G8B8" 		x_scale=1 y_scale=1 }
-		{ name="normal" 				format="A2R10G10B10" 	x_scale=1 y_scale=1 }
-		
-		{ name="infestation_mask"		format="A8R8G8B8"	x_scale=1 y_scale=1 }
-		{ name="infestation_mask_half_skirt"	format="A16B16G16R16F"	x_scale=0.5 y_scale=0.5 ping_pong=true }
-		
-		// Light accumulation buffer.
-		{ name="accumulation_1"			format="A16B16G16R16F"	x_scale=1 y_scale=1 ping_pong=true }
-		
-		// Stores a copy of the final lit scene which is fed into the refraction pass
-		{ name="refraction"				format="A16B16G16R16F"	x_scale=1 y_scale=1 }
-		
-		// Medium-quality ambient occlusion. Half-res buffers.
-		{ name="med_ao_depth" 			format="R16F" 			x_scale=0.5 y_scale=0.5 }
-		{ name="med_ao_ao"				format="G16R16F"		x_scale=0.5 y_scale=0.5 }
-		{ name="med_ao_blur"			format="G16R16F"		x_scale=1 y_scale=1 }
+    [
+        // G-buffer
+        { name="depth"                  format="G16R16F"        x_scale=1 y_scale=1 }
+        { name="albedo"                 format="R8G8B8A8"       x_scale=1 y_scale=1 srgb=true }
+        { name="specular_gloss"         format="R8G8B8A8"       x_scale=1 y_scale=1 srgb=true }
+        { name="normal"                 format="A2R10G10B10"    x_scale=1 y_scale=1 }
 
-		// High-quality ambient occlusion. Full-res everything.
-		{ name="high_ao"				format="G16R16F"		x_scale=1 y_scale=1 ping_pong=true }
-		
-		// Reflections.
-		//{ name="reflections"			format="A16B16G16R16F"	x_scale=0.5 y_scale=0.5 }
-		
-		// Reduced resolution buffers.
-		{ name="depth_8"				format="D16"			x_scale=0.125 y_scale=0.125 }					// 1/8 resolution
-		{ name="accumulation_2"			format="A16B16G16R16F"	x_scale=0.5 y_scale=0.5 ping_pong=true } 		// 1/2 resolution
-		{ name="accumulation_4"			format="A16B16G16R16F"	x_scale=0.25 y_scale=0.25 ping_pong=true } 		// 1/4 resolution
-		{ name="accumulation_8"			format="A16B16G16R16F"	x_scale=0.125 y_scale=0.125 ping_pong=true } 	// 1/8 resolution
-		{ name="accumulation_16"		format="A16B16G16R16F"	x_scale=0.0625 y_scale=0.0625 ping_pong=true } 	// 1/16 resolution
+        { name="anti_aliasing_input"    format="R8G8B8A8"       x_scale=1 y_scale=1 }
+        
+        { name="infestation_mask"       format="R8G8B8A8"   x_scale=1 y_scale=1 }
+        { name="infestation_mask_half_skirt"    format="A16B16G16R16F"  x_scale=0.5 y_scale=0.5 ping_pong=true }
+        
+        // Light accumulation buffer.
+        { name="accumulation_1"         format="A16B16G16R16F"  x_scale=1 y_scale=1 ping_pong=true }
+        
+        // Stores a copy of the final lit scene which is fed into the refraction pass
+        { name="refraction"             format="A16B16G16R16F"  x_scale=1 y_scale=1 }
+        
+        // Medium-quality ambient occlusion. Half-res buffers.
+        { name="med_ao_depth"           format="R16F"           x_scale=0.5 y_scale=0.5 }
+        { name="med_ao_ao"              format="G16R16F"        x_scale=0.5 y_scale=0.5 }
+        { name="med_ao_blur"            format="G16R16F"        x_scale=1 y_scale=1 }
 
-		// Low-res particles
-		{ name="lowparts_vsdepth"    	format="R16F" 			x_scale=0.5 y_scale=0.5 }
-		{ name="lowparts_accum"			format="A16B16G16R16F"	x_scale=0.5 y_scale=0.5 }
-		
-		{ name="infestation"			file_name="materials/infestation/infestation.dds" }
-		{ name="infestation_normal"		file_name="materials/infestation/infestation_normal.dds" }
-		
-	]
-	
+        // High-quality ambient occlusion. Full-res everything.
+        { name="high_ao"                format="G16R16F"        x_scale=1 y_scale=1 ping_pong=true }
+        
+        // Reflections.
+        //{ name="reflections"          format="A16B16G16R16F"  x_scale=0.5 y_scale=0.5 }
+        
+        // Reduced resolution buffers.
+        { name="depth_8"                format="D16"            x_scale=0.125 y_scale=0.125 }                   // 1/8 resolution
+        { name="accumulation_2"         format="A16B16G16R16F"  x_scale=0.5 y_scale=0.5 ping_pong=true }        // 1/2 resolution
+        { name="accumulation_4"         format="A16B16G16R16F"  x_scale=0.25 y_scale=0.25 ping_pong=true }      // 1/4 resolution
+        { name="accumulation_8"         format="A16B16G16R16F"  x_scale=0.125 y_scale=0.125 ping_pong=true }    // 1/8 resolution
+        { name="accumulation_16"        format="A16B16G16R16F"  x_scale=0.0625 y_scale=0.0625 ping_pong=true }  // 1/16 resolution
+
+        // Low-res particles
+        { name="lowparts_vsdepth"       format="R16F"           x_scale=0.5 y_scale=0.5 }
+        { name="lowparts_accum"         format="A16B16G16R16F"  x_scale=0.5 y_scale=0.5 }
+        
+        { name="infestation"            file_name="materials/infestation/infestation.dds" }
+        { name="infestation_normal"     file_name="materials/infestation/infestation_normal.dds" }
+        
+    ]
+    
 layers =
-	[
-	
-		// Fill in the G-buffer.
-		{
-			name							= "gbuffer"
-			color_targets					= "albedo normal specular_gloss depth"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "WriteDeferred"
-			clear							= "color depth stencil"
-			generator						= "objects"
-			objects_mask					= "~decal"
-		}
-		
-		//  Render the decals into the G-buffer.
-		{
-			name							= "gbuffer_decals"
-			color_targets					= "albedo normal specular_gloss"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "Decal"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}		
-				
-		// Generate the infestation mask
-		{
-			name							= "infestation_mask"
-			conditions						= { infestation = "rich" }
-			color_targets					= "infestation_mask"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			clear							= "color"
-			technique						= "WriteInfestationMask"
-			generator						= "objects"
-			objects_mask					= "model_array"
-			parameters						= { normalTexture = "normal" depthTexture = "depth" }
-		}	
-		
-		// Compute the blending between infestation normals
-		{
-			name							= "infestation_mask_skirt"
-			conditions						= { infestation = "rich" }
-			color_targets					= "infestation_mask_half_skirt"
-			clear							= "color"
-			shader							= "renderer/Infestation.fx"
-			technique						= "InfestationMaskSkirt"
-			generator						= "fullscreen"
-			parameters 						= {
-					infestationMask 		= "infestation_mask"
-					depthTexture 			= "depth"
-					normalTexture 			= "normal"
-				}
-		}
-		
-		{
-			name							= "infestation_mask_hblur_skirt"
-			conditions						= { infestation = "rich" }			
-			color_targets					= "infestation_mask_half_skirt"
-			shader							= "renderer/Infestation.fx"
-			technique						= "HBilateralBlurMask"
-			generator						= "fullscreen"
-			parameters 						= { infestationMask = "infestation_mask_half_skirt" depthTexture = "depth" }
-		}
-		{
-			name							= "infestation_mask_vblur_skirt"
-			conditions						= { infestation = "rich" }			
-			color_targets					= "infestation_mask_half_skirt"
-			shader							= "renderer/Infestation.fx"
-			technique						= "VBilateralBlurMask"
-			generator						= "fullscreen"
-			parameters 						= { infestationMask = "infestation_mask_half_skirt" depthTexture = "depth" }
-		}
-		
-		// Blend the final infestation normals and colors into the G-buffer
-		{
-			name							= "infestation_splat"
-			conditions						= { infestation = "rich" }			
-			color_targets					= "albedo normal specular_gloss"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/Infestation.fx"
-			technique						= "Splat"
-			generator						= "fullscreen"
-			parameters 						= {
-					infestationTexture 		= "infestation"
-					infestationNormalMap 	= "infestation_normal"
-					infestationMask 		= "infestation_mask_half_skirt"
-                    fullResInfestationMask  = "infestation_mask"
-					depthTexture 			= "depth"
-					infestationTextureScale	= "infestation_scale"
-				}
-		}	
-		
-		// Generate a low resolution version of the depth buffer used for atmospherics.
-		{
-			name							= "downsample_depth"
-			conditions						= { mode = "lit" atmospherics = "true" }
-			color_targets					= "accumulation_8"
-			depth_stencil_target			= "depth_8"
-			shader							= "renderer/Atmospherics.fx"
-			technique						= "ResizeDepth"
-			clear							= "depth"
-			parameters						= { depthTexture = "depth" }
-			generator						= "fullscreen"
-		}		
-		
-		// Generate the shadow maps.
-		{
-			name							= "shadow_mapping"
-			conditions						= { mode = "lit" shadows = "true" }
-			generator						= "shadow_mapping"
-			technique						= "WriteShadowMap"
-		}
-		
-		// Render the lighting passes.
-		{ 
-			name							= "lighting"
-			conditions						= { mode = "lit" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			clear							= "color stencil"
-			generator						= "deferred_shading"
-			shader							= "renderer/RenderDeferred.fx"
-			parameters 						= {
-					albedoTexture 			= "albedo"
-					normalTexture 			= "normal"
-					specularGlossTexture 	= "specular_gloss"
-					depthTexture 			= "depth"
-				}
-		}
-		
-		// Render the cube map reflections.
-		{ 
-			name							= "lighting_probes"
-			conditions						= { mode = "lit" reflections = "true" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			generator						= "light_probes"
-			shader							= "renderer/RenderDeferred.fx"
-			parameters 						= {
-					albedoTexture 			= "albedo"
-					normalTexture 			= "normal"
-					specularGlossTexture 	= "specular_gloss"
-					depthTexture 			= "depth"
-				}
-		}			
+    [
+    
+        // Fill in the G-buffer.
+        {
+            name                            = "gbuffer"
+            color_targets                   = "albedo normal specular_gloss depth"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "WriteDeferred"
+            clear                           = "color depth stencil"
+            generator                       = "objects"
+            objects_mask                    = "~decal"
+        }
 
-		// Unlit mode
-		{ 
-			name		  					= "unlit"
-			conditions						= { mode = "unlit" }			
-			color_targets 					= "accumulation_1"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/Unlit.fx"
-			technique 						= "Unlit"
-			generator 						= "fullscreen"
-			parameters 						= { albedoTexture = "albedo" }
-		}
+        //  Render the decals into the G-buffer.
+        {
+            name                            = "gbuffer_decals"
+            color_targets                   = "albedo normal specular_gloss"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "Decal"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "decal"
+        }    
+        
+        // Generate the infestation mask
+        {
+            name                            = "infestation_mask"
+            conditions                      = { infestation = "rich" }
+            color_targets                   = "infestation_mask"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            clear                           = "color"
+            technique                       = "WriteInfestationMask"
+            generator                       = "objects"
+            objects_mask                    = "model_array"
+            parameters                      = { depthTexture = "depth" }
+        }    
+        
+        // Compute the blending between infestation normals
+        {
+            name                            = "infestation_mask_skirt"
+            conditions                      = { infestation = "rich" }
+            color_targets                   = "infestation_mask_half_skirt"
+            clear                           = "color"
+            shader                          = "renderer/Infestation.shader"
+            technique                       = "InfestationMaskSkirt"
+            generator                       = "fullscreen"
+            parameters                      = {
+                    infestationMask         = { resource="infestation_mask" linear=true }
+                    depthTexture            = "depth"
+                    normalTexture           = "normal"
+                }
+        }
+        
+        {
+            name                            = "infestation_mask_hblur_skirt"
+            conditions                      = { infestation = "rich" }            
+            color_targets                   = "infestation_mask_half_skirt"
+            shader                          = "renderer/Infestation.shader"
+            technique                       = "HBilateralBlurMask"
+            generator                       = "fullscreen"
+            parameters                      = { infestationMask = "infestation_mask_half_skirt" depthTexture = "depth" }
+        }
+        {
+            name                            = "infestation_mask_vblur_skirt"
+            conditions                      = { infestation = "rich" }            
+            color_targets                   = "infestation_mask_half_skirt"
+            shader                          = "renderer/Infestation.shader"
+            technique                       = "VBilateralBlurMask"
+            generator                       = "fullscreen"
+            parameters                      = { infestationMask = "infestation_mask_half_skirt" depthTexture = "depth" }
+        }
+        
+        // Blend the final infestation normals and colors into the G-buffer
+        {
+            name                            = "infestation_splat"
+            conditions                      = { infestation = "rich" }            
+            color_targets                   = "albedo normal specular_gloss"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/Infestation.shader"
+            technique                       = "Splat"
+            generator                       = "fullscreen"
+            parameters                      = {
+                    infestationTexture      = { resource="infestation" wrap=true linear=true }
+                    infestationNormalMap    = { resource="infestation_normal" wrap=true linear=true }
+                    infestationMask         = "infestation_mask_half_skirt"
+                    depthTexture            = "depth"
+                    infestationTextureScale = "infestation_scale"
+                }
+        }            
+        
+        // Generate a low resolution version of the depth buffer used for atmospherics.
+        {
+            name                            = "downsample_depth"
+            conditions                      = { mode = "lit" atmospherics = "true" }
+            color_targets                   = "accumulation_8"
+            depth_stencil_target            = "depth_8"
+            shader                          = "renderer/Atmospherics.shader"
+            technique                       = "ResizeDepth"
+            clear                           = "depth"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "fullscreen"
+        }                
+        
+        // Generate the shadow maps.
+        {
+            name                            = "shadow_mapping"
+            conditions                      = { mode = "lit" shadows = "true" }
+            generator                       = "shadow_mapping"
+            technique                       = "WriteShadowMap"
+        }
+        
+        // Render the lighting passes.
+        { 
+            name                            = "lighting"
+            conditions                      = { mode = "lit" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            clear                           = "color"
+            generator                       = "deferred_shading"
+            shader                          = "renderer/DeferredShading.shader"
+            volume_shader                   = "renderer/LightVolume.shader"
+            volume_technique                = "StencilTwoSided"
+            parameters                      = {
+                    albedoTexture           = "albedo"
+                    normalTexture           = "normal"
+                    specularGlossTexture    = "specular_gloss"
+                    depthTexture            = "depth"
+                }
+        } 
+        
+        // Render the cube map reflections.
+        { 
+            name                            = "lighting_probes"
+            conditions                      = { mode = "lit" reflections = "true" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            generator                       = "light_probes"
+            shader                          = "renderer/Reflection.shader"
+            volume_shader                   = "renderer/LightVolume.shader"
+            volume_technique                = "StencilTwoSided"
+            parameters                      = {
+                    albedoTexture           = "albedo"
+                    normalTexture           = "normal"
+                    specularGlossTexture    = "specular_gloss"
+                    depthTexture            = "depth"
+                }
+        }                    
 
-		// Medium-quality ambient occlusion
-		{
-			name							= "downsample_depth_ao"
-			conditions						= { mode = "lit" ambient_occlusion = "medium" }
-			color_targets 					= "med_ao_depth"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "ResizeDepth"
-			parameters						= { depthTexture = "depth" }
-			generator						= "fullscreen"
-		}		
-		{
-			name							= "ambient_occlusion"
-			conditions						= { mode = "lit" ambient_occlusion = "medium" }
-			color_targets					= "med_ao_ao"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "ClassicAmbientOcclusion"
-			generator						= "fullscreen"
-			parameters 						= { depthTexture = "med_ao_depth" normalTexture = "normal" }
-		}
-		{
-			name							= "ambient_occlusion_hblur"
-			conditions						= { mode = "lit" ambient_occlusion = "medium" }
-			color_targets					= "med_ao_blur"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "HBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "med_ao_ao" }
-		}
-		{
-			name							= "ambient_occlusion_vblur"
-			conditions						= { mode = "lit" ambient_occlusion = "medium" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "VBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "med_ao_blur" }
-		}
+        // Unlit mode
+        { 
+            name                            = "unlit"
+            conditions                      = { mode = "unlit" }            
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/Unlit.shader"
+            technique                       = "Unlit"
+            generator                       = "fullscreen"
+            parameters                      = { albedoTexture = "albedo" }
+        }
 
-		// Medium-quality angle-based ambient occlusion
-		{
-			name							= "downsample_depth_ao"
-			conditions						= { mode = "lit" ambient_occlusion = "medium_anglebased" }
-			color_targets 					= "med_ao_depth"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "ResizeDepth"
-			parameters						= { depthTexture = "depth" }
-			generator						= "fullscreen"
-		}		
-		{
-			name							= "ambient_occlusion"
-			conditions						= { mode = "lit" ambient_occlusion = "medium_anglebased" }
-			color_targets					= "med_ao_ao"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "AngleBasedAmbientOcclusion"
-			generator						= "fullscreen"
-			parameters 						= { depthTexture = "med_ao_depth" normalTexture = "normal" }
-		}
-		{
-			name							= "ambient_occlusion_hblur"
-			conditions						= { mode = "lit" ambient_occlusion = "medium_anglebased" }
-			color_targets					= "med_ao_blur"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "HBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "med_ao_ao" }
-		}
-		{
-			name							= "ambient_occlusion_vblur"
-			conditions						= { mode = "lit" ambient_occlusion = "medium_anglebased" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "VBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "med_ao_blur" }
-		}
+        // Medium-quality ambient occlusion
+        {
+            name                            = "downsample_depth_ao"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium" }
+            color_targets                   = "med_ao_depth"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "ResizeDepth"
+            parameters                      = { depthTexture = { resource="depth" linear=true } }
+            generator                       = "fullscreen"
+        }        
+        {
+            name                            = "ambient_occlusion"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium" }
+            color_targets                   = "med_ao_ao"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "ClassicAmbientOcclusion"
+            generator                       = "fullscreen"
+            parameters                      = { depthTexture = { resource="med_ao_depth" linear=true } normalTexture = "normal" }
+        }
+        {
+            name                            = "ambient_occlusion_hblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium" }
+            color_targets                   = "med_ao_blur"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "HBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "med_ao_ao" }
+        }
+        {
+            name                            = "ambient_occlusion_vblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "VBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "med_ao_blur" }
+        }
 
-		// High-quality ambient occlusion
-		{
-			name							= "high_ambient_occlusion"
-			conditions						= { mode = "lit" ambient_occlusion = "high" }
-			color_targets					= "high_ao"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "ClassicAmbientOcclusion"
-			generator						= "fullscreen"
-			parameters 						= { depthTexture = "depth" normalTexture = "normal" }
-		}
-		{
-			name							= "high_ambient_occlusion_hblur"
-			conditions						= { mode = "lit" ambient_occlusion = "high" }
-			color_targets					= "high_ao"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "HBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "high_ao" }
-		}
-		{
-			name							= "high_ambient_occlusion_vblur"
-			conditions						= { mode = "lit" ambient_occlusion = "high" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "VBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "high_ao" }
-		}
+        // Medium-quality angle-based ambient occlusion
+        {
+            name                            = "downsample_depth_ao"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium_anglebased" }
+            color_targets                   = "med_ao_depth"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "ResizeDepth"
+            parameters                      = { depthTexture = { resource="depth" linear=true } }
+            generator                       = "fullscreen"
+        }        
+        {
+            name                            = "ambient_occlusion"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium_anglebased" }
+            color_targets                   = "med_ao_ao"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "AngleBasedAmbientOcclusion"
+            generator                       = "fullscreen"
+            parameters                      = { depthTexture = { resource="med_ao_depth" linear=true } normalTexture = "normal" }
+        }
+        {
+            name                            = "ambient_occlusion_hblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium_anglebased" }
+            color_targets                   = "med_ao_blur"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "HBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "med_ao_ao" }
+        }
+        {
+            name                            = "ambient_occlusion_vblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "medium_anglebased" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "VBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "med_ao_blur" }
+        }
 
-		// High-quality angle-based ambient occlusion
-		{
-			name							= "high_ambient_occlusion"
-			conditions						= { mode = "lit" ambient_occlusion = "anglebased" }
-			color_targets					= "high_ao"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "AngleBasedAmbientOcclusion"
-			generator						= "fullscreen"
-			parameters 						= { depthTexture = "depth" normalTexture = "normal" }
-		}
-		{
-			name							= "high_ambient_occlusion_hblur"
-			conditions						= { mode = "lit" ambient_occlusion = "anglebased" }
-			color_targets					= "high_ao"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "HBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "high_ao" }
-		}
-		{
-			name							= "high_ambient_occlusion_vblur"
-			conditions						= { mode = "lit" ambient_occlusion = "anglebased" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/AmbientOcclusion.fx"
-			technique						= "VBilateralBlur"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "high_ao" }
-		}
-		
-		// Add in the light atmospherics.
-		{
-			name							= "atmospherics"
-			conditions						= { mode = "lit" atmospherics = "true" }
-			color_targets					= "accumulation_8"
-			shader							= "renderer/RenderDeferred.fx"
-			depth_stencil_target			= "depth_8"
-			generator						= "atmospherics"
-			clear							= "color"
-		}
-		{
-			name							= "atmospherics_hblur"
-			conditions						= { mode = "lit" atmospherics = "true" }
-			color_targets					= "accumulation_8"
-			shader							= "renderer/Atmospherics.fx"
-			technique						= "HBlur"
-			generator						= "fullscreen"
-			parameters 						= { srcTexture = "accumulation_8" }
-		}
-		{
-			name							= "atmospherics_vblur"
-			conditions						= { mode = "lit" atmospherics = "true" }
-			color_targets					= "accumulation_8"
-			shader							= "renderer/Atmospherics.fx"
-			technique						= "VBlur"
-			generator						= "fullscreen"
-			parameters 						= { srcTexture = "accumulation_8" }
-		}
-		{
-			name							= "atmospherics_blend"
-			conditions						= { mode = "lit" atmospherics = "true" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/Atmospherics.fx"
-			technique						= "Blend"
-			generator						= "fullscreen"
-			parameters 						= { blendTexture = "accumulation_8" }
-		}	
-		
-		// Add in the fog.
-		{
-			name							= "fog"
-			conditions						= { mode = "lit" fog = "true" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			generator						= "fog"
-			shader							= "renderer/RenderDeferred.fx"
-			parameters 						= { depthTexture = "depth" }
-		}
-		
-		// Render the background
-		{
-			name							= "background"
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			generator						= "background"
-			technique						= "Background"
-		}	
-		
-		// Add in the emissive pass.
-		{
-			name							= "emissive"
-			conditions						= { mode = "lit" }
-			conditions						= { mode = "unlit" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "WriteEmissive"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "~ decal particles"
-		}
-		
-		// Add in the emissive pass for the decals.
-		{
-			name							= "emissive_decals"
-			conditions						= { mode = "lit" }
-			conditions						= { mode = "unlit" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "DecalEmissive"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}
+        // High-quality ambient occlusion
+        {
+            name                            = "high_ambient_occlusion"
+            conditions                      = { mode = "lit" ambient_occlusion = "high" }
+            color_targets                   = "high_ao"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "ClassicAmbientOcclusion"
+            generator                       = "fullscreen"
+            parameters                      = { depthTexture = { resource="depth" linear=true } normalTexture = "normal" }
+        }
+        {
+            name                            = "high_ambient_occlusion_hblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "high" }
+            color_targets                   = "high_ao"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "HBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "high_ao" }
+        }
+        {
+            name                            = "high_ambient_occlusion_vblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "high" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "VBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "high_ao" }
+        }
 
-		
-	    //----------------------------------------
+        // High-quality angle-based ambient occlusion
+        {
+            name                            = "high_ambient_occlusion"
+            conditions                      = { mode = "lit" ambient_occlusion = "anglebased" }
+            color_targets                   = "high_ao"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "AngleBasedAmbientOcclusion"
+            generator                       = "fullscreen"
+            parameters                      = { depthTexture = { resource="depth" linear=true } normalTexture = "normal" }
+        }
+        {
+            name                            = "high_ambient_occlusion_hblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "anglebased" }
+            color_targets                   = "high_ao"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "HBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "high_ao" }
+        }
+        {
+            name                            = "high_ambient_occlusion_vblur"
+            conditions                      = { mode = "lit" ambient_occlusion = "anglebased" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/AmbientOcclusion.shader"
+            technique                       = "VBilateralBlur"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "high_ao" }
+        }        
+
+        // Add in the light atmospherics.
+        {
+            name                            = "atmospherics"
+            conditions                      = { mode = "lit" atmospherics = "true" }
+            color_targets                   = "accumulation_8"
+            shader                          = "renderer/Atmospherics.shader"
+            depth_stencil_target            = "depth_8"
+            generator                       = "atmospherics"
+            clear                           = "color"
+        }
+        {
+            name                            = "atmospherics_hblur"
+            conditions                      = { mode = "lit" atmospherics = "true" }
+            color_targets                   = "accumulation_8"
+            shader                          = "renderer/Atmospherics.shader"
+            technique                       = "HBlur"
+            generator                       = "fullscreen"
+            parameters                      = { srcTexture = { resource="accumulation_8" linear=true } }
+        }
+        {
+            name                            = "atmospherics_vblur"
+            conditions                      = { mode = "lit" atmospherics = "true" }
+            color_targets                   = "accumulation_8"
+            shader                          = "renderer/Atmospherics.shader"
+            technique                       = "VBlur"
+            generator                       = "fullscreen"
+            parameters                      = { srcTexture = { resource="accumulation_8" linear=true } }
+        }
+        {
+            name                            = "atmospherics_blend"
+            conditions                      = { mode = "lit" atmospherics = "true" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/Atmospherics.shader"
+            technique                       = "Blend"
+            generator                       = "fullscreen"
+            parameters                      = { blendTexture = { resource="accumulation_8" linear=true } }
+        }            
+
+        // Render the background
+        {
+            name                            = "background"
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            generator                       = "background"
+            technique                       = "WriteEmissive"
+        }    
+        
+        // Forward shade translucent surfaces
+        {
+            name                            = "forward_shading"
+            conditions                      = { mode = "lit" glass = "true" }
+            conditions                      = { mode = "unlit" glass = "true" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            generator                       = "forward_shading_probes"
+        }       
+        
+        
+        // Add in the emissive pass.
+        {
+            name                            = "emissive"
+            conditions                      = { mode = "lit" }
+            conditions                      = { mode = "unlit" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "WriteEmissive"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "~ decal particles"
+        }       
+        
+        // Add in the emissive pass for the decals.
+        {
+            name                            = "emissive_decals"
+            conditions                      = { mode = "lit" }
+            conditions                      = { mode = "unlit" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "DecalEmissive"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "decal"
+        }
+
+        //----------------------------------------
         //  Refraction
         //----------------------------------------
-	
-		// Copy the lit scene for input as the refraction map.
-		{
-			name							= "generate_refraction_map"
-			conditions						= { mode = "lit" }
-			generator						= "copy"
-			color_targets					= "refraction"
-			copy_source						= "accumulation_1"
-		}
-		
-		// Clear the alpha component of the refraction texture to white.
-		{
-			name							= "clear_refraction_map_mask"
-			conditions						= { mode = "lit" }
-			generator						= "fullscreen"
-			color_targets					= "refraction"
-			shader							= "renderer/Refraction.fx"
-			technique						= "RefractionMaskClear"
-		}
-		
-		// Generate the mask of pixels we'll grab for distortion.
-		{
-			name							= "generate_refraction_map_mask"
-			conditions						= { mode = "lit" }
-			color_targets					= "refraction"
-			depth_stencil_target			= "back_buffer_depth_stencil"		
-			technique						= "WriteRefractionMask"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "~ particles decal"
-		}		
-		{
-			name							= "generate_refraction_map_mask"
-			conditions						= { mode = "lit" }
-			color_targets					= "refraction"
-			depth_stencil_target			= "back_buffer_depth_stencil"		
-			technique						= "DecalRefractionMask"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}		
-	
-		// Write the objects that use refraction.
-		{
-			name							= "refraction"
-			conditions						= { mode = "lit" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "WriteRefraction"
-			parameters						= { depthTexture = "depth" refractionTexture = "refraction" }
-			generator						= "objects"
-			objects_mask					= "~ particles decal"
-		}		
+    
+        // Copy the lit scene for input as the refraction map.
+        {
+            name                            = "generate_refraction_map"
+            conditions                      = { mode = "lit" }
+            generator                       = "copy"
+            color_targets                   = "refraction"
+            copy_source                     = "accumulation_1"
+        }
+        
+        // Clear the alpha component of the refraction texture to white.
+        {
+            name                            = "clear_refraction_map_mask"
+            conditions                      = { mode = "lit" }
+            generator                       = "fullscreen"
+            color_targets                   = "refraction"
+            shader                          = "renderer/Refraction.shader"
+            technique                       = "RefractionMaskClear"
+        }
+        
+        // Generate the mask of pixels we'll grab for distortion.
+        {
+            name                            = "generate_refraction_map_mask"
+            conditions                      = { mode = "lit" }
+            color_targets                   = "refraction"
+            depth_stencil_target            = "back_buffer_depth_stencil"        
+            technique                       = "WriteRefractionMask"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "~ particles decal"
+        }        
+    
+        // Write the objects that use refraction.
+        {
+            name                            = "refraction"
+            conditions                      = { mode = "lit" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "WriteRefraction"
+            parameters                      = { depthTexture = "depth" refractionTexture = { resource="refraction" linear=true } }
+            generator                       = "objects"
+            objects_mask                    = "~ particles decal"
+        }        
 
-        // Write the decals that use refraction
-		{
-			name							= "refraction_decals"
-			conditions						= { mode = "lit" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "DecalRefraction"
-			parameters						= { depthTexture = "depth" refractionTexture = "refraction" }
-			generator						= "objects"
-			objects_mask					= "decal"
-		}
-		
         // Write the particles that use refraction
-		{
-			name							= "refraction_particles"
-			conditions						= { mode = "lit" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "ParticleRefraction"
-			parameters						= { depthTexture = "depth" refractionTexture = "refraction" }
-			generator						= "objects"
-			objects_mask					= "particles"
-		}
-		
-        // High-res particles pass
-		{
-			name							= "emissive_particles"
-			conditions						= { mode = "lit" particles = "high" }
-			conditions						= { mode = "unlit" particles = "high" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "Particle"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "particles"
-		}
+        {
+            name                            = "refraction_particles"
+            conditions                      = { mode = "lit" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "ParticlesRefraction"
+            parameters                      = { depthTexture = "depth" refractionTexture = { resource="refraction" linear=true } }
+            generator                       = "objects"
+            objects_mask                    = "particles"
+        }       
 
-			
+        // High-res particles pass
+        {
+            name                            = "emissive_particles"
+            conditions                      = { mode = "lit" particles = "high" }
+            conditions                      = { mode = "unlit" particles = "high" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "Particles"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "particles"
+        }
+        
         //----------------------------------------
         //   Low-res Emissive Particles
         //----------------------------------------
 
         // Down-sample depth buffer
         // Just use the same shader as Medium AO
-		{
-			name							= "lowparts_downsample_depth"
-			conditions						= { mode = "lit" particles = "low" }
-			conditions						= { mode = "unlit" particles = "low" }
+        {
+            name                            = "lowparts_downsample_depth"
+            conditions                      = { mode = "lit" particles = "low" }
+            conditions                      = { mode = "unlit" particles = "low" }
 
-			color_targets 					= "lowparts_vsdepth"
+            color_targets                   = "lowparts_vsdepth"
             
-			shader							= "renderer/Particles.fx"
-			technique						= "ResizeDepth"
+            shader                          = "renderer/Particles.shader"
+            technique                       = "ResizeDepth"
 
-			parameters						= { depthTexture = "depth" }
-			generator						= "fullscreen"
-		}
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "fullscreen"
+        }
 
         // Draw particles in low-res accum. But do not do view-model particles
-		{
-			name							= "lowparts_render"
-			conditions						= { mode = "lit" particles = "low" }
-			conditions						= { mode = "unlit" particles = "low" }
+        {
+            name                            = "lowparts_render"
+            conditions                      = { mode = "lit" particles = "low" }
+            conditions                      = { mode = "unlit" particles = "low" }
+            color_targets                   = "lowparts_accum"
 
-			technique						= "Particle"
-
-			parameters						= { depthTexture = "lowparts_vsdepth" }
-			generator						= "objects"
-			objects_mask					= "particles"
+            parameters                      = { depthTexture = "lowparts_vsdepth" }
+            technique                       = "Particles"
+            generator                       = "objects"
+            objects_mask                    = "particles"
             zones_mask                      = "default"
-
-            clear							= "color"
+            
+            clear                           = "color"
             clear_color                     = "0 0 0 1.0"   // Important that we clear to opaque black for alpha-product accumulation
-			color_targets					= "lowparts_accum"
-		}
+        }
 
         // Composite back into full res accumulation
-		{
-			name							= "lowparts_composite"
-			conditions						= { mode = "lit" particles = "low" }
-			conditions						= { mode = "unlit" particles = "low" }
+        {
+            name                            = "lowparts_composite"
+            conditions                      = { mode = "lit" particles = "low" }
+            conditions                      = { mode = "unlit" particles = "low" }
 
-			color_targets 					= "accumulation_1"
+            color_targets                   = "accumulation_1"
 
-			shader 							= "renderer/Particles.fx"
-			technique 						= "Composite"
+            shader                          = "renderer/Particles.shader"
+            technique                       = "Composite"
 
-            parameters						= { lowAccumTexture = "lowparts_accum" }
-			generator						= "fullscreen"
-		}
+            parameters                      = { lowAccumTexture = { resource="lowparts_accum" linear=true } }
+            generator                       = "fullscreen"
+        }
 
         // High-res particles pass for view-model particles only
-		{
-			name							= "emissive_particles"
-			conditions						= { mode = "lit" particles = "low" }
-			conditions						= { mode = "unlit" particles = "low" }
-			color_targets					= "accumulation_1"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "Particle"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "particles"
+        {
+            name                            = "high_view_particles"
+            conditions                      = { mode = "lit" particles = "low" }
+            conditions                      = { mode = "unlit" particles = "low" }
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "Particles"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "particles"
             zones_mask                      = "view"
-		}
-
-
+        }
+        
         //----------------------------------------
         //   End Particles
-        //----------------------------------------
+        //----------------------------------------      
+        
+        // Billboards
+        {
+            name                            = "billboards"
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "Particles"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "billboard"
+        }
+        
+        //////////////////////////////////////////////////////////////////
+        // BLOOM
 
-		/*
-		// Reflections
-		{
-			name							= "reflections"
-			conditions						= { mode = "lit" reflections ="true" }
-			color_targets					= "reflections"
-			shader							= "renderer/Reflections.fx"
-			technique						= "Reflections"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "accumulation_1" depthTexture = "depth" normalTexture = "normal" }
-		}
-		{
-			name							= "reflections_combine"
-			conditions						= { mode = "lit" reflections ="true" }
-			color_targets					= "accumulation_1"
-			shader							= "renderer/Reflections.fx"
-			technique						= "ReflectionsCombine"
-			generator						= "fullscreen"
-			parameters 						= { lightingTexture = "reflections"  }
-		}
-		*/
-	
-		//////////////////////////////////////////////////////////////////
-		// BLOOM
+        // Downsample to 1/2 while applying the bloom tone mapping operator.
+        { 
+            name                            = "bloom_curve"
+            conditions                      = { mode = "lit" bloom = "true" }
+            color_targets                   = "accumulation_2"
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "BloomCurve"
+            parameters                      = { inputTexture = { resource="accumulation_1" linear=true } }
+            generator                       = "fullscreen"
+            clear                           = "color depth stencil"
+        }
 
-		// Downsample to 1/2 while applying the bloom tone mapping operator.
-		{ 
-			name 							= "bloom_curve"
-			conditions						= { mode = "lit" bloom = "true" }
-			color_targets 					= "accumulation_2"
-			shader							= "renderer/Bloom.fx"
-			technique						= "BloomCurve"
-			parameters						= { inputTexture = "accumulation_1" }
-			generator						= "fullscreen"
-		}
+        // blur
+        {
+            name                            = "bloom_hblur_2"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "HBlur"
+            color_targets                   = "accumulation_2"
+            parameters                      = { inputTexture = { resource="accumulation_2" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_vblur_2"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "VBlur"
+            color_targets                   = "accumulation_2"
+            parameters                      = { inputTexture = { resource="accumulation_2" linear=true } }
+            generator                       = "fullscreen"
+        }
 
-		// blur
-		{
-			name							= "bloom_hblur_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
+        // Downsample into 1/4 and blur
+        {
+            name                            = "bloom_downsample_4"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "DownSample"
+            color_targets                   = "accumulation_4"
+            parameters                      = { inputTexture = { resource="accumulation_2" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_hblur_4"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "HBlur"
+            color_targets                   = "accumulation_4"
+            parameters                      = { inputTexture = { resource="accumulation_4" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_vblur_4"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "VBlur"
+            color_targets                   = "accumulation_4"
+            parameters                      = { inputTexture = { resource="accumulation_4" linear=true } }
+            generator                       = "fullscreen"
+        }
 
-		// Downsample into 1/4 and blur
-		{
-			name							= "bloom_downsample_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_hblur_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
+        // Downsample into 1/8 and blur
+        {
+            name                            = "bloom_downsample_8"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "DownSample"
+            color_targets                   = "accumulation_8"
+            parameters                      = { inputTexture = { resource="accumulation_4" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_hblur_8"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "HBlur"
+            color_targets                   = "accumulation_8"
+            parameters                      = { inputTexture = { resource="accumulation_8" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_vblur_8"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "VBlur"
+            color_targets                   = "accumulation_8"
+            parameters                      = { inputTexture = { resource="accumulation_8" linear=true } }
+            generator                       = "fullscreen"
+        }
 
-		// Downsample into 1/8 and blur
-		{
-			name							= "bloom_downsample_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_hblur_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
+        // Downsample into 1/16 and blur
+        {
+            name                            = "bloom_downsample_16"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "DownSample"
+            color_targets                   = "accumulation_16"
+            parameters                      = { inputTexture = { resource="accumulation_8" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_hblur_16"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "HBlur"
+            color_targets                   = "accumulation_16"
+            parameters                      = { inputTexture = { resource="accumulation_16" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_vblur_16"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Blur.shader"
+            technique                       = "VBlur"
+            color_targets                   = "accumulation_16"
+            parameters                      = { inputTexture = { resource="accumulation_16" linear=true } }
+            generator                       = "fullscreen"
+        }
 
-		// Downsample into 1/16 and blur
-		{
-			name							= "bloom_downsample_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "DownSample"
-			color_targets 					= "accumulation_16"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_hblur_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "HBlur"
-			color_targets 					= "accumulation_16"
-			parameters						= { inputTexture = "accumulation_16" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_vblur_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Blur.fx"
-			technique 						= "VBlur"
-			color_targets 					= "accumulation_16"
-			parameters						= { inputTexture = "accumulation_16" }
-			generator						= "fullscreen"
-		}
+        // Combine
+        {
+            name                            = "bloom_composite_16"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "Composite"
+            color_targets                   = "accumulation_8"
+            parameters                      = { inputTexture = { resource="accumulation_16" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_composite_8"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "Composite"
+            color_targets                   = "accumulation_4"
+            parameters                      = { inputTexture = { resource="accumulation_8" linear=true } }
+            generator                       = "fullscreen"
+        }
+        {
+            name                            = "bloom_composite_4"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "Composite"
+            color_targets                   = "accumulation_2"
+            parameters                      = { inputTexture = { resource="accumulation_4" linear=true } }
+            generator                       = "fullscreen"
+        }
 
-		// Combine
-		{
-			name							= "bloom_composite_16"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "Composite"
-			color_targets 					= "accumulation_8"
-			parameters						= { inputTexture = "accumulation_16" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_8"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "Composite"
-			color_targets 					= "accumulation_4"
-			parameters						= { inputTexture = "accumulation_8" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_4"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "Composite"
-			color_targets 					= "accumulation_2"
-			parameters						= { inputTexture = "accumulation_4" }
-			generator						= "fullscreen"
-		}
-		{
-			name							= "bloom_composite_2"
-			conditions						= { mode = "lit" bloom = "true" }
-			shader 							= "renderer/Bloom.fx"
-			technique 						= "FinalComposite"
-			color_targets 					= "accumulation_1"
-			parameters						= { inputTexture = "accumulation_2" }
-			generator						= "fullscreen"
-		}
+        {
+            name                            = "bloom_composite_2"
+            conditions                      = { mode = "lit" bloom = "true" }
+            shader                          = "renderer/Bloom.shader"
+            technique                       = "FinalComposite"
+            color_targets                   = "accumulation_1"
+            parameters                      = { inputTexture = { resource="accumulation_2" linear=true } }
+            generator                       = "fullscreen"
+        }
 
-		// BLOOM END
-		////////////////////////////	
+        // BLOOM END
+        ////////////////////////////
+        
+        // Apply the screen effects.
+        {
+            name                             = "screen_effects"
+            conditions                       = { mode="lit" }
+            color_targets                    = "accumulation_1"
+            generator                        = "screen_effects"
+            parameters                       = { depthTexture = "depth" normalTexture = "normal" albedoTexture = "albedo" }
+        }
+        
+        // Apply the tone mapping operator.
+        {
+            name                            = "tonemap"
+            conditions                      = { mode="lit" anti_aliasing = "true" }
+            conditions                      = { mode="unlit" anti_aliasing = "true" }
+            color_targets                   = "anti_aliasing_input"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/ToneMap.shader"
+            technique                       = "ToneMap"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "accumulation_1" }
+        }
+        {
+            name                            = "tonemap"
+            conditions                      = { mode="lit" anti_aliasing = "false" }
+            conditions                      = { mode="unlit" anti_aliasing = "false" }
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/ToneMap.shader"
+            technique                       = "ToneMap"
+            generator                       = "fullscreen"
+            parameters                      = { lightingTexture = "accumulation_1" }
+        }
+        
+        // Anti-aliasing using FXAA.
+        {        
+            name                            = "fxaa"
+            conditions                      = { anti_aliasing = "true" }
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "AntiAlias"
+            shader                          = "renderer/AntiAlias.shader"
+            generator                       = "fullscreen"
+            parameters                      = { antiAliasInputTexture = { resource="anti_aliasing_input" linear=true } }
+        }
+        
+        //////////////////////////////////////////////////////////////////
+        // DEBUGGING PASSES
 
+        // Visualize the depth buffer
+        { 
+            name                            = "visualize_depth"
+            conditions                      = { mode = "depth" }            
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/DeferredVisualize.shader"
+            technique                       = "VisualizeDepth"
+            generator                       = "fullscreen"
+            parameters                      = { depthTexture = "depth" }
+        }               
+        
+        // Visualize the albedo map
+        { 
+            name                            = "visualize_albedo"
+            conditions                      = { mode = "albedo" }           
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/DeferredVisualize.shader"
+            technique                       = "VisualizeAlbedo"
+            generator                       = "fullscreen"
+            parameters                      = { albedoTexture = "albedo" }
+        }
+        
+        // Visualize the normal map
+        { 
+            name                            = "visualize_normals"
+            conditions                      = { mode = "normals" }           
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/DeferredVisualize.shader"
+            technique                       = "VisualizeNormals"
+            generator                       = "fullscreen"
+            parameters                      = { normalTexture = "normal" }
+        }        
+        
+        // Visualize the gloss map
+        { 
+            name                            = "visualize_gloss"
+            conditions                      = { mode = "gloss" }           
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/DeferredVisualize.shader"
+            technique                       = "VisualizeGloss"
+            generator                       = "fullscreen"
+            parameters                      = { specularGlossTexture = "specular_gloss" }
+        }
 
-		// Apply the screen effects.
-		{
-			name							= "screen_effects"
-			conditions						= { mode="lit" }
-			color_targets					= "accumulation_1"
-			generator						= "screen_effects"
-			parameters						= { depthTexture = "depth" normalTexture = "normal" albedoTexture = "albedo" }
-		}
-		
-		// Apply the tone mapping operator.
-		{
-			name							= "tonemap"
-			conditions						= { mode="lit" anti_aliasing = "true" }
-			conditions						= { mode="unlit" anti_aliasing = "true" }
-			color_targets					= "albedo"			// Reuse the albedo map as the FXAA input
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/ToneMap.fx"
-			technique						= "ToneMap"
-			generator						= "fullscreen"
-			parameters						= { lightingTexture = "accumulation_1" }
-		}
-		{
-			name							= "tonemap"
-			conditions						= { mode="lit" anti_aliasing = "false" }
-			conditions						= { mode="unlit" anti_aliasing = "false" }
-			color_targets					= "back_buffer"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			shader							= "renderer/ToneMap.fx"
-			technique						= "ToneMap"
-			generator						= "fullscreen"
-			parameters						= { lightingTexture = "accumulation_1" }
-		}
-		
-		// Anti-aliasing using FXAA.
-		{		
-			name							= "fxaa"
-			conditions						= { anti_aliasing = "true" }
-			color_targets					= "back_buffer"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "AntiAlias"
-			shader							= "renderer/AntiAlias.fx"
-			generator						= "fullscreen"
-			parameters						= { antiAliasInputTexture = "albedo" }		
-		}
-		
-		//////////////////////////////////////////////////////////////////
-		// DEBUGGING PASSES
-
-		// Visualize the depth buffer
-		{ 
-			name		  					= "visualize_depth"
-			conditions						= { mode = "depth" }			
-			color_targets 					= "back_buffer"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/DeferredVisualize.fx"
-			technique 						= "VisualizeDepth"
-			generator 						= "fullscreen"
-			parameters 						= { depthTexture = "depth" }
-		}				
-	
-		// Visualize the albedo map
-		{ 
-			name		  					= "visualize_albedo"
-			conditions						= { mode = "albedo" }			
-			color_targets 					= "back_buffer"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/DeferredVisualize.fx"
-			technique 						= "VisualizeAlbedo"
-			generator 						= "fullscreen"
-			parameters 						= { albedoTexture = "albedo" }
-		}
-		
-		// Visualize the normal map
-		{ 
-			name		  					= "visualize_normals"
-			conditions						= { mode = "normals" }			
-			color_targets 					= "back_buffer"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/DeferredVisualize.fx"
-			technique 						= "VisualizeNormals"
-			generator 						= "fullscreen"
-			parameters 						= { normalTexture = "normal" }
-		}
-
-		// Visualize the specular map
-		{ 
-			name		  					= "visualize_specular"
-			conditions						= { mode = "specular" }			
-			color_targets 					= "back_buffer"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/DeferredVisualize.fx"
-			technique 						= "VisualizeSpecular"
-			generator 						= "fullscreen"
-			parameters 						= { specularGlossTexture = "specular_gloss" }
-		}				
-		
-		// Visualize the gloss map
-		{ 
-			name		  					= "visualize_gloss"
-			conditions						= { mode = "gloss" }			
-			color_targets 					= "back_buffer"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/DeferredVisualize.fx"
-			technique 						= "VisualizeGloss"
-			generator 						= "fullscreen"
-			parameters 						= { specularGlossTexture = "specular_gloss" }
-		}	
-
-		// Visualize the infestation mask
-		{ 
-			name		  					= "visualize_infestation"
-			conditions						= { mode = "infest" }			
-			color_targets 					= "back_buffer"
-			depth_stencil_target 			= "back_buffer_depth_stencil"
-			shader							= "renderer/Infestation.fx"
-			technique 						= "VisualizeInfestation"
-			generator 						= "fullscreen"
-			parameters 						= { infestationMask = "infestation_mask_half_skirt" }
-		}		
-		
-		// Add in the emissive pass.
-		{
-			name							= "visualize_emissive"
-			conditions						= { mode = "emissive" }
-			color_targets					= "back_buffer"
-			clear							= "color"
-			depth_stencil_target			= "back_buffer_depth_stencil"
-			technique						= "WriteEmissive"
-			parameters						= { depthTexture = "depth" }
-			generator						= "objects"
-			objects_mask					= "~ decal particles"
-		}
-		
-	]
+        // Visualize the specular map
+        { 
+            name                            = "visualize_specular"
+            conditions                      = { mode = "specular" }           
+            color_targets                   = "back_buffer"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            shader                          = "renderer/DeferredVisualize.shader"
+            technique                       = "VisualizeSpecular"
+            generator                       = "fullscreen"
+            parameters                      = { specularGlossTexture = "specular_gloss" }
+        }           
+        
+        // Visualize the emissive pass.
+        {
+            name                            = "visualize_emissive"
+            conditions                      = { mode = "emissive" }
+            color_targets                   = "back_buffer"
+            clear                           = "color"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            technique                       = "WriteEmissive"
+            parameters                      = { depthTexture = "depth" }
+            generator                       = "objects"
+            objects_mask                    = "~ decal particles"
+        }        
+        
+    ]

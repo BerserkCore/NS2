@@ -208,7 +208,7 @@ function Egg:GetTechAllowed(techId, techNode, player)
     
 end
 
-function Egg:OverrideHintString(hintString)
+function Egg:OverrideHintString(hintString, forEntity)
 
     if (not GetAreEnemies(self, forEntity)) and self:GetIsResearching() then
         return "COMM_SEL_UPGRADING"
@@ -243,7 +243,7 @@ function Egg:GetReceivesStructuralDamage()
 end
 
 function Egg:GetIsFlameAble()
-    return false
+    return true
 end
 
 /** 
@@ -378,6 +378,7 @@ function Egg:SpawnPlayer(player)
         local team = queuedPlayer:GetTeam()
         local success, player = team:ReplaceRespawnPlayer(queuedPlayer, spawnOrigin, queuedPlayer:GetAngles(), gestationClass)                
         player:SetCameraDistance(0)
+        player:SetHatched()
         // It is important that the player was spawned at the spot we specified.
         assert(player:GetOrigin() == spawnOrigin)
         
@@ -446,9 +447,8 @@ function Egg:OverrideCheckVision()
     return false
 end
 
-local kEggHealthbarOffset = Vector(0, 0.4, 0)
 function Egg:GetHealthbarOffset()
-    return kEggHealthbarOffset
+    return 0.4
 end
 
 function Egg:GetEngagementPointOverride()

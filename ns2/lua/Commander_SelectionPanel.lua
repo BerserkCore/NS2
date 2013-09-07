@@ -133,8 +133,11 @@ function CommanderUI_GetSelectedBargraphs(entity)
     local t = {}
     
     if entity then
+    
+        if entity.OverrideGetStatusInfo then    
+            t = entity:OverrideGetStatusInfo()
         
-        if HasMixin(entity, "Recycle") and entity:GetRecycleActive() then
+        elseif HasMixin(entity, "Recycle") and entity:GetRecycleActive() then
         
             table.insert(t, Locale.ResolveString("COMM_SEL_RECYCLING"))
             table.insert(t, entity:GetResearchProgress())

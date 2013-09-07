@@ -32,21 +32,31 @@ end
 
 function Marine:OnTakeDamage(damage, attacker, doer, point)
 
-    if doer and doer:isa("Gore") and not self:GetIsVortexed() then
+    if doer then
     
-        self.interruptAim = true
-        self.interruptStartTime = Shared.GetTime()
+        if doer:isa("Grenade") and doer:GetOwner() == self then
         
-    end
+            self.onGround = false
+            local velocity = self:GetVelocity()
+            local fromGrenade = self:GetOrigin() - doer:GetOrigin()
+            local length = fromGrenade:Normalize()
+            local force = Clamp(1 - (length / 4), 0, 1)
+            
+            if force > 0 then
+                velocity:Add(force * fromGrenade)
+                self:SetVelocity(velocity)
+            end
+            
+        end
 
-    /*
-    if damage > 50 and (not self.timeLastDamageKnockback or self.timeLastDamageKnockback + 1 < Shared.GetTime()) then    
-    
-        self:AddPushImpulse(GetNormalizedVectorXZ(self:GetOrigin() - point) * damage * 0.1 * self:GetSlowSpeedModifier())
-        self.timeLastDamageKnockback = Shared.GetTime()
+        if (doer:isa("Gore") or doer:isa("Shockwave")) and not self:GetIsVortexed() then
         
+            self.interruptAim = true
+            self.interruptStartTime = Shared.GetTime()
+            
+        end
+    
     end
-    */
 
 end
 
@@ -98,32 +108,17 @@ end
 function Marine:OnSprintStart()
 
     if self:GetIsAlive() then
-        /*StartSoundEffectOnEntity(Marine.kSprintStart, self)
-        if self.loopingSprintSound then
-            self.loopingSprintSound:Start()
-        end*/
+        StartSoundEffectOnEntity(Marine.kSprintStart, self)
     end
 
 end
 
-function Marine:OnSprintEnd()
+function Marine:OnSprintEnd(sprintDuration)
 
-    /*if self:GetTiredScalar() >= 0.7 then
+    if sprintDuration > 5 then
         StartSoundEffectOnEntity(Marine.kSprintTiredEnd, self)
     end
-    
-    if self.loopingSprintSound then
-        self.loopingSprintSound:Stop()
-    end*/
 
-end
-
-function Marine:OnUpdateSprint(sprinting)
-
-    /*if self.loopingSprintSound and self.loopingSprintSound:GetIsPlaying() and self:GetTiredScalar() == 0 and not sprinting then
-        self.loopingSprintSound:Stop()
-    end*/
-    
 end
 
 function Marine:InitWeapons()
@@ -140,7 +135,7 @@ function Marine:InitWeapons()
 
 end
 
-local function GetHostSupportsTechId(host, techId)
+local function GetHostSupportsTechId(forPlayer, host, techId)
 
     if Shared.GetCheatsEnabled() then
         return true
@@ -150,7 +145,7 @@ local function GetHostSupportsTechId(host, techId)
     
     if host.GetItemList then
     
-        for index, supportedTechId in ipairs(host:GetItemList()) do
+        for index, supportedTechId in ipairs(host:GetItemList(forPlayer)) do
         
             if supportedTechId == techId then
             
@@ -167,10 +162,6 @@ local function GetHostSupportsTechId(host, techId)
     
 end
 
-local function PlayerIsFacingHostStructure(player, host)
-    return true
-end
-
 function GetHostStructureFor(entity, techId)
 
     local hostStructures = {}
@@ -182,9 +173,9 @@ function GetHostStructureFor(entity, techId)
         for index, host in ipairs(hostStructures) do
         
             // check at first if the structure is hostign the techId:
-            if GetHostSupportsTechId(host, techId) and PlayerIsFacingHostStructure(player, host) then
+            if GetHostSupportsTechId(entity,host, techId) then
                 return host
-            end    
+            end
         
         end
             
@@ -236,21 +227,46 @@ local function BuyExo(self, techId)
     
         // Find open area nearby to place the big guy.
         local capsuleHeight, capsuleRadius = self:GetTraceCapsule()
-        local spawnPoint = GetRandomSpawnForCapsule(capsuleHeight, capsuleRadius, self:GetModelOrigin(), 0.5, 5, EntityFilterOne(self))
+        local extents = Vector(Exo.kXZExtents, Exo.kYExtents, Exo.kXZExtents)
+
+        local spawnPoint        
+        local checkPoint = self:GetOrigin() + Vector(0, 0.02, 0)
+        
+        if GetHasRoomForCapsule(extents, checkPoint + Vector(0, extents.y, 0), CollisionRep.Move, PhysicsMask.Evolve, self) then
+            spawnPoint = checkPoint
+        else
+            spawnPoint = GetRandomSpawnForCapsule(extents.y, extents.x, checkPoint, 0.5, 5, EntityFilterOne(self))
+        end    
+            
+        local weapons 
 
         if spawnPoint then
         
             self:AddResources(-GetCostForTech(techId))
-            if techId == kTechId.Exosuit then
-                self:GiveExo(spawnPoint)
-            elseif techId == kTechId.DualMinigunExosuit then
-                self:GiveDualExo(spawnPoint)
-            elseif techId == kTechId.ClawRailgunExosuit then
-                self:GiveClawRailgunExo(spawnPoint)
-            elseif techId == kTechId.DualRailgunExosuit then
-                Print("give DualRailgunExosuit")
-                self:GiveDualRailgunExo(spawnPoint)
+            local weapons = self:GetWeapons()
+            for i = 1, #weapons do            
+                weapons[i]:SetParent(nil)            
             end
+            
+            local exo = nil
+            
+            if techId == kTechId.Exosuit then
+                exo = self:GiveExo(spawnPoint)
+            elseif techId == kTechId.DualMinigunExosuit then
+                exo = self:GiveDualExo(spawnPoint)
+            elseif techId == kTechId.ClawRailgunExosuit then
+                exo = self:GiveClawRailgunExo(spawnPoint)
+            elseif techId == kTechId.DualRailgunExosuit then
+                exo = self:GiveDualRailgunExo(spawnPoint)
+            end
+            
+            if exo then                
+                for i = 1, #weapons do
+                    exo:StoreWeapon(weapons[i])
+                end            
+            end
+            
+            exo:TriggerEffects("spawn_exo")
             
             return
             
@@ -262,8 +278,8 @@ local function BuyExo(self, techId)
     
 end
 
-local kIsExoTechId = { [kTechId.Exosuit] = true, [kTechId.DualMinigunExosuit] = true,
-                       [kTechId.ClawRailgunExosuit] = true, [kTechId.DualRailgunExosuit] = true }
+kIsExoTechId = { [kTechId.Exosuit] = true, [kTechId.DualMinigunExosuit] = true,
+                 [kTechId.ClawRailgunExosuit] = true, [kTechId.DualRailgunExosuit] = true }
 function Marine:AttemptToBuy(techIds)
 
     local techId = techIds[1]
@@ -374,14 +390,13 @@ end
 
 function Marine:OnKill(attacker, doer, point, direction)
 
-    // drop all weapons which cost resources
+    // Drop all weapons which cost resources
     self:DropAllWeapons()
-
-    // destroy remaining weapons
+    
+    // Destroy remaining weapons
     self:DestroyWeapons()
     
     Player.OnKill(self, attacker, doer, point, direction)
-    self:PlaySound(Marine.kDieSoundName)
     
     // Don't play alert if we suicide
     if attacker ~= self then
@@ -392,14 +407,6 @@ function Marine:OnKill(attacker, doer, point, direction)
     self:SetFlashlightOn(false)
     self.originOnDeath = self:GetOrigin()
     
-end
-
-function Marine:GetCanPhase()
-    return not GetIsVortexed(self) and self:GetIsAlive() and (not self.timeOfLastPhase or (Shared.GetTime() > (self.timeOfLastPhase + Marine.kPlayerPhaseDelay)))
-end
-
-function Marine:SetTimeOfLastPhase(time)
-    self.timeOfLastPhase = time
 end
 
 function Marine:GetOriginOnDeath()
@@ -423,38 +430,54 @@ function Marine:GiveJetpack()
     
 end
 
+local function StorePrevPlayer(self, exo)
+
+    exo.prevPlayerMapName = self:GetMapName()
+    exo.prevPlayerHealth = self:GetHealth()
+    exo.prevPlayerMaxArmor = self:GetMaxArmor()
+    exo.prevPlayerArmor = self:GetArmor()
+    
+end
+
 function Marine:GiveExo(spawnPoint)
 
-    self:DropAllWeapons()
-    self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "ClawMinigun" })
+    local exo = self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "ClawMinigun" })
+    StorePrevPlayer(self, exo)
+    
+    return exo
     
 end
 
 function Marine:GiveDualExo(spawnPoint)
 
-    self:DropAllWeapons()
-    self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "MinigunMinigun" })
+    local exo = self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "MinigunMinigun" })
+    StorePrevPlayer(self, exo)
+    
+    return exo
     
 end
 
 function Marine:GiveClawRailgunExo(spawnPoint)
 
-    self:DropAllWeapons()
-    self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "ClawRailgun" })
+    local exo = self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "ClawRailgun" })
+    StorePrevPlayer(self, exo)
+    
+    return exo
     
 end
 
 function Marine:GiveDualRailgunExo(spawnPoint)
 
-    self:DropAllWeapons()
-    self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "RailgunRailgun" })
+    local exo = self:Replace(Exo.kMapName, self:GetTeamNumber(), false, spawnPoint, { layout = "RailgunRailgun" })
+    StorePrevPlayer(self, exo)
+    
+    return exo
     
 end
 
-function Marine:MakeSpecialEdition()
-    self:SetModel(Marine.kBlackArmorModelName, Marine.kMarineAnimationGraph)
-end
+function Marine:OnVariantUpdated()
 
-function Marine:MakeDeluxeEdition()
-    self:SetModel(Marine.kSpecialEditionModelName, Marine.kMarineAnimationGraph)
+    local modelName = Marine.kModelNames[self:GetSex()][self:GetVariant()]
+    self:SetModel(modelName, Marine.kMarineAnimationGraph)
+    
 end

@@ -42,9 +42,15 @@ end
 if Server then
 
     function EnergizeMixin:Energize(giver)
+    
+        local energizeAllowed = not self.GetIsEnergizeAllowed or self:GetIsEnergizeAllowed()
         
-        table.insertunique(self.energizeGivers, giver:GetId())
-        self.energizeGiverTime[giver:GetId()] = Shared.GetTime()
+        if energizeAllowed then
+        
+            table.insertunique(self.energizeGivers, giver:GetId())
+            self.energizeGiverTime[giver:GetId()] = Shared.GetTime()
+        
+        end
     
     end
 
@@ -54,10 +60,12 @@ local function SharedUpdate(self, deltaTime)
 
     if Server then
     
+        local energizeAllowed = not self.GetIsEnergizeAllowed or self:GetIsEnergizeAllowed()
+    
         local removeGiver = {}
         for _, giverId in ipairs(self.energizeGivers) do
             
-            if self.energizeGiverTime[giverId] + 1 < Shared.GetTime() then
+            if not energizeAllowed or self.energizeGiverTime[giverId] + 1 < Shared.GetTime() then
                 self.energizeGiverTime[giverId] = nil
                 table.insert(removeGiver, giverId)
             end

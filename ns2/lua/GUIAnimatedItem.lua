@@ -206,11 +206,11 @@ gValueFunction[kAnimType.TextureAnimation] = SetTextureAnimation
 
 local function CheckParameters(duration, name, modFunction, callBack)
 
-    if time ~= nil then
+    if duration ~= nil then
         asserttype("duration", "number", duration)
     end
     
-    if animName ~= nil then
+    if name ~= nil then
         asserttype("name", "string", name)
     end
     
@@ -368,19 +368,23 @@ function GUIAnimatedItem:SetWideText(textValue, time, animName, modFunction, cal
 end
 
 function GUIAnimatedItem:SetNumberText(number, time, animName, modFunction, callBack)
+
     ASSERT(type(time) == "number")
-    if time == nil or (time <= 0) then  
+    if time == nil or (time <= 0) then
+    
         self.guiItem:SetText(math.floor(number * self.numberTextAccuracy) * self.numberTextAccuracy)
         return
+        
     end
     
     local oldValue = tonumber(self.guiItem:GetText())
     
-    if oldValue == nil then   
+    if oldValue == nil then
         oldValue = 0
     end
     
-    GenerateAnimation(self, kAnimType.NumberText, time, modFuncDummy, callBack, animName, oldValue, number)
+    GenerateAnimation(self, kAnimType.NumberText, time, nil, callBack, animName, oldValue, number)
+    
 end
 
 function GUIAnimatedItem:SetColor(colorValue, time, animName, modFunction, callBack)

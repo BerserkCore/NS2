@@ -33,13 +33,9 @@ end
 
 local networkVars =
 {
-    // Whether this entity is in sight of the enemy team
-    sighted = "boolean",
-    
     // Id used to look up precached string representing room location ("Marine Start")
     // not certain about the maximum number of cached strings
     locationId = "resource",
-    
 }
 
 AddMixinNetworkVars(TechMixin, networkVars)
@@ -238,6 +234,10 @@ function ScriptActor:GetTechAllowed(techId, techNode, player)
     
 end
 
+function ScriptActor:GetPlayIdleSound()
+    return GetIsUnitActive(self)
+end
+
 // Children can decide not to allow certain activations at certain times (energy cost already considered)
 function ScriptActor:GetActivationTechAllowed(techId)
     return true
@@ -260,7 +260,7 @@ function ScriptActor:GetDescription()
     return GetDisplayNameForTechId(self:GetTechId(), "<no description>")
 end
 
-function ScriptActor:GetVisualRadius ()
+function ScriptActor:GetVisualRadius()
     return LookupTechData(self:GetTechId(), kVisualRange, nil)
 end
 
@@ -274,6 +274,10 @@ function ScriptActor:GetViewCoords()
 end
 
 function ScriptActor:GetCanBeUsed(player, useSuccessTable)
+
+    if player:isa("Exo") then
+        useSuccessTable.useSuccess = false
+    end
 
     if HasMixin(player, "Live") and not player:GetIsAlive() then
         useSuccessTable.useSuccess = false

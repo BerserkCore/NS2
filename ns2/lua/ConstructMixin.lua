@@ -129,6 +129,11 @@ local function SharedUpdate(self, deltaTime)
             end
             
         end
+
+        // respect the cheat here; sometimes the cheat breaks due to things relying on it NOT being built until after a frame
+        if GetGamerules():GetAutobuild() then
+            self:SetConstructionComplete()
+        end
         
     elseif Client then
     
@@ -142,6 +147,40 @@ local function SharedUpdate(self, deltaTime)
     
     end
     
+end
+
+if Server then
+
+    function ConstructMixin:OnKill()
+
+        if not self:GetIsBuilt() then
+        
+            local techTree = self:GetTeam():GetTechTree()
+            local techNode = techTree:GetTechNode(self:GetTechId())
+            
+            if techNode then
+                techNode:SetResearchProgress(0.0)
+                techTree:SetTechNodeChanged(techNode, "researchProgress = 1.0f")
+            end 
+            
+        end
+        
+    end
+    
+end
+
+function ConstructMixin:ModifyHeal(healTable)
+
+    if not self:GetIsBuilt() then
+    
+        local maxFraction = kStartHealthScalar + (1 - kStartHealthScalar) * self.buildFraction    
+        local maxHealth = self:GetMaxHealth() * maxFraction + self:GetMaxArmor() * maxFraction
+        local health = self:GetHealth() + self:GetArmor()
+        
+        healTable.health = Clamp(maxHealth - health, 0, healTable.health) 
+    
+    end
+
 end
 
 function ConstructMixin:ResetConstructionStatus()
@@ -214,13 +253,20 @@ function ConstructMixin:Construct(elapsedTime, builder)
     local success = false
     local playAV = false
     
-    if not self.constructionComplete then
+    if not self.constructionComplete and (not HasMixin(self, "Live") or self:GetIsAlive()) then
         
         if builder and builder.OnConstructTarget then
             builder:OnConstructTarget(self)
         end
         
         if Server then
+
+            if not self.lastBuildFractionTechUpdate then
+                self.lastBuildFractionTechUpdate = self.buildFraction
+            end
+            
+            local techTree = self:GetTeam():GetTechTree()
+            local techNode = techTree:GetTechNode(self:GetTechId())
 
             local modifier = (self:GetTeamType() == kMarineTeamType and GetIsPointOnInfestation(self:GetOrigin())) and kInfestationBuildModifier or 1
             local startBuildFraction = self.buildFraction
@@ -231,10 +277,10 @@ function ConstructMixin:Construct(elapsedTime, builder)
             
                 self:SetConstructionComplete(builder)
                 
-                // Give points for building structures
-                if self:GetIsBuilt() and not self:isa("Hydra") and builder and HasMixin(builder, "Scoring") then                
-                    builder:AddScore(kBuildPointValue)
-                end
+                if techNode then
+                    techNode:SetResearchProgress(1.0)
+                    techTree:SetTechNodeChanged(techNode, "researchProgress = 1.0f")
+                end    
                 
             else
             
@@ -249,7 +295,16 @@ function ConstructMixin:Construct(elapsedTime, builder)
                 self.underConstruction = true
                 
                 self.buildTime = newBuildTime
+                self.oldBuildFraction = self.buildFraction
                 self.buildFraction = math.max(math.min((self.buildTime / timeToComplete), 1), 0)
+                
+                if techNode and (self.buildFraction - self.lastBuildFractionTechUpdate) >= 0.05 then
+                
+                    techNode:SetResearchProgress(self.buildFraction)
+                    techTree:SetTechNodeChanged(techNode, string.format("researchProgress = %.2f", self.buildFraction))
+                    self.lastBuildFractionTechUpdate = self.buildFraction
+                    
+                end
                 
                 if not self.GetAddConstructHealth or self:GetAddConstructHealth() then
                 
@@ -262,10 +317,8 @@ function ConstructMixin:Construct(elapsedTime, builder)
                 if self.oldBuildFraction ~= self.buildFraction then
                 
                     if self.OnConstruct then
-                        self:OnConstruct(builder, self.buildFraction)
+                        self:OnConstruct(builder, self.buildFraction, self.oldBuildFraction)
                     end
-                    
-                    self.oldBuildFraction = self.buildFraction
                     
                 end
                 
@@ -288,13 +341,13 @@ function ConstructMixin:Construct(elapsedTime, builder)
     
 end
 
-function ConstructMixin:GetCanBeUsedConstructed()
+function ConstructMixin:GetCanBeUsedConstructed(byPlayer)
     return false
 end
 
 function ConstructMixin:GetCanBeUsed(player, useSuccessTable)
 
-    if self:GetIsBuilt() and not self:GetCanBeUsedConstructed() then
+    if self:GetIsBuilt() and not self:GetCanBeUsedConstructed(player) then
         useSuccessTable.useSuccess = false
     end
     
@@ -446,7 +499,7 @@ if Server then
 
         self.startsBuilt = GetAndCheckBoolean(self.startsBuilt, "startsBuilt", false)
 
-        if (self.startsBuilt and not self:GetIsBuilt()) or GetGamerules():GetAutobuild() then
+        if (self.startsBuilt and not self:GetIsBuilt()) then
             self:SetConstructionComplete()
         end
         

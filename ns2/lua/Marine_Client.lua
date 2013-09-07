@@ -21,9 +21,8 @@ Marine.kSpitHitEffectDuration = 1
 
 local kSensorBlipSize = 25
 
-local kMarineHealthbarOffset = Vector(0, 1.2, 0)
 function Marine:GetHealthbarOffset()
-    return kMarineHealthbarOffset
+    return 1.2
 end
 
 function MarineUI_GetHasArmsLab()
@@ -117,15 +116,6 @@ function PlayerUI_GetSensorBlipInfo()
     
 end
 
-local function GetIsCloseToMenuStructure(self)
-    
-    local ptlabs = GetEntitiesForTeamWithinRange("PrototypeLab", self:GetTeamNumber(), self:GetOrigin(), PrototypeLab.kResupplyUseRange)
-    local armories = GetEntitiesForTeamWithinRange("Armory", self:GetTeamNumber(), self:GetOrigin(), Armory.kResupplyUseRange)
-    
-    return (ptlabs and #ptlabs > 0) or (armories and #armories > 0)
-
-end
-
 function Marine:UnitStatusPercentage()
     return self.unitStatusPercentage
 end
@@ -178,7 +168,7 @@ function Marine:UpdateClientEffects(deltaTime, isLocal)
         end
         
         local stunned = HasMixin(self, "Stun") and self:GetIsStunned()
-        local blurEnabled = self.buyMenu ~= nil or stunned or self:GetIsMinimapVisible()
+        local blurEnabled = self.buyMenu ~= nil or stunned
         self:SetBlurEnabled(blurEnabled)
         
         // update spit hit effect
@@ -273,25 +263,6 @@ function Marine:OnUpdateRender()
     
 end
 
-function Marine:CloseMenu()
-
-    if self.buyMenu then
-    
-        GetGUIManager():DestroyGUIScript(self.buyMenu)
-        self.buyMenu = nil
-        MouseTracker_SetIsVisible(false)
-        
-        // Quick work-around to not fire weapon when closing menu.
-        self.timeClosedMenu = Shared.GetTime()
-        
-        return true
-        
-    end
-   
-    return false
-    
-end
-
 function Marine:AddNotification(locationId, techId)
 
     local locationName = ""
@@ -370,6 +341,8 @@ function Marine:BuyMenu(structure)
                 self.buyMenu:SetHostStructure(structure)
             end
             
+            self:TriggerEffects("marine_buy_menu_open")
+            
             TEST_EVENT("Marine buy menu displayed")
             
         end
@@ -439,31 +412,11 @@ function Marine:OnCountDownEnd()
 end
 
 function Marine:OnOrderSelfComplete(orderType)
-
     self:TriggerEffects("complete_order")
-
 end
 
 function Marine:GetSpeedDebugSpecial()
     return self:GetSprintTime() / SprintMixin.kMaxSprintTime
-end
-
-function Marine:OnUpdateSprint()
-
-    /*if self.loopingSprintSoundEntId ~= Entity.invalidId then
-    
-        local soundEnt = Shared.GetEntity(self.loopingSprintSoundEntId)
-        if soundEnt then
-        
-            // Note: This line is resulting in console spam:
-            // SoundEventInstance::SetParameter(marine/common/sprint_loop, tired = 0.998213, 1): getValue():
-            // Do not check in unless this is resolved. This method is not ideal in any case.
-            soundEnt:SetParameter("tired", self:GetTiredScalar(), 1)
-            
-        end 
-        
-    end*/
-    
 end
 
 function Marine:UpdateGhostModel()

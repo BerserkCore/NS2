@@ -29,6 +29,8 @@ kGUILayerCountDown = 16
 kGUILayerTestEvents = 17
 kGUILayerMainMenuNews = 19
 kGUILayerMainMenu = 20
+kGUILayerTrainingMenuTipVideos = 21 // used when videos are played from the training menu tab
+kGUILayerMainMenuDialogs = 30
 // The Web layer must be much higher than the MainMenu layer
 // because the MainMenu layer inserts items above
 // kGUILayerMainMenu procedurally.

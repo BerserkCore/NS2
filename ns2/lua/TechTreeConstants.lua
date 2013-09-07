@@ -6,16 +6,28 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-kTechId = enum({
+local gTechIdToString = {}
+
+local function createTechIdEnum(table)
+
+    for i = 1, #table do    
+        gTechIdToString[table[i]] = i  
+    end
     
-    'None',
+    return enum(table)
+
+end
+
+kTechId = createTechIdEnum({
+    
+    'None', 'PingLocation',
     
     'VoteConcedeRound',
     
-    'SpawnMarine', 'SpawnAlien', 'CollectResources', 'TransformResources',
+    'SpawnMarine', 'SpawnAlien', 'CollectResources', 'TransformResources', 'Research',
     
     // General orders and actions ("Default" is right-click)
-    'Default', 'Move', 'Attack', 'Build', 'Construct', 'Grow', 'Cancel', 'Recycle', 'Weld', 'AutoWeld', 'Stop', 'SetRally', 'SetTarget', 'Follow', 'HoldPosition',
+    'Default', 'Move', 'Patrol', 'Attack', 'Build', 'Construct', 'AutoConstruct', 'Grow', 'Cancel', 'Recycle', 'Weld', 'AutoWeld', 'Stop', 'SetRally', 'SetTarget', 'Follow', 'HoldPosition', 'FollowAlien',
     // special mac order (follows the target, welds the target as priority and others in range)
     'FollowAndWeld',
     
@@ -60,27 +72,28 @@ kTechId = enum({
     // Marine tech 
     'CommandStation', 'MAC', 'Armory', 'InfantryPortal', 'Extractor', 'ExtractorArmor', 'Sentry', 'ARC',
     'PowerPoint', 'AdvancedArmoryUpgrade', 'Observatory', 'Detector', 'DistressBeacon', 'PhaseGate', 'RoboticsFactory', 'ARCRoboticsFactory', 'ArmsLab',
-    'PowerPack', 'SentryBattery', 'PrototypeLab', 'AdvancedArmory',
+    'SentryBattery', 'PrototypeLab', 'AdvancedArmory',
     
     // Weapon tech
-    'AdvancedWeaponry', 'RifleUpgradeTech', 'ShotgunTech', 'DetonationTimeTech', 'FlamethrowerRangeTech', 'GrenadeLauncherTech', 'FlamethrowerTech', 'FlamethrowerAltTech', 'WelderTech', 'MinesTech',
+    'AdvancedWeaponry', 'ShotgunTech', 'HeavyRifleTech', 'DetonationTimeTech', 'FlamethrowerRangeTech', 'GrenadeLauncherTech', 'FlamethrowerTech', 'FlamethrowerAltTech', 'WelderTech', 'MinesTech',
+    'GrenadeTech', 'ClusterGrenade', 'ClusterGrenadeProjectile', 'GasGrenade', 'GasGrenadeProjectile', 'PulseGrenade', 'PulseGrenadeProjectile',
     'DropWelder', 'DropMines', 'DropShotgun', 'DropGrenadeLauncher', 'DropFlamethrower',
     
     // Marine buys
-    'RifleUpgrade', 'FlamethrowerAlt',
+    'FlamethrowerAlt',
     
     // Research 
     'PhaseTech', 'MACSpeedTech', 'MACEMPTech', 'ARCArmorTech', 'ARCSplashTech', 'JetpackTech', 'ExosuitTech',
-    'DualMinigunTech', 'DualMinigunExosuit',
+    'DualMinigunTech', 'DualMinigunExosuit', 'UpgradeToDualMinigun',
     'ClawRailgunTech', 'ClawRailgunExosuit',
-    'DualRailgunTech', 'DualRailgunExosuit',
+    'DualRailgunTech', 'DualRailgunExosuit', 'UpgradeToDualRailgun',
     'DropJetpack', 'DropExosuit',
     
     // MAC (build bot) abilities
     'MACEMP', 'Welding',
     
     // Weapons 
-    'Rifle', 'Pistol', 'Shotgun', 'Claw', 'Minigun', 'Railgun', 'GrenadeLauncher', 'Flamethrower', 'Axe', 'LayMines', 'Welder',
+    'Rifle', 'Pistol', 'Shotgun', 'HeavyRifle', 'Claw', 'Minigun', 'Railgun', 'GrenadeLauncher', 'Flamethrower', 'Axe', 'LayMines', 'Welder',
     
     // Armor
     'Jetpack', 'JetpackFuelTech', 'JetpackArmorTech', 'Exosuit', 'ExosuitLockdownTech', 'ExosuitUpgradeTech',
@@ -110,17 +123,12 @@ kTechId = enum({
     // Special tech
     'TwoHives', 'ThreeHives', 'UpgradeToCragHive', 'UpgradeToShadeHive', 'UpgradeToShiftHive',
     
-    // Alien abilities (not all are needed, only ones with damage types)
-    'Bite', 'LerkBite', 'Parasite',  'Spit', 'BuildAbility', 'Spray', 'Spores', 'HydraSpike', 'Swipe', 'StabBlink', 'ShadowStep', 'Gore', 'Smash',
-    'Babbler', 'BabblerEgg',
+    'HydraSpike',
 
-    
-    // upgradeable alien abilities (need to be unlocked)
-    'LifeFormMenu',
-    'BileBomb', 'GorgeTunnelTech', 'WebTech', 'Leap', 'Blink', 'Stomp', 'BoneShield', 'Spikes', 'SpikesAccuracy', 'Umbra', 'PoisonDart', 'Xenocide', 'Vortex', 'PrimalScream', 'BabblerAbility',
+    'LifeFormMenu', 'SkulkMenu', 'GorgeMenu', 'LerkMenu', 'FadeMenu', 'OnosMenu',
 
     // Alien structures 
-    'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'Drifter', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'GorgeTunnel', 'Web',
+    'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'DrifterEgg', 'Drifter', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'GorgeTunnel',
     'GorgeEgg', 'LerkEgg', 'FadeEgg', 'OnosEgg',
     
     // Infestation upgrades
@@ -132,14 +140,33 @@ kTechId = enum({
     'Spur', 'TwoSpurs', 'ThreeSpurs', 'SecondSpur', 'ThirdSpur', 'FullSpur',
 
     // Upgrade buildings and abilities (structure, upgraded structure, passive, triggered, targeted)
-    'Crag', 'CragHeal',
-    'Whip', 'EvolveBombard', 'WhipBombard', 'WhipBombardCancel', 'WhipBomb', 'GrenadeWhack',
-    'Shift', 'SelectShift', 'EvolveEcho', 'ShiftHatch', 'ShiftEcho', 'ShiftEnergize', 
-    'Shade', 'EvolveHallucinations', 'ShadeDisorient', 'ShadeCloak', 'ShadePhantomMenu', 'ShadePhantomStructuresMenu',
+    'Crag', 'TwoCrags', 'CragHeal',
+    'Whip', 'TwoWhips', 'EvolveBombard', 'WhipBombard', 'WhipBombardCancel', 'WhipBomb', 'Slap',
+    'Shift', 'TwoShifts', 'SelectShift', 'EvolveEcho', 'ShiftHatch', 'ShiftEcho', 'ShiftEnergize', 
+    'Shade', 'TwoShades', 'EvolveHallucinations', 'ShadeDisorient', 'ShadeCloak', 'ShadePhantomMenu', 'ShadePhantomStructuresMenu',
     'UpgradeCeleritySpur', 'CeleritySpur', 'UpgradeAdrenalineSpur', 'AdrenalineSpur', 'UpgradeHyperMutationSpur', 'HyperMutationSpur',
     'UpgradeSilenceVeil', 'SilenceVeil', 'UpgradeCamouflageVeil', 'CamouflageVeil', 'UpgradeAuraVeil', 'AuraVeil', 'UpgradeFeintVeil', 'FeintVeil',
     'UpgradeRegenerationShell', 'RegenerationShell', 'UpgradeCarapaceShell', 'CarapaceShell',
     'DrifterCamouflage', 'DrifterCelerity', 'DrifterRegeneration',
+    
+    'DefensivePosture', 'OffensivePosture', 'AlienMuscles', 'AlienBrain',
+    
+    'UpgradeSkulk', 'UpgradeGorge', 'UpgradeLerk', 'UpgradeFade', 'UpgradeOnos',
+    
+    // Skulk abilities    
+    'Bite', 'Sneak', 'Parasite', 'Leap', 'Xenocide',
+    
+    // gorge abilities
+    'Spit', 'Spray', 'BellySlide', 'BabblerTech', 'BuildAbility', 'BabblerAbility', 'Babbler', 'BabblerEgg', 'GorgeTunnelTech', 'BileBomb',  'WebTech', 'Web',
+
+    // lerk abilities
+    'LerkBite', 'Cling', 'Spikes', 'Umbra', 'Spores',
+
+    // fade abilities   
+    'Swipe', 'Blink', 'ShadowStep', 'Vortex', 'Stab', 
+    
+    // onos abilities
+    'Gore', 'Smash', 'Charge', 'BoneShield', 'Stomp', 'Shockwave', 
     
     // echo menu
     'TeleportHydra', 'TeleportWhip', 'TeleportTunnel', 'TeleportCrag', 'TeleportShade', 'TeleportShift', 'TeleportVeil', 'TeleportSpur', 'TeleportShell', 'TeleportHive', 'TeleportEgg', 'TeleportHarvester',
@@ -163,7 +190,7 @@ kTechId = enum({
     'Infestation',
     
     // Commander abilities
-    'BoneWall', 'NutrientMist', 'SelectDrifter', 'HealWave', 'CragUmbra', 'ShadeInk', 'EnzymeCloud', 'Rupture', 'Hallucinate', 'Storm',
+    'NutrientMist', 'Rupture', 'BoneWall', 'Contamination', 'SelectDrifter', 'HealWave', 'CragUmbra', 'ShadeInk', 'EnzymeCloud', 'Hallucinate', 'Storm',
     
     // Alien Commander hallucinations
     'HallucinateDrifter', 'HallucinateSkulk', 'HallucinateGorge', 'HallucinateLerk', 'HallucinateFade', 'HallucinateOnos',
@@ -180,6 +207,10 @@ kTechId = enum({
     'Max'
     
     })
+    
+function StringToTechId(string)
+    return gTechIdToString[string] or kTechId.None
+end    
 
 // Increase techNode network precision if more needed
 kTechIdMax  = kTechId.Max

@@ -161,6 +161,10 @@ function GUICommanderOrders:Update(deltaTime)
     
     UpdateOrderList(self.orders, newOrdersNum, teamType)
     
+    if newOrders[1] then    
+        prevScreenPosition = GetClampedScreenPosition(newOrders[1]:GetOrderSource(), -300)    
+    end
+    
     for i = 1, newOrdersNum do
     
         local order = newOrders[i]

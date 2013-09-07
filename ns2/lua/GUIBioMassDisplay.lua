@@ -82,6 +82,8 @@ local function UpdateAbilityList(self, currentBioMassLevel, bioMassAlertLevel, a
     end
     
     local player = Client.GetLocalPlayer()
+    local mouseX, mouseY = Client.GetCursorPosScreen()
+    self.hoverTechId = nil
     
     for i = 1, 9 do
     
@@ -111,8 +113,12 @@ local function UpdateAbilityList(self, currentBioMassLevel, bioMassAlertLevel, a
                 self.background:AddChild(levelIcon.Graphic)
                 
             end
+            
+            if not self.hoverTechId and GUIItemContainsPoint(levelIcon.Graphic, mouseX, mouseY) then
+                self.hoverTechId = techId
+            end
 
-            local hasTech = GetHasTech(player, techId)
+            local hasTech = GetIsTechUnlocked(player, techId)
             if hasTech then
             
                 if i > currentBioMassLevel - bioMassAlertLevel then
@@ -214,7 +220,17 @@ function GUIBioMassDisplay:Update(deltaTime)
     local bioMass = (teamInfo and teamInfo.GetBioMassLevel) and teamInfo:GetBioMassLevel() or 0
     local maxBioMass = (teamInfo and teamInfo.GetMaxBioMassLevel) and teamInfo:GetMaxBioMassLevel() or 0
     local bioMassAlert = (teamInfo and teamInfo.GetBioMassAlertLevel) and teamInfo:GetBioMassAlertLevel() or 0
-    local showGUI = player and (player:isa("Commander") or player:GetIsMinimapVisible() or player:GetBuyMenuIsDisplaying() or bioMassAlert > 0)
+    local showGUI = player and (player:isa("Commander") or player:GetIsMinimapVisible() or player:GetBuyMenuIsDisplaying() or bioMassAlert > 0) or PlayerUI_GetIsTechMapVisible()
+    
+    if player:isa("Commander") and not self.registered then
+        
+        local script = GetGUIManager():GetGUIScriptSingle("GUICommanderTooltip")
+        if script then
+            script:Register(self)
+            self.registered = true
+        end
+        
+    end
     
     local overflow = math.max(0, bioMass - maxBioMass)
     local activeBioMass = math.min(maxBioMass, bioMass)
@@ -253,5 +269,15 @@ function GUIBioMassDisplay:Update(deltaTime)
     self.effectiveBiomass:SetTexturePixelCoordinates(kForegroundCoords[1], kForegroundCoords[2], x2PixelCoord, kForegroundCoords[4])
     
     UpdateAbilityList(self, bioMass, bioMassAlert, Color((1 - alertAnim) + kUnlocked.r * alertAnim, kUnlocked.g * alertAnim, kUnlocked.b * alertAnim, 1))
+
+end
+
+function GUIBioMassDisplay:GetTooltipData()
+
+    if self.hoverTechId then
+        return PlayerUI_GetTooltipDataFromTechId(self.hoverTechId)
+    end    
+
+    return nil
 
 end

@@ -61,6 +61,54 @@ function Hive:OnResearchComplete(researchId)
     
 end
 
+local kResearchTypeToHiveType =
+{
+    [kTechId.UpgradeToCragHive] = kTechId.CragHive,
+    [kTechId.UpgradeToShadeHive] = kTechId.ShadeHive,
+    [kTechId.UpgradeToShiftHive] = kTechId.ShiftHive,
+}
+
+function Hive:UpdateResearch()
+
+    local researchId = self:GetResearchingId()
+
+    if kResearchTypeToHiveType[researchId] then
+    
+        local hiveTypeTechId = kResearchTypeToHiveType[researchId]
+        local techTree = self:GetTeam():GetTechTree()    
+        local researchNode = techTree:GetTechNode(hiveTypeTechId)    
+        researchNode:SetResearchProgress(self.researchProgress)
+        techTree:SetTechNodeChanged(researchNode, string.format("researchProgress = %.2f", self.researchProgress)) 
+        
+    end
+
+end
+
+function Hive:OnResearchCancel(researchId)
+
+    if kResearchTypeToHiveType[researchId] then
+    
+        local hiveTypeTechId = kResearchTypeToHiveType[researchId]
+        local team = self:GetTeam()
+        
+        if team then
+        
+            local techTree = team:GetTechTree()
+            local researchNode = techTree:GetTechNode(hiveTypeTechId)
+            if researchNode then
+            
+                researchNode:ClearResearching()
+                techTree:SetTechNodeChanged(researchNode, string.format("researchProgress = %.2f", 0))   
+         
+            end
+            
+        end    
+        
+    end
+
+end
+
+
 function Hive:SetFirstLogin()
     self.isFirstLogin = true
 end
@@ -381,6 +429,19 @@ function Hive:OnUpdate(deltaTime)
     
     CheckLowHealth(self)
     
+    if not self:GetIsAlive() then
+    
+        local destructionAllowedTable = { allowed = true }
+        if self.GetDestructionAllowed then
+            self:GetDestructionAllowed(destructionAllowedTable)
+        end
+        
+        if destructionAllowedTable.allowed then
+            DestroyEntity(self)
+        end
+        
+    end    
+    
 end
 
 function Hive:OnKill(attacker, doer, point, direction)
@@ -390,6 +451,8 @@ function Hive:OnKill(attacker, doer, point, direction)
     // Notify the teams that this Hive was destroyed.
     SendGlobalMessage(kTeamMessageTypes.HiveKilled, self:GetLocationId())
     self.bioMassLevel = 0
+    
+    self:SetModel(nil)
     
 end
 
@@ -511,7 +574,7 @@ function Hive:OnTakeDamage(damage, attacker, doer, point)
 end
 
 function Hive:OnTeleportEnd()
-    
+
     local attachedTechPoint = self:GetAttached()
     if attachedTechPoint then
         attachedTechPoint:SetIsSmashed(true)
@@ -528,21 +591,19 @@ function Hive:OnTeleportEnd()
         local extents = LookupTechData(kTechId.Onos, kTechDataMaxExtents, nil)
         local randomSpawn = GetRandomSpawnForCapsule(extents.y, extents.x, self:GetOrigin(), 2, 4, EntityFilterAll())
         commander.lastGroundOrigin = randomSpawn
-    
+        
     end
     
-    for key,id in pairs(self.cystChildren) do
+    for key, id in pairs(self.cystChildren) do
     
         local child = Shared.GetEntity(id)
-        if child == nil then
-            removals[key] = true
-        else
+        if child then
             child.parentId = Entity.invalidId
         end
         
     end
     
-    self.cystChildren = {}
+    self.cystChildren = { }
     
 end
 

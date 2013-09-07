@@ -15,7 +15,8 @@ class 'Spit' (PredictedProjectile)
 
 Spit.kMapName = "spit"
 Spit.kDamage = kSpitDamage
-
+Spit.kClearOnImpact = true
+Spit.kClearOnEnemyImpact = true
 
 local networkVars =
 {

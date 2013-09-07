@@ -26,6 +26,13 @@ local kPrivateIconSize = Vector(26, 26, 0)
 local kPrivateIconPos = Vector(60, 4, 0)
 local kPrivateIconTexture = "ui/lock.dds"
 
+local kPlayerSkillSize = Vector(64, 20, 0)
+local kPlayerSkillOffset = Vector(0, 2, 0)
+
+local kYellow = Color(1, 1, 0)
+local kGreen = Color(0, 1, 0)
+local kRed = Color(1, 0 ,0)
+
 function SelectServerEntry(entry)
 
     local height = entry:GetHeight()
@@ -168,6 +175,8 @@ function ServerEntry:Initialize()
     self.private:SetPosition(kPrivateIconPos)
     self.private:SetTexture(kPrivateIconTexture)
     
+    self.playerSkill = CreateGraphicItem(self, true)
+    
     self:SetFontName("fonts/AgencyFB_small.fnt")
     
     self:SetTextColor(kWhite)
@@ -217,7 +226,8 @@ function ServerEntry:SetServerData(serverData)
 
     if self.serverData ~= serverData then
     
-        self.playerCount:SetText(string.format("%d/%d", serverData.numPlayers, serverData.maxPlayers))
+        local numReservedSlots = GetNumServerReservedSlots(serverData.serverId)
+        self.playerCount:SetText(string.format("%d/%d", serverData.numPlayers, (serverData.maxPlayers - numReservedSlots)))
         if serverData.numPlayers >= serverData.maxPlayers then
             self.playerCount:SetColor(kRed)
         else
@@ -268,6 +278,17 @@ function ServerEntry:SetServerData(serverData)
             self.favorite:SetTexture(kNonFavoriteTexture)
         end
         
+        local skillFraction = Clamp(serverData.playerSkill / kMaxPlayerSkill, 0, 1)
+        local skillColor
+        if skillFraction >= 0.5 then
+            skillColor = LerpColor(kYellow, kRed, (skillFraction - 0.5) * 2)
+        elseif skillFraction < 0.5 then
+            skillColor = LerpColor(kGreen, kYellow, skillFraction * 2)
+        end
+
+        self.playerSkill:SetColor(skillColor)
+        self.playerSkill:SetSize(Vector(kPlayerSkillSize.x * skillFraction, kPlayerSkillSize.y, 0))
+
         self:SetId(serverData.serverId)
         self.serverData = { }
         for name, value in pairs(serverData) do
@@ -285,12 +306,14 @@ function ServerEntry:SetWidth(width, isPercentage, time, animateFunc, callBack)
 
         MenuElement.SetWidth(self, width, isPercentage, time, animateFunc, callBack)
 
-        self.serverName:SetPosition(kUseVector * width * 0.08)
+        self.serverName:SetPosition(kUseVector * width * 0.13)
         self.modName:SetPosition(kUseVector * width * 0.49)
         self.mapName:SetPosition(kUseVector * width * 0.61)
         self.playerCount:SetPosition(kUseVector * width * 0.78)
         self.tickRate:SetPosition(kUseVector * width * 0.89)
         self.ping:SetPosition(kUseVector * width * 0.97)
+        
+        self.playerSkill:SetPosition(kUseVector * width * 0.08 + kPlayerSkillOffset)
         
         self.storedWidth = width
     

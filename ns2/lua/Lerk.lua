@@ -24,6 +24,7 @@ Script.Load("lua/Mixins/CrouchMoveMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Lerk' (Alien)
 
@@ -62,6 +63,7 @@ AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(CrouchMoveMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 // if the user hits a wall and holds the use key and the resulting speed is < this, grip starts
 Lerk.kWallGripMaxSpeed = 4
@@ -153,6 +155,8 @@ function Lerk:OnInitialized()
         
     end
     
+    InitMixin(self, IdleMixin)
+    
 end
 
 function Lerk:OnDestroy()
@@ -207,10 +211,6 @@ end
 function Lerk:GetPitchSmoothRate()
     return 3
 end 
-
-function Lerk:GetVelocitySmoothRate()
-    return 10
-end
 
 local kMaxGlideRoll = math.rad(30)
 
@@ -325,6 +325,15 @@ function Lerk:GetMaxSpeed(possible)
     end    
     
 end
+
+function Lerk:GetMovementSpecialTechId()
+    return kTechId.Cling
+end
+
+function Lerk:GetHasMovementSpecial()
+    return true
+end
+
 
 function Lerk:GetMass()
     return kMass
@@ -473,6 +482,10 @@ local function UpdateAirStrafe(self, input, velocity, deltaTime)
 
 end
 
+function Lerk:GetHasBiomassHealth()
+    return GetHasTech(self, kTechId.UpgradeLerk)
+end
+
 function Lerk:GetIsSmallTarget()
     return true
 end
@@ -570,8 +583,4 @@ function Lerk:OnUpdateAnimationInput(modelMixin)
     
 end
 
-function Lerk:GetHideArmorAmount()
-    return kLerkHideArmor
-end
-
-Shared.LinkClassToMap("Lerk", Lerk.kMapName, networkVars)
+Shared.LinkClassToMap("Lerk", Lerk.kMapName, networkVars, true)

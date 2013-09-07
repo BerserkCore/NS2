@@ -9,6 +9,14 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/CommanderTutorialUtility.lua")
+
+local function OnCommandResetCommanderTutorial()
+    CommanderTutorial_ResetAll()
+end
+
+Event.Hook("Console_resetcommandertutorial", OnCommandResetCommanderTutorial)
+
 local function OnCommandSelectAndGoto(selectAndGotoMessage)
 
     local player = Client.GetLocalPlayer()

@@ -178,6 +178,17 @@ kDamageEffects =
             {sound = "sound/NS2.fev/materials/organic/scrape", surface = "membrane", doer = "SwipeBlink", world_space = true, done = true},
             {sound = "sound/NS2.fev/materials/metal/metal_scrape", doer = "SwipeBlink", world_space = true, done = true},
             
+            {sound = "sound/NS2.fev/materials/metal/metal_scrape", surface = "metal", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/thin_metal/scrape", surface = "thin_metal", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/thin_metal/scrape", surface = "electronic", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/organic/scrape", surface = "organic", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/organic/scrape", surface = "infestation", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/rock/scrape", surface = "rock", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/alien/fade/swipe_hit_marine_glance", surface = "armor", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/alien/fade/swipe_hit_marine_glance", surface = "flesh", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/organic/scrape", surface = "membrane", doer = "StabBlink", world_space = true, done = true},
+            {sound = "sound/NS2.fev/materials/metal/metal_scrape", doer = "StabBlink", world_space = true, done = true},
+            
             {sound = "sound/NS2.fev/alien/lerk/spikes_structure", surface = "metal", doer = "Hydra", done = true},
             {sound = "sound/NS2.fev/alien/common/spike_hit_marine", surface = "armor", doer = "Hydra", done = true},
             {sound = "sound/NS2.fev/alien/lerk/spikes_pierce", surface = "flesh", doer = "Hydra", done = true},
@@ -249,6 +260,11 @@ kDamageEffects =
                       {.25, "cinematics/vfx_materials/decals/clawmark_03.material"},
                       {.25, "cinematics/vfx_materials/decals/clawmark_04.material"}}, scale = 0.25, doer = "SwipeBlink", done = true}, 
                       
+            {decal = {{.25, "cinematics/vfx_materials/decals/clawmark_01.material"},
+                      {.25, "cinematics/vfx_materials/decals/clawmark_02.material"},
+                      {.25, "cinematics/vfx_materials/decals/clawmark_03.material"},
+                      {.25, "cinematics/vfx_materials/decals/clawmark_04.material"}}, scale = 0.25, doer = "StabBlink", done = true}, 
+                      
             {decal = "cinematics/vfx_materials/decals/bash_01.material", scale = 1, doer = "Gore", done = true}, 
         },    
     },
@@ -285,6 +301,7 @@ kDamageEffects =
             {player_cinematic = "cinematics/alien/gorge/spit_impact.cinematic", doer = "Spit", done = true}, // TODO: remove sound from cinematic
             {player_cinematic = "cinematics/materials/%s/sting.cinematic", doer = "Hydra", done = true},
             {player_cinematic = "cinematics/materials/%s/scrape.cinematic", doer = "SwipeBlink", done = true},
+            {player_cinematic = "cinematics/materials/%s/gore.cinematic", doer = "StabBlink", done = true},
             {player_cinematic = "cinematics/materials/%s/gore.cinematic", doer = "Gore", done = true},
             
             {player_cinematic = "cinematics/materials/%s/sting.cinematic", doer = "LerkBite", alt_mode = true, done = true},
@@ -315,7 +332,6 @@ kDamageEffects =
             {cinematic = "cinematics/marine/structures/hurt_small.cinematic", classname = "ArmsLab", done = true},
             {cinematic = "cinematics/marine/structures/hurt_small_severe.cinematic", classname = "Observatory", flinch_severe = true, done = true},
             {cinematic = "cinematics/marine/structures/hurt_small.cinematic", classname = "Observatory", done = true},
-            {cinematic = "cinematics/marine/structures/hurt_small_severe.cinematic", classname = "PowerPack", flinch_severe = true, done = true},
             {cinematic = "cinematics/marine/structures/hurt_small.cinematic", classname = "SentryBattery", done = true},
             {parented_cinematic = "cinematics/marine/exo/hurt_severe.cinematic", classname = "Exo", isalien = false, flinch_severe = true, done = true},
             {parented_cinematic = "cinematics/marine/exo/hurt.cinematic", classname = "Exo", isalien = false, done = true},
@@ -358,8 +374,11 @@ kDamageEffects =
         flinchEffects =
         {
             // marine flinch effects
+            {sound = "sound/NS2.fev/marine/common/spore_wound_female", classname = "Marine", sex = "female", damagetype = kDamageType.Gas, world_space = true, done = true},
             {sound = "sound/NS2.fev/marine/common/spore_wound", classname = "Marine", damagetype = kDamageType.Gas, world_space = true, done = true},
+            {sound = "sound/NS2.fev/marine/common/wound_serious_female", classname = "Marine", sex = "female", flinch_severe = true, world_space = true, done = true},
             {sound = "sound/NS2.fev/marine/common/wound_serious", classname = "Marine", flinch_severe = true, world_space = true, done = true},
+            {sound = "sound/NS2.fev/marine/common/wound_female", classname = "Marine", sex = "female", world_space = true, done = true},
             {sound = "sound/NS2.fev/marine/common/wound", classname = "Marine", world_space = true, done = true},
             {sound = "sound/NS2.fev/marine/structures/mac/pain", classname = "MAC", world_space = true, done = true},
             

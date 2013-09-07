@@ -294,8 +294,10 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, sl
         
     end
 
-    // TODO: dont compare velocities, use some boolean
-    if oldVelocity ~= velocity and isMove and self.OnWorldCollision then
+    -- TODO: dont compare velocities, use some boolean
+    -- averageSurfaceNormal should not normally be nil at this point but there is an edge
+    -- case where it is.
+    if oldVelocity ~= velocity and isMove and averageSurfaceNormal and self.OnWorldCollision then
     
         local impactForce = math.max(0, (-averageSurfaceNormal):DotProduct(oldVelocity))    
         self:OnWorldCollision(averageSurfaceNormal, impactForce, velocity)

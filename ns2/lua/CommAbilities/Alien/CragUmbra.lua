@@ -14,7 +14,7 @@ class 'CragUmbra' (CommanderAbility)
 
 CragUmbra.kMapName = "cragumbra"
 
-CragUmbra.kCragUmbraEffect = PrecacheAsset("cinematics/alien/Crag/umbra.cinematic")
+CragUmbra.kCragUmbraEffect = PrecacheAsset("cinematics/alien/crag/umbra.cinematic")
 
 CragUmbra.kType = CommanderAbility.kType.Repeat
 

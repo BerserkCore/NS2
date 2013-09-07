@@ -17,10 +17,7 @@ Shared.PrecacheSurfaceShader("materials/effects/mesh_effects/view_blood.surface_
 // kRange is now the range from eye to edge of attack range, ie its independent of the size of
 // the melee box, so for the skulk, it needs to increase to 1.2 to say at its previous range.
 // previously this value had an offset, which caused targets to be behind the melee attack (too close to the target and you missed)
-local kRange = 1.2
-if not kUseGradualMeleeAttacks then
-    kRange = 1.4
-end
+local kRange = 1.5
 
 local kStructureHitEffect = PrecacheAsset("cinematics/alien/lerk/bite_view_structure.cinematic")
 local kMarineHitEffect = PrecacheAsset("cinematics/alien/lerk/bite_view_marine.cinematic")
@@ -109,22 +106,14 @@ function LerkBite:OnPrimaryAttackEnd()
     
 end
 
-if kUseGradualMeleeAttacks then
-
 function LerkBite:GetMeleeBase()
-    return 1.5, 1.5
-end
 
-else
-
-function LerkBite:GetMeleeBase()
     local parent = self:GetParent()
     if parent and parent.GetIsEnzymed and parent:GetIsEnzymed() then
         return 1, 1.2
     end
-    return .7, 1
-end
-
+    return 0.9, 1.2
+    
 end
 
 function LerkBite:GetMeleeOffset()
@@ -146,12 +135,7 @@ function LerkBite:OnTag(tagName)
             
             self.spiked = false
         
-            local didHit, target, endPoint, surface
-            if kUseGradualMeleeAttacks then
-                didHit, target, endPoint, surface = PerformGradualMeleeAttack(self, player, kLerkBiteDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
-            else
-                didHit, target, endPoint, surface = AttackMeleeCapsule(self, player, kLerkBiteDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
-            end
+            local didHit, target, endPoint, surface = AttackMeleeCapsule(self, player, kLerkBiteDamage, kRange, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
             
             if didHit and target then
             

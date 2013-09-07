@@ -13,6 +13,7 @@ Shared.PrecacheSurfaceShader("cinematics/vfx_materials/nanoshield.surface_shader
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/nanoshield_view.surface_shader")
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/nanoshield_exoview.surface_shader")
 
+local kNanoShieldStartSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_shield_3D")
 local kNanoLoopSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_loop")
 local kNanoDamageSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_damage")
 
@@ -97,6 +98,8 @@ function NanoShieldMixin:ActivateNanoShield()
             self.shieldLoopSound:SetAsset(kNanoLoopSound)
             self.shieldLoopSound:SetParent(self)
             self.shieldLoopSound:Start()
+            
+            StartSoundEffectOnEntity(kNanoShieldStartSound, self)
             
         end
         

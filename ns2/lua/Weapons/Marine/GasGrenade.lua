@@ -12,18 +12,20 @@ Script.Load("lua/OwnerMixin.lua")
 class 'GasGrenade' (PredictedProjectile)
 
 GasGrenade.kMapName = "gasgrenadeprojectile"
-GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
+GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_nerve.model")
 GasGrenade.kUseServerPosition = true
 
 GasGrenade.kRadius = 0.17
+GasGrenade.kClearOnImpact = false
+GasGrenade.kClearOnEnemyImpact = false
 
 local networkVars = 
 {
     releaseGas = "boolean"
 }
 
-local kLifeTime = 20
-local kGasReleaseDelay = 5
+local kLifeTime = 10
+local kGasReleaseDelay = 2
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
@@ -53,10 +55,6 @@ function GasGrenade:OnCreate()
     self.releaseGas = false
     self.clientGasReleased = false
     
-end
-
-function GasGrenade:GetProjectileModel()
-    return GasGrenade.kModelName
 end
 
 function GasGrenade:ProcessHit(targetHit, surface)
@@ -123,13 +121,10 @@ local gNerveGasDamageTakers = {}
 
 local kCloudUpdateRate = 0.3
 local kSpreadDelay = 0.6
-local kNerveGasCloudRadius = 4
+local kNerveGasCloudRadius = 7
 local kNerveGasCloudLifetime = 6
 
 local kCloudMoveSpeed = 2
-
-kNerveGasDamagePerSecond = 40
-kNerveGasDamageType = kDamageType.Structural // kDamageType.ArmorOnly
 
 local networkVars =
 {
@@ -224,6 +219,10 @@ function NerveGasCloud:DoNerveGasDamage()
 
     return true
 
+end
+
+function NerveGasCloud:GetDeathIconIndex()
+    return kDeathMessageIcon.GasGrenade
 end
 
 if Server then

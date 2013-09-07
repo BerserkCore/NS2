@@ -128,6 +128,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function Sentry:OnCreate()
 
@@ -156,6 +157,7 @@ function Sentry:OnCreate()
     InitMixin(self, DissolveMixin)
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
+    InitMixin(self, ParasiteMixin)    
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -243,6 +245,7 @@ function Sentry:OnInitialized()
     elseif Client then
     
         InitMixin(self, UnitStatusMixin)   
+        InitMixin(self, HiveVisionMixin)
  
     end
     
@@ -361,9 +364,8 @@ function Sentry:OnWeldOverride(entity, elapsedTime)
     
 end
 
-local kSentryHealthbarOffset = Vector(0, 0.4, 0)
 function Sentry:GetHealthbarOffset()
-    return kSentryHealthbarOffset
+    return 0.4
 end 
 
 if Server then
@@ -506,7 +508,7 @@ if Server then
             local ents = GetEntitiesForTeamWithinRange("SentryBattery", self:GetTeamNumber(), self:GetOrigin(), SentryBattery.kRange)
             for index, ent in ipairs(ents) do
             
-                if GetIsUnitActive(ent) then
+                if GetIsUnitActive(ent) and ent:GetLocationName() == self:GetLocationName() then
                 
                     self.attachedToBattery = true
                     break
@@ -672,6 +674,19 @@ end
 
 function GetCheckSentryLimit(techId, origin, normal, commander)
 
+    -- Prevent the case where a Sentry in one room is being placed next to a
+    -- SentryBattery in another room.
+    local battery = GetSentryBatteryInRoom(origin)
+    if battery then
+    
+        if (battery:GetOrigin() - origin):GetLength() > SentryBattery.kRange then
+            return false
+        end
+        
+    else
+        return false
+    end
+    
     local location = GetLocationForPoint(origin)
     local locationName = location and location:GetName() or nil
     local numInRoom = 0
@@ -682,13 +697,13 @@ function GetCheckSentryLimit(techId, origin, normal, commander)
         validRoom = true
         
         for index, sentry in ientitylist(Shared.GetEntitiesWithClassname("Sentry")) do
-            
+        
             if sentry:GetLocationName() == locationName then
                 numInRoom = numInRoom + 1
             end
             
         end
-    
+        
     end
     
     return validRoom and numInRoom < kSentriesPerBattery

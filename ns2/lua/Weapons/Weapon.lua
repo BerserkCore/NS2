@@ -31,7 +31,8 @@ local networkVars =
 {
     isHolstered = "boolean",
     primaryAttacking = "compensated boolean",
-    secondaryAttacking = "compensated boolean"
+    secondaryAttacking = "compensated boolean",
+    weaponWorldState = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -63,14 +64,6 @@ function Weapon:OnCreate()
         self.activeSince = 0
     end
     
-end
-
-function Weapon:OnInitialized()
-
-    ScriptActor.OnInitialized(self)
-
-    self:SetRelevancy(false)
-
 end
 
 function Weapon:OnDestroy()
@@ -226,7 +219,11 @@ function Weapon:OnDraw(player, previousWeaponMapName)
         player:SetViewModel(nil, nil)
     end
     
-    player:SetViewModel(self:GetViewModelName(), self)
+    if HasMixin(player, "PlayerVariant") then
+        player:SetViewModel(self:GetViewModelName(player:GetSex(), player:GetVariant()), self)
+    else
+        player:SetViewModel(self:GetViewModelName(), self)
+    end
     
     self:TriggerEffects("draw")
     

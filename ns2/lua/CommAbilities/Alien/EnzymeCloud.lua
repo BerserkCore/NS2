@@ -19,7 +19,6 @@ EnzymeCloud.kRepeatEffect = PrecacheAsset("cinematics/alien/cyst/enzymecloud_lar
 
 EnzymeCloud.kType = CommanderAbility.kType.Repeat
 
-// duration of cinematic, increase cinematic duration and kEnzymeCloudDuration to 12 to match the old value from Crag.lua
 EnzymeCloud.kEnzymeCloudDuration = kEnzymeCloudDuration
 local kEnzymeCloudUpdateTime = 0.16
 
@@ -32,7 +31,8 @@ function EnzymeCloud:OnInitialized()
     
     if Server then
         // sound feedback
-        self:TriggerEffects("enzyme_cloud")    
+        self:TriggerEffects("enzyme_cloud")
+        DestroyEntitiesWithinRange("EnzymeCloud", self:GetOrigin(), 25, EntityFilterOne(self))
     end
     
     CommanderAbility.OnInitialized(self)

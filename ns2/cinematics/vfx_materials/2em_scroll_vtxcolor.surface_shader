@@ -1,0 +1,46 @@
+<shader>
+
+	<inputs>
+		<input name="emissiveMap1" type="texture" address="wrap" srgb="true"/>
+		<input name="emissiveMap2" type="texture" address="wrap" srgb="true"/>
+
+		<input name="tint" type="float3" />  
+		<input name="em1Coord" type="float4" />  	   
+		<input name="em2Coord" type="float4" /> 	
+	</inputs>	
+
+	<params>
+		<param name="osPosition">true</param>
+		<param name="wsPosition">true</param>
+		<param name="wsNormal">true</param>
+		<param name="vsNormal">true</param>
+		<param name="twoSided">true</param>
+	</params>
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			
+					
+		
+			float4 emiss1 = tex2D(emissiveMap1, input.texCoord  * float2(em1Coord.r, em1Coord.g) + float2( time * em1Coord.b, time * em1Coord.a));			
+
+
+			float4 emiss2 = tex2D(emissiveMap2, input.texCoord  * float2(em2Coord.r, em2Coord.g) + float2( time * em2Coord.b, time * em2Coord.a));			
+
+
+			material.emissive 	=  (emiss1.rgb * emiss2.rgb ) * tint * input.color.rgb;
+		
+			material.opacity 	=  input.color.a;
+			
+		}
+	]]>
+	</code>
+
+</shader>

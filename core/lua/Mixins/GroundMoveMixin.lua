@@ -35,6 +35,7 @@ local kForwardMove = Vector(0, 0, 1)
 GroundMoveMixin.networkVars =
 {
     onGround = "compensated boolean",
+    isOnEntity = "private compensated boolean",
     timeGroundAllowed = "private time",
     timeGroundTouched = "private time"
 }
@@ -61,6 +62,7 @@ GroundMoveMixin.optionalCallbacks =
 function GroundMoveMixin:__initmixin()
 
     self.onGround = true
+    self.isOnEntity = false
     self.onGroundClient = true
     self.timeGroundAllowed = 0
     self.timeGroundTouched = 0
@@ -118,7 +120,7 @@ local function GetIsCloseToGround(self, distance)
     
     end
     
-    return onGround, normal
+    return onGround, normal, hitEntities
     
 end
 
@@ -389,21 +391,6 @@ function GroundMoveMixin:PreUpdateMove(input, runningPrediction)
     
 end
 
-local function StepDown(self, horizontalOffset)
-
-    local oldOrigin = Vector(self:GetOrigin())
-    local stepAmount = 0
-    local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(Vector(0, -horizontalOffset * downSlopeFactor, 0), 1)
-    
-    if not averageSurfaceNormal then // or averageSurfaceNormal.y < 0.5 then
-        self:SetOrigin(oldOrigin)
-        return false
-    end
-
-    return true
-    
-end
-
 local function DoStepMove(self, input, velocity, deltaTime)
     
     local oldOrigin = Vector(self:GetOrigin())
@@ -454,7 +441,7 @@ local function FlushCollisionCallbacks(self, velocity)
 
     if not self.onGround and self.storedNormal then
 
-        local onGround, normal = GetIsCloseToGround(self, 0.15)
+        local onGround, normal, hitEntities = GetIsCloseToGround(self, 0.15)
         
         if self.OverrideUpdateOnGround then
             onGround = self:OverrideUpdateOnGround(onGround)
@@ -576,6 +563,10 @@ function GroundMoveMixin:GetIsOnGround()
     return self.onGround
 end
 
+function GroundMoveMixin:GetIsOnEntity()
+    return self.isOnEntity == true
+end
+
 // for compatibility
 function GroundMoveMixin:GetIsOnSurface()
     return self.onGround
@@ -583,7 +574,7 @@ end
 
 local function UpdateOnGround(self, input, velocity)
 
-    local onGround, normal = GetIsCloseToGround(self, 0.15)
+    local onGround, normal, hitEntities = GetIsCloseToGround(self, 0.15)
 
     if self.OverrideUpdateOnGround then
         onGround = self:OverrideUpdateOnGround(onGround)
@@ -592,6 +583,7 @@ local function UpdateOnGround(self, input, velocity)
     if not onGround and onGround ~= self.onGround then
     
         self.onGround = false
+        self.isOnEntity = false
         self.timeGroundTouched = Shared.GetTime()
         
         if self.OnGroundChanged then
@@ -599,6 +591,8 @@ local function UpdateOnGround(self, input, velocity)
         end
     
     end
+    
+    self.isOnEntity = self.onGround and hitEntities ~= nil and #hitEntities > 0
     
 end
 

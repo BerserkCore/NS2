@@ -366,8 +366,16 @@ local function ResetAnimationState(self)
     local graph = Shared_GetAnimationGraph(self.animationGraphIndex)
     
     if model ~= nil and graph ~= nil then
-        self.animationState:Reset(graph, model, Shared_GetTime())
-        CaptureAnimationState(self)
+    
+        // it seems AnimationGraphState:Reset doesn't work properly. Randomly the animation input is discarded when changing model / graph.
+        // To make sure the graph is initialized correctly here we just throw away the old object, create a new one and update the anim input:
+        self.animationState = AnimationGraphState()
+        UpdateAnimationState(self, true, true)
+        
+        // old code:
+        //self.animationState:Reset(graph, model, Shared_GetTime())
+        //CaptureAnimationState(self)
+        
     end
 
 end
@@ -896,19 +904,21 @@ end
  * Coords of the attach point will be returned.
  */
 function BaseModelMixin:GetAttachPointCoords(attachPoint)
+
     PROFILE("BaseModelMixin:GetAttachPointCoords")
+    
     local attachPointIndex = attachPoint
     if type(attachPointIndex) == "string" then
         attachPointIndex = self:GetAttachPointIndex(attachPoint)
     end
     
     local model = Shared_GetModel(self.modelIndex)
-
-    if model ~= nil then
+    
+    if attachPointIndex > -1 and model ~= nil then
     
         local attachPointExists = model:GetAttachPointExists(attachPointIndex)
         ASSERT(attachPointExists, self:GetClassName() .. ":GetAttachPointCoords(" .. attachPointIndex .. "): Attach point doesn't exist. Named: " .. ToString(attachPoint) .. " Model Name: " .. model:GetFileName() .. " Point Name: " .. ToString(attachPoint))
-
+        
         local coords = self._modelCoords
         if attachPointExists and coords ~= nil then
             return self._modelCoords * model:GetAttachPointCoords(attachPointIndex, self.boneCoords)

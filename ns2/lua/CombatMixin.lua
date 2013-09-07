@@ -115,7 +115,7 @@ end
 
 function CombatMixin:OnDamageDone(doer, target)
 
-    if doer and (doer:isa("Projectile") or doer:isa("Weapon")) then
+    if doer and (doer:isa("Projectile") or doer:isa("PredictedProjectile") or doer:isa("Weapon") or doer:isa("Minigun") or doer:isa("Claw") or doer:isa("Railgun")) then
 
         self.timeLastDamageDealt = Shared.GetTime()
         

@@ -19,7 +19,7 @@ local kAnimationGraph = PrecacheAsset("models/alien/onos/onos_view.animation_gra
 
 local networkVars =
 {
-    timeLastBoneShield = "time"
+    timeLastBoneShield = "compensated time"
 }
 
 AddMixinNetworkVars(StompMixin, networkVars)
@@ -46,13 +46,13 @@ function BoneShield:GetHUDSlot()
     return 2
 end
 
-function BoneShield:GetCanUseBoneShield()
-    return self.timeLastBoneShield + 2 < Shared.GetTime()
+function BoneShield:GetCanUseBoneShield(player)
+    return self.timeLastBoneShield + 2 < Shared.GetTime() and not self.secondaryAttacking and not player.charging
 end
 
 function BoneShield:OnPrimaryAttack(player)
 
-    if self:GetEnergyCost() < player:GetEnergy() and player:GetIsOnGround() and self:GetCanUseBoneShield() then
+    if self:GetEnergyCost() < player:GetEnergy() and player:GetIsOnGround() and self:GetCanUseBoneShield(player) then
         self.primaryAttacking = true
     end
 
@@ -65,10 +65,10 @@ end
 function BoneShield:OnUpdateAnimationInput(modelMixin)
 
     local activityString = "none"
-    local abilityString = "gore"
+    local abilityString = "boneshield"
     
     if self.primaryAttacking then
-        activityString = "none" // TODO: set anim input
+        activityString = "primary" // TODO: set anim input
     end
     
     modelMixin:SetAnimationInput("ability", abilityString)

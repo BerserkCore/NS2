@@ -86,7 +86,7 @@ function OnCommandScores(scoreTable)
     
     Scoreboard_SetPlayerData(scoreTable.clientId, scoreTable.entityId, scoreTable.playerName, scoreTable.teamNumber, scoreTable.score,
                              scoreTable.kills, scoreTable.deaths, math.floor(scoreTable.resources), scoreTable.isCommander, scoreTable.isRookie,
-                             status, scoreTable.isSpectator)
+                             status, scoreTable.isSpectator, scoreTable.assists)
     
 end
 

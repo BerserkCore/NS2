@@ -46,6 +46,11 @@ function EntityFilterMixinAndSelf(entity, mixinType)
     return function(test) return test == entity or HasMixin(test, mixinType) end
 end
 
+function EntityFilterMixin(mixinType)
+    return function(test) HasMixin(test, mixinType) end
+end
+
+
 /** Adds the material effect to the entity and all child entities (hat have a Model mixin) */
 function AddMaterialEffect(entity, material, viewMaterial, entities)
 
@@ -1555,12 +1560,11 @@ function GetAndCheckBoolean(valueString, valueName, defaultValue)
 
     local returnValue = false
     
-    if(valueString == nil) then
-        Shared.Message(string.format("GetAndCheckBoolean(%s): Value is nil, returning default of %s.", valueName, tostring(defaultValue)))
+    if valueString == nil  then
         returnValue = defaultValue
-    elseif(type(valueString) == "string") then
+    elseif type(valueString) == "string" then
         returnValue = ConditionalValue(string.find(valueString, "true") ~= nil, true, false)
-    elseif(type(valueString) == "boolean") then
+    elseif type(valueString) == "boolean" then
         returnValue = valueString
     end  
     

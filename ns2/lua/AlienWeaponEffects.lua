@@ -10,6 +10,21 @@
 
 kAlienWeaponEffects =
 {
+    shockwave_trail =
+    {
+        {
+            {cinematic = "cinematics/alien/onos/shockwave.cinematic"},
+        }
+    },
+    
+    shockwave_hit =
+    {
+        {
+            {decal =  "cinematics/vfx_materials/decals/shockwave_hit.material", scale = 2.0},
+            {cinematic = "cinematics/alien/onos/shockwave_hit.cinematic"},
+        }
+    },
+
     draw = 
     {
     },
@@ -180,9 +195,7 @@ kAlienWeaponEffects =
             
             // TODO: Change to something else
             {cinematic = "cinematics/alien/gorge/bilebomb_impact.cinematic"},
-            
-            {sound = "", silenceupgrade = true, done = true},
-            {sound = "sound/NS2.fev/alien/gorge/bilebomb_hit", done = true},
+            {parented_sound = "sound/NS2.fev/alien/gorge/bilebomb_hit", done = true},
         },
     },
 
@@ -257,13 +270,13 @@ kAlienWeaponEffects =
             {player_sound = "sound/NS2.fev/alien/fade/stab"},
         },
     },
-
+    
     blink_in =
     {
         blinkInEffects =
         {        
-            {player_cinematic = "cinematics/alien/fade/blink_in_silent.cinematic", silenceupgrade = true, done = true},   
-            {player_cinematic = "cinematics/alien/fade/blink_in.cinematic"},        
+            {player_sound = "sound/NS2.fev/alien/fade/blink_end"},
+            {player_cinematic = "cinematics/alien/fade/blink_in_silent.cinematic", done = true},     
         },
     },  
 
@@ -271,17 +284,17 @@ kAlienWeaponEffects =
     {
         blinkOutEffects =
         {   
-            {player_cinematic = "cinematics/alien/fade/blink_out_silent.cinematic", silenceupgrade = true, done = true},     
-            {player_cinematic = "cinematics/alien/fade/blink_out.cinematic"},     
+            {player_sound = "sound/NS2.fev/alien/fade/blink"},
+            {player_cinematic = "cinematics/alien/fade/blink_out_silent.cinematic", done = true},
         },
     },
     
     shadow_step =
     {
-        miniBlinkEffects =
+        shadowStepEffects =
         {
-            {player_cinematic = "cinematics/alien/fade/shadowstep_silent.cinematic", silenceupgrade = true, done = true},
-            {player_cinematic = "cinematics/alien/fade/shadowstep.cinematic", done = true},
+            {player_sound = "sound/NS2.fev/alien/fade/shadow_step"},
+            {player_cinematic = "cinematics/alien/fade/shadowstep_silent.cinematic", done = true},
         }
     
     },

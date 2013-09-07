@@ -59,8 +59,7 @@ Drifter.kOrdered3DSoundName = PrecacheAsset("sound/NS2.fev/alien/drifter/ordered
 local kDrifterConstructSound = PrecacheAsset("sound/NS2.fev/alien/drifter/drift")
 local kDrifterMorphing = PrecacheAsset("sound/NS2.fev/alien/commander/drop_structure")
 
-Drifter.kMoveSpeed = 8
-Drifter.kCelerityMoveSpeed = 10
+Drifter.kMoveSpeed = 11
 Drifter.kHealth = kDrifterHealth
 Drifter.kArmor = kDrifterArmor
             
@@ -339,6 +338,8 @@ function Drifter:OnOverrideOrder(order)
 
         if orderTarget and HasMixin(orderTarget, "Construct") and not orderTarget:GetIsBuilt() and GetAreFriends(self, orderTarget) and not IsBeingGrown(self, orderTarget) then    
             order:SetType(kTechId.Grow)
+        elseif orderTarget and orderTarget:isa("Alien") and orderTarget:GetIsAlive() then
+            order:SetType(kTechId.Follow)
         else
             order:SetType(kTechId.Move)
         end
@@ -388,8 +389,38 @@ function Drifter:ProcessMoveOrder(moveSpeed, deltaTime)
     
         local hoverAdjustedLocation = currentOrder:GetLocation()
         
-        if self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, moveSpeed, deltaTime) then
-            self:CompletedCurrentOrder()
+        if self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, moveSpeed, deltaTime) then 
+
+            if currentOrder:GetType() == kTechId.Move then
+            
+                self:CompletedCurrentOrder()
+            
+            // doesnt work with queued orders yet,    
+            elseif currentOrder:GetType() == kTechId.Patrol then
+            
+                local prevTarget = currentOrder:GetLocation()
+                local prevOrigin = currentOrder:GetOrigin()
+                
+                currentOrder:SetLocation(prevOrigin)
+                currentOrder:SetOrigin(prevTarget)
+
+            end    
+                
+        end
+        
+    end
+    
+end
+
+function Drifter:ProcessFollowOrder(moveSpeed, deltaTime)
+
+    local currentOrder = self:GetCurrentOrder()
+    
+    if currentOrder ~= nil then
+    
+        local destination = currentOrder:GetLocation()
+        if (self:GetOrigin() - destination):GetLengthXZ() > 7.5 then
+            self:MoveToTarget(PhysicsMask.AIMovement, destination, moveSpeed, deltaTime)
         end
         
     end
@@ -493,8 +524,10 @@ local function UpdateTasks(self, deltaTime)
 
         local currentOrigin = Vector(self:GetOrigin())
         
-        if currentOrder:GetType() == kTechId.Move then
+        if currentOrder:GetType() == kTechId.Move or currentOrder:GetType() == kTechId.Patrol then
             self:ProcessMoveOrder(drifterMoveSpeed, deltaTime)
+        elseif currentOrder:GetType() == kTechId.Follow then
+            self:ProcessFollowOrder(drifterMoveSpeed, deltaTime)     
         elseif currentOrder:GetType() == kTechId.EnzymeCloud or currentOrder:GetType() == kTechId.Hallucinate or currentOrder:GetType() == kTechId.MucousMembrane or currentOrder:GetType() == kTechId.Storm then
             self:ProcessEnzymeOrder(drifterMoveSpeed, deltaTime)
         elseif currentOrder:GetType() == kTechId.Grow then
@@ -592,8 +625,23 @@ local function ScanForNearbyEnemy(self)
 end
 
 function Drifter:PerformAction(techNode)
+
+    if techNode:GetTechId() == kTechId.FollowAlien then
     
-    if techNode:GetTechId() == kTechId.HoldPosition then
+        local aliens = GetEntitiesForTeamWithinRange("Alien", self:GetTeamNumber(), self:GetOrigin(), 30)
+        Shared.SortEntitiesByDistance(self:GetOrigin(), aliens)
+
+        for i = 1, #aliens do
+        
+            local alien = aliens[i]
+            if alien:GetIsAlive() and not alien:isa("Embryo") then
+                self:GiveOrder(kTechId.Follow, alien:GetId(), alien:GetOrigin(), nil, true, true)
+                break
+            end
+        
+        end
+        
+    elseif techNode:GetTechId() == kTechId.HoldPosition then
         self:GiveOrder(kTechId.HoldPosition, self:GetId(), self:GetOrigin(), nil, true, true)
         return true
     end
@@ -684,7 +732,7 @@ end
 function Drifter:GetTechButtons(techId)
 
     local techButtons = { kTechId.EnzymeCloud, kTechId.Storm, kTechId.MucousMembrane, kTechId.Hallucinate,
-                          kTechId.Grow, kTechId.HoldPosition, kTechId.None, kTechId.None }
+                          kTechId.Grow, kTechId.Move, kTechId.Patrol, kTechId.FollowAlien }
 /*
     if self.hasCelerity then
         techButtons[6] = kTechId.DrifterCelerity

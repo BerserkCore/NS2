@@ -22,6 +22,10 @@ function WebsAbility:GetDropStructureId()
     return kTechId.Web
 end
 
+function WebsAbility:AllowBackfacing()
+    return true
+end
+
 function WebsAbility:GetSuffixName()
     return "web"
 end
@@ -39,7 +43,7 @@ function WebsAbility:GetIsPositionValid(displayOrigin, player, normal, lastClick
     local mapOrigin = Vector(0,0,0)
     local direction = player:GetViewCoords().zAxis
     local startPoint = displayOrigin + normal * 0.1
-    local valid = false
+    local valid = lastClickedPosition == nil
 
     if lastClickedPosition and displayOrigin and startPoint ~= lastClickedPosition 
        and (lastClickedPosition - startPoint):GetLength() < kMaxWebLength and (lastClickedPosition - startPoint):GetLength() > kMinWebLength then
@@ -58,4 +62,9 @@ end
 
 function WebsAbility:GetDropMapName()
     return Web.kMapName
+end
+
+local kWebOffset = 0.1
+function WebsAbility:ModifyCoords(coords)
+    coords.origin = coords.origin + coords.yAxis * kWebOffset
 end

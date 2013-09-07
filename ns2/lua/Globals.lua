@@ -7,6 +7,9 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 Script.Load("lua/Utility.lua")
 
+kMaxPlayerSkill = 1000
+kMaxPlayerLevel = 100
+
 kSuicideDelay = 6
 
 kDecalMaxLifetime = 60
@@ -148,15 +151,16 @@ kDeathMessageIcon = enum( { 'None',
                             'Mine', 'Gore', 'Spit', 'Jetpack', 'Claw',
                             'Minigun', 'Vortex', 'LerkBite', 'Umbra', 
                             'Xenocide', 'Blink', 'Leap', 'Stomp',
-                            'Consumed', 'GL', 'Recycled', 'Babbler', 'Railgun', 'BabblerAbility', 'GorgeTunnel',
+                            'Consumed', 'GL', 'Recycled', 'Babbler', 'Railgun', 'BabblerAbility', 'GorgeTunnel', 'BoneShield',
+                            'ClusterGrenade', 'GasGrenade', 'PulseGrenade', 'StabBlink',
                             } )
 
-kMinimapBlipType = enum( { 'Undefined', 'TechPoint', 'ResourcePoint', 'Scan',
-                           'Sentry', 'CommandStation', 'CommandStationL2', 'CommandStationL3',
-                           'Extractor', 'InfantryPortal', 'Armory', 'PhaseGate', 'Observatory',
-                           'RoboticsFactory', 'ArmsLab', 'PrototypeLab', 'PowerPack',
+kMinimapBlipType = enum( { 'Undefined', 'TechPoint', 'ResourcePoint', 'Scan', 'EtherealGate', 'HighlightWorld',
+                           'Sentry', 'CommandStation',
+                           'Extractor', 'InfantryPortal', 'Armory', 'AdvancedArmory', 'PhaseGate', 'Observatory',
+                           'RoboticsFactory', 'ArmsLab', 'PrototypeLab',
                            'Hive', 'Harvester', 'Hydra', 'Egg', 'Embryo', 'Crag', 'Whip', 'Shade', 'Shift', 'Shell', 'Veil', 'Spur', 'TunnelEntrance',
-                           'Marine', 'JetpackMarine', 'Exo', 'Jetpack', 'Skulk', 'Lerk', 'Onos', 'Fade', 'Gorge',
+                           'Marine', 'JetpackMarine', 'Exo', 'Skulk', 'Lerk', 'Onos', 'Fade', 'Gorge',
                            'Door', 'PowerPoint', 'DestroyedPowerPoint',
                            'ARC', 'Drifter', 'MAC', 'Infestation', 'InfestationDying', 'MoveOrder', 'AttackOrder', 'BuildOrder', 'SensorBlip', 'SentryBattery' } )
 
@@ -246,7 +250,13 @@ kCommanderInvisibleVentsGroupName = "CommanderInvisibleVents"
 kCommanderNoBuildGroupName = "CommanderNoBuild"
 kCommanderBuildGroupName = "CommanderBuild"
 
+// invisible and blocks all movement
+kMovementCollisionGroupName = "MovementCollisionGeometry"
+// same as 'MovementCollisionGeometry'
 kCollisionGeometryGroupName = "CollisionGeometry"
+// invisible, blocks anything default geometry would block
+kInvisibleCollisionGroupName = "InvisibleGeometry"
+// visible and won't block anything
 kNonCollisionGeometryGroupName = "NonCollisionGeometry"
 
 kPathingLayerName = "Pathing"
@@ -278,6 +288,7 @@ kSoundOutputDeviceOptionsKey = "sound/output-device"
 kSoundVolumeOptionsKey = "soundVolume"
 kMusicVolumeOptionsKey = "musicVolume"
 kVoiceVolumeOptionsKey = "voiceVolume"
+kDisplayOptionsKey = "graphics/display/display"
 kWindowModeOptionsKey = "graphics/display/window-mode"
 kDisplayQualityOptionsKey = "graphics/display/quality"
 kInvertedMouseOptionsKey = "input/mouse/invert"
@@ -285,6 +296,7 @@ kLastServerConnected = "lastConnectedServer"
 kLastServerPassword  = "lastServerPassword"
 kLastServerMapName  = "lastServerMapName"
 
+kPhysicsGpuAccelerationKey = "physics/gpu-acceleration"
 kGraphicsXResolutionOptionsKey = "graphics/display/x-resolution"
 kGraphicsYResolutionOptionsKey = "graphics/display/y-resolution"
 kAntiAliasingOptionsKey = "graphics/display/anti-aliasing"

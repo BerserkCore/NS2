@@ -38,7 +38,7 @@ function GUIMarineFlashlightHelp:Update(dt)
     
     if not self.flashlightUsed then
     
-        // Only display when the player is in a location that is not powered. A dark room.
+        // Only animate in when the player is in a location that is not powered. A dark room.
         if PlayerUI_GetLocationPower()[3] == kLightMode.NoPower then
         
             if not self.keyBackground:GetIsVisible() then
@@ -46,16 +46,17 @@ function GUIMarineFlashlightHelp:Update(dt)
             end
             
             self.keyBackground:SetIsVisible(true)
-            local player = Client.GetLocalPlayer()
-            if player then
             
-                if player:GetFlashlightOn() then
-                
-                    self.keyBackground:SetIsVisible(false)
-                    self.flashlightUsed = true
-                    HelpWidgetIncreaseUse(self, "GUIMarineFlashlightHelp")
-                    
-                end
+        end
+        
+        local player = Client.GetLocalPlayer()
+        if self.keyBackground:GetIsVisible() and player then
+        
+            if player:GetFlashlightOn() then
+            
+                self.keyBackground:SetIsVisible(false)
+                self.flashlightUsed = true
+                HelpWidgetIncreaseUse(self, "GUIMarineFlashlightHelp")
                 
             end
             

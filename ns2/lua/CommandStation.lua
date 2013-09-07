@@ -22,6 +22,7 @@ Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'CommandStation' (CommandStructure)
 
@@ -31,9 +32,6 @@ CommandStation.kModelName = PrecacheAsset("models/marine/command_station/command
 local kAnimationGraph = PrecacheAsset("models/marine/command_station/command_station.animation_graph")
 
 CommandStation.kUnderAttackSound = PrecacheAsset("sound/NS2.fev/marine/voiceovers/commander/command_station_under_attack")
-
-CommandStation.kTriggerNanoShieldSound3d = PrecacheAsset("sound/NS2.fev/marine/commander/nano_shield_3D")
-CommandStation.kTriggerNanoShieldSound = PrecacheAsset("sound/NS2.fev/marine/commander/nano_shield")
 
 Shared.PrecacheSurfaceShader("models/marine/command_station/command_station_display.surface_shader")
 
@@ -55,6 +53,7 @@ AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(HiveVisionMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function CommandStation:OnCreate()
 
@@ -93,6 +92,8 @@ function CommandStation:OnInitialized()
         InitMixin(self, UnitStatusMixin)
         
     end
+    
+    InitMixin(self, IdleMixin)
 
 end
 
@@ -126,13 +127,13 @@ function CommandStation:GetUsablePoints()
 end
 
 function CommandStation:GetTechButtons()
-    return { kTechId.NanoShieldTech }
+    return { kTechId.NanoShieldTech, kTechId.CatPackTech }
 end
 
 function CommandStation:GetCanBeUsed(player, useSuccessTable)
 
     // Cannot be used if the team already has a Commander (but can still be used to build).
-    if self:GetIsBuilt() and GetTeamHasCommander(self:GetTeamNumber()) then
+    if player:isa("Exo") or (self:GetIsBuilt() and GetTeamHasCommander(self:GetTeamNumber())) then
         useSuccessTable.useSuccess = false
     end
     
@@ -186,9 +187,8 @@ function CommandStation:OnUpdateRender()
     
 end
 
-local kCommandStationHealthbarOffset = Vector(0, 2, 0)
 function CommandStation:GetHealthbarOffset()
-    return kCommandStationHealthbarOffset
+    return 2
 end
 
 // return a good spot from which a player could have entered the hive

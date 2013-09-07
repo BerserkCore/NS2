@@ -111,11 +111,12 @@ function GUICrosshair:Update(deltaTime)
         end
     end
     
+    local animSpeed = 3
+    
     // Update give damage indicator.
     local indicatorVisible, timePassedPercent = PlayerUI_GetShowGiveDamageIndicator()
     self.damageIndicator:SetIsVisible(indicatorVisible and showCrossHair)
-    self.damageIndicator:SetColor(Color(1, 1, 1, 1 - timePassedPercent * 3))
-    self.crosshairs:SetColor(Color(1, 1, 1, timePassedPercent * 3))
+    self.damageIndicator:SetColor(Color(1, 1, 1, 1 - timePassedPercent * animSpeed))
 
     crosshairPos = Vector(0, PlayerUI_GetCrossHairVerticalOffset(), 0) + GUICrosshair.kCrosshairPos
     self.crosshairs:SetPosition(crosshairPos)

@@ -21,6 +21,8 @@ MarineSpectator.kMapName = "marinespectator"
 
 local networkVars ={ }
 
+AddMixinNetworkVars(ScoringMixin, networkVars)
+
 function MarineSpectator:OnCreate()
 
     TeamSpectator.OnCreate(self)

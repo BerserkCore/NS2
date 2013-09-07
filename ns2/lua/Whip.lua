@@ -48,6 +48,7 @@ Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
 Script.Load("lua/BiomassMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Whip' (ScriptActor)
 
@@ -121,6 +122,7 @@ AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 if Server then
 
@@ -237,6 +239,8 @@ function Whip:OnInitialized()
         
     end
     
+    InitMixin(self, IdleMixin)
+    
 end
 
 function Whip:GetBioMassLevel()
@@ -298,11 +302,11 @@ function Whip:GetTechButtons(techId)
 
     local techButtons = nil
 
-    techButtons = { kTechId.Attack, kTechId.Stop, kTechId.None, kTechId.None,  
-                    kTechId.None,  kTechId.None,  kTechId.None,  kTechId.None, }
+    techButtons = { kTechId.Attack, kTechId.Move, kTechId.None, kTechId.None,  
+                    kTechId.UpgradeSkulk, kTechId.None, kTechId.None, kTechId.None }
     
     if self.rooted then
-        techButtons[3] = kTechId.GrenadeWhack
+        techButtons[3] = kTechId.Slap
     end
     
     return techButtons
@@ -317,18 +321,6 @@ function Whip:OverrideHintString(hintString)
     
     return hintString
     
-end
-
-function Whip:GetActivationTechAllowed(techId)
-
-    if techId == kTechId.WhipRoot then
-        return self:GetIsBuilt() and self:GetGameEffectMask(kGameEffect.OnInfestation)
-    elseif techId == kTechId.WhipUnroot then
-        return self:GetIsBuilt() and self.rooted == true
-    end
-
-    return true
-        
 end
 
 function Whip:OverrideVisionRadius()
@@ -356,10 +348,6 @@ function Whip:GetTechAllowed(techId, techNode, player)
     
     if techId == kTechId.Attack then
         allowed = self:GetIsBuilt() and self.rooted == true
-    end
-    
-    if techId == kTechId.Move then
-        allowed = not self.rooted
     end
 
     return allowed and self:GetIsUnblocked(), canAfford

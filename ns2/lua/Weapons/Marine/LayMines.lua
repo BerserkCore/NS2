@@ -16,7 +16,7 @@ LayMines.kMapName = "mine"
 local kDropModelName = PrecacheAsset("models/marine/mine/mine_pile.model")
 local kHeldModelName = PrecacheAsset("models/marine/mine/mine_3p.model")
 
-local kViewModelName = PrecacheAsset("models/marine/mine/mine_view.model")
+local kViewModels = GenerateMarineViewModelPaths("mine")
 local kAnimationGraph = PrecacheAsset("models/marine/mine/mine_view.animation_graph")
 
 local kPlacementDistance = 2
@@ -67,8 +67,8 @@ function LayMines:GetMinesLeft()
     return self.minesLeft
 end
 
-function LayMines:GetViewModelName()
-    return kViewModelName
+function LayMines:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function LayMines:GetAnimationGraphName()
@@ -81,6 +81,10 @@ end
 
 function LayMines:GetDropClassName()
     return "Mine"
+end
+
+function LayMines:GetWeight()
+    return kLayMineWeight
 end
 
 function LayMines:GetDropMapName()

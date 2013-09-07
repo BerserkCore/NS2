@@ -23,6 +23,7 @@ Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Skulk' (Alien)
 
@@ -80,7 +81,8 @@ local networkVars =
     timeOfLastJumpLand = "private compensated time",
     timeLastWallJump = "private compensated time",
     jumpLandSpeed = "private compensated float",
-    dashing = "compensated boolean"
+    dashing = "compensated boolean",
+    hasLeap = "private boolean",
 
 }
 
@@ -93,6 +95,7 @@ AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Skulk:OnCreate()
 
@@ -148,6 +151,8 @@ function Skulk:OnInitialized()
     self.leaping = false
     
     self.timeLastWallJump = 0
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -447,6 +452,10 @@ function Skulk:ModifyGravityForce(gravityTable)
 
 end
 
+function Skulk:GetHasBiomassHealth()
+    return GetHasTech(self, kTechId.UpgradeSkulk)
+end
+
 function Skulk:GetJumpHeight()
     return Skulk.kJumpHeight
 end
@@ -581,11 +590,23 @@ function Skulk:OnUpdate(deltaTime)
     
 end
 
+function Skulk:GetMovementSpecialTechId()
+    return kTechId.Sneak
+end
+
+function Skulk:GetHasMovementSpecial()
+    return self.movementModiferState
+end
+
 function Skulk:OnProcessMove(input)
 
     Alien.OnProcessMove(self, input)
     
     //UpdateDashEffects(self)
+    
+    if Server then    
+        self.hasLeap = GetIsTechUnlocked(self, kTechId.Leap)    
+    end
 
 end
 
@@ -598,4 +619,4 @@ function Skulk:GetEngagementPointOverride()
     return self:GetOrigin() + kSkulkEngageOffset
 end
 
-Shared.LinkClassToMap("Skulk", Skulk.kMapName, networkVars)
+Shared.LinkClassToMap("Skulk", Skulk.kMapName, networkVars, true)

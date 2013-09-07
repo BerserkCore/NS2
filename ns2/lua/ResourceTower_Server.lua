@@ -18,7 +18,7 @@ function ResourceTower:CollectResources()
     
     local team = self:GetTeam()
     if team then
-        team:AddTeamResources(kTeamResourcePerTick)
+        team:AddTeamResources(kTeamResourcePerTick, true)
     end
 
     if self:isa("Extractor") then

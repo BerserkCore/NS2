@@ -73,7 +73,7 @@ end
 function GetEntitiesWithFilter(entityList, filterFunction)
 
     PROFILE("Entity:GetEntitiesWithFilter")
-
+    
     assert(entityList ~= nil)
     assert(type(filterFunction) == "function")
     
@@ -82,21 +82,26 @@ function GetEntitiesWithFilter(entityList, filterFunction)
     local numDstEntities = 0
     
     for entityIndex = 1, numEntities do
+    
         local entity = entityList:GetEntityAtIndex(entityIndex - 1)
-        if filterFunction(entity) then
+        -- entity may be nil in cases where an Entity is destroyed in the current frame.
+        if entity and filterFunction(entity) then
+        
             numDstEntities = numDstEntities + 1
             result[numDstEntities] = entity
+            
         end
+        
     end
     
     return result
-
+    
 end
 
 function EntityListToTable(entityList)
 
     PROFILE("EntityListToTable")
-
+    
     assert(entityList ~= nil)
     
     local numEntities = entityList:GetSize()
@@ -107,7 +112,7 @@ function EntityListToTable(entityList)
     end
     
     return result
-
+    
 end
 
 function GetEntitiesForTeam(className, teamNumber)
@@ -119,7 +124,7 @@ function GetEntitiesForTeam(className, teamNumber)
         return HasMixin(entity, "Team") and entity:GetTeamNumber() == teamNumber
     end
     return GetEntitiesWithFilter(Shared.GetEntitiesWithClassname(className), teamFilterFunction)
-
+    
 end
 
 function GetEntitiesForTeamWithinRange(className, teamNumber, origin, range)
@@ -129,10 +134,10 @@ function GetEntitiesForTeamWithinRange(className, teamNumber, origin, range)
     assert(origin ~= nil)
     assert(type(range) == "number")
     
-    local function teamFilterFunction(entity)    
-        return HasMixin(entity, "Team") and entity:GetTeamNumber() == teamNumber
+    local function TeamFilterFunction(entity)
+        return entity ~= nil and HasMixin(entity, "Team") and entity:GetTeamNumber() == teamNumber
     end
-    return Shared.GetEntitiesWithTagInRange("class:" .. className, origin, range, teamFilterFunction)
+    return Shared.GetEntitiesWithTagInRange("class:" .. className, origin, range, TeamFilterFunction)
     
 end
 
@@ -143,9 +148,9 @@ function GetEntitiesWithinRange(className, origin, range)
     assert(type(className) == "string")
     assert(origin ~= nil)
     assert(type(range) == "number")
-
-    return Shared.GetEntitiesWithTagInRange("class:" .. className, origin, range)    
-
+    
+    return Shared.GetEntitiesWithTagInRange("class:" .. className, origin, range)
+    
 end
 
 function GetEntitiesForTeamWithinXZRange(className, teamNumber, origin, range)
@@ -245,12 +250,14 @@ function GetEntitiesMatchAnyTypesForTeam(typeList, teamNumber)
     local allMatchingEntsList = { }
     
     for i, type in ipairs(typeList) do
+    
         local matchingEntsForType = GetEntitiesWithFilter(Shared.GetEntitiesWithClassname(type), teamFilter)
         table.adduniquetable(matchingEntsForType, allMatchingEntsList)
+        
     end
     
     return allMatchingEntsList
-
+    
 end
 
 function GetEntitiesMatchAnyTypes(typeList)
@@ -282,11 +289,11 @@ function GetEntitiesWithMixinForTeam(mixinType, teamNumber)
     assert(type(mixinType) == "string")
     assert(type(teamNumber) == "number")
     
-    local function onTeamFilterFunction(entity)
+    local function OnTeamFilterFunction(entity)
         return HasMixin(entity, "Team") and entity:GetTeamNumber() == teamNumber
     end
-    return GetEntitiesWithFilter(Shared.GetEntitiesWithTag(mixinType), onTeamFilterFunction)
-
+    return GetEntitiesWithFilter(Shared.GetEntitiesWithTag(mixinType), OnTeamFilterFunction)
+    
 end
 
 function GetEntitiesWithMixinWithinRange(mixinType, origin, range)

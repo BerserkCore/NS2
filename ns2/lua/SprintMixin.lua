@@ -169,6 +169,7 @@ function SprintMixin:UpdateSprintingState(input)
         //if not self.desiredSprinting or (self:GetSprintTime() >= SprintMixin.kMinSprintTime) then
     
             self.sprintTimeOnChange = self:GetSprintTime()
+            local sprintDuration = math.max(0, Shared.GetTime() - self.timeSprintChange)
             self.timeSprintChange = Shared.GetTime()
             self.sprinting = self.desiredSprinting
             
@@ -181,7 +182,7 @@ function SprintMixin:UpdateSprintingState(input)
             else
             
                 if self.OnSprintEnd then
-                    self:OnSprintEnd()
+                    self:OnSprintEnd(sprintDuration)
                 end
                 
             end

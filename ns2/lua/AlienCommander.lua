@@ -9,8 +9,10 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/Commander.lua")
-
+Script.Load("lua/CommAbilities/Alien/NutrientMist.lua")
 Script.Load("lua/CommAbilities/Alien/Rupture.lua")
+Script.Load("lua/CommAbilities/Alien/BoneWall.lua")
+Script.Load("lua/CommAbilities/Alien/Contamination.lua")
 
 class 'AlienCommander' (Commander)
 
@@ -51,9 +53,11 @@ AlienCommander.kSpendResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/co
 AlienCommander.kSpendTeamResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_metal")
 AlienCommander.kBoneWallSpawnSound = PrecacheAsset("sound/NS2.fev/alien/common/infestation_spikes")
 AlienCommander.kHealWaveSound = PrecacheAsset("sound/NS2.fev/alien/common/frenzy")
-AlienCommander.kShadeInkSound = PrecacheAsset("sound/NS2.fev/alien/structures/shift/echo")
-
+AlienCommander.kShadeInkSound = PrecacheAsset("sound/NS2.fev/alien/structures/shade/cloak_triggered_2D")
 AlienCommander.kCreateCystSound = PrecacheAsset("sound/NS2.fev/alien/commander/DI_drop_2D")
+AlienCommander.kCreateMistSound = PrecacheAsset("sound/NS2.fev/alien/commander/catalyze_2D")
+AlienCommander.kRupterSound = PrecacheAsset("sound/NS2.fev/alien/structures/generic_spawn_large")
+AlienCommander.kContaminationSound = PrecacheAsset("sound/NS2.fev/alien/gorge/babbler_ball_hit")
 
 local kHoverSound = PrecacheAsset("sound/NS2.fev/alien/commander/hover")
 
@@ -231,32 +235,22 @@ if Server then
                 
                 if legalBuildPosition then
                 
-                    local cystPoints, parent = GetCystPoints(trace.endPoint)
+                    local cystPoints, parent, normals = GetCystPoints(trace.endPoint)
                     cost = math.max(0, (#cystPoints - 1) * kCystCost)
                     
                     if cost <= team:GetTeamResources() and parent ~= nil then
                     
-                        local previousParent = parent
+                        local previousParent = nil
                         local createdCysts = 0
                     
                         for i = 2, #cystPoints do
-                        
-                            local normalTrace = Shared.TraceRay(cystPoints[i] + Vector(0, 0.25, 0), cystPoints[i] + Vector(0, -5, 0), CollisionRep.Default, PhysicsMask.CystBuild, EntityFilterAll())
-                            
-                            if normalTrace.fraction == 1 then
-                            
-                                Shared.Message(string.format("Warning: Invalid trace at %.2f %.2f %.2f", cystPoints[i].x, cystPoints[i].y, cystPoints[i].z))
-                                normalTrace.normal = Vector(0, 1, 0)
-                                normalTrace.endPoint = cystPoints[i]
-                                
-                            end
-                            
-                            local cyst = CreateEntity(Cyst.kMapName, normalTrace.endPoint, self:GetTeamNumber())
-                            cyst:SetCoords(AlignCyst(Coords.GetTranslation(normalTrace.endPoint), normalTrace.normal))    
+
+                            local cyst = CreateEntity(Cyst.kMapName, cystPoints[i], self:GetTeamNumber())
+                            cyst:SetCoords(AlignCyst(Coords.GetTranslation(cystPoints[i]), normals[i]))    
 
                             cyst:SetImmuneToRedeploymentTime(0.05)                    
                          
-                            if not cyst:GetIsConnected() then
+                            if not cyst:GetIsConnected() and previousParent then
                                 cyst:ReplaceParent(previousParent)
                             end
                             
@@ -303,13 +297,19 @@ if Server then
             elseif techId == kTechId.HealWave then
                 soundToPlay = AlienCommander.kHealWaveSound
             elseif techId == kTechId.ShadeInk then
-                soundToPlay = AlienCommander.kShadeInkSound
+                soundToPlay = AlienCommander.kShadeInkSound  
             elseif techId == kTechId.Cyst then
                 soundToPlay = AlienCommander.kCreateCystSound
+            elseif techId == kTechId.NutrientMist then
+                soundToPlay = AlienCommander.kCreateMistSound    
+            elseif techId == kTechId.Rupture then
+                soundToPlay = AlienCommander.kRupterSound    
+            elseif techId == kTechId.Contamination then
+                soundToPlay = AlienCommander.kContaminationSound    
             end
 
-            if soundToPlay then
-                Shared.PlayPrivateSound(self, soundToPlay, nil, 1.0, self:GetOrigin())
+            if soundToPlay then                
+                Shared.PlayPrivateSound(self, soundToPlay, nil, 1.0, self:GetOrigin())                
             end
 
         end    
@@ -365,7 +365,7 @@ function AlienCommander:GetTechAllowed(techId, techNode, self)
     
     if techId == kTechId.SelectDrifter then
     
-        allowed = GetNearest(self, "Drifter") ~= nil
+        allowed = true
         canAfford = true
         
     elseif techId == kTechId.SelectShift then
@@ -380,19 +380,6 @@ function AlienCommander:GetTechAllowed(techId, techNode, self)
     elseif techId == kTechId.ShadeInk then
     
         allowed = GetNearest(self, "Shade") ~= nil
-    /*
-    elseif techId == kTechId.Shell then
-    
-        allowed = self.shellCount < 3
-        
-    elseif techId == kTechId.Spur then
-
-        allowed = self.spurCount < 3    
-        
-    elseif techId == kTechId.Veil then
-
-        allowed = self.veilCount < 3
-        */
 
     end    
     
@@ -416,14 +403,14 @@ end
 
 local gAlienMenuButtons =
 {
-    [kTechId.BuildMenu] = { kTechId.Cyst, kTechId.Harvester, kTechId.Whip, kTechId.Hive,
+    [kTechId.BuildMenu] = { kTechId.Cyst, kTechId.Harvester, kTechId.DrifterEgg, kTechId.Hive,
                             kTechId.ThreatMarker, kTechId.NeedHealingMarker, kTechId.ExpandingMarker, kTechId.None },
                             
-    [kTechId.AdvancedMenu] = { kTechId.Crag, kTechId.Shade, kTechId.Shift, kTechId.None,
+    [kTechId.AdvancedMenu] = { kTechId.Crag, kTechId.Shade, kTechId.Shift, kTechId.Whip,
                                kTechId.Shell, kTechId.Veil, kTechId.Spur, kTechId.None },
 
     [kTechId.AssistMenu] = { kTechId.HealWave, kTechId.ShadeInk, kTechId.SelectShift, kTechId.SelectDrifter,
-                             kTechId.NutrientMist, kTechId.Rupture, kTechId.BoneWall, kTechId.None }
+                             kTechId.NutrientMist, kTechId.Rupture, kTechId.BoneWall, kTechId.Contamination }
 }
 
 function AlienCommander:GetButtonTable()
@@ -455,7 +442,10 @@ function AlienCommander:SetCurrentTech(techId)
 
     if techId == kTechId.SelectDrifter then
     
-        SelectNearest(self, "Drifter")
+        if not SelectNearest(self, "Drifter") then
+            SelectNearest(self, "DrifterEgg")
+        end
+        
         return
         
     elseif techId == kTechId.SelectShift then

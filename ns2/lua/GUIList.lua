@@ -34,41 +34,58 @@ function GUIList:Uninitialize()
     self.list = nil
 
 end
+
 function GUIList:GetBackground()
     return self.background
 end
+
 function GUIList:SetColor(color)
     self.background:SetColor(color)
 end
+
 function GUIList:SetPosition(position)
     self.background:SetPosition(position)
 end
+
 function GUIList:SetAnchor(xAnchor,yAnchor)
     self.background:SetAnchor(xAnchor,yAnchor)
 end
+
 function GUIList:SetLayer(layer)
     self.background:SetLayer(layer)
 end
+
 function GUIList:SetSize(size)
-    self.size = (size)
-    repostion = function(item, i)
+
+    self.size = size
+    
+    local function Reposition(item, i)
+    
         item.Background:SetSize(size)
         item.Background:SetPosition(getLocation(self, i))
+        
     end
-    self:ForEach(reposition)
+    
+    self:ForEach(Reposition)
+    
 end
+
 function GUIList:SetSpacing(spacing)
     self.spacing = spacing
 end
+
 function GUIList:SetPadding(padding)
     self.padding = padding
 end
+
 function GUIList.SetMoveRate(rate)
     self.moveRate = rate
 end
+
 function GUIList:SetAlignment(alignment)
     self.alignment = alignment
 end
+
 function GUIList:SetIsVisible(bool)
     self.background:SetIsVisible(bool)
 end
@@ -106,6 +123,7 @@ local function moveItem(self, item, stop)
 end
 
 local function getLocation(self, index)
+
     if self.alignment == self.kAlignment.Right then
         return index * Vector(-self.size.x - self.spacing, 0, 0)
     elseif self.alignment == self.kAlignment.Left then
@@ -115,9 +133,11 @@ local function getLocation(self, index)
     elseif self.alignment == self.kAlignment.Top then
         return (index-1) * Vector(0, self.size.y + self.spacing, 0)
     end
+    
 end
 
-local function updateItem(self, item, i, deltaTime)
+local function UpdateItem(self, item, i, deltaTime)
+
     if i ~= item.Index then
     
         item.Index = i
@@ -131,15 +151,16 @@ local function updateItem(self, item, i, deltaTime)
         fraction = math.min(fraction + deltaTime * item.Velocity, 1)
         item.LerpFraction = fraction
         LerpItem(item)
-
+        
     end
+    
 end
 
 function GUIList:Update(deltaTime)
     
     for i = 1, #self.list do
         local item = self.list[i]
-        updateItem(self, item, i, deltaTime)
+        UpdateItem(self, item, i, deltaTime)
     end
     
     if #self.list > 0 then
@@ -155,7 +176,8 @@ function GUIList:Update(deltaTime)
 end
 
 function GUIList:Create(id)
-    local item = {}
+
+    local item = { }
     item.Id = id
     
     local background = GUIManager:CreateGraphicItem()
@@ -165,6 +187,7 @@ function GUIList:Create(id)
     self.background:AddChild(background)
     
     return item
+    
 end
 
 function GUIList:Add(item, move)
@@ -181,26 +204,38 @@ function GUIList:Add(item, move)
 end
 
 function GUIList:Remove(id)
+
     local item, i = self:Get(id)
     if item then
+    
         GUI.DestroyItem(item.Background)
         table.remove(self.list, i)
+        
     end
+    
 end
 
 function GUIList:Get(id)
+
     for i = 1, #(self.list) do
+    
         local item = self.list[i]
         if item.Id == id then
             return item, i
         end
+        
     end
     return nil
+    
 end
 
 function GUIList:ForEach(func)
+
     for i = 1, #(self.list) do
+    
         local item = self.list[i]
         func(item, i)
+        
     end
+    
 end

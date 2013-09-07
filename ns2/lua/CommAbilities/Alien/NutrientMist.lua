@@ -14,6 +14,8 @@ NutrientMist.kMapName = "nutrientmist"
 
 NutrientMist.kNutrientMistEffect = PrecacheAsset("cinematics/alien/nutrientmist.cinematic")
 
+NutrientMist.kMistSound = PrecacheAsset("sound/NS2.fev/alien/commander/catalyze_3D")
+
 NutrientMist.kType = CommanderAbility.kType.Repeat
 NutrientMist.kSearchRange = 10
 
@@ -30,6 +32,8 @@ if Server then
         // never show for marine commander
         local mask = bit.bor(kRelevantToTeam1Unit, kRelevantToTeam2Unit, kRelevantToReadyRoom, kRelevantToTeam2Commander)
         self:SetExcludeRelevancyMask(mask)
+        
+        StartSoundEffectAtOrigin(NutrientMist.kMistSound, self:GetOrigin())
 
     end
 

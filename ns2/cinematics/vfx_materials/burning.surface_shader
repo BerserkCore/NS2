@@ -33,7 +33,7 @@
 			float3 noise = tex2D( noiseMap, input.texCoord  * 2 + float2(time * .35, time * 0.61) ).rgb;
 			float3 noise2 = tex2D( noiseMap, input.texCoord  * float2( 3.2, 2.7) + float2(time * -.41, time * .73) ).rgb;
 			float3 noise3 = tex2D( noiseMap, input.texCoord  * float2( 1.8, 2.1) + float2(time * -.1, time * .3) ).rgb;
-			float fresnel =  pow(max(-input.vsNormal.z, 0), 13);
+			float fresnel =  pow(saturate(-input.vsNormal.z), 13);
 			
 		
 

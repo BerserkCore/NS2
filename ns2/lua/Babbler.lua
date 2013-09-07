@@ -579,33 +579,33 @@ if Server then
     
     end
     
-    local function UpdateCling(self, deltaTime, distanceToTarget)
-       
+    local function UpdateCling(self, deltaTime)
+    
         local target = self:GetTarget()
         local success = false
         if target then
-
+        
             local attachPointOrigin = target:GetFreeBabblerAttachPointOrigin()
             if attachPointOrigin then
             
                 success = true
-                local moveDir = GetNormalizedVector( attachPointOrigin - self:GetOrigin() )
-  
+                local moveDir = GetNormalizedVector(attachPointOrigin - self:GetOrigin())
+                
                 local distance = (self:GetOrigin() - attachPointOrigin):GetLength()
                 local travelDistance = deltaTime * 15
-  
-                if distance < travelDistance then  
-              
-                    self.clinged = true  
+                
+                if distance < travelDistance then
+                
+                    self.clinged = true
                     travelDistance = distance
-
+                    
                     target:AttachBabbler(self)
                     
                 end
-  
+                
                 // disable physic simulation
                 self:SetGroundMoveType(true)
-                self:SetOrigin( self:GetOrigin() + moveDir * travelDistance )
+                self:SetOrigin(self:GetOrigin() + moveDir * travelDistance)
                 
             end
             
@@ -613,8 +613,8 @@ if Server then
         
         if not success then
             self:Detach()
-        end    
-    
+        end
+        
     end
     
     local kDetachOffset = Vector(0, 0.3, 0)
@@ -631,23 +631,23 @@ if Server then
             self:UpdateJumpPhysicsBody()
             self:SetMoveType(kBabblerMoveType.None)
             self:JumpRandom()
-        
+            
         end
-    
+        
     end
     
     local function UpdateClingAttached(self)
     
         local target = self:GetTarget()
-        if target and target:GetIsAlive() then  
-  
+        if target and target:GetIsAlive() then
+        
             // disable physic simulation, match coords with attach point
             self:SetGroundMoveType(true)
             
-        else 
-            self:Detach()            
-        end 
-    
+        else
+            self:Detach()
+        end
+        
     end
     
     local function UpdateTargetPosition(self)
@@ -671,7 +671,7 @@ if Server then
         return trace.fraction == 1
 
     end
-
+    
     function Babbler:UpdateMove(deltaTime)
     
         PROFILE("Babbler:UpdateMove")
@@ -679,16 +679,14 @@ if Server then
         UpdateTargetPosition(self)
         
         if self.clinged then
-
             UpdateClingAttached(self)
-    
         elseif self.moveType == kBabblerMoveType.Move or self.moveType == kBabblerMoveType.Cling then
         
             if self.moveType == kBabblerMoveType.Cling and self.targetPosition and (self:GetOrigin() - self.targetPosition):GetLength() < 7 then
             
-                UpdateCling(self, deltaTime, distanceToTarget)
+                UpdateCling(self, deltaTime)
                 success = true
-        
+                
             elseif self:GetIsOnGround() then
             
                 if self.timeLastJump + 0.5 < Shared.GetTime() then
@@ -943,7 +941,7 @@ elseif Client then
         if self.clientClinged ~= self.clinged then
         
             //self:TriggerEffects("babbler_cling")
-            self.clientClinged = clinged
+            self.clientClinged = self.clinged
         
         end
 
@@ -1048,6 +1046,10 @@ end
 
 function Babbler:GetEffectParams(tableParams)
     tableParams[kEffectFilterSilenceUpgrade] = self.silenced
+end
+
+function Babbler:ModifyDamageTaken(damageTable, attacker, doer, damageType, hitPoint)
+    damageTable.damage = math.min(5, damageTable.damage)
 end
 
 function Babbler:GetDeathIconIndex()

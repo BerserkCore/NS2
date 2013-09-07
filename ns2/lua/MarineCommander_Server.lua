@@ -25,9 +25,7 @@ function MarineCommander:TriggerScan(position, trace)
 
     if trace.fraction ~= 1 then
 
-        CreateEntity(Scan.kMapName, position, self:GetTeamNumber())
-        StartSoundEffectAtOrigin(Observatory.kScanSound, position)
-        
+        CreateEntity(Scan.kMapName, position, self:GetTeamNumber())        
         // create custom sound for marine commander
         StartSoundEffectForPlayer(Observatory.kCommanderScanSound, self)
         self:ProcessSuccessAction(kTechId.Scan)
@@ -85,8 +83,7 @@ function MarineCommander:TriggerNanoShield(position)
     
     if nanoShield:GetWasSuccess() then
     
-        StartSoundEffectAtOrigin(CommandStation.kTriggerNanoShieldSound3d, position)
-        StartSoundEffectForPlayer(CommandStation.kTriggerNanoShieldSound, commander)
+        Shared.PlayPrivateSound(self, MarineCommander.kTriggerNanoShieldSound, nil, 1.0, self:GetOrigin())
         self:ProcessSuccessAction(kTechId.NanoShield)
         success = true
         

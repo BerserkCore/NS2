@@ -9,17 +9,20 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+// TEMP TEMP
 gSpawnVideoUrlPrefix = "file:///ns2/tipvideos/"
+//gSpawnVideoUrlPrefix = "file://C:/ns2_p4/ns2_p4/assets/tipvideos/"
 Script.Load("lua/GUITipVideo_SpawnVideos.lua")
+Script.Load("lua/tweener/Tweener.lua")
 
 local gDebugIgnoreGameState = false
 
 local kBlankUrl = "temptemp"
 local kTipViewURL = "file:///ns2/web/client_game/tipvideo_widget_html5.html"
 local kTextureName = "*tip_video_webview_texture"
-local kSlideInSecs = 1.0
-local kFadeOutSecs = 0.5
-local kAfterDeathDelay = 3.5
+local kSlideInSecs = 0.5
+local kFadeOutSecs = 0.25
+local kAfterDeathDelay = 3.5    // wait after fade to black, etc.
 local kWidgetRightMargin = 20
 local kTipTextHeight = 50
 local kBackgroundAlpha = 0.5
@@ -34,17 +37,23 @@ Client.PrecacheLocalSound(kStopSound)
 local webViewWidth = 720
 local webViewHeight = 480
 
-function GetNumTipVideoPlays(key)
-    local nplays = Client.GetOptionInteger("tipvids/"..key, 0)
+//----------------------------------------
+//  External API for other stuff, like ready video list
+//----------------------------------------
+function GetNumTipVideoPlays(subKey)
+    local nplays = Client.GetOptionInteger("tipvids/"..subKey, 0)
     return nplays
 end
 
-function IncNumTipVideoPlays(key)
-    local nplays = GetNumTipVideoPlays(key)
-    Client.SetOptionInteger("tipvids/"..key, nplays+1)
+function IncNumTipVideoPlays(subKey)
+    local nplays = GetNumTipVideoPlays(subKey)
+    Client.SetOptionInteger("tipvids/"..subKey, nplays+1)
 end
 
-local function ToNextTip(player)
+//----------------------------------------
+//  Picks a video that has been played the least, and increments its play count
+//----------------------------------------
+local function GetNextTipVideo( player, evolveClass )
 
     // Try to play the least-played video
 
@@ -55,10 +64,17 @@ local function ToNextTip(player)
     for itip = 1, #gSpawnTipVideos do
 
         local tip = gSpawnTipVideos[itip]
-        local nplays = Client.GetOptionInteger("tipvids/"..tip.key, 0)
+        local nplays = Client.GetOptionInteger("tipvids/"..tip.subKey, 0)
 
-        if tip.teamNumber ~= player:GetTeamNumber() or nplays >= kMaxPlaysPerVideo then
+        if evolveClass ~= nil
+        and (tip.context ~= "evolve" or tip.evolveClass == nil or tip.evolveClass:lower() ~= evolveClass:lower())
+        then
+            // no good
+
+        elseif tip.teamNumber ~= player:GetTeamNumber() or nplays >= kMaxPlaysPerVideo then
+
             // never play vids for the other team, and don't play a vid too many times
+
         else
 
             // Use relevancy to break ties
@@ -80,7 +96,7 @@ local function ToNextTip(player)
     if leastPlayedIndex >= 0 then
 
         local tip = gSpawnTipVideos[ leastPlayedIndex ]
-        Client.SetOptionInteger("tipvids/"..tip.key, leastPlays+1)
+        Client.SetOptionInteger("tipvids/"..tip.subKey, leastPlays+1)
         tip.videoType = "spawn"
         return tip
 
@@ -152,6 +168,7 @@ function GUITipVideo:Initialize()
     self.sinceDeath = 0
     self.sinceHide = 0
     self.tip = nil
+    self.wasEvolveVideo = false
 
 end
 
@@ -182,32 +199,39 @@ function GUITipVideo:Hide()
     self.state = "hiding"
     self.sinceHide = 0.0
     self.tip = nil
+
+    // reset layer, in case it was changed
+    self.widget:SetLayer(kGUILayerTipVideos)
+end
+
+local function GetMustHideSpawnVideo( self )
+
+    local player = Client.GetLocalPlayer()
+
+    return player == nil
+    // only hide the vid if the player is CONTROLLING a live player - cuz if they're just spectating a live player, we should NOT be playing!
+    or (Client.GetIsControllingPlayer() and player:GetIsAlive())
+    or (gDebugIgnoreGameState or GetGameInfoEntity():GetState() ~= kGameState.Started)
+
 end
 
 // Returns true if we must hide the video asap - ie. the player disabled hints, or player is playing the game
 function GUITipVideo:GetMustHide()
 
-    if not self.tip then
-
+    if not Client.GetOptionBoolean("showHints", true) then
         return true
-
-    elseif self.tip.videoType == "spawn" then
-
-        local isEnabled = Client.GetOptionBoolean("showHints", true)
-        local player = Client.GetLocalPlayer()
-
-        return not isEnabled
-        or player == nil
-        // only hide the vid if the player is CONTROLLING a live player - cuz if they're just spectating a live player, we should NOT be playing!
-        or (Client.GetIsControllingPlayer() and player:GetIsAlive())
-        or (gDebugIgnoreGameState or GetGameInfoEntity():GetState() ~= kGameState.Started)
-
-    elseif self.tip.videoType == "ready" then
-
-        // TODO - probably some other conditions i forgot here
-        return (gDebugIgnoreGameState or GetGameInfoEntity():GetState() == kGameState.Started)
-
     end
+
+    if not self.tip then
+        return true
+    end
+
+    if self.mustHideFunction ~= nil then
+        local val = self:mustHideFunction()
+        return val
+    end
+
+    return false
 
 end
 
@@ -216,9 +240,9 @@ function GUITipVideo:GetMaxPlaySecs()
     if self.tip.videoType == "spawn" then
         return 7.0
     elseif self.tip.videoType == "ready" then
-        return 30.0
+        return 40.0
     else
-        return 0.0
+        return 99999.0
     end
 
 end
@@ -250,7 +274,7 @@ function GUITipVideo:Update(dt)
 
                 // Setup tip text
                 local player = Client.GetLocalPlayer()
-                local tipStr = SubstituteBindStrings(Locale.ResolveString(self.tip.key))
+                local tipStr = SubstituteBindStrings(Locale.ResolveString(self.tip.subKey))
                 self.tipText:SetText( tipStr )
                 self.tipText:SetColor( kChatTextColor[player:GetTeamType()] )
 
@@ -295,7 +319,7 @@ function GUITipVideo:Update(dt)
             local endX = Client.GetScreenWidth() - widgetWidth - kWidgetRightMargin
 
             if self.sincePlay < kSlideInSecs then
-                local alpha = Easing.outBounce( self.sincePlay, 0.0, 1.0, kSlideInSecs )
+                local alpha = Easing.outBack( self.sincePlay, 0.0, 1.0, kSlideInSecs )
                 pos.x = (1-alpha)*startX + alpha*endX
             else
                 pos.x = endX
@@ -330,23 +354,41 @@ function GUITipVideo:Update(dt)
         
     elseif self.state == "hidden" then
 
-        // we are hidden, are presumably the player is still dead
-        // do not even consider showing again until player respawns
-
         local player = Client.GetLocalPlayer()
 
-        if player and player:GetIsOnPlayingTeam()
-            and player:GetIsAlive()
-            and Client.GetIsControllingPlayer()
-        then
-            self.state = "waitingForPlayerDeath"
+        if self.wasEvolveVideo then
+
+            // wait for the player to finish evolving before ever playing another video
+            //if player and not player:isa("Embryo") then
+                self.state = "waiting"
+            //end
+
+
+        else
+
+            // and the player may still be dead
+            // do not even consider showing again until player respawns
+
+            if player and player:GetIsOnPlayingTeam()
+                and player:GetIsAlive()
+                and Client.GetIsControllingPlayer()
+            then
+                // player is back in the game
+                self.state = "waiting"
+            end
+
         end
 
-    elseif self.state == "waitingForPlayerDeath" then
+    elseif self.state == "waiting" then
+
+        //----------------------------------------
+        //  Waiting on certain events to trigger videos
+        //----------------------------------------
     
         local player = Client.GetLocalPlayer()
         local isEnabled = Client.GetOptionBoolean("showHints", true)
         local justDied = not player:GetIsAlive() and Client.GetIsControllingPlayer()
+        local isEvolving = player:isa("Embryo")
 
         if isEnabled and justDied then
 
@@ -355,7 +397,29 @@ function GUITipVideo:Update(dt)
             self.state = "playerIsDead"
 
             // Decide which tip to play right here, since the player ent will be gone soon
-            self.tip = ToNextTip(player)
+            self.tip = GetNextTipVideo(player)
+            self.mustHideFunction = GetMustHideSpawnVideo
+
+        elseif isEnabled and isEvolving then
+
+            // immediately play evolve video
+            local evolveClass = LookupTechData(player.gestationTypeTechId, kTechDataGestateName)
+            local evolveTime = LookupTechData(player.gestationTypeTechId, kTechDataGestateTime)
+            local tip = GetNextTipVideo(player, evolveClass)
+
+            if tip ~= nil then
+                self:TriggerVideo( tip )
+                self.tipText:SetColor( kChatTextColor[player:GetTeamType()] )
+                self.wasEvolveVideo = true
+
+                // override this function
+                self.mustHideFunction = function(self)
+                    if not Client.GetLocalPlayer():isa("Embryo") then
+                        return true
+                    end
+                    return self.sincePlay ~= nil and (self.sincePlay-kSlideInSecs) > 8.0
+                end
+            end
 
         end
         
@@ -369,20 +433,54 @@ function GUITipVideo:TriggerReadyVideo(tip)
 
     if self.state == "hiding"
     or self.state == "hidden"
-    or self.state == "waitingForPlayerDeath"
+    or self.state == "waiting"
     then
         
         self.tip = tip
         self.tip.volume = Client.GetOptionInteger("soundVolume", 50) / 100.0
         self.tip.delaySecs = kSlideInSecs
         self.videoWebView:LoadUrl(kTipViewURL.."?"..json.encode(self.tip))
-        local tipStr = SubstituteBindStrings(Locale.ResolveString(self.tip.key))
+        local tipStr = SubstituteBindStrings(Locale.ResolveString(self.tip.subKey))
         tipStr = tipStr .. "  (Press 0 to stop)"
         self.tipText:SetText( tipStr )
         self.tipText:SetColor( Color(1,1,1,1) )
         self.state = "loadingHtml"
         self.tip.videoType = "ready"
 
+    end
+
+end
+
+// Interface for playing a video from training menu
+function GUITipVideo:TriggerVideo( tip, seconds, guiLayer )
+
+    if self.state ~= "hidden" then
+        self:Hide()
+    end
+
+    self.tip =
+    {
+        videoUrl = tip.videoUrl,
+        subKey = tip.subKey,
+        volume = Client.GetOptionInteger("soundVolume", 50) / 100.0,
+        delaySecs = kSlideInSecs,
+        videoType = "adhoc",
+        lengthSeconds = seconds,
+    }
+    self.videoWebView:LoadUrl(kTipViewURL.."?"..json.encode(self.tip))
+    local tipStr = SubstituteBindStrings(Locale.ResolveString(self.tip.subKey))
+    self.tipText:SetText( tipStr )
+    self.tipText:SetColor( Color(1,1,1,1) )
+    self.state = "loadingHtml"
+    self.sincePlay = 0
+    // stop playing after given time
+    self.mustHideFunction = function(self)
+        return self.sincePlay ~= nil and (self.sincePlay-kSlideInSecs) > self.tip.lengthSeconds
+    end
+
+    // TODO this does not work - our stuff does not show above the training video list WTF
+    if guiLayer ~= nil then
+        self.widget:SetLayer(guiLayer)
     end
 
 end
@@ -412,7 +510,7 @@ Event.Hook("Console_resettipvids",
         function(enabled)
             for itip = 1, #gSpawnTipVideos do
                 local tip = gSpawnTipVideos[itip]
-                Client.SetOptionInteger("tipvids/"..tip.key, 0)
+                Client.SetOptionInteger("tipvids/"..tip.subKey, 0)
             end
             Print("OK cleared tip vid history")
         end)

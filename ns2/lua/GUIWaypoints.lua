@@ -446,7 +446,7 @@ local function AnimateOrderChanged(self, type)
             elseif type == kTechId.Move then
                 MarineOrder_OnOrderMove()
                 
-            elseif type == kTechId.Construct then 
+            elseif type == kTechId.Construct or type == kTechId.AutoConstruct then 
                 MarineOrder_OnOrderConstruct()
              
             elseif type == kTechId.Defend then
@@ -465,7 +465,7 @@ local function AnimateOrderChanged(self, type)
             elseif type == kTechId.Move then
                 AlienOrder_OnOrderMove()
         
-            elseif type == kTechId.Construct then 
+            elseif type == kTechId.Construct or type == kTechId.AutoConstruct then 
                 AlienOrder_OnOrderConstruct()
                 
             elseif type == kTechId.Heal or type == kTechId.AutoHeal then

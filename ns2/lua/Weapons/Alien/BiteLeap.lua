@@ -20,10 +20,7 @@ Shared.PrecacheSurfaceShader("materials/effects/mesh_effects/view_blood.surface_
 // NS1 was 20 inches, which is .5 meters. The eye point in NS1 was correct but in NS2 it's the model origin.
 // Melee attacks must originate from the player's eye instead of the world model's eye to make sure you 
 // can't attack through walls.
-local kRange = 1.2
-if not kUseGradualMeleeAttacks then
-    kRange = 1.42
-end
+local kRange = 1.42
 
 local kEnzymedRange = 1.55
 
@@ -100,15 +97,6 @@ function BiteLeap:OnPrimaryAttackEnd()
     
 end
 
-if kUseGradualMeleeAttacks then
-
-function BiteLeap:GetMeleeBase()
-    // Width of box, height of box
-    return 1.1, 1
-end
-
-else
-
 function BiteLeap:GetMeleeBase()
     // Width of box, height of box
     
@@ -118,8 +106,6 @@ function BiteLeap:GetMeleeBase()
     end
     
     return 0.7, 1
-end
-
 end
 
 function BiteLeap:GetMeleeOffset()
@@ -138,12 +124,7 @@ function BiteLeap:OnTag(tagName)
         
             local range = (player.GetIsEnzymed and player:GetIsEnzymed()) and kEnzymedRange or kRange
         
-            local didHit, target, endPoint
-            if kUseGradualMeleeAttacks then
-                didHit, target, endPoint = PerformGradualMeleeAttack(self, player, kBiteDamage, range, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
-            else
-                didHit, target, endPoint = AttackMeleeCapsule(self, player, kBiteDamage, range, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
-            end
+            local didHit, target, endPoint = AttackMeleeCapsule(self, player, kBiteDamage, range, nil, false, EntityFilterOneAndIsa(player, "Babbler"))
             
             if Client and didHit then
                 self:TriggerFirstPersonHitEffects(player, target)  

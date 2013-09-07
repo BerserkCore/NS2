@@ -6,6 +6,8 @@
 //    
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
+Script.Load("lua/PathingUtility.lua")
+
 ObstacleMixin = CreateMixin(ObstacleMixin)
 ObstacleMixin.type = "Obstacle"
 
@@ -20,6 +22,8 @@ ObstacleMixin.optionalCallbacks =
 {
     GetResetsPathing = "Pathing entities will recalculate their path when this obstacle is added / removed."
 }
+
+local PathingUtility_GetIsPathingMeshInitialized = GetIsPathingMeshInitialized
 
 // technically it would be most correct to reset all entities in the world
 // but practically, entities which implemented GetResetsPathing are of temporary nature and used for blocking,
@@ -48,6 +52,10 @@ function ObstacleMixin:OnInitialized()
     self:AddToMesh()
 end
 
+function ObstacleMixin:OnPathingMeshInitialized()
+    self:AddToMesh()
+end
+
 function ObstacleMixin:OnDestroy()
     self:RemoveFromMesh()
 end
@@ -62,17 +70,22 @@ end
 
 function ObstacleMixin:AddToMesh()
 
-   local position, radius, height = self:_GetPathingInfo()   
-   self.obstacleId = Pathing.AddObstacle(position, radius, height) 
-  
-    if self.obstacleId ~= -1 then
-    
-        gAllObstacles[self] = true
-        if self.GetResetsPathing and self:GetResetsPathing() then
-            InformEntitiesInRange(self, 25)
-        end
+   if PathingUtility_GetIsPathingMeshInitialized() then
+
+       local position, radius, height = self:_GetPathingInfo()   
+       self.obstacleId = Pathing.AddObstacle(position, radius, height) 
+      
+        if self.obstacleId ~= -1 then
         
+            gAllObstacles[self] = true
+            if self.GetResetsPathing and self:GetResetsPathing() then
+                InformEntitiesInRange(self, 25)
+            end
+            
+        end
+    
     end
+    
 end
 
 function ObstacleMixin:RemoveFromMesh()

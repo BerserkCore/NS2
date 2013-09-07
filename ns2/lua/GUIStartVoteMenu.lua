@@ -405,6 +405,11 @@ function GUIStartVoteMenu:SendKeyEvent(key, down)
             
         end
         
+        -- Eat all mouse input while this menu is visible.
+        if down and key == InputKey.MouseButton0 or key == InputKey.MouseButton1 then
+            return true
+        end
+        
     end
     
     return false

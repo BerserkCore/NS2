@@ -43,6 +43,7 @@ kUmbraModifier["Rifle"] = kUmbraBulletModifier
 kUmbraModifier["Pistol"] = kUmbraBulletModifier
 kUmbraModifier["Sentry"] = kUmbraBulletModifier
 kUmbraModifier["Minigun"] = kUmbraMinigunModifier
+kUmbraModifier["Railgun"] = kUmbraRailgunModifier
 
 function UmbraMixin:__initmixin()
 

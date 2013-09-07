@@ -39,6 +39,9 @@ Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
 Script.Load("lua/CombatMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/WebableMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'ARC' (ScriptActor)
 
@@ -114,6 +117,9 @@ AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(WebableMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 function ARC:OnCreate()
 
@@ -139,6 +145,8 @@ function ARC:OnCreate()
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, WebableMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Server then
     
@@ -209,19 +217,21 @@ function ARC:OnInitialized()
     
         self.lastModeClient = self.mode
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
     
     end
     
     self:SetUpdates(true)
     
+    InitMixin(self, IdleMixin)
+    
 end
 
-local kARCHealthbarOffset = Vector(0, 0.7, 0)
 function ARC:GetHealthbarOffset()
-    return kARCHealthbarOffset
+    return 0.7
 end 
 
-function ARC:GetIsIdle()
+function ARC:GetPlayIdleSound()
     return self.deployMode == ARC.kDeployMode.Undeployed
 end
 
@@ -536,16 +546,6 @@ function ARC:OnKill(attacker, doer, point, direction)
         
     end 
   
-end
-
-function ARC:GetVisualRadius()
-    
-    if self.mode == ARC.kMode.Stationary or self.mode == ARC.kMode.Moving then
-        return nil
-    end
-    
-    return ScriptActor.GetVisualRadius(self)
-    
 end
 
 function ARC:OnUpdateAnimationInput(modelMixin)

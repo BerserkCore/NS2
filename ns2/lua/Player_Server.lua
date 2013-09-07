@@ -42,14 +42,6 @@ function Player:Reset()
     
 end
 
-function Player:ResetScores()
-
-    self.kills = 0
-    self.deaths = 0    
-    self:SetScoreboardChanged(true)
-
-end
-
 function Player:ClearEffects()
 end
 
@@ -109,13 +101,6 @@ function Player:GetClientMuted(checkClientIndex)
     if not self.mutedClients then self.mutedClients = { } end
     return self.mutedClients[checkClientIndex] == true
     
-end
-
-// Changes the visual appearance of the player to the special edition version.
-function Player:MakeSpecialEdition()
-end
-
-function Player:MakeDeluxeEdition()
 end
 
 // Not authoritative, only visual and information. TeamResources is stored in the team.
@@ -400,11 +385,6 @@ function Player:CopyPlayerDataFrom(player)
     self.countingDown = player.countingDown
     self.frozen = player.frozen
     
-    // Don't copy alive, health, maxhealth, armor, maxArmor - they are set in Spawn()
-    self.score = player.score or 0
-    self.kills = player.kills
-    self.deaths = player.deaths
-    
     self.timeOfDeath = player.timeOfDeath
     self.timeOfLastUse = player.timeOfLastUse
     self.crouching = player.crouching
@@ -676,21 +656,6 @@ function Player:GiveItem(itemMapName, setActive)
     
 end
 
-function Player:GetKills()
-    return self.kills
-end
-
-function Player:GetDeaths()
-    return self.deaths
-end
-
-function Player:AddDeaths()
-
-    self.deaths = Clamp(self.deaths + 1, 0, kMaxDeaths)
-    self:SetScoreboardChanged(true)
-    
-end
-
 function Player:GetPing()
 
     local client = Server.GetOwner(self)
@@ -812,14 +777,20 @@ function Player:OnClientUpdated(client)
 
     if client then
     
-        if client.armorType == kArmorType.Black and GetHasBlackArmor(client) then
-            self:MakeSpecialEdition()
-        elseif client.armorType == kArmorType.Deluxe and GetHasDeluxeEdition(client) then
-            self:MakeDeluxeEdition()
+        if HasMixin(self, "PlayerVariant") then
+        
+            local variant = "green"
+            if client.armorType == kArmorType.Black and GetHasBlackArmor(client) then
+                variant = "special"
+            elseif client.armorType == kArmorType.Deluxe and GetHasDeluxeEdition(client) then
+                variant = "deluxe"
+            end
+            self:SetVariant(variant, client.sexType or "male")
+            
         end
-    
+        
     end
-
+    
 end
 
 // only use intensity value here to reduce traffic

@@ -23,6 +23,8 @@ Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/NanoShieldMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
+Script.Load("lua/MarineActionFinderMixin.lua")
+Script.Load("lua/WebableMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
@@ -40,7 +42,13 @@ local networkVars =
     timeThrustersStarted = "private compensated time",
     weaponUpgradeLevel = "integer (0 to 3)",
     inventoryWeight = "float",
-    thrusterMode = "enum kExoThrusterMode"
+    thrusterMode = "enum kExoThrusterMode",
+    catpackboost = "private boolean",
+    timeCatpackboost = "private time",
+    hasDualGuns = "private boolean",
+    timeLastBeacon = "private time",
+    creationTime = "private time",
+    ejecting = "compensated boolean",
 }
 
 Exo.kMapName = "exo"
@@ -93,10 +101,6 @@ local kThrusterLeftAttachpoint = "Exosuit_LFoot"
 local kThrusterRightAttachpoint = "Exosuit_RFoot"
 local kFlaresAttachpoint = "Exosuit_UpprTorso"
 
-// How fast does the Exo armor get repaired by welders.
-local kArmorWeldRatePlayer = 25
-local kArmorWeldRateMAC = 12.5
-
 local kExoViewDamaged = PrecacheAsset("cinematics/marine/exo/hurt_view.cinematic")
 local kExoViewHeavilyDamaged = PrecacheAsset("cinematics/marine/exo/hurt_severe_view.cinematic")
 
@@ -106,6 +110,8 @@ local kThrusterUpwardsAcceleration = 2
 local kThrusterHorizontalAcceleration = 23
 // added to max speed when using thrusters
 local kHorizontalThrusterAddSpeed = 2.5
+
+local kExoEjectDuration = 3
 
 Exo.kXZExtents = 0.55
 Exo.kYExtents = 1.2
@@ -122,16 +128,23 @@ AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
+AddMixinNetworkVars(ScoringMixin, networkVars)
+AddMixinNetworkVars(WebableMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
     if not GetIsVortexed(self) then
-
-        local nearbyEggs = GetEntitiesWithinRange("Egg", self:GetOrigin(), kSmashEggRange)
-        for _, egg in ipairs(nearbyEggs) do
-            egg:Kill(self, self, self:GetOrigin(), Vector(0, -1, 0))
-        end
     
+        local nearbyEggs = GetEntitiesWithinRange("Egg", self:GetOrigin(), kSmashEggRange)
+        for e = 1, #nearbyEggs do
+            nearbyEggs[e]:Kill(self, self, self:GetOrigin(), Vector(0, -1, 0))
+        end
+        
+        local nearbyEmbryos = GetEntitiesWithinRange("Embryo", self:GetOrigin(), kSmashEggRange)
+        for e = 1, #nearbyEmbryos do
+            nearbyEmbryos[e]:Kill(self, self, self:GetOrigin(), Vector(0, -1, 0))
+        end
+        
     end
     
     // Keep on killing those nasty eggs forever.
@@ -155,6 +168,8 @@ function Exo:OnCreate()
     InitMixin(self, CorrodeMixin)
     InitMixin(self, TunnelUserMixin)
     InitMixin(self, ParasiteMixin)
+    InitMixin(self, MarineActionFinderMixin)
+    InitMixin(self, WebableMixin)
     
     self:SetIgnoreHealth(true)
     
@@ -169,6 +184,11 @@ function Exo:OnCreate()
     self.timeThrustersStarted = 0
     self.inventoryWeight = 0
     self.thrusterMode = kExoThrusterMode.Vertical
+    self.catpackboost = false
+    self.timeCatpackboost = 0
+    self.ejecting = false
+    
+    self.creationTime = Shared.GetTime()
     
     if Server then
     
@@ -199,41 +219,47 @@ function Exo:OnCreate()
         
         self.flashlight:SetIsVisible(false)
         
+        self.idleSound2DId = Entity.invalidId
+
     end
     
+end
+
+function Exo:InitExoModel()
+
+    local modelName = kModelName
+    local graphName = kAnimationGraph
+    if self.layout == "MinigunMinigun" then
+    
+        modelName = kDualModelName
+        graphName = kDualAnimationGraph
+        self.hasDualGuns = true
+        
+    elseif self.layout == "ClawRailgun" then
+    
+        modelName = kClawRailgunModelName
+        graphName = kClawRailgunAnimationGraph
+        
+    elseif self.layout == "RailgunRailgun" then
+    
+        modelName = kDualRailgunModelName
+        graphName = kDualRailgunAnimationGraph
+        self.hasDualGuns = true
+        
+    end
+    
+    // SetModel must be called before Player.OnInitialized is called so the attach points in
+    // the Exo are valid to attach weapons to. This is far too subtle...
+    self:SetModel(modelName, graphName)
+
 end
 
 function Exo:OnInitialized()
 
     // Only set the model on the Server, the Client
     // will already have the correct model at this point.
-    if Server then
-    
-        local modelName = kModelName
-        local graphName = kAnimationGraph
-        if self.layout == "MinigunMinigun" then
-        
-            modelName = kDualModelName
-            graphName = kDualAnimationGraph
-            self.hasDualGuns = true
-            
-        elseif self.layout == "ClawRailgun" then
-        
-            modelName = kClawRailgunModelName
-            graphName = kClawRailgunAnimationGraph
-            
-        elseif self.layout == "RailgunRailgun" then
-        
-            modelName = kDualRailgunModelName
-            graphName = kDualRailgunAnimationGraph
-            self.hasDualGuns = true
-            
-        end
-        
-        // SetModel must be called before Player.OnInitialized is called so the attach points in
-        // the Exo are valid to attach weapons to. This is far too subtle...
-        self:SetModel(modelName, graphName)
-        
+    if Server then    
+        self:InitExoModel()
     end
     
     InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kPlayerMoveOrderCompleteDistance })
@@ -301,6 +327,10 @@ local function ShowHUD(self, show)
     
 end
 
+function Exo:GetHasDualGuns()
+    return self.hasDualGuns
+end
+
 function Exo:GetPlayerControllersGroup()
     return PhysicsGroup.BigPlayerControllersGroup
 end
@@ -320,7 +350,13 @@ end
 function Exo:ComputeDamageAttackerOverride(attacker, damage, damageType)
 
     if self.hasDualGuns then
-        damage = damage * kExoDualGunModifier
+
+        if self:GetHasMinigun() then
+            damage = damage * kExoDualMinigunModifier
+        elseif self:GetHasRailgun() then
+            damage = damage * kExoDualRailgunModifier
+        end        
+
     end
 
     return damage
@@ -344,7 +380,11 @@ function Exo:InitWeapons()
 
     Player.InitWeapons(self)
     
-    local weaponHolder = self:GiveItem(ExoWeaponHolder.kMapName, false)
+    local weaponHolder = self:GetWeapon(ExoWeaponHolder.kMapName)
+    
+    if not weaponHolder then
+        weaponHolder = self:GiveItem(ExoWeaponHolder.kMapName, false)   
+    end    
     
     if self.layout == "ClawMinigun" then
         weaponHolder:SetWeapons(Claw.kMapName, Minigun.kMapName)
@@ -373,7 +413,7 @@ function Exo:GetMaxBackwardSpeedScalar()
 end   
 
 function Exo:OnDestroy()
-        
+   
     if self.flashlight ~= nil then
         Client.DestroyRenderLight(self.flashlight)
     end
@@ -418,12 +458,35 @@ function Exo:GetMaxSpeed(possible)
         return kWalkMaxSpeed
     end
     
-    return kMaxSpeed * self:GetInventorySpeedScalar()
+    local maxSpeed = kMaxSpeed * self:GetInventorySpeedScalar()
+    
+    if self.catpackboost then
+        maxSpeed = maxSpeed + kCatPackMoveAddSpeed
+    end
+    
+    return maxSpeed
     
 end
 
-function Exo:MakeSpecialEdition()
-    // Currently there's no Exo special edition visual difference
+function Exo:GetHasRailgun()
+
+    local weaponHolder = self:GetWeapon(ExoWeaponHolder.kMapName)
+    return weaponHolder ~= nil and (weaponHolder:GetLeftSlotWeapon():isa("Railgun") or weaponHolder:GetRightSlotWeapon():isa("Railgun"))
+    
+end
+
+function Exo:GetHasMinigun()
+
+    local weaponHolder = self:GetWeapon(ExoWeaponHolder.kMapName)
+    return weaponHolder ~= nil and (weaponHolder:GetLeftSlotWeapon():isa("Minigun") or weaponHolder:GetRightSlotWeapon():isa("Minigun"))
+
+end
+
+function Exo:GetCanUseCatPack()
+
+    local enoughTimePassed = self.timeCatpackboost + 6 < Shared.GetTime()
+    return not self.catpackboost or enoughTimePassed
+    
 end
 
 function Exo:GetHeadAttachpointName()
@@ -492,40 +555,22 @@ function Exo:GetEngagementPointOverride()
     return self:GetOrigin() + kEngageOffset
 end
 
-local kExoHealthbarOffset = Vector(0, 1.8, 0)
 function Exo:GetHealthbarOffset()
-    return kExoHealthbarOffset
+    return 1.8
 end
 
 function Exo:OnWeldOverride(doer, elapsedTime)
 
-    if self:GetArmor() < self:GetMaxArmor() then
+    Player.OnWeldOverride(self, doer, elapsedTime)
     
-        local weldRate = kArmorWeldRatePlayer
-        if doer and doer:isa("MAC") then
-            weldRate = kArmorWeldRateMAC
-        end
-      
-        local addArmor = weldRate * elapsedTime
-        self:SetArmor(self:GetArmor() + addArmor)
-        
-        if Server then
-            UpdateHealthWarningTriggered(self)
-        end
-        
+    if Server then
+        UpdateHealthWarningTriggered(self)
     end
     
 end
 
 function Exo:GetPlayerStatusDesc()
     return self:GetIsAlive() and kPlayerStatus.Exo or kPlayerStatus.Dead
-end
-
-/**
- * The Exo does not use anything. It smashes.
- */
-function Exo:GetIsAbleToUse()
-    return false
 end
 
 function Exo:GetInventorySpeedScalar(player)
@@ -548,7 +593,7 @@ local function UpdateIdle2DSound(self, yaw, pitch, dt)
         self.lastExoPitch = pitch
         
         local rotateSpeed = math.min(1, ((yawDiff ^ 2) + (pitchDiff ^ 2)) / 0.05)
-        //idleSound2D:SetParameter("rotate", rotateSpeed, 1)
+        idleSound2D:SetParameter("rotate", rotateSpeed, 1)
         
     end
     
@@ -559,12 +604,14 @@ local function UpdateThrusterEffects(self)
     if self.clientThrustersActive ~= self.thrustersActive then
     
         self.clientThrustersActive = self.thrustersActive
-        
-        // TODO: start / end thruster loop sound
-        
+
         if self.thrustersActive then            
-            self:TriggerEffects("exo_thruster_start")            
-        else            
+        
+            local effectParams = {}
+            effectParams[kEffectParamVolume] = 0.1
+        
+            self:TriggerEffects("exo_thruster_start", effectParams)         
+        else
             self:TriggerEffects("exo_thruster_end")            
         end
     
@@ -579,6 +626,10 @@ end
 function Exo:OnProcessMove(input)
 
     Player.OnProcessMove(self, input)
+    
+    if self.catpackboost then
+        self.catpackboost = Shared.GetTime() - self.timeCatpackboost < kCatPackDuration
+    end
     
     if Client and not Shared.GetIsRunningPrediction() then
         UpdateIdle2DSound(self, input.yaw, input.pitch, input.time)
@@ -604,7 +655,125 @@ function Exo:GetFlashlightOn()
     return self.flashlightOn
 end
 
+function Exo:GetHasCatpackBoost()
+    return self.catpackboost
+end
+
+function Exo:GetCanEject()
+    return self:GetIsPlaying() and not self.ejecting and self:GetIsOnGround() and not self:GetIsOnEntity() and self.creationTime + kExoEjectDuration < Shared.GetTime() and #GetEntitiesForTeamWithinRange("CommandStation", self:GetTeamNumber(), self:GetOrigin(), 4) == 0
+end
+
+function Exo:GetIsEjecting()
+    return self.ejecting
+end
+
+function Exo:EjectExo()
+
+    if self:GetCanEject() then
+    
+        self.ejecting = true
+        self:TriggerEffects("eject_exo_begin")
+        
+        if Server then
+            self:AddTimedCallback(Exo.PerformEject, kExoEjectDuration)
+        end
+    
+    end
+
+end
+
+function Exo:PreUpdateMove(input, runningPrediction)
+
+    if Client and self == Client.GetLocalPlayer() then
+    
+        local sens = 1
+        
+        if self.ejecting or self.creationTime + kExoEjectDuration > Shared.GetTime() then
+            sens = 0
+        end    
+
+        Client.SetMouseSensitivityScalarX(sens)
+
+    end
+    
+end
+
 if Server then
+
+    function Exo:PerformEject()
+    
+        if self:GetIsAlive() then
+        
+            // pickupable version
+            local exosuit = CreateEntity(Exosuit.kMapName, self:GetOrigin(), self:GetTeamNumber())
+            exosuit:SetLayout(self.layout)
+            exosuit:SetCoords(self:GetCoords())
+            exosuit:SetMaxArmor(self:GetMaxArmor())
+            exosuit:SetArmor(self:GetArmor())
+            
+            local reuseWeapons = self.storedWeaponsIds ~= nil
+        
+            local marine = self:Replace(self.prevPlayerMapName or Marine.kMapName, self:GetTeamNumber(), false, self:GetOrigin() + Vector(0, 0.2, 0), { preventWeapons = reuseWeapons })
+            marine:SetHealth(self.prevPlayerHealth or kMarineHealth)
+            marine:SetMaxArmor(self.prevPlayerMaxArmor or kMarineArmor)
+            marine:SetArmor(self.prevPlayerArmor or kMarineArmor)
+            
+            exosuit:SetOwner(marine)
+            
+            marine.onGround = false
+            local initialVelocity = self:GetViewCoords().zAxis
+            initialVelocity:Scale(4)
+            initialVelocity.y = 9
+            marine:SetVelocity(initialVelocity)
+            
+            if reuseWeapons then
+         
+                for _, weaponId in ipairs(self.storedWeaponsIds) do
+                
+                    local weapon = Shared.GetEntity(weaponId)
+                    if weapon then
+                        marine:AddWeapon(weapon)
+                    end
+                    
+                end
+            
+            end
+            
+            marine:SetHUDSlotActive(1)
+            
+            if marine:isa("JetpackMarine") then
+                marine:SetFuel(0)
+            end
+        
+        end
+    
+        return false
+    
+    end
+
+    function Exo:StoreWeapon(weapon)
+
+        if not self.storedWeaponsIds then
+            self.storedWeaponsIds = {}
+        end
+        weapon:SetWeaponWorldState(false)
+        table.insert(self.storedWeaponsIds, weapon:GetId())    
+
+    end
+
+    function Exo:OnEntityChange(oldId, newId)
+    
+        Player.OnEntityChange(self, oldId, newId)
+
+        if oldId == self.idleSound2DId then
+            self.idleSound2DId = Entity.invalidId
+        end
+        
+        if oldId and self.storedWeaponsIds and table.removevalue(self.storedWeaponsIds, oldId) and newId then
+            table.insert(self.storedWeaponsIds, newId)
+        end
+
+    end
 
     function Exo:OnHealed()
         UpdateHealthWarningTriggered(self)
@@ -638,6 +807,19 @@ if Server then
         
         self:TriggerEffects("death", { classname = self:GetClassName(), effecthostcoords = Coords.GetTranslation(self:GetOrigin()) })
         
+        if self.storedWeaponsIds then
+        
+            for _, weaponId in ipairs(self.storedWeaponsIds) do
+                
+                local weapon = Shared.GetEntity(weaponId)
+                if weapon then
+                    DestroyEntity(weapon)
+                end
+                
+            end
+        
+        end
+        
     end
     
 end
@@ -665,6 +847,14 @@ if Client then
             ShowHUD(self, visible)
             
         end
+        
+        if self.buyMenu then
+        
+            if not self:GetIsAlive() or not GetIsCloseToMenuStructure(self) then
+                self:CloseMenu()
+            end
+            
+        end 
         
     end
     
@@ -703,7 +893,7 @@ if Client then
             local armorDisplay = self.armorDisplay
             if not armorDisplay then
 
-                armorDisplay = Client.CreateGUIView(256, 256)
+                armorDisplay = Client.CreateGUIView(256, 256, true)
                 armorDisplay:Load("lua/GUIExoArmorDisplay.lua")
                 armorDisplay:SetTargetTexture("*exo_armor")
                 self.armorDisplay = armorDisplay
@@ -773,9 +963,25 @@ end
 
 function Exo:HandleButtons(input)
 
+    if self.ejecting or self.creationTime + kExoEjectDuration > Shared.GetTime() then
+
+        input.commands = bit.band(input.commands, bit.bnot(bit.bor(Move.Use, Move.Buy, Move.Jump,
+                                                                   Move.PrimaryAttack, Move.SecondaryAttack,
+                                                                   Move.NextWeapon, Move.PrevWeapon, Move.Reload,
+                                                                   Move.Taunt, Move.Weapon1, Move.Weapon2,
+                                                                   Move.Weapon3, Move.Weapon4, Move.Weapon5, Move.Crouch, Move.Drop, Move.MovementModifier)))
+                                                                   
+        input.move:Scale(0)
+    
+    end
+
     Player.HandleButtons(self, input)
     
     self:UpdateThrusters(input)
+
+    if bit.band(input.commands, Move.Drop) ~= 0 then
+       self:EjectExo()
+    end
     
 end
 
@@ -798,12 +1004,37 @@ local function HandleThrusterEnd(self)
     
 end
 
+function Exo:GetIsThrusterAllowed()
+
+    local allowed = true
+    
+    for i = 0, self:GetNumChildren() - 1 do
+    
+        local child = self:GetChildAtIndex(i)
+        if child.GetIsThrusterAllowed and not child:GetIsThrusterAllowed() then
+            allowed = false
+            break
+        end
+    
+    end
+    
+    return allowed
+
+end
+
+function Exo:ApplyCatPack()
+
+    self.catpackboost = true
+    self.timeCatpackboost = Shared.GetTime()
+    
+end
+
 function Exo:UpdateThrusters(input)
 
     local lastThrustersActive = self.thrustersActive
     local jumpPressed = bit.band(input.commands, Move.Jump) ~= 0
     local movementSpecialPressed = bit.band(input.commands, Move.MovementModifier) ~= 0
-    local thrusterDesired = jumpPressed or movementSpecialPressed
+    local thrusterDesired = (jumpPressed or movementSpecialPressed) and self:GetIsThrusterAllowed()
 
     if thrusterDesired ~= lastThrustersActive then
     
@@ -1010,7 +1241,153 @@ if Server then
     end
 
     Event.Hook("Console_disruptexo", OnCommandDisruptExo)
+    
+    function Exo:CopyPlayerDataFrom(player)
+    
+        Player.CopyPlayerDataFrom(self, player)
+    
+        self.prevPlayerMapName =  player.prevPlayerMapName
+        self.prevPlayerHealth = player.prevPlayerHealth
+        self.prevPlayerMaxArmor = player.prevPlayerMaxArmor
+        self.prevPlayerArmor = player.prevPlayerArmor
+        
+        if player.storedWeaponsIds then        
+            self.storedWeaponsIds = player.storedWeaponsIds
+        end
+    
+    end
+    
+    function Exo:AttemptToBuy(techIds)
+
+        local techId = techIds[1]
+        local success = false
+        
+        if not self:GetHasDualGuns() then
+            
+            local newExo = nil
+        
+            if techId == kTechId.UpgradeToDualMinigun and self:GetHasMinigun() then
+
+                newExo = self:Replace(Exo.kMapName, self:GetTeamNumber(), false, self:GetOrigin(), { layout = "MinigunMinigun" })
+                success = true
+            
+            elseif techId == kTechId.UpgradeToDualRailgun and self:GetHasRailgun() then
+            
+                newExo = self:Replace(Exo.kMapName, self:GetTeamNumber(), false, self:GetOrigin(), { layout = "RailgunRailgun" })
+                success = true
+            
+            end
+            
+            if success and newExo then
+            
+                newExo:SetMaxArmor(self:GetMaxArmor())
+                newExo:SetArmor(self:GetArmor())
+                newExo:AddResources(-GetCostForTech(techId))
+                
+                newExo:TriggerEffects("spawn_exo")
+            
+            end
+        
+        end
+        
+        return success
+        
+    end 
+     
+elseif Client then
+
+    function Exo:UpdateMisc(input)
+
+        Player.UpdateMisc(self, input)
+        
+        if not Shared.GetIsRunningPrediction() then
+
+            if input.move.x ~= 0 or input.move.z ~= 0 then
+
+                self:CloseMenu()
+                
+            end
+            
+        end
+        
+    end
+
+    // Bring up buy menu
+    function Exo:BuyMenu(structure)
+        
+        // Don't allow display in the ready room
+        if self:GetTeamNumber() ~= 0 and Client.GetLocalPlayer() == self then
+        
+            if not self.buyMenu then
+            
+                self.buyMenu = GetGUIManager():CreateGUIScript("GUIMarineBuyMenu")
+                
+                MarineUI_SetHostStructure(structure)
+                
+                if structure then
+                    self.buyMenu:SetHostStructure(structure)
+                end
+                
+                self:TriggerEffects("marine_buy_menu_open")
+                
+                TEST_EVENT("Exo buy menu displayed")
+                
+            end
+            
+        end
+        
+    end
 
 end
 
-Shared.LinkClassToMap("Exo", Exo.kMapName, networkVars)
+function Exo:GetWebSlowdownScalar()
+    return 0.6
+end
+
+// move camera down while ejecting
+local kExoEjectionMove = 1
+function Exo:PlayerCameraCoordsAdjustment(cameraCoords)
+
+    if self:GetIsAlive() then
+
+        if self.ejecting and self.clientExoEjecting ~= self.ejecting then
+            self.timeEjectStarted = Shared.GetTime()
+            self.clientExoEjecting = self.ejecting
+        end
+        
+        local animDirection = 0
+        
+        if Shared.GetTime() - self.creationTime < kExoEjectDuration then
+        
+            animStartTime = self.creationTime
+            animDirection = 1
+            
+        end    
+
+        if self.timeEjectStarted then
+        
+            animStartTime = self.timeEjectStarted
+            animDirection = -1
+        
+        end
+        
+        if animStartTime then
+
+            local animTime = Clamp(Shared.GetTime() - animStartTime, 0, kExoEjectDuration)
+            local animFraction = Easing.inOutBounce(animTime, 0.0, 1.0, kExoEjectDuration)
+            
+            if animDirection == -1 then        
+                cameraCoords.origin.y = cameraCoords.origin.y - kExoEjectionMove * animFraction
+            elseif animDirection == 1 then
+                cameraCoords.origin.y = cameraCoords.origin.y - kExoEjectionMove + kExoEjectionMove * animFraction
+            end    
+        
+        end
+    
+    end
+    
+    return cameraCoords
+
+end
+
+Shared.LinkClassToMap("Exo", Exo.kMapName, networkVars, true)

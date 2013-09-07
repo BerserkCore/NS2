@@ -36,6 +36,8 @@ Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/VortexAbleMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/ParasiteMixin.lua")
 
 class 'InfantryPortal' (ScriptActor)
 
@@ -57,8 +59,6 @@ InfantryPortal.kAnimSpinStart = "spin_start"
 InfantryPortal.kAnimSpinContinuous = "spin"
 
 InfantryPortal.kUnderAttackSound = PrecacheAsset("sound/NS2.fev/marine/voiceovers/commander/base_under_attack")
-
-InfantryPortal.kLoopSound = PrecacheAsset("sound/NS2.fev/marine/structures/infantry_portal_active")
 InfantryPortal.kIdleLightEffect = PrecacheAsset("cinematics/marine/infantryportal/idle_light.cinematic")
 
 InfantryPortal.kTransponderUseTime = .5
@@ -94,6 +94,8 @@ AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(VortexAbleMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(ParasiteMixin, networkVars)
 
 local function CreateSpinEffect(self)
 
@@ -175,6 +177,7 @@ function InfantryPortal:OnCreate()
     InitMixin(self, GhostStructureMixin)
     InitMixin(self, VortexAbleMixin)
     InitMixin(self, PowerConsumerMixin)
+    InitMixin(self, ParasiteMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -240,7 +243,10 @@ function InfantryPortal:OnInitialized()
         
     elseif Client then
         InitMixin(self, UnitStatusMixin)
+        InitMixin(self, HiveVisionMixin)
     end
+    
+    InitMixin(self, IdleMixin)
     
 end
 
@@ -590,9 +596,8 @@ function InfantryPortal:GetTechButtons()
     
 end
 
-local kInfantryPortalHealthbarOffset = Vector(0, 0.5, 0)
 function InfantryPortal:GetHealthbarOffset()
-    return kInfantryPortalHealthbarOffset
+    return 0.5
 end 
 
 Shared.LinkClassToMap("InfantryPortal", InfantryPortal.kMapName, networkVars, true)

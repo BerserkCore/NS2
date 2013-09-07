@@ -41,6 +41,7 @@ Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/TriggerMixin.lua")
 Script.Load("lua/TargettingMixin.lua")
 Script.Load("lua/CatalystMixin.lua")
+Script.Load("lua/IdleMixin.lua")
 
 class 'Hydra' (ScriptActor)
 
@@ -90,6 +91,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(MaturityMixin, networkVars)
 AddMixinNetworkVars(CatalystMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
+AddMixinNetworkVars(IdleMixin, networkVars)
 
 function Hydra:OnCreate()
 
@@ -175,6 +177,8 @@ function Hydra:OnInitialized()
     end
     
     self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
+    
+    InitMixin(self, IdleMixin)
     
 end
 

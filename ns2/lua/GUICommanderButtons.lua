@@ -262,12 +262,25 @@ local function GetPixelCoordsForTab(index)
 
 end
 
+local function ButtonPressed(self, index)
+
+    if CommanderUI_MenuButtonRequiresTarget(index) then
+        self:SetTargetedButton(index)
+    end
+    
+    CommanderUI_MenuButtonAction(index)
+    
+    self:SelectTab(index)
+    
+end
+
 local function UpdateTabs(self)
 
     // Assume no tabs are pressed or highlighted.
     for t = 1, #self.tabs do
     
         local tabTable = self.tabs[t]
+
         if self.lastPressedTab ~= tabTable then        
             tabTable.TopItem:SetColor(GUICommanderButtons.kTabDisabledColor)            
         else        
@@ -289,6 +302,12 @@ local function UpdateTabs(self)
             tabTable.TextItem:SetText(tooltipData[1])
         end
         
+    end
+    
+    -- Select the first tab if no tab has been selected yet.
+    -- This will cause the tab to be selected on the server as well.
+    if not self.selectedTabIndex then
+        ButtonPressed(self, self:ConvertTechIdToTabIndex(kTechId.BuildMenu))
     end
     
     self.tabBackground:SetTexturePixelCoordinates( GetPixelCoordsForTab(self.selectedTabIndex) )
@@ -494,6 +513,36 @@ function GUICommanderButtons:GetButtonList()
 
 end
 
+local function UpdateHighlight(self)
+
+    local player = Client.GetLocalPlayer()
+    if player then
+    
+        local highlightTech = GetHighlightButtonTechId()
+    
+        for i = 1, #self.buttons do
+        
+            local buttonAvailable = CommanderUI_MenuButtonStatus(i) == 1
+            if buttonAvailable then
+            
+                if type(highlightTech) == "table" then
+                
+                    if table.contains(highlightTech, player.menuTechButtons[i]) then
+                        self.buttons[i]:SetColor(Color(0.4, 1, 0.4, 1))
+                    end
+            
+                elseif player.menuTechButtons[i] == highlightTech then
+                    self.buttons[i]:SetColor(Color(0.4, 1, 0.4, 1))
+                end
+            
+            end
+        
+        end
+    
+    end
+
+end
+
 function GUICommanderButtons:Update(deltaTime)
 
     PROFILE("GUICommanderButtons:Update")
@@ -514,6 +563,8 @@ function GUICommanderButtons:Update(deltaTime)
     
     self:UpdateButtonHotkeys()
     
+    UpdateHighlight(self)
+    
 end
 
 local function HighlightButton(self, buttonItem)
@@ -523,11 +574,18 @@ local function HighlightButton(self, buttonItem)
     
     if foundTabTable == nil then
     
-        if self.highlightItem:GetParent() then
-            self.highlightItem:GetParent():RemoveChild(self.highlightItem)
+        local currentParent = self.highlightItem:GetParent()
+        if currentParent ~= buttonItem then
+    
+            if currentParent then
+                currentParent:RemoveChild(self.highlightItem)
+            end
+            
+            buttonItem:AddChild(self.highlightItem)
+            CommanderUI_OnButtonHover()
+        
         end
         
-        buttonItem:AddChild(self.highlightItem)
         self.highlightItem:SetIsVisible(true)
         
     end
@@ -556,6 +614,7 @@ function GUICommanderButtons:UpdateInput()
                        
                         HighlightButton(self, buttonItem)
                         tooltipButtonIndex = i
+                        
                         break
                         
                     // Off or red buttons can still have a tooltip.
@@ -651,7 +710,7 @@ function GUICommanderButtons:UpdateButtonStatus(buttonIndex)
     local buttonCooldownFraction = CommanderUI_MenuButtonCooldownFraction(buttonIndex)
     local buttonItem = self.buttons[buttonIndex]
     local cooldownItem = self.cooldowns[buttonIndex]
-    local backgroundItem = self.buttonbackground[buttonIndex]
+    local backgroundItem = self.buttonbackground[buttonIndex]    
     
     if cooldownItem then
     
@@ -697,7 +756,7 @@ function GUICommanderButtons:UpdateButtonStatus(buttonIndex)
             buttonItem:SetColor(GUICommanderButtons.kButtonStatusOff.Color)
         end
         
-    end
+    end  
     
     backgroundItem:SetIsVisible(buttonItem:GetIsVisible() and buttonStatus ~= GUICommanderButtons.kButtonStatusPassive.Id)
     
@@ -776,18 +835,6 @@ local function SendButtonTargetedAction(index, x, y)
     
 end
 
-local function ButtonPressed(self, index, mouseX, mouseY)
-
-    if CommanderUI_MenuButtonRequiresTarget(index) then
-        self:SetTargetedButton(index)
-    end
-    
-    CommanderUI_MenuButtonAction(index)
-    
-    self:SelectTab(index)
-    
-end
-
 function GUICommanderButtons:MousePressed(key, mouseX, mouseY)
 
     if CommanderUI_GetUIClickable() then
@@ -801,12 +848,17 @@ function GUICommanderButtons:MousePressed(key, mouseX, mouseY)
             
         elseif key == InputKey.MouseButton0 then
         
+            local success = false
+        
             if self.idleWorkers:GetIsVisible() and GUIItemContainsPoint(self.idleWorkers, mouseX, mouseY) then
                 CommanderUI_ClickedIdleWorker()
+                success = true
             elseif self.playerAlerts:GetIsVisible() and GUIItemContainsPoint(self.playerAlerts, mouseX, mouseY) then
                 CommanderUI_ClickedPlayerAlert()
+                success = true
             elseif self.selectAllPlayers and GUIItemContainsPoint(self.selectAllPlayers, mouseX, mouseY) then
                 CommanderUI_ClickedSelectAllPlayers()
+                success = true
             elseif self.targetedButton ~= nil then
             
                 // Commander_GhostStructure handles ghost structures. This code path handles tech that doesn't
@@ -828,13 +880,18 @@ function GUICommanderButtons:MousePressed(key, mouseX, mouseY)
                     if buttonItem:GetIsVisible() and buttonStatus == GUICommanderButtons.kButtonStatusEnabled.Id and
                        GUIItemContainsPoint(buttonItem, mouseX, mouseY) then
                        
-                        ButtonPressed(self, i, mouseX, mouseY)
+                        ButtonPressed(self, i)
+                        success = true
                         break
                         
                     end
                     
                 end
                 
+            end
+            
+            if success then
+                CommanderUI_OnButtonClicked()
             end
             
         end
@@ -969,7 +1026,7 @@ function GUICommanderButtons:ContainsPoint(pointX, pointY)
     // Check if the point is over any of the UI managed by the GUICommanderButtons.
     local containsPoint = self.idleWorkers:GetIsVisible() and GUIItemContainsPoint(self.idleWorkers, pointX, pointY)
     containsPoint = containsPoint or (self.playerAlerts:GetIsVisible() and GUIItemContainsPoint(self.playerAlerts, pointX, pointY))
-    containsPoint = containsPoint or (selectAllPlayers ~= nil and GUIItemContainsPoint(self.selectAllPlayers, pointX, pointY))
+    containsPoint = containsPoint or (self.selectAllPlayers ~= nil and GUIItemContainsPoint(self.selectAllPlayers, pointX, pointY))
     return containsPoint or GUIItemContainsPoint(self.background, pointX, pointY)
     
 end

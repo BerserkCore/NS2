@@ -22,7 +22,6 @@ Script.Load("lua/SprintMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/ScoringMixin.lua")
-Script.Load("lua/Weapons/Marine/Builder.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
@@ -38,7 +37,9 @@ Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/WebableMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
+Script.Load("lua/PhaseGateUserMixin.lua")
 Script.Load("lua/Weapons/PredictedProjectile.lua")
+Script.Load("lua/PlayerVariantMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -54,16 +55,38 @@ elseif Client then
     Script.Load("lua/Marine_Client.lua")
 end
 
+local kViewModelTemplates = { green = "_view.model", special = "_view_special.model", deluxe = "_view_deluxe.model" }
+function GenerateMarineViewModelPaths(weaponName)
+
+    local viewModels = { male = { }, female = { } }
+    
+    for name, suffix in pairs(kViewModelTemplates) do
+        viewModels.male[name] = PrecacheAsset("models/marine/" .. weaponName .. "/" .. weaponName .. suffix)
+    end
+    
+    for name, suffix in pairs(kViewModelTemplates) do
+        viewModels.female[name] = PrecacheAsset("models/marine/" .. weaponName .. "/female_" .. weaponName .. suffix)
+    end
+    
+    return viewModels
+    
+end
+
 Shared.PrecacheSurfaceShader("models/marine/marine.surface_shader")
 Shared.PrecacheSurfaceShader("models/marine/marine_noemissive.surface_shader")
 
-Marine.kModelName = PrecacheAsset("models/marine/male/male.model")
-Marine.kBlackArmorModelName = PrecacheAsset("models/marine/male/male_special.model")
-Marine.kSpecialEditionModelName = PrecacheAsset("models/marine/male/male_special_v1.model")
-
 Marine.kMarineAnimationGraph = PrecacheAsset("models/marine/male/male.animation_graph")
 
-Marine.kDieSoundName = PrecacheAsset("sound/NS2.fev/marine/common/death")
+-- Generate 3rd person models.
+Marine.kModelNames = { male = { }, female = { } }
+local kModelTemplates = { green = ".model", special = "_special.model", deluxe = "_special_v1.model" }
+for name, suffix in pairs(kModelTemplates) do
+    Marine.kModelNames.male[name] = PrecacheAsset("models/marine/male/male" .. suffix)
+end
+for name, suffix in pairs(kModelTemplates) do
+    Marine.kModelNames.female[name] = PrecacheAsset("models/marine/female/female" .. suffix)
+end
+
 Marine.kFlashlightSoundName = PrecacheAsset("sound/NS2.fev/common/light")
 Marine.kGunPickupSound = PrecacheAsset("sound/NS2.fev/marine/common/pickup_gun")
 Marine.kSpendResourcesSoundName = PrecacheAsset("sound/NS2.fev/marine/common/player_spend_nanites")
@@ -76,7 +99,6 @@ Marine.kFlinchBigEffect = PrecacheAsset("cinematics/marine/hit_big.cinematic")
 Marine.kHitGroundStunnedSound = PrecacheAsset("sound/NS2.fev/marine/common/jump")
 Marine.kSprintStart = PrecacheAsset("sound/NS2.fev/marine/common/sprint_start")
 Marine.kSprintTiredEnd = PrecacheAsset("sound/NS2.fev/marine/common/sprint_tired")
-Marine.kLoopingSprintSound = PrecacheAsset("sound/NS2.fev/marine/common/sprint_loop")
 
 Marine.kEffectNode = "fxnode_playereffect"
 Marine.kHealth = kMarineHealth
@@ -118,7 +140,6 @@ Marine.kAirStrafeWeight = 2
 local networkVars =
 {      
     flashlightOn = "boolean",
-    timeOfLastPhase = "private time",
     
     timeOfLastDrop = "private time",
     timeOfLastPickUpWeapon = "private time",
@@ -132,9 +153,14 @@ local networkVars =
     interruptAim = "private boolean",
     poisoned = "boolean",
     catpackboost = "private boolean",
+    timeCatpackboost = "private time",
     weaponUpgradeLevel = "integer (0 to 3)",
     
-    unitStatusPercentage = "private integer (0 to 100)"
+    unitStatusPercentage = "private integer (0 to 100)",
+    
+    strafeJumped = "private compensated boolean",
+    
+    timeLastBeacon = "private time"
     
 }
 
@@ -158,6 +184,9 @@ AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(WebableMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
+AddMixinNetworkVars(PhaseGateUserMixin, networkVars)
+AddMixinNetworkVars(PlayerVariantMixin, networkVars)
+AddMixinNetworkVars(ScoringMixin, networkVars)
 
 function Marine:OnCreate()
 
@@ -182,18 +211,12 @@ function Marine:OnCreate()
     InitMixin(self, WebableMixin)
     InitMixin(self, CorrodeMixin)
     InitMixin(self, TunnelUserMixin)
-    
+    InitMixin(self, PhaseGateUserMixin)
     InitMixin(self, PredictedProjectileShooterMixin)
-    
-    //self.loopingSprintSoundEntId = Entity.invalidId
+    InitMixin(self, PlayerVariantMixin)
     
     if Server then
     
-        /*self.loopingSprintSound = Server.CreateEntity(SoundEffect.kMapName)
-        self.loopingSprintSound:SetAsset(Marine.kLoopingSprintSound)
-        self.loopingSprintSound:SetParent(self)
-        self.loopingSprintSoundEntId = self.loopingSprintSound:GetId()*/
-        
         self.timePoisoned = 0
         self.poisoned = false
         
@@ -229,7 +252,7 @@ local function UpdateNanoArmor(self)
 end
 
 function Marine:GetCanJump()
-    return self:GetIsOnGround() or self:GetIsOnLadder()
+    return not self:GetIsWebbed() and ( self:GetIsOnGround() or self:GetIsOnLadder() )
 end
 
 function Marine:OnInitialized()
@@ -243,9 +266,9 @@ function Marine:OnInitialized()
             Shared.SortEntitiesByDistance(self:GetOrigin(), ips)
             ips[1]:PreventSpinEffect(0.2)
         end
-    
+        
     end
-
+    
     // These mixins must be called before SetModel because SetModel eventually
     // calls into OnUpdatePoseParameters() which calls into these mixins.
     // Yay for convoluted class hierarchies!!!
@@ -258,7 +281,7 @@ function Marine:OnInitialized()
     
     // SetModel must be called before Player.OnInitialized is called so the attach points in
     // the Marine are valid to attach weapons to. This is far too subtle...
-    self:SetModel(Marine.kModelName, Marine.kMarineAnimationGraph)
+    self:SetModel(Marine.kModelNames[self:GetSex()][self:GetVariant()], Marine.kMarineAnimationGraph)
     
     Player.OnInitialized(self)
     
@@ -302,7 +325,6 @@ function Marine:OnInitialized()
     end
     
     self.weaponDropTime = 0
-    self.timeOfLastPhase = 0
     
     local viewAngles = self:GetViewAngles()
     self.lastYaw = viewAngles.yaw
@@ -429,14 +451,6 @@ function Marine:OnDestroy()
             Client.DestroyRenderLight(self.flashlight)
         end
 
-        if self.buyMenu then
-        
-            GetGUIManager():DestroyGUIScript(self.buyMenu)
-            self.buyMenu = nil
-            MouseTracker_SetIsVisible(false)
-            
-        end
-
     end
     
 end
@@ -540,7 +554,11 @@ function Marine:GetMaxSpeed(possible)
     local inventorySpeedScalar = self:GetInventorySpeedScalar() + .17    
     local useModifier = self.isUsing and 0.5 or 1
     
-    return maxSpeed * self:GetCatalystMoveSpeedModifier() * self:GetSlowSpeedModifier() * inventorySpeedScalar  * useModifier
+    if self.catpackboost then
+        maxSpeed = maxSpeed + kCatPackMoveAddSpeed
+    end
+    
+    return maxSpeed * self:GetSlowSpeedModifier() * inventorySpeedScalar  * useModifier
     
 end
 
@@ -577,7 +595,7 @@ function Marine:GetWeaponDropTime()
     return self.weaponDropTime
 end
 
-local marineTechButtons = { kTechId.Attack, kTechId.Move, kTechId.Defend  }
+local marineTechButtons = { kTechId.Attack, kTechId.Move, kTechId.Defend, kTechId.Construct }
 function Marine:GetTechButtons(techId)
 
     local techButtons = nil
@@ -588,14 +606,6 @@ function Marine:GetTechButtons(techId)
     
     return techButtons
  
-end
-
-function Marine:GetCatalystFireModifier()
-    return ConditionalValue(self:GetHasCatpackBoost(), CatPack.kAttackSpeedModifier, 1)
-end
-
-function Marine:GetCatalystMoveSpeedModifier()
-    return ConditionalValue(self:GetHasCatpackBoost(), CatPack.kMoveSpeedScalar, 1)
 end
 
 function Marine:GetChatSound()
@@ -647,6 +657,13 @@ function Marine:GetCanDropWeapon(weapon, ignoreDropTimeLimit)
     end
     
     return false
+    
+end
+
+function Marine:GetCanUseCatPack()
+
+    local enoughTimePassed = self.timeCatpackboost + 6 < Shared.GetTime()
+    return not self.catpackboost or enoughTimePassed
     
 end
 
@@ -735,21 +752,6 @@ function Marine:GetWeldPercentageOverride()
     return self:GetArmor() / self:GetMaxArmor()
 end
 
-function Marine:OnWeldOverride(doer, elapsedTime)
-
-    // macs weld marines by only 50% of the rate
-    local macMod = self:GetIsInCombat() and 0.2 or 0.5    
-    local weldMod = ( doer ~= nil and doer:isa("MAC") ) and macMod or 1
-
-    if self:GetArmor() < self:GetMaxArmor() then
-    
-        local addArmor = Marine.kArmorWeldRate * elapsedTime * weldMod
-        self:SetArmor(self:GetArmor() + addArmor)
-        
-    end
-    
-end
-
 function Marine:OnSpitHit(direction)
 
     if Server then
@@ -805,8 +807,13 @@ function Marine:OnUpdateAnimationInput(modelMixin)
    if self:GetIsStunned() and self:GetRemainingStunTime() > 0.5 then
         modelMixin:SetAnimationInput("move", "stun")
     end
+    
+    local catalystSpeed = 1
+    if self.catpackboost then
+        catalystSpeed = kCatPackWeaponSpeed
+    end
 
-    modelMixin:SetAnimationInput("attack_speed", self:GetCatalystFireModifier())
+    modelMixin:SetAnimationInput("catalyst_speed", catalystSpeed)
     
 end
 
@@ -814,17 +821,56 @@ function Marine:GetDeflectMove()
     return true
 end    
 
-function Marine:ModifyJump(input, velocity, jumpVelocity)
-    jumpVelocity:Scale(self:GetSlowSpeedModifier())
+function Marine:ModifyJumpLandSlowDown(slowdownScalar)
+
+    if self.strafeJumped then
+        slowdownScalar = 0.2 + slowdownScalar
+    end
+    
+    return slowdownScalar
+
 end
 
+local kStrafeJumpForce = 1
+local kStrafeJumpDelay = 0.7
+function Marine:ModifyJump(input, velocity, jumpVelocity)
+    
+    local isStrafeJump = input.move.z == 0 and input.move.x ~= 0
+    if isStrafeJump and self:GetTimeGroundTouched() + kStrafeJumpDelay < Shared.GetTime() then
+    
+        local strafeJumpDirection = GetNormalizedVector(self:GetViewCoords():TransformVector(input.move))
+        jumpVelocity:Add(strafeJumpDirection * kStrafeJumpForce)
+        jumpVelocity.y = jumpVelocity.y * 0.8
+        self.strafeJumped = true
+        
+    else
+        self.strafeJumped = false
+    end
+    
+    jumpVelocity:Scale(self:GetSlowSpeedModifier())
+    
+end
+
+function Marine:OnJump()
+
+    if self.strafeJumped then
+        self:TriggerEffects("strafe_jump", {surface = self:GetMaterialBelowPlayer()})           
+    end
+
+    self:TriggerEffects("jump", {surface = self:GetMaterialBelowPlayer()})
+    
+end    
+
 function Marine:OnProcessMove(input)
+
+    if self.catpackboost then
+        self.catpackboost = Shared.GetTime() - self.timeCatpackboost < kCatPackDuration
+    end
 
     if Server then
     
         self.ruptured = Shared.GetTime() - self.timeRuptured < Rupture.kDuration
         self.interruptAim  = Shared.GetTime() - self.interruptStartTime < Gore.kAimInterruptDuration
-        self.catpackboost = Shared.GetTime() - self.timeCatpackboost < CatPack.kDuration
         
         if self.unitStatusPercentage ~= 0 and self.timeLastUnitPercentageUpdate + 2 < Shared.GetTime() then
             self.unitStatusPercentage = 0
@@ -869,6 +915,10 @@ function Marine:OnProcessMove(input)
     
 end
 
+function Marine:GetCanSeeDamagedIcon(ofEntity)
+    return HasMixin(ofEntity, "Weldable")
+end
+
 function Marine:GetIsInterrupted()
     return self.interruptAim
 end
@@ -891,4 +941,4 @@ function Marine:GetIsStunAllowed()
     return not self.timeLastStun or self.timeLastStun + kDisruptMarineTimeout < Shared.GetTime() and not self:GetIsVortexed()
 end
 
-Shared.LinkClassToMap("Marine", Marine.kMapName, networkVars)
+Shared.LinkClassToMap("Marine", Marine.kMapName, networkVars, true)

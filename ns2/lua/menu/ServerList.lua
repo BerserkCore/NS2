@@ -8,6 +8,7 @@
 
 Script.Load("lua/menu/MenuElement.lua")
 Script.Load("lua/menu/ServerEntry.lua")
+Script.Load("lua/Globals.lua")
 
 local kDefaultWidth = 350
 local kDefaultColumnHeight = 64
@@ -69,6 +70,19 @@ function SortByPrivate(a, b)
 
     local aValue = a.requiresPassword and 1 or 0
     local bValue = b.requiresPassword and 1 or 0
+    
+    if not gSortReversed then
+        return aValue > bValue
+    else
+        return aValue < bValue
+    end
+    
+end
+
+function SortByPlayerSkill(a, b)
+
+    local aValue = a.playerSkill and a.playerSkill or 0
+    local bValue = b.playerSkill and b.playerSkill or 0
     
     if not gSortReversed then
         return aValue > bValue
@@ -147,6 +161,20 @@ function FilterMaxPing(maxping)
             return true
         else
             return entry.ping <= maxping
+        end
+        
+    end
+    
+end
+
+function FilterPlayerSkill(maxskill)
+
+    return function(entry)
+    
+        if maxskill == kMaxPlayerSkill then
+            return true
+        else
+            return entry.playerSkill <= maxskill
         end
         
     end

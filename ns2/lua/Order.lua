@@ -25,7 +25,6 @@ local networkVars =
     orderParam = "integer (-1 to 4000)",
     orderLocation = "vector",
     orderOrientation = "interpolated angle (11 bits)",
-    orderSource = "vector",
     ownerId = "entityid",
     orderIndex = "integer (0 to 100)",
 }
@@ -43,7 +42,6 @@ function Order:OnCreate()
     self.orderParam = -1
     self.orderLocation = Vector(0, 0, 0)
     self.orderOrientation = 0
-    self.orderSource = Vector(0, 0, 0)
     self.orderTime = Shared.GetTime()
     
     self:SetPropagate(Entity.Propagate_Mask)
@@ -82,10 +80,6 @@ function Order:OnEntityChange(oldId, newId)
     
 end
 
-function Order:SetOrderSource(vector)
-    self.orderSource = vector
-end
-
 function Order:tostring()
     return string.format("Order type: %s Location: %s", GetDisplayNameForTechId(self.orderType), self:GetLocation():tostring())
 end
@@ -110,6 +104,7 @@ kOrderTypesUseEntityOrigin[kTechId.AutoWeld] = true
 kOrderTypesUseEntityOrigin[kTechId.Heal] = true
 kOrderTypesUseEntityOrigin[kTechId.Move] = true
 kOrderTypesUseEntityOrigin[kTechId.Construct] = true
+kOrderTypesUseEntityOrigin[kTechId.AutoConstruct] = true
 kOrderTypesUseEntityOrigin[kTechId.Follow] = true
 kOrderTypesUseEntityOrigin[kTechId.FollowAndWeld] = true
 kOrderTypesUseEntityOrigin[kTechId.Defend] = true
@@ -133,6 +128,18 @@ end
 
 function Order:GetShowLine()
     return LookupTechData(self.orderType, kTechDataShowOrderLine, false)
+end
+
+function Order:GetOrderSource()
+
+    local owner = self:GetOwner()
+
+    if not owner or self.orderType == kTechId.Patrol then
+        return self:GetOrigin()
+    elseif owner then
+        return owner:GetOrigin()
+    end
+
 end
 
 // When setting this location, add in GetHoverHeight() so MACs and Drifters stay off the ground

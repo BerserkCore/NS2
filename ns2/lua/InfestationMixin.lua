@@ -240,10 +240,16 @@ function InfestationMixin:UpdateInfestation(deltaTime)
     
     end
     
-    if not self:GetIsAlive() and self:GetCurrentInfestationRadius() == 0 then        
+    if not self:GetIsAlive() and radius == 0 then        
         self.allowDestruction = true
     end
+    
+    self.currentInfestationRadius = radius
 
+end
+
+function InfestationMixin:GetCurrentInfestationRadiusCached()
+    return self.currentInfestationRadius or 0
 end
 
 function InfestationMixin:GetDestructionAllowed(destructionAllowedTable)

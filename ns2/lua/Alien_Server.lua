@@ -9,10 +9,6 @@
 
 Script.Load("lua/AlienUpgradeManager.lua")
 
-function Alien:SetPrimalScream(duration)
-    self.timeWhenPrimalScreamExpires = Shared.GetTime() + duration
-end
-
 function Alien:TriggerEnzyme(duration)
 
     if not self:GetIsOnFire() then
@@ -40,8 +36,11 @@ end
 
 function Alien:OnProcessMove(input)
     
-    if Server then    
-        self.hasAdrenalineUpgrade = GetHasAdrenalineUpgrade(self)
+    self.hasAdrenalineUpgrade = GetHasAdrenalineUpgrade(self)
+    
+    // need to clear this value or spectators would see the hatch effect every time they cycle through players
+    if self.hatched and self.creationTime + 3 < Shared.GetTime() then
+        self.hatched = false
     end
     
     Player.OnProcessMove(self, input)
@@ -52,10 +51,10 @@ function Alien:OnProcessMove(input)
     
         // Calculate two and three hives so abilities for abilities        
         UpdateAbilityAvailability(self, self:GetTierTwoTechId(), self:GetTierThreeTechId())
-        
+
         self.enzymed = self.timeWhenEnzymeExpires > Shared.GetTime()
-        self.primalScreamBoost = self.timeWhenPrimalScreamExpires > Shared.GetTime()
-        
+        self.electrified = self.timeElectrifyEnds > Shared.GetTime()
+
         self:UpdateAutoHeal()
         self:UpdateSilenceLevel()
         
@@ -196,7 +195,7 @@ function Alien:ProcessBuyAction(techIds)
             newPlayer:DropToFloor()
             
             newPlayer:SetResources(upgradeManager:GetAvailableResources())
-            newPlayer:SetGestationData(upgradeManager:GetUpgrades(), self:GetTechId(), healthScalar, armorScalar)
+            newPlayer:SetGestationData(upgradeManager:GetUpgrades(), self:GetTechId(), self:GetHealthFraction(), self:GetArmorScalar())
             
             if oldLifeFormTechId and lifeFormTechId and oldLifeFormTechId ~= lifeFormTechId then
                 newPlayer.twoHives = false
@@ -215,10 +214,6 @@ function Alien:ProcessBuyAction(techIds)
     
     return success
     
-end
-
-function Alien:MakeSpecialEdition()
-    // Currently there's no alien special edition visual difference
 end
 
 function Alien:GetTierTwoTechId()

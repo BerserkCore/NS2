@@ -46,6 +46,21 @@ if Client then
         return 33
     
     end
+    
+    local function GetIsObscurred(viewer, target)
+    
+        local targetOrigin = HasMixin(target, "Target") and target:GetEngagementPoint() or target:GetOrigin()
+        local eyePos = GetEntityEyePos(viewer)
+    
+        local trace = Shared.TraceRay(eyePos, targetOrigin, CollisionRep.LOS, PhysicsMask.All, EntityFilterAll())
+        
+        if trace.fraction == 1 then
+            return false
+        end
+            
+        return true    
+    
+    end
 
     function HiveVisionMixin:OnUpdate(deltaTime)   
 
@@ -59,12 +74,8 @@ if Client then
         if not visible and self:isa("Player") then
         
             // Make friendly players always show up.            
-            if player ~= self then
-            
-                if GetAreFriends(self, player) then
-                    visible = true
-                end
-            
+            if player ~= self and GetAreFriends(self, player) and GetIsObscurred(player, self) then
+                visible = true
             end
             
         end
@@ -74,18 +85,24 @@ if Client then
         end
         
         // Update the visibility status.
-        if visible ~= self.hiveSightVisible then
+        if visible ~= self.hiveSightVisible and (not self.timeHiveVisionChanged or self.timeHiveVisionChanged + 1 < Shared.GetTime()) then
+        
             local model = self:GetRenderModel()
             if model ~= nil then
+            
                 if visible then
                     HiveVision_AddModel( model )
                     //DebugPrint("%s add model", self:GetClassName())
                 else
                     HiveVision_RemoveModel( model )
                     //DebugPrint("%s remove model", self:GetClassName())
-                end                    
+                end 
+                   
                 self.hiveSightVisible = visible    
+                self.timeHiveVisionChanged = Shared.GetTime()
+                
             end
+            
         end
             
     end

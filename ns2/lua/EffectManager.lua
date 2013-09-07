@@ -265,6 +265,12 @@ local function InternalGetEffectMatches(self, triggeringEntity, assetEntry, tabl
                     return false
                 end
                 
+            elseif filterName == kEffectFilterSex then
+            
+                if filterValue ~= triggerFilterValue then
+                    return false
+                end
+                
             else
             
                 // Otherwise makes sure specified parameters match
@@ -664,7 +670,7 @@ function EffectManager:InternalTriggerSound(effectTable, triggeringParams, trigg
         // Play world sound
         if effectTable[kSoundType] then
         
-            if player and inWorldSpace ~= true and inWorldSpaceExceptPlayer ~= true then
+            if player and inWorldSpace ~= true then
             
                 // Shared player sound
                 soundEffectEntity = StartSoundEffectOnEntity(soundAssetName, player, volume)
@@ -672,7 +678,7 @@ function EffectManager:InternalTriggerSound(effectTable, triggeringParams, trigg
                 
             else
             
-                // World sound (don't send to the player if inWorldSpaceExceptPlayer is true).
+                // World sound
                 soundEffectEntity = StartSoundEffectAtOrigin(soundAssetName, coords.origin, volume)
                 success = true
                 
@@ -686,7 +692,7 @@ function EffectManager:InternalTriggerSound(effectTable, triggeringParams, trigg
         // Play parented sound
         elseif effectTable[kParentedSoundType] then
         
-            soundEffectEntity = StartSoundEffectOnEntity(soundAssetName, player, volume, nil)
+            soundEffectEntity = StartSoundEffectOnEntity(soundAssetName, triggeringEntity, volume, nil)
             success = true
             
         elseif effectTable[kPrivateSoundType] then

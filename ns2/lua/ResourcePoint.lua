@@ -10,6 +10,7 @@ Script.Load("lua/ScriptActor.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
+Script.Load("lua/ObstacleMixin.lua")
 
 class 'ResourcePoint' (ScriptActor)
 
@@ -34,6 +35,7 @@ end
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
+AddMixinNetworkVars(ObstacleMixin, networkVars)
 
 function ResourcePoint:OnCreate()
 
@@ -41,7 +43,8 @@ function ResourcePoint:OnCreate()
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
-    
+    InitMixin(self, ObstacleMixin)
+
     if Client then
         InitMixin(self, CommanderGlowMixin)   
         self.resnodeEffectPlaying = false
@@ -128,9 +131,8 @@ if Client then
     
 end
 
-local kResourcePointHealthbarOffset = Vector(0, 0.6, 0)
 function ResourcePoint:GetHealthbarOffset()
-    return kResourcePointHealthbarOffset
+    return 0.6
 end 
 
 Shared.LinkClassToMap("ResourcePoint", ResourcePoint.kPointMapName, networkVars)

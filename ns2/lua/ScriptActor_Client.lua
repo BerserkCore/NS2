@@ -150,39 +150,11 @@ local function UpdateAttachedEffects(self)
     
 end
 
-function ScriptActor:StopIdleEffects()
-    self.idleClient = false
-    self:TriggerEffects("on_destroy")
-end
-
-function ScriptActor:GetIsIdle()
-    return GetIsUnitActive(self)
-end
-
 function ScriptActor:OnUpdate(deltaTime)
 
     PROFILE("ScriptActor_Client:OnUpdate")
     
     UpdateAttachedEffects(self)
-    
-    // TODO: write idle mixin and add the mixin to the classes which were a Structure before
-    if self:isa("Structure") then
-    
-        if not self.idleClient and self:GetIsIdle() then
-        
-            //Print("%s start idle sound", self:GetClassName())
-            self.idleClient = true
-            self:TriggerEffects("idle")
-            
-        elseif self.idleClient and not self:GetIsIdle() then
-
-            //Print("%s stop idle sound", self:GetClassName())
-            self.idleClient = false
-            self:TriggerEffects("idle_stop")
-
-        end    
-        
-    end
     
 end
 

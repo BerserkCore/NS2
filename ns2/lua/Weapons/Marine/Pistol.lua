@@ -16,7 +16,7 @@ class 'Pistol' (ClipWeapon)
 Pistol.kMapName = "pistol"
 
 Pistol.kModelName = PrecacheAsset("models/marine/pistol/pistol.model")
-local kViewModelName = PrecacheAsset("models/marine/pistol/pistol_view.model")
+local kViewModels = GenerateMarineViewModelPaths("pistol")
 local kAnimationGraph = PrecacheAsset("models/marine/pistol/pistol_view.animation_graph")
 
 local kClipSize = 10
@@ -32,7 +32,8 @@ local networkVars =
 {
     altMode = "boolean",
     emptyPoseParam = "private float (0 to 1 by 0.01)",
-    queuedShots = "private compensated integer (0 to 10)"
+    queuedShots = "private compensated integer (0 to 10)",
+    timeAttackStarted = "time",
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -180,8 +181,8 @@ function Pistol:GetHasSecondary(player)
     return false
 end
 
-function Pistol:GetViewModelName()
-    return kViewModelName
+function Pistol:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function Pistol:GetDeathIconIndex()

@@ -531,7 +531,7 @@ function GetAlienTierTwoFor(techId)
         gTierTwoTech[kTechId.Skulk] = kTechId.Leap
         gTierTwoTech[kTechId.Gorge] = kTechId.BileBomb
         gTierTwoTech[kTechId.Lerk] = kTechId.Spores
-        gTierTwoTech[kTechId.Fade] = kTechId.Blink
+        gTierTwoTech[kTechId.Fade] = kTechId.Stab
         gTierTwoTech[kTechId.Onos] = kTechId.BoneShield
         
     end

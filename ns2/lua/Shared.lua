@@ -121,6 +121,7 @@ Script.Load("lua/TunnelEntrance.lua")
 Script.Load("lua/Clog.lua")
 Script.Load("lua/Cyst.lua")
 Script.Load("lua/Drifter.lua")
+Script.Load("lua/DrifterEgg.lua")
 Script.Load("lua/Egg.lua")
 Script.Load("lua/Embryo.lua")
 Script.Load("lua/Hallucination.lua")
@@ -153,6 +154,7 @@ Script.Load("lua/Onos.lua")
 // Weapons
 Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/Weapons/Marine/Rifle.lua")
+Script.Load("lua/Weapons/Marine/HeavyRifle.lua")
 Script.Load("lua/Weapons/Marine/Pistol.lua")
 Script.Load("lua/Weapons/Marine/Shotgun.lua")
 Script.Load("lua/Weapons/Marine/Axe.lua")
@@ -162,10 +164,11 @@ Script.Load("lua/Weapons/Marine/Claw.lua")
 Script.Load("lua/Weapons/Marine/GrenadeLauncher.lua")
 Script.Load("lua/Weapons/Marine/Flamethrower.lua")
 Script.Load("lua/Weapons/Marine/LayMines.lua")
+Script.Load("lua/Weapons/Marine/Builder.lua")
 Script.Load("lua/Weapons/Marine/Welder.lua")
 Script.Load("lua/Jetpack.lua")
 
-local GRENADES_ENABLED = false
+local GRENADES_ENABLED = true // false
 if GRENADES_ENABLED then
 
     Script.Load("lua/Weapons/Marine/GasGrenadeThrower.lua")

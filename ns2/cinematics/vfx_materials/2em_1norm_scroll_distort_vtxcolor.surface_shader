@@ -1,0 +1,54 @@
+<shader>
+	
+	<inputs>
+		<input name="emissiveMap1" type="texture" address="wrap" srgb="true"/>
+		<input name="emissiveMap2" type="texture" address="wrap" srgb="true"/>
+		<input name="normalMap" type="texture" address="wrap" srgb="true"/>
+		<input name="transmissionColor"  type="float3">(1, 1, 1)</input>
+		<input name="tint" type="float3" />  
+		<input name="em1Coord" type="float4" /> 	   
+		<input name="em2Coord" type="float4" /> 
+		<input name="normCoord" type="float4" /> 
+		<input name="normIntensity" type="float">0.10</input> 
+
+	</inputs>
+	
+	<params>
+		<param name="vsNormal">true</param>
+		<param name="vsTangent">true</param>
+		<param name="vsBinormal">true</param>
+	</params>
+		
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float2 offset = float2(time, 0);
+	
+			
+			float3 tsNormal = normCoord.r * DecodeNormal( tex2D(normalMap, input.texCoord * 2 + offset * normCoord.b)) + 
+				              normCoord.g * DecodeNormal( tex2D(normalMap, input.texCoord + offset.yx * normCoord.a) );
+							
+			float2 vsNormal;
+			vsNormal.x = tsNormal.x * input.vsTangent;
+			vsNormal.y = tsNormal.y * input.vsBinormal;							
+							
+
+			float4 emiss1 = tex2D(emissiveMap1, input.texCoord * float2(em1Coord.r, em1Coord.g) + float2( time * em1Coord.b, time * em1Coord.a));
+			float4 emiss2 = tex2D(emissiveMap2, input.texCoord * float2(em2Coord.r, em2Coord.g) + float2( time * em2Coord.b, time * em2Coord.a));	
+
+			material.emissive 	=  ((emiss1.rgb * input.color.r) + (emiss2.rgb * input.color.g)) * tint;
+			material.transmissionColor = transmissionColor;
+			material.ssDistortion = vsNormal.xy * input.color.b;
+		}
+	]]>		
+	</code>
+
+</shader>

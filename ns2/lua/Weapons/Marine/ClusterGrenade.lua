@@ -15,15 +15,11 @@ ClusterGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster.mod
 
 local networkVars = { }
 
-local kLifeTime = 2
+local kLifeTime = 1.2
 
 ClusterGrenade.kRadius = 0.17
-
-kClusterGrenadeDamageRadius = 10
-kClusterGrenadeDamage = 60
-
-kClusterFragmentDamageRadius = 8
-kClusterFragmentDamage = 25
+ClusterGrenade.kClearOnImpact = false
+ClusterGrenade.kClearOnEnemyImpact = true
 
 local kGrenadeCameraShakeDistance = 15
 local kGrenadeMinShakeIntensity = 0.01
@@ -56,7 +52,7 @@ local function CreateFragments(self)
         local creationPoint = origin + kClusterGrenadeFragmentPoints[i]
         local fragment = CreateEntity(ClusterFragment.kMapName, creationPoint, self:GetTeamNumber())
         
-        local startVelocity = GetNormalizedVector(creationPoint - origin) * (6 + math.random() * 6)   
+        local startVelocity = GetNormalizedVector(creationPoint - origin) * (3 + math.random() * 6) + Vector(0, 4 * math.random(), 0)
         fragment:Setup(player, startVelocity, true, nil, self)
     
     end
@@ -142,6 +138,10 @@ function ClusterGrenade:Detonate(targetHit)
 
 end
 
+function ClusterGrenade:GetDeathIconIndex()
+    return kDeathMessageIcon.ClusterGrenade
+end
+
 Shared.LinkClassToMap("ClusterGrenade", ClusterGrenade.kMapName, networkVars)
 
 
@@ -169,6 +169,10 @@ end
 
 function ClusterFragment:GetProjectileModel()
     return ClusterFragment.kModelName
+end
+
+function ClusterFragment:GetDeathIconIndex()
+    return kDeathMessageIcon.ClusterGrenade
 end
 
 function ClusterFragment:Detonate(targetHit)

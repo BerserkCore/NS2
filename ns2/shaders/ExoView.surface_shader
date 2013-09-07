@@ -12,7 +12,6 @@
     
     <params>
         <param name="vsNormal">true</param>
-		<param name="time">true</param>
     </params>	
 	
 	<code>

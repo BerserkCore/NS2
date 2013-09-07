@@ -8,8 +8,6 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/FunctionContracts.lua")
-
 /**
  * Pass in a target direction and a spread amount in radians and a new
  * direction vector is returned. Pass in a function that returns a random
@@ -20,7 +18,7 @@ function CalculateSpread(directionCoords, spreadAmount, randomizer)
     local spreadAngle = spreadAmount / 2
     
     local randomAngle = randomizer() * math.pi * 2
-    local randomRadius = randomizer() * math.tan(spreadAngle) // * randomizer()
+    local randomRadius = randomizer() * math.tan(spreadAngle)
     
     local spreadDirection = directionCoords.zAxis +
                             (directionCoords.xAxis * math.cos(randomAngle) +
@@ -31,4 +29,19 @@ function CalculateSpread(directionCoords, spreadAmount, randomizer)
     return spreadDirection
 
 end
-AddFunctionContract(CalculateSpread, { Arguments = { "Coords", "number", "function" }, Returns = { "Vector" } })
+
+function DebugFireRate(weapon)
+
+    if Server then
+    
+        if not weapon.timeLastShootDebug then
+            weapon.timeLastShootDebug = 0
+        end
+    
+        local delta = Shared.GetTime() - weapon.timeLastShootDebug        
+        DebugPrint("%s: %.3f seconds since last shot", ToString(weapon), delta)            
+        weapon.timeLastShootDebug = Shared.GetTime()
+        
+    end
+
+end

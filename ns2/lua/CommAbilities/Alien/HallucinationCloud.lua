@@ -73,6 +73,7 @@ if Server then
         
         // kill all hallucinations before, to prevent unreasonable spam
         for _, hallucination in ipairs(GetEntitiesForTeam("Hallucination", self:GetTeamNumber())) do
+            hallucination.consumed = true
             hallucination:Kill()
         end
         
@@ -84,7 +85,7 @@ if Server then
         // search for alien in range, cloak them and create a hallucination
         for _, alien in ipairs(friendlyUnits) do
         
-            if not alien:isa("Drifter") or not madeDrifter then
+            if alien:GetIsAlive() and (not alien:isa("Drifter") or not madeDrifter) then
             
                 local angles = alien:GetAngles()
                 angles.pitch = 0

@@ -19,6 +19,9 @@ float		screenwidth;
 float		screenheight;
 texture     inputTexture;
 texture     baseTexture;
+float       amount;
+float       startTime;
+float       time;
 
 sampler inputTextureSampler = sampler_state
     {
@@ -100,10 +103,14 @@ float4 SFXFadeBlinkPS(PS_INPUT input) : COLOR0
 	
 	float4 color = base + result;
 	
+	float2 screenCenter = float2(0.5, 0.5);
+	float4 flash = 1 - clamp((time - startTime) / 0.3, 0, 1);
+	float darkened = clamp(length(texCoord - screenCenter) - 0.4, 0, 1); 
+	
 	// Tint everything and blend over the original.
 	const float4 tint = float4(0.05, 0.25, 0.5, 1);
 	float intensity = color.r * 0.2126f + color.g * 0.7152f + color.b * 0.0722f;
-	return lerp(base, intensity * tint, 0.8);
+	return base + intensity * tint * amount + flash * intensity * tint * darkened * 5;
 	
 }
 

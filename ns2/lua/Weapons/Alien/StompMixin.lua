@@ -15,7 +15,7 @@ local kMaxPlayerVelocityToStomp = 6
 local kDisruptRange = kStompRange
 local kStompVerticalRange = 1.5
 
-local kStompRadius = 5
+local kStompRadius = 2
 
 // GetHasSecondary and GetSecondaryEnergyCost should completely override any existing
 // same named function defined in the object.
@@ -31,11 +31,18 @@ StompMixin.overrideFunctions =
 
 StompMixin.networkVars = 
 {
-    stomping = "boolean"
 }
 
+function StompMixin:__initmixin()
+
+    if Server then    
+        self.shockwaveEntIds = {}    
+    end
+
+end
+
 function StompMixin:GetIsStomping()
-    return self.stomping
+    return self.secondaryAttacking
 end
 
 function StompMixin:GetSecondaryTechId()
@@ -53,13 +60,21 @@ end
 function StompMixin:PerformStomp(player)
 
     local enemyTeamNum = GetEnemyTeamNumber(self:GetTeamNumber())
-    local stompOrigin = player:GetOrigin()
-
-    for index, ent in ipairs(GetEntitiesWithMixinForTeamWithinRange("Stun", enemyTeamNum, stompOrigin, kStompRadius)) do
+    local stompOrigin = player:GetOrigin()   
     
-        if math.abs(ent:GetOrigin().y - stompOrigin.y) < 1.2 then
-            ent:SetStun(kDisruptMarineTime)
-        end
+    if Server then
+    
+        local direction = GetNormalizedVectorXZ(player:GetViewCoords().zAxis)
+        local shockwaveOrigin = stompOrigin + Vector.yAxis * 0.2 + direction * 0.4
+        
+        local shockwave = CreateEntity(Shockwave.kMapName, shockwaveOrigin, self:GetTeamNumber())
+        shockwave:SetOwner(player)
+
+        local coords = Coords.GetLookIn(shockwaveOrigin, direction) 
+        shockwave:SetCoords(coords)
+        
+        local shockwaveId = shockwave:GetId()
+        self.shockwaveEntIds[shockwaveId] = true
         
     end
     
@@ -78,18 +93,13 @@ end
 
 function StompMixin:OnSecondaryAttack(player)
 
-    if player:GetEnergy() >= kStompEnergyCost and player:GetIsOnGround() then
-        self.stomping = true
-        Ability.OnSecondaryAttack(self, player)
+    if player:GetEnergy() >= kStompEnergyCost and player:GetIsOnGround() and not self.primaryAttacking then
+        self.secondaryAttacking = true
     end
 
 end
 
 function StompMixin:OnSecondaryAttackEnd(player)
-    
-    Ability.OnSecondaryAttackEnd(self, player)    
-    self.stomping = false
-    
 end
 
 function StompMixin:OnTag(tagName)
@@ -107,20 +117,56 @@ function StompMixin:OnTag(tagName)
             self:TriggerEffects("stomp_attack", { effecthostcoords = player:GetCoords() })
             player:DeductAbilityEnergy(kStompEnergyCost)
             
-        end
+        end   
         
-        if player:GetEnergy() < kStompEnergyCost then
-            self.stomping = false
-        end    
-        
+    elseif tagName == "end" then
+        self.secondaryAttacking = false
     end
 
 end
 
 function StompMixin:OnUpdateAnimationInput(modelMixin)
 
-    if self.stomping then
+    if self.secondaryAttacking then
         modelMixin:SetAnimationInput("activity", "secondary") 
     end
     
+end
+
+function StompMixin:UnregisterShockwave(shockwave)
+    self.shockwaveEntIds[shockwave:GetId()] = nil
+end
+
+function StompMixin:OnProcessMove(input)
+
+    if Server then
+
+        for shockwaveId, _ in pairs(self.shockwaveEntIds) do
+        
+            local shockwave = Shared.GetEntity(shockwaveId)
+            if shockwave then            
+                shockwave:UpdateShockwave(input.time)            
+            end
+        
+        end
+    
+    end
+
+end
+
+if Server then
+
+    function StompMixin:OnDestroy()
+
+        for shockwaveId, _ in pairs(self.shockwaveEntIds) do
+        
+            local shockwave = Shared.GetEntity(shockwaveId)
+            if shockwave then
+                DestroyEntity(shockwave)
+            end
+            
+        end    
+
+    end
+
 end

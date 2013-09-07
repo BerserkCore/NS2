@@ -37,6 +37,7 @@ local kHealViewMaterials =
 LiveMixin.optionalCallbacks =
 {
     OnTakeDamage = "A callback to alert when the object has taken damage.",
+    PreOnKill = "A callback to alert before an object will be killed.",
     OnKill = "A callback to alert when the object has been killed.",
     GetCanTakeDamageOverride = "Should return false if the entity cannot take damage. If this function is not provided it will be assumed that the entity can take damage.",
     GetCanDieOverride = "Should return false if the entity cannot die. If this function is not provided it will be assumed that the entity can die.",
@@ -93,7 +94,7 @@ function LiveMixin:__initmixin()
     
     self.health = LookupTechData(self:GetTechId(), kTechDataMaxHealth, 100)
     assert(self.health ~= nil)
-    self.maxHealth = self.health
+    self:SetMaxHealth(self.health)
     assert(self.maxHealth < LiveMixin.kMaxHealth)
 
     self.armor = LookupTechData(self:GetTechId(), kTechDataMaxArmor, 0)
@@ -208,8 +209,8 @@ function LiveMixin:AdjustMaxHealth(setMax)
     assert(setMax > 0)
     
     local healthFraction = self.health / self.maxHealth
-    self.maxHealth = setMax
-    self.health = self.maxHealth * healthFraction
+    self:SetMaxHealth(setMax)
+    self:SetHealth(self.maxHealth * healthFraction)
 
 end
 
@@ -389,7 +390,7 @@ function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUse
         
     end
     
-    return killedFromDamage
+    return killedFromDamage, (oldHealth - self.health + (oldArmor - self.armor) * 2)
     
 end
 
@@ -450,7 +451,7 @@ function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
     if self.GetCanBeHealed and not self:GetCanBeHealed() then
         return 0
     end
-    /*
+
     if self.ModifyHeal then
     
         local healTable = { health = health }
@@ -459,7 +460,7 @@ function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
         health = healTable.health
         
     end
-    */
+
     if self:AmountDamaged() > 0 then
     
         // Add health first, then armor if we're full
@@ -506,6 +507,10 @@ function LiveMixin:Kill(attacker, doer, point, direction)
 
     // Do this first to make sure death message is sent
     if self:GetIsAlive() and self:GetCanDie() then
+    
+        if self.PreOnKill then
+            self:PreOnKill(attacker, doer, point, direction)
+        end
     
         self.health = 0
         self.armor = 0
@@ -729,7 +734,7 @@ function LiveMixin:UpdateHealthValues(newTechId)
         self.health = newMaxHealth * percent
         
         // Set new max health
-        self.maxHealth = newMaxHealth
+        self:SetMaxHealth(newMaxHealth)
         
     end
     

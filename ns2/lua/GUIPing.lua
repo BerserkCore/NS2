@@ -53,6 +53,7 @@ function GUIPing:Update(deltaTime)
     local distanceFraction = 1 - Clamp(distance / kMaxPingDistance, 0, 1)
     local pingSize = kMinSize + distanceFraction * (kMaxSize - kMinSize)
     
+    self.pingItem.Frame:SetIsVisible(timeSincePing <= kCommanderPingDuration)
     GUIAnimateCommanderPing(self.pingItem.Mark, self.pingItem.Border, self.pingItem.Location, pingSize, timeSincePing, kBorderColor, kMarkColor)
     
     // Fade out when closer to screen center.

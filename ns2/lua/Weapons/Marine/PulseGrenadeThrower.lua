@@ -19,11 +19,16 @@ class 'PulseGrenadeThrower' (GrenadeThrower)
 
 PulseGrenadeThrower.kMapName = "pulsegrenade"
 
-PulseGrenadeThrower.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse_view.model")
-local kAnimationGraph = PrecacheAsset("models/marine/grenades/gr_pulse_view.animation_graph")
+local kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
+local kViewModels = GenerateMarineGrenadeViewModelPaths("gr_pulse")
+local kAnimationGraph = PrecacheAsset("models/marine/grenades/grenade_view.animation_graph")
 
-function PulseGrenadeThrower:GetViewModelName()
-    return PulseGrenadeThrower.kModelName
+function PulseGrenadeThrower:GetThirdPersonModelName()
+    return kModelName
+end
+
+function PulseGrenadeThrower:GetViewModelName(sex, variant)
+    return kViewModels[sex][variant]
 end
 
 function PulseGrenadeThrower:GetAnimationGraphName()

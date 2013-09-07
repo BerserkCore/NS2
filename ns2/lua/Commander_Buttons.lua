@@ -26,6 +26,30 @@ function CommanderUI_Logout()
         
 end
 
+local kButtonClickedSound =
+{
+    [kMarineTeamType] = PrecacheAsset("sound/NS2.fev/common/hovar"),
+    [kAlienTeamType] = PrecacheAsset("sound/NS2.fev/alien/common/alien_menu/hover"),
+}
+
+function CommanderUI_OnButtonClicked()
+
+    local player = Client.GetLocalPlayer()
+    if player and HasMixin(player, "Team") then
+        
+        local soundToPlay = kButtonClickedSound[player:GetTeamType()]
+        if soundToPlay then
+            StartSoundEffect(soundToPlay)
+        end
+        
+    end
+
+end
+
+function CommanderUI_OnButtonHover()
+    CommanderUI_OnButtonClicked()
+end
+
 function CommanderUI_MenuButtonWidth()
     return 80
 end
@@ -192,6 +216,20 @@ function CommanderUI_MenuButtonAction(index)
     
 end
 
+local function GetIsMenu(techId)
+
+    local techTree = GetTechTree()
+    if techTree then
+    
+        local techNode = techTree:GetTechNode(techId)
+        return techNode ~= nil and techNode:GetIsMenu()
+        
+    end
+    
+    return false
+
+end
+
 function CommanderUI_MenuButtonOffset(index)
 
     local player = Client.GetLocalPlayer()
@@ -206,8 +244,13 @@ function CommanderUI_MenuButtonOffset(index)
             end
         else
         
+            // show the back arrow when a menu button is at the bottom right
+            if index == 12 and GetIsMenu(techId) then
+            
+                techId = kTechId.RootMenu
+        
             // override upgrade structures for alien commander
-            if player:isa("AlienCommander") then
+            elseif player:isa("AlienCommander") then
             
                 if techId == kTechId.Shell then
 

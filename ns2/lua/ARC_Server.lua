@@ -20,8 +20,10 @@ function ARC:UpdateMoveOrder(deltaTime)
     self:SetMode(ARC.kMode.Moving)  
     
     local moveSpeed = ( self:GetIsInCombat() or self:GetGameEffectMask(kGameEffect.OnInfestation) ) and ARC.kCombatMoveSpeed or ARC.kMoveSpeed
+    local maxSpeedTable = { maxSpeed = moveSpeed }
+    self:ModifyMaxSpeed(maxSpeedTable)
     
-    self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), moveSpeed, deltaTime)
+    self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), maxSpeedTable.maxSpeed, deltaTime)
     
     self:AdjustPitchAndRoll()
     

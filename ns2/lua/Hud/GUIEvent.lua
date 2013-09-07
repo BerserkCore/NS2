@@ -50,6 +50,7 @@ local function GetUnlockIconParams(unlockId)
         kUnlockIconParams[kTechId.FlamethrowerTech] =       { description = "EVT_FLAMETHROWER_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.ShotgunTech] =            { description = "EVT_SHOTGUN_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.GrenadeLauncherTech] =    { description = "EVT_GRENADE_LAUNCHER_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
+        kUnlockIconParams[kTechId.GrenadeTech        ] =    { description = "EVT_GRENADES_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.AdvancedWeaponry] =       { description = "EVT_ADVANCED_WEAPONRY_RESEARCHED", bottomText = "EVT_BUY_AT_ARMORY" }
         kUnlockIconParams[kTechId.DetonationTimeTech] =     { description = "EVT_DETONATION_TIME_RESEARCHED" }
         kUnlockIconParams[kTechId.FlamethrowerRangeTech] =  { description = "EVT_FLAMETHROWER_RANGE_RESEARCHED" }
@@ -72,14 +73,19 @@ local function GetUnlockIconParams(unlockId)
         kUnlockIconParams[kTechId.Leap] = { description = "EVT_LEAP_RESEARCHED" }
         kUnlockIconParams[kTechId.BileBomb] = { description = "EVT_BILE_BOMB_RESEARCHED" }
         kUnlockIconParams[kTechId.Spores] = { description = "EVT_SPORES_RESEARCHED" }
-        kUnlockIconParams[kTechId.Blink] = { description = "EVT_BLINK_RESEARCHED" }
-        kUnlockIconParams[kTechId.ShadowStep] = { description = "EVT_SHADOWSTEP_RESEARCHED" }
+        kUnlockIconParams[kTechId.Stab] = { description = "EVT_STAB_RESEARCHED" }
         kUnlockIconParams[kTechId.Stomp] = { description = "EVT_STOMP_RESEARCHED" }
-        
+        kUnlockIconParams[kTechId.BoneShield] = { description = "EVT_BONESHIELD_RESEARCHED" }
         kUnlockIconParams[kTechId.Xenocide] = { description = "EVT_XENOCIDE_RESEARCHED" }
         kUnlockIconParams[kTechId.Umbra] = { description = "EVT_UMBRA_RESEARCHED" }
         kUnlockIconParams[kTechId.Vortex] = { description = "EVT_VORTEX_RESEARCHED" }
         kUnlockIconParams[kTechId.GorgeTunnelTech] = { description = "EVT_GORGETUNNEL_RESEARCHED" }
+        
+        kUnlockIconParams[kTechId.UpgradeSkulk] = { description = "EVT_SKULK_UPGRADED" }
+        kUnlockIconParams[kTechId.UpgradeGorge] = { description = "EVT_GORGE_UPGRADED" }
+        kUnlockIconParams[kTechId.UpgradeLerk] = { description = "EVT_LERK_UPGRADED" }
+        kUnlockIconParams[kTechId.UpgradeFade] = { description = "EVT_FADE_UPGRADED" }
+        kUnlockIconParams[kTechId.UpgradeOnos] = { description = "EVT_ONOS_UPGRADED" }
         
     end
     

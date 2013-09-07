@@ -9,8 +9,6 @@
 
 Script.Load("lua/ScriptActor.lua")
 Script.Load("lua/Mixins/ClientModelMixin.lua")
-Script.Load("lua/GameEffectsMixin.lua")
-Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 
@@ -41,7 +39,6 @@ local networkVars =
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ClientModelMixin, networkVars)
-AddMixinNetworkVars(GameEffectsMixin, networkVars)
 
 function TechPoint:OnCreate()
 
@@ -49,11 +46,8 @@ function TechPoint:OnCreate()
     
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ClientModelMixin)
-    InitMixin(self, GameEffectsMixin)
     
-    if Server then
-        InitMixin(self, InfestationTrackerMixin)
-    elseif Client then
+    if Client then
         InitMixin(self, CommanderGlowMixin)
     end
     
@@ -168,11 +162,6 @@ if Client then
         
     end
     
-end
-
-local kTechPointHealthbarOffset = Vector(0, 2.0, 0)
-function TechPoint:GetHealthbarOffset()
-    return kTechPointHealthbarOffset
 end
 
 Shared.LinkClassToMap("TechPoint", TechPoint.kMapName, networkVars)
