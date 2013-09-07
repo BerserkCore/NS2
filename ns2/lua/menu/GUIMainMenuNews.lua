@@ -6,8 +6,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-local kSizeX = 0.32
-local kSizeY = 0.38
+local widthFraction = 0.4
+local newsAspect = 1.2/1
 local kTextureName = "*mainmenu_news"
 -- Non local so modders can easily change the URL.
 kMainMenuNewsURL = "http://unknownworlds.com/ns2/ingamenews/"
@@ -16,20 +16,30 @@ class 'GUIMainMenuNews' (GUIScript)
 
 function GUIMainMenuNews:Initialize()
 
-    local xSize = kSizeX * Client.GetScreenWidth()
-    local ySize = xSize
-    self.webView = Client.CreateWebView(xSize, ySize)
+    local layer = kGUILayerMainMenuNews
+
+    self.logo = GUIManager:CreateGraphicItem()
+    self.logo:SetTexture("ui/menu/logo.dds")
+    self.logo:SetLayer(layer)
+    
+    local width = widthFraction * Client.GetScreenWidth()
+    local newsHt = width/newsAspect
+    self.webView = Client.CreateWebView(width, newsHt)
     self.webView:SetTargetTexture(kTextureName)
     self.webView:LoadUrl(kMainMenuNewsURL)
-    
     self.webContainer = GUIManager:CreateGraphicItem()
-    self.webContainer:SetSize(Vector(xSize, ySize, 0))
-    self.webContainer:SetAnchor(GUIItem.Right, GUIItem.Center)
-    self.webContainer:SetPosition(Vector(-xSize - 0.14 * Client.GetScreenWidth(), -ySize / 2, 0))
     self.webContainer:SetTexture(kTextureName)
-    self.webContainer:SetLayer(kGUILayerMainMenuNews)
-    
+    self.webContainer:SetLayer(layer)
+
+    self.reinforceButton = GUIManager:CreateGraphicItem()
+    self.reinforceButton:SetLayer(layer)
+
+    self.storeButton = GUIManager:CreateGraphicItem()
+    self.storeButton:SetLayer(layer)
+
     self.buttonDown = { [InputKey.MouseButton0] = false, [InputKey.MouseButton1] = false, [InputKey.MouseButton2] = false }
+
+    self.isVisible = true
     
 end
 
@@ -40,10 +50,18 @@ function GUIMainMenuNews:Uninitialize()
     
     Client.DestroyWebView(self.webView)
     self.webView = nil
+
+    GUI.DestroyItem(self.logo)
+    GUI.DestroyItem(self.reinforceButton)
+    GUI.DestroyItem(self.storeButton)
     
 end
 
 function GUIMainMenuNews:SendKeyEvent(key, down, amount)
+
+    if not self.isVisible then
+        return
+    end
 
     local isReleventKey = false
     
@@ -72,6 +90,14 @@ function GUIMainMenuNews:SendKeyEvent(key, down, amount)
             return true
             
         end
+
+        if GUIItemContainsPoint( self.reinforceButton, mouseX, mouseY ) then
+            Client.ShowWebpage("www.naturalselection2.com/reinforced/")
+        end
+
+        if GUIItemContainsPoint( self.storeButton, mouseX, mouseY ) then
+            Client.ShowWebpage("www.redbubble.com/people/unknownworlds/shop")
+        end
         
     elseif key == InputKey.MouseZ then
     
@@ -87,16 +113,73 @@ end
 
 function GUIMainMenuNews:Update(deltaTime)
 
+    if not self.isVisible then
+        return
+    end
+
     local mouseX, mouseY = Client.GetCursorPosScreen()
     local containsPoint, withinX, withinY = GUIItemContainsPoint(self.webContainer, mouseX, mouseY)
     if containsPoint or self.buttonDown[InputKey.MouseButton0] or self.buttonDown[InputKey.MouseButton1] or self.buttonDown[InputKey.MouseButton2] then
         self.webView:OnMouseMove(withinX, withinY)
     end
+
+    if GUIItemContainsPoint( self.reinforceButton, mouseX, mouseY ) then
+        self.reinforceButton:SetTexture("ui/leftbox_mouseover.dds")
+    else
+        self.reinforceButton:SetTexture("ui/leftbox.dds")
+    end
+
+    if GUIItemContainsPoint( self.storeButton, mouseX, mouseY ) then
+        self.storeButton:SetTexture("ui/rightbox_mouseover.dds")
+    else
+        self.storeButton:SetTexture("ui/rightbox.dds")
+    end
+
+    //----------------------------------------
+    //  Re-position/size everything, always
+    //----------------------------------------
+    local width = widthFraction * Client.GetScreenWidth()
+    local newsHt = width/newsAspect
+
+    local rightMargin = math.min( 150, Client.GetScreenWidth()*0.05 )
+    local y = 10    // top margin
+
+    local logoAspect = 600/192
+
+    self.logo:SetSize( Vector(width, width/logoAspect, 0) )
+    self.logo:SetAnchor(GUIItem.Right, GUIItem.Top)
+    self.logo:SetPosition(Vector( -width-rightMargin, y, 0))
+    y = y + width/logoAspect
+
+    local logoAspect = 300/100
+    local buttonSpacing = 10
+    local logoWidth = width/2.0 - buttonSpacing/2
+    local buttonHeight = logoWidth / logoAspect
+    y = y - 8
+    self.reinforceButton:SetSize( Vector(logoWidth, buttonHeight, 0) )
+    self.reinforceButton:SetAnchor(GUIItem.Right, GUIItem.Top)
+    self.reinforceButton:SetPosition(Vector( -width-rightMargin, y, 0))
+
+    self.storeButton:SetSize( Vector(logoWidth, buttonHeight, 0) )
+    self.storeButton:SetAnchor(GUIItem.Right, GUIItem.Top)
+    self.storeButton:SetPosition(Vector( -width-rightMargin+logoWidth+buttonSpacing, y, 0))
+
+    y = y + buttonHeight + buttonSpacing
+
+    //
+    self.webContainer:SetSize(Vector(width, newsHt, 0))
+    self.webContainer:SetAnchor(GUIItem.Right, GUIItem.Top)
+    self.webContainer:SetPosition(Vector(-width-rightMargin, y, 0))
+    y = y + newsHt
     
 end
 
 function GUIMainMenuNews:SetIsVisible(visible)
     self.webContainer:SetIsVisible(visible)
+    self.logo:SetIsVisible(visible)
+    self.reinforceButton:SetIsVisible(visible)
+    self.storeButton:SetIsVisible(visible)
+    self.isVisible = visible
 end
 
 function GUIMainMenuNews:LoadURL(url)

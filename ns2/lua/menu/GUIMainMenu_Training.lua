@@ -117,6 +117,11 @@ local function CreateVideosPage(self)
 
     self.videosPage = CreateMenuElement(self.trainingWindow:GetContentBox(), "Image")
     self.videosPage:SetCSSClass("play_now_content")
+    self.videosPage:AddEventCallbacks({
+            OnHide = function()
+                GUITipVideo.singleton:Hide()
+            end
+            })
 
     self.videoLinks = {}
 
@@ -171,7 +176,7 @@ local function CreateTutorialPage(self)
     self.playTutorialButton:SetText("PLAY TUTORIAL")
     
     self.playTutorialButton:AddEventCallbacks({
-             OnClick = function (self) self.scriptHandle:CreateTutorialServer() end
+             OnClick = function (self) self.scriptHandle:StartTutorial() end
         })
 
     local note = CreateMenuElement( self.tutorialPage, "Font", false )
@@ -183,7 +188,7 @@ unique about NS2 compared to similar games. It assumes you are familiar with FPS
     
 end
 
-function GUIMainMenu:CreateTutorialServer()
+function GUIMainMenu:StartTutorial()
 
     local modIndex = Client.GetLocalModId("tutorial")
     
@@ -191,15 +196,16 @@ function GUIMainMenu:CreateTutorialServer()
         Shared.Message("Tutorial mod does not exist!")
         return
     end
-    
-    local password      = "dummypassword"
+
+    local password      = "dummypassword"..ToString(math.random())
     local port          = 27015
-    local maxPlayers    = 24
+    local maxPlayers    = 24    // need room for bots
     local serverName    = "private tutorial server"
     local mapName       = "ns2_docking"
     Client.SetOptionString("lastServerMapName", mapName)
+    Client.SetOptionBoolean("playedTutorial", true)
     
-    if Client.StartServer(modIndex, mapName, serverName, password, port, 1) then
+    if Client.StartServer(modIndex, mapName, serverName, password, port, 1, true) then
         LeaveMenu()
     end
     
@@ -382,11 +388,7 @@ forwarded. Enjoy!]])
     self.botsPage:AddEventCallbacks(
     {
      OnShow = function (self)
-
-            // TODO add more maps when they become more bot-friendly
-            local mapNames = { "Descent" }
-            mapList:SetOptions( mapNames )
-
+            mapList:SetOptions( MainMenu_GetMapNameList() )
         end
     })
     

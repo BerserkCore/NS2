@@ -208,7 +208,11 @@ end
  */
 function OptionsDialogUI_SetValues(nickname, mouseSens, display, screenResIdx, visualDetailIdx, soundVol, musicVol, windowModeId, shadows, bloom, atmospherics, anisotropicFiltering, antiAliasing, invMouse, voiceVol)
 
+    local oldName = Client.GetOptionString( kNicknameOptionsKey, Client.GetUserName() )
     Client.SetOptionString( kNicknameOptionsKey, nickname )
+    if oldName ~= nickname then
+        Client.SendNetworkMessage("SetName", { name = nickname }, true)
+    end
     
     OptionsDialogUI_SetMouseSensitivity( mouseSens )
     

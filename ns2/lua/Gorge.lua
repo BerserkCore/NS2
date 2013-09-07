@@ -436,10 +436,6 @@ function Gorge:GetDesiredAngles()
 
 end
 
-function Gorge:GetHasBiomassHealth()
-    return GetHasTech(self, kTechId.UpgradeGorge)
-end
-
 function Gorge:PreUpdateMove(input, runningPrediction)
 
     self.prevY = self:GetOrigin().y

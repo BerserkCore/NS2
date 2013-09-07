@@ -503,10 +503,6 @@ function Fade:GetBlinkAllowed()
 
 end
 
-function Fade:GetHasBiomassHealth()
-    return GetHasTech(self, kTechId.UpgradeFade)
-end
-
 function Fade:OnScan()
 
     if Server then

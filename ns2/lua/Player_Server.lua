@@ -550,9 +550,6 @@ function Player:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extra
         client:SetSpectatingPlayer(nil)
     end
     
-    // Must happen after the client has been set on the player.
-    player:InitializeBadges()
-    
     // Log player spawning
     if teamNumber ~= 0 then
         PostGameViz(string.format("%s spawned", SafeClassName(self)), self)

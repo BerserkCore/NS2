@@ -5,21 +5,28 @@
 // ==============================================================================================
 
 Script.Load("lua/Globals.lua")
+Script.Load("lua/NS2Utility.lua")
 
 MarineVariantMixin = CreateMixin(MarineVariantMixin)
 MarineVariantMixin.type = "MarineVariant"
+
+local kDefaultVariantData = kMarineVariantData[ kDefaultMarineVariant ]
 
 // Utiliy function for other models that are dependent on marine variant
 function GenerateMarineViewModelPaths(weaponName)
 
     local viewModels = { male = { }, female = { } }
-
-    for variant, data in pairs(kMarineVariantData) do
-        viewModels.male[variant] = PrecacheAsset("models/marine/"..weaponName.."/"..weaponName.."_view"..data.viewModelFilePart ..".model" )
+    
+    local function MakePath( prefix, suffix )
+        return "models/marine/"..weaponName.."/"..prefix..weaponName.."_view"..suffix..".model"
     end
-
+    
     for variant, data in pairs(kMarineVariantData) do
-        viewModels.female[variant] = PrecacheAsset("models/marine/"..weaponName.."/female_"..weaponName.."_view"..data.viewModelFilePart..".model" )
+        viewModels.male[variant] = PrecacheAssetSafe( MakePath("", data.viewModelFilePart), MakePath("", kDefaultVariantData.viewModelFilePart) )
+    end
+    
+    for variant, data in pairs(kMarineVariantData) do
+        viewModels.female[variant] = PrecacheAssetSafe( MakePath("female_", data.viewModelFilePart), MakePath("female_", kDefaultVariantData.viewModelFilePart) )
     end
     
     return viewModels
@@ -29,12 +36,16 @@ end
 // precache models fror all variants
 MarineVariantMixin.kModelNames = { male = { }, female = { } }
 
-for variant, data in pairs(kMarineVariantData) do
-    MarineVariantMixin.kModelNames.male[variant] = PrecacheAsset("models/marine/male/male" .. data.modelFilePart .. ".model" )
+local function MakeModelPath( gender, suffix )
+    return "models/marine/"..gender.."/"..gender..suffix..".model"
 end
 
 for variant, data in pairs(kMarineVariantData) do
-    MarineVariantMixin.kModelNames.female[variant] = PrecacheAsset("models/marine/female/female" .. data.modelFilePart .. ".model" )
+    MarineVariantMixin.kModelNames.male[variant] = PrecacheAssetSafe( MakeModelPath("male", data.modelFilePart), MakeModelPath("male", kDefaultVariantData.modelFilePart) )
+end
+
+for variant, data in pairs(kMarineVariantData) do
+    MarineVariantMixin.kModelNames.female[variant] = PrecacheAssetSafe( MakeModelPath("female", data.modelFilePart), MakeModelPath("female", kDefaultVariantData.modelFilePart) )
 end
 
 MarineVariantMixin.kDefaultModelName = MarineVariantMixin.kModelNames.male[kDefaultMarineVariant]
@@ -96,21 +107,17 @@ if Server then
 
             // cleared, pass info to clients
             self.variant = data.marineVariant
+            assert( self.variant ~= -1 )
             local modelName = self:GetVariantModel()
-
-            if modelName ~= nil then
-                self:SetModel(modelName, MarineVariantMixin.kMarineAnimationGraph)
-            else
-                Print("ERROR: bad model name for marine variant "..EnumToString(kMarineVariant, self.variant))
-            end
+            assert( modelName ~= "" )
+            self:SetModel(modelName, MarineVariantMixin.kMarineAnimationGraph)
 
         else
-
             Print("ERROR: Client tried to request marine variant they do not have yet")
-
         end
             
         // set the highest level shoulder pad
+        self.shoulderPadIndex = 0
         for padId = 1, #kShoulderPad2ProductId do
 
             if GetHasShoulderPad( padId, client ) then
@@ -126,6 +133,25 @@ if Server then
             end
         end
 
+    end
+
+end
+
+if Client then
+
+    function MarineVariantMixin:OnUpdateRender()
+
+        // update player patch
+        if self:GetRenderModel() ~= nil then
+            self:GetRenderModel():SetMaterialParameter("patchIndex", self.shoulderPadIndex-1)
+
+            // TEMP
+            //self:GetRenderModel():SetMaterialParameter("patchIndex", self:GetClientIndex()%3 - 1 )
+
+            // TEMP
+            //self:GetRenderModel():SetMaterialParameter("patchIndex", 1 )
+        end
+    
     end
 
 end

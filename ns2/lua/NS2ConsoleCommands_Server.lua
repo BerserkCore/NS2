@@ -1500,3 +1500,11 @@ Event.Hook("Console_make", OnCommandMake)
 Event.Hook("Console_debugcommander", OnCommandDebugCommander)
 Event.Hook("Console_hell", OnCommandHell)
 Event.Hook("Console_trace", OnCommandTrace)
+
+Event.Hook("Console_dlc", function(client)
+        if Shared.GetCheatsEnabled() then
+            GetHasDLC = function(pid, client)
+                return true
+                end
+        end
+        end)

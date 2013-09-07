@@ -455,10 +455,6 @@ function Skulk:ModifyGravityForce(gravityTable)
 
 end
 
-function Skulk:GetHasBiomassHealth()
-    return GetHasTech(self, kTechId.UpgradeSkulk)
-end
-
 function Skulk:GetJumpHeight()
     return Skulk.kJumpHeight
 end

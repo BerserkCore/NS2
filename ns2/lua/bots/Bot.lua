@@ -36,11 +36,6 @@ function Bot:Initialize(forceTeam, active)
     self.forceTeam = forceTeam
     self.active = active
     
-    if self.client:GetControllingPlayer() ~= nil then
-        // For some reason, this may be nil on Windows8..
-        self.client:GetControllingPlayer():SetName("Bot")
-    end
-    
 end
 
 function Bot:GetMapName()

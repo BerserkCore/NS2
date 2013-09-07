@@ -20,7 +20,7 @@ GUIUnitStatus.kUnitStatusSize = Vector(60, 60, 0)
 GUIUnitStatus.kAlphaPerSecond = 0.8
 GUIUnitStatus.kImpulseIntervall = 2.5
 
-GUIUnitStatus.kBadgeSize = Vector(32, 32, 0)
+local kBadgeSize = Vector(26, 26, 0)
 
 GUIUnitStatus.kBlackTexture = "ui/black_dot.dds"
 
@@ -309,13 +309,14 @@ local function CreateBlipItem(self)
     newBlip.BorderMask:SetStencilFunc(GUIItem.NotEqual)
     newBlip.Border:AddChild(newBlip.BorderMask)
     
+    // Create badge icon items
     newBlip.Badges = {}
-    for i = 1,math.random(1, BadgeMixin_GetMaxBadges()) do
+    for i = 1,BadgeMixin_GetMaxBadges() do
 
         local badge = GUIManager:CreateGraphicItem()
         badge:SetAnchor(GUIItem.Left, GUIItem.Top)
-        badge:SetSize(GUIUnitStatus.kBadgeSize)
-        badge:SetPosition(Vector(i * (GUIUnitStatus.kBadgeSize.x+5), -GUIUnitStatus.kBadgeSize.y, 0))
+        badge:SetSize(kBadgeSize)
+        badge:SetPosition(Vector(-i * (kBadgeSize.x+5), kNameDefaultPos.y, 0))
         badge:SetIsVisible(false)
         badge:SetInheritsParentAlpha(true)
 
@@ -491,13 +492,20 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         updateBlip.BorderMask:SetIsVisible(teamType == kMarineTeamType and blipData.IsCrossHairTarget)
         updateBlip.smokeyBackground:SetIsVisible(teamType == kAlienTeamType and blipData.HealthFraction ~= 0)
 
-    // TEMP
-        for i = 1,#updateBlip.Badges do
+        assert( #updateBlip.Badges >= #blipData.BadgeTextures )
+        for i = 1, #updateBlip.Badges do
 
             local badge = updateBlip.Badges[i]
-            badge:SetTexture("ui/badge_pax2012.dds")
-            //badge:SetIsVisible(string.len(blipData.BadgeTexture) > 0)
-            badge:SetIsVisible(true)
+            local texture = blipData.BadgeTextures[i]
+
+            if texture ~= nil then
+
+                badge:SetTexture(texture)
+                badge:SetIsVisible(true)
+
+            else
+                badge:SetIsVisible(false)
+            end
 
         end
         

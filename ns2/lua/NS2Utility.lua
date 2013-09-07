@@ -2793,3 +2793,38 @@ function GetCommanderLogoutAllowed()
     */
 
 end
+
+function GetFileExists(path)
+    local searchResult = {}
+    Shared.GetMatchingFileNames( path, false, searchResult )
+    return #searchResult > 0
+end
+
+//----------------------------------------
+//  This will return nil if the asset DNE
+//----------------------------------------
+function PrecacheAssetIfExists( path )
+
+    if GetFileExists(path) then
+        return PrecacheAsset(path)
+    else
+        //DebugPrint("attempted to precache asset that does not exist: "..path)
+        return nil
+    end
+
+end
+
+//----------------------------------------
+//  If the first path DNE, it will use the fallback
+//----------------------------------------
+function PrecacheAssetSafe( path, fallback )
+
+    if GetFileExists(path) then
+        return PrecacheAsset(path)
+    else
+        //DebugPrint("Could not find "..path.."\n    Loading "..fallback.." instead" )
+        assert( GetFileExists(fallback) )
+        return PrecacheAsset(fallback)
+    end
+
+end

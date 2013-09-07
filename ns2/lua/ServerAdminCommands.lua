@@ -402,11 +402,25 @@ local function ListBans(client)
 end
 CreateServerAdminCommand("Console_sv_listbans", ListBans, "Lists the banned players")
 
+local function GetOrCreateReservedSlotsConfigSetting()
+
+    local setting = Server.GetConfigSetting("reserved_slots")
+    if not setting then
+    
+        Server.SetConfigSetting("reserved_slots", { amount = 0, ids = { } })
+        setting = Server.GetConfigSetting("reserved_slots")
+        
+    end
+    
+    return setting
+    
+end
+
 function GetReservedSlotData()
 
     local returnData = { }
     
-    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    local reservedSlots = GetOrCreateReservedSlotsConfigSetting()
     if reservedSlots and reservedSlots.amount and reservedSlots.ids then
     
         returnData.amount = reservedSlots.amount
@@ -424,7 +438,7 @@ end
 function SetReservedSlotAmount(amount)
 
     amount = tonumber(amount)
-    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    local reservedSlots = GetOrCreateReservedSlotsConfigSetting()
     if reservedSlots and amount and amount >= 0 and amount <= Server.GetMaxPlayers() then
     
         reservedSlots.amount = amount
@@ -463,7 +477,7 @@ local function AddReservedSlot(client, name, id)
         
     end
     
-    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    local reservedSlots = GetOrCreateReservedSlotsConfigSetting()
     if reservedSlots and reservedSlots.ids then
     
         reservedSlots.ids[name] = id
@@ -486,7 +500,7 @@ local function RemoveReservedSlot(client, id)
         
     end
     
-    local reservedSlots = Server.GetConfigSetting("reserved_slots")
+    local reservedSlots = GetOrCreateReservedSlotsConfigSetting()
     if reservedSlots and reservedSlots.ids then
     
         for name, steamId in pairs(reservedSlots.ids) do

@@ -2640,3 +2640,20 @@ function GetRandomDirXZ()
     return Vector( math.cos(azimuth), 0, math.sin(azimuth) )
 
 end
+
+//----------------------------------------
+//  
+//----------------------------------------
+function FindStructByFieldValue( arrayOfStructs, fieldKey, fieldValue )
+
+    for i = 1,#arrayOfStructs do
+
+        if arrayOfStructs[i][fieldKey] == fieldValue then
+            return arrayOfStructs[i], i
+        end
+
+    end
+
+    return nil, -1
+
+end

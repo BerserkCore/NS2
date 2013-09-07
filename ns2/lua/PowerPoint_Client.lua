@@ -152,6 +152,17 @@ function PowerPoint:GetShowCrossHairText()
     return self:GetPowerState() ~= PowerPoint.kPowerState.unsocketed
 end
 
+function PowerPoint:GetUnitNameOverride(viewer)
+
+    local unitName = GetDisplayName(self)
+    if not self:GetIsBuilt() then
+        unitName = unitName .. "(" .. Locale.ResolveString("INDESTRUCTABLE") .. ")"
+    end
+
+    return unitName    
+    
+end    
+
 function PowerPoint:OnUpdateRender()
 
     PROFILE("PowerPoint:OnUpdateRender")

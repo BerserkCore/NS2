@@ -141,11 +141,11 @@ function FilterServerMode(mode)
 end
 
 function FilterServerName(name)
-    return function(entry) return string.find(string.upper(entry.name), string.upper(name)) ~= nil end
+    return function(entry) return string.find(string.upper(entry.name), string.upper(name), nil, true) ~= nil end
 end
 
 function FilterMapName(map)
-    return function(entry) return string.find(string.upper(entry.map), string.upper(map)) ~= nil end
+    return function(entry) return string.find(string.upper(entry.map), string.upper(map), nil, true) ~= nil end
 end
 
 function FilterMinRate(minrate)

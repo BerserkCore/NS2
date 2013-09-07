@@ -442,6 +442,7 @@ kMelee1DamageScalar = 1.1
 kMelee2DamageScalar = 1.2
 kMelee3DamageScalar = 1.3
 
+kWhipSlapDamage = 50
 kWhipBombardDamage = 400
 kWhipBombardDamageType = kDamageType.Corrode
 kWhipBombardRadius = 6
@@ -693,7 +694,7 @@ kShiftHatchRange = 11
 kMatureShiftMaxEnergy = 200
 
 kEchoHydraCost = 1
-kEchoWhipCost = 1
+kEchoWhipCost = 2
 kEchoTunnelCost = 5
 kEchoCragCost = 1
 kEchoShadeCost = 1
@@ -703,7 +704,7 @@ kEchoSpurCost = 1
 kEchoShellCost = 1
 kEchoHiveCost = 10
 kEchoEggCost = 2
-kEchoHarvesterCost = 1
+kEchoHarvesterCost = 2
 
 kShadeInitialEnergy = 25  kShadeMaxEnergy = 100
 kShadeInkCost = 3

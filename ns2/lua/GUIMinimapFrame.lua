@@ -60,7 +60,7 @@ function GUIMinimapFrame:Initialize()
     self:InitFrame()
     
     self.chooseSpawnText = GetGUIManager():CreateTextItem()
-    self.chooseSpawnText:SetText("open minimap to choose a spawn point.")
+    self.chooseSpawnText:SetText(Locale.ResolveString("CHOOSE_SPAWN"))
     self.chooseSpawnText:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
     self.chooseSpawnText:SetTextAlignmentX(GUIItem.Align_Center)
     self.chooseSpawnText:SetTextAlignmentY(GUIItem.Align_Max)

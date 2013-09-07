@@ -504,10 +504,6 @@ function Onos:GetMovementSpecialEnergyCost()
     return 0
 end
 
-function Onos:GetHasBiomassHealth()
-    return GetHasTech(self, kTechId.UpgradeOnos)
-end
-
 function Onos:GetMovementSpecialTechId()
     return kTechId.Charge
 end

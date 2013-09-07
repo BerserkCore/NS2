@@ -218,11 +218,11 @@ end
 // Returns true if we must hide the video asap - ie. the player disabled hints, or player is playing the game
 function GUITipVideo:GetMustHide()
 
-    if not Client.GetOptionBoolean("showHints", true) then
+    if not self.tip then
         return true
     end
 
-    if not self.tip then
+    if self.tip.videoType ~= "adhoc" and not Client.GetOptionBoolean("showHints", true) then
         return true
     end
 

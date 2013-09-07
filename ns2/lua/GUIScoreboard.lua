@@ -18,6 +18,9 @@ GUIScoreboard.kClickForMouseBackgroundSize = Vector(GUIScale(200), GUIScale(32),
 GUIScoreboard.kClickForMouseTextSize = GUIScale(22)
 GUIScoreboard.kClickForMouseText = Locale.ResolveString("SB_CLICK_FOR_MOUSE")
 
+local kIconSize = GUIScale(Vector(40, 40, 0))
+local kIconOffset = GUIScale(Vector(0, -10, 0))
+
 // Shared constants.
 GUIScoreboard.kTeamInfoFontName      = "fonts/Arial_15.fnt"
 GUIScoreboard.kPlayerStatsFontName   = "fonts/Arial_15.fnt"
@@ -50,8 +53,10 @@ GUIScoreboard.kPlayerStatsFontSize = 16
 GUIScoreboard.kPlayerItemWidthBuffer = 10
 GUIScoreboard.kPlayerItemHeight = 32
 GUIScoreboard.kPlayerSpacing = 4
-GUIScoreboard.kPlayerVoiceChatIconSize = 20
 
+local kPlayerItemLeftMargin = 10
+local kPlayerNumberWidth = 10
+local kPlayerVoiceChatIconSize = 20
 local kPlayerBadgeIconSize = 20
 local kPlayerBadgeRightPadding = 4
 
@@ -173,8 +178,8 @@ local function CreateTeamBackground(self, teamNumber)
     killsItem:SetTextAlignmentX(GUIItem.Align_Min)
     killsItem:SetTextAlignmentY(GUIItem.Align_Min)
     killsItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
-    killsItem:SetColor(color)
-    killsItem:SetText(Locale.ResolveString("SB_KILLS"))
+	killsItem:SetColor(color)
+    killsItem:SetText("K")
     teamItem:AddChild(killsItem)
     
     currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
@@ -187,7 +192,7 @@ local function CreateTeamBackground(self, teamNumber)
     assistsItem:SetTextAlignmentY(GUIItem.Align_Min)
     assistsItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
     assistsItem:SetColor(color)
-    assistsItem:SetText(Locale.ResolveString("SB_ASSISTS"))
+    assistsItem:SetText("A")
     teamItem:AddChild(assistsItem)
     
     currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
@@ -200,20 +205,17 @@ local function CreateTeamBackground(self, teamNumber)
     deathsItem:SetTextAlignmentY(GUIItem.Align_Min)
     deathsItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
     deathsItem:SetColor(color)
-    deathsItem:SetText(Locale.ResolveString("SB_DEATHS"))
+    deathsItem:SetText("D")
     teamItem:AddChild(deathsItem)
     
     currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
     
     // Resources text item.
-    local resItem = GUIManager:CreateTextItem()
-    resItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    resItem:SetAnchor(GUIItem.Left, GUIItem.Top)
-    resItem:SetTextAlignmentX(GUIItem.Align_Min)
-    resItem:SetTextAlignmentY(GUIItem.Align_Min)
-    resItem:SetPosition(Vector(currentColumnX , playerDataRowY, 0))
-    resItem:SetColor(color)
-    resItem:SetText(Locale.ResolveString("SB_RES"))
+    local resItem = GUIManager:CreateGraphicItem()
+    resItem:SetPosition(Vector(currentColumnX , playerDataRowY, 0) + kIconOffset)
+    resItem:SetTexture("ui/buildmenu.dds")
+    resItem:SetTexturePixelCoordinates(unpack(GetTextureCoordinatesForIcon(kTechId.CollectResources)))
+    resItem:SetSize(kIconSize)
     teamItem:AddChild(resItem)
     
     currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
@@ -480,6 +482,33 @@ function GUIScoreboard:Update(deltaTime)
     
 end
 
+local function SetPlayerItemBadges( item, badgeTextures )
+
+    assert( #badgeTextures <= #item.BadgeItems )
+
+    for i = 1, #item.BadgeItems do
+
+        if badgeTextures[i] ~= nil then
+            item.BadgeItems[i]:SetTexture( badgeTextures[i] )
+            item.BadgeItems[i]:SetIsVisible( true )
+        else
+            item.BadgeItems[i]:SetIsVisible( false )
+        end
+
+    end
+
+    // now adjust the position of the player name
+    local numBadgesShown = math.min( #badgeTextures, #item.BadgeItems )
+    item.Name:SetPosition( Vector(
+                // DONT FORGET ANYTHINGZ
+                kPlayerItemLeftMargin + kPlayerNumberWidth + kPlayerVoiceChatIconSize
+                + numBadgesShown*(kPlayerBadgeIconSize + kPlayerBadgeRightPadding),
+                0,
+                0 ))
+
+end
+
+
 function GUIScoreboard:UpdateTeam(updateTeam)
     
     local teamGUIItem = updateTeam["GUIs"]["Background"]
@@ -566,7 +595,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
             end
         end
         
-        player["Index"]:SetText(index..".")
+        player["Number"]:SetText(index..".")
         player["Name"]:SetText(playerName)
         
         // Needed to determine who to (un)mute when voice icon is clicked.
@@ -634,6 +663,15 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         end
         currentY = currentY + GUIScoreboard.kPlayerItemHeight + GUIScoreboard.kPlayerSpacing
         currentPlayerIndex = currentPlayerIndex + 1
+
+        // update badges info
+        local ent = Shared.GetEntity( playerRecord.EntityId )
+        if ent ~= nil then
+            // trust local ent data if available
+            SetPlayerItemBadges( player, BadgeMixin_GetBadgeTextures("scoreboard", ent) )
+        else
+            SetPlayerItemBadges( player, BadgeMixin_GetBadgeTextures("scoreboard", playerRecord) )
+        end
         
     end
 
@@ -675,71 +713,72 @@ function GUIScoreboard:CreatePlayerItem()
     playerItem:SetTexture("ui/hud_elements.dds")
     playerItem:SetTextureCoordinates(0, 0, 0.558, 0.16)
 
+    local playerItemChildX = kPlayerItemLeftMargin
+
     // Player number item
-    local playerIndexItem = GUIManager:CreateTextItem()
-    playerIndexItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    playerIndexItem:SetAnchor(GUIItem.Left, GUIItem.Top)
-    playerIndexItem:SetTextAlignmentX(GUIItem.Align_Max)
-    playerIndexItem:SetTextAlignmentY(GUIItem.Align_Min)
-    playerIndexItem:SetPosition(Vector(15, 5, 0))
-    playerIndexItem:SetColor(Color(0.5, 0.5, 0.5, 1))
-    playerItem:AddChild(playerIndexItem)
-
-    // TEMP
-    local badgeTextures = {
-        "ui/badge_pax2012.dds",
-        "ui/badge_pax2012.dds",
-        "ui/badge_pax2012.dds",
-    }
-    local numBadges = #badgeTextures
-    
-    // Player name text item.
-    local playerNameItem = GUIManager:CreateTextItem()
-    playerNameItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    playerNameItem:SetAnchor(GUIItem.Left, GUIItem.Top)
-    playerNameItem:SetTextAlignmentX(GUIItem.Align_Min)
-    playerNameItem:SetTextAlignmentY(GUIItem.Align_Min)
-    playerNameItem:SetPosition(Vector(
-                15
-                + GUIScoreboard.kPlayerVoiceChatIconSize
-                + numBadges * (kPlayerBadgeIconSize+kPlayerBadgeRightPadding),
-                5, 0))
-    playerNameItem:SetColor(Color(1, 1, 1, 1))
-    playerItem:AddChild(playerNameItem)
-    
-    // Player badges
-    for i = 1,numBadges do
-
-        local xPosition = -i * (kPlayerBadgeIconSize+kPlayerBadgeRightPadding)
-
-        local playerBadge = GUIManager:CreateGraphicItem()
-        playerBadge:SetSize(Vector(kPlayerBadgeIconSize, kPlayerBadgeIconSize, 0))
-        playerBadge:SetAnchor(GUIItem.Left, GUIItem.Top)
-        playerBadge:SetPosition(Vector(xPosition, 0, 0))
-        playerBadge:SetTexture("ui/badge_pax2012.dds")
-        playerNameItem:AddChild(playerBadge)
-
-    end
+    local playerNumber = GUIManager:CreateTextItem()
+    playerNumber:SetFontName(GUIScoreboard.kPlayerStatsFontName)
+    playerNumber:SetAnchor(GUIItem.Left, GUIItem.Center)
+    playerNumber:SetTextAlignmentX(GUIItem.Align_Min)
+    playerNumber:SetTextAlignmentY(GUIItem.Align_Center)
+    playerNumber:SetPosition(Vector(playerItemChildX, 0, 0))
+    playerItemChildX = playerItemChildX + kPlayerNumberWidth
+    playerNumber:SetColor(Color(0.5, 0.5, 0.5, 1))
+    playerItem:AddChild(playerNumber)
 
     // Player voice icon item.
     local playerVoiceIcon = GUIManager:CreateGraphicItem()
-    playerVoiceIcon:SetSize(Vector(GUIScoreboard.kPlayerVoiceChatIconSize, GUIScoreboard.kPlayerVoiceChatIconSize, 0))
-    playerVoiceIcon:SetAnchor(GUIItem.Left, GUIItem.Top)
+    playerVoiceIcon:SetSize(Vector(kPlayerVoiceChatIconSize, kPlayerVoiceChatIconSize, 0))
+    playerVoiceIcon:SetAnchor(GUIItem.Left, GUIItem.Center)
     playerVoiceIcon:SetPosition(Vector(
-                -GUIScoreboard.kPlayerVoiceChatIconSize - numBadges * (kPlayerBadgeIconSize+kPlayerBadgeRightPadding),
-                0, 0))
+                playerItemChildX,
+                -kPlayerVoiceChatIconSize/2,
+                0))
+    playerItemChildX = playerItemChildX + kPlayerVoiceChatIconSize
     playerVoiceIcon:SetTexture("ui/speaker.dds")
-    playerNameItem:AddChild(playerVoiceIcon)
+    playerItem:AddChild(playerVoiceIcon)
+
+    //----------------------------------------
+    //  Badge icons
+    //----------------------------------------
+    local maxBadges = BadgeMixin_GetMaxBadges()
+    local badgeItems = {}
     
+    // Player badges
+    for i = 1,maxBadges do
+
+        local playerBadge = GUIManager:CreateGraphicItem()
+        playerBadge:SetSize(Vector(kPlayerBadgeIconSize, kPlayerBadgeIconSize, 0))
+        playerBadge:SetAnchor(GUIItem.Left, GUIItem.Center)
+        playerBadge:SetPosition(Vector(playerItemChildX, -kPlayerBadgeIconSize/2, 0))
+        playerItemChildX = playerItemChildX + kPlayerBadgeIconSize + kPlayerBadgeRightPadding
+        playerBadge:SetIsVisible(false)
+        playerItem:AddChild(playerBadge)
+        table.insert( badgeItems, playerBadge )
+
+    end
+
+    // Player name text item.
+    local playerNameItem = GUIManager:CreateTextItem()
+    playerNameItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
+    playerNameItem:SetAnchor(GUIItem.Left, GUIItem.Center)
+    playerNameItem:SetTextAlignmentX(GUIItem.Align_Min)
+    playerNameItem:SetTextAlignmentY(GUIItem.Align_Center)
+    playerNameItem:SetPosition(Vector(
+                playerItemChildX,
+                0, 0))
+    playerNameItem:SetColor(Color(1, 1, 1, 1))
+    playerItem:AddChild(playerNameItem)
+
     local currentColumnX = Client.GetScreenWidth() / 6
     
     // Status text item.
     local statusItem = GUIManager:CreateTextItem()
     statusItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    statusItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    statusItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     statusItem:SetTextAlignmentX(GUIItem.Align_Min)
-    statusItem:SetTextAlignmentY(GUIItem.Align_Min)
-    statusItem:SetPosition(Vector(currentColumnX, 5, 0))
+    statusItem:SetTextAlignmentY(GUIItem.Align_Center)
+    statusItem:SetPosition(Vector(currentColumnX, 0, 0))
     statusItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(statusItem)
     
@@ -748,10 +787,10 @@ function GUIScoreboard:CreatePlayerItem()
     // Score text item.
     local scoreItem = GUIManager:CreateTextItem()
     scoreItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    scoreItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    scoreItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     scoreItem:SetTextAlignmentX(GUIItem.Align_Min)
-    scoreItem:SetTextAlignmentY(GUIItem.Align_Min)
-    scoreItem:SetPosition(Vector(currentColumnX, 5, 0))
+    scoreItem:SetTextAlignmentY(GUIItem.Align_Center)
+    scoreItem:SetPosition(Vector(currentColumnX, 0, 0))
     scoreItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(scoreItem)
     
@@ -760,10 +799,10 @@ function GUIScoreboard:CreatePlayerItem()
     // Kill text item.
     local killsItem = GUIManager:CreateTextItem()
     killsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    killsItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    killsItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     killsItem:SetTextAlignmentX(GUIItem.Align_Min)
-    killsItem:SetTextAlignmentY(GUIItem.Align_Min)
-    killsItem:SetPosition(Vector(currentColumnX, 5, 0))
+    killsItem:SetTextAlignmentY(GUIItem.Align_Center)
+    killsItem:SetPosition(Vector(currentColumnX, 0, 0))
     killsItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(killsItem)
     
@@ -772,10 +811,10 @@ function GUIScoreboard:CreatePlayerItem()
     // assists text item.
     local assistsItem = GUIManager:CreateTextItem()
     assistsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    assistsItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    assistsItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     assistsItem:SetTextAlignmentX(GUIItem.Align_Min)
-    assistsItem:SetTextAlignmentY(GUIItem.Align_Min)
-    assistsItem:SetPosition(Vector(currentColumnX, 5, 0))
+    assistsItem:SetTextAlignmentY(GUIItem.Align_Center)
+    assistsItem:SetPosition(Vector(currentColumnX, 0, 0))
     assistsItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(assistsItem)
     
@@ -784,10 +823,10 @@ function GUIScoreboard:CreatePlayerItem()
     // Deaths text item.
     local deathsItem = GUIManager:CreateTextItem()
     deathsItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    deathsItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    deathsItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     deathsItem:SetTextAlignmentX(GUIItem.Align_Min)
-    deathsItem:SetTextAlignmentY(GUIItem.Align_Min)
-    deathsItem:SetPosition(Vector(currentColumnX, 5, 0))
+    deathsItem:SetTextAlignmentY(GUIItem.Align_Center)
+    deathsItem:SetPosition(Vector(currentColumnX, 0, 0))
     deathsItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(deathsItem)
     
@@ -796,10 +835,10 @@ function GUIScoreboard:CreatePlayerItem()
     // Resources text item.
     local resItem = GUIManager:CreateTextItem()
     resItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    resItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    resItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     resItem:SetTextAlignmentX(GUIItem.Align_Min)
-    resItem:SetTextAlignmentY(GUIItem.Align_Min)
-    resItem:SetPosition(Vector(currentColumnX, 5, 0))
+    resItem:SetTextAlignmentY(GUIItem.Align_Center)
+    resItem:SetPosition(Vector(currentColumnX, 0, 0))
     resItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(resItem)
     
@@ -808,14 +847,18 @@ function GUIScoreboard:CreatePlayerItem()
     // Ping text item.
     local pingItem = GUIManager:CreateTextItem()
     pingItem:SetFontName(GUIScoreboard.kPlayerStatsFontName)
-    pingItem:SetAnchor(GUIItem.Left, GUIItem.Top)
+    pingItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     pingItem:SetTextAlignmentX(GUIItem.Align_Min)
-    pingItem:SetTextAlignmentY(GUIItem.Align_Min)
-    pingItem:SetPosition(Vector(currentColumnX, 5, 0))
+    pingItem:SetTextAlignmentY(GUIItem.Align_Center)
+    pingItem:SetPosition(Vector(currentColumnX, 0, 0))
     pingItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(pingItem)
     
-    return { Background = playerItem, Index = playerIndexItem, Name = playerNameItem, Voice = playerVoiceIcon, Status = statusItem, Score = scoreItem, Kills = killsItem, Assists = assistsItem, Deaths = deathsItem, Resources = resItem, Ping = pingItem }
+    return { Background = playerItem, Number = playerNumber, Name = playerNameItem,
+        Voice = playerVoiceIcon, Status = statusItem, Score = scoreItem, Kills = killsItem,
+        Assists = assistsItem, Deaths = deathsItem, Resources = resItem, Ping = pingItem,
+        BadgeItems = badgeItems,
+    }
     
 end
 

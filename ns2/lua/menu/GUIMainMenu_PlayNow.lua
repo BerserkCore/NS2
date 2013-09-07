@@ -148,79 +148,10 @@ local function CreatePlayNowPage(self)
     
 end
 
-local function CloseFirstTimeWindow(self)
-
-    if self.playFirstTimeWindow then
-
-        local storeOption = self.showFirstTimeCheckbox:GetValue()
-        Client.SetOptionString("preventFirstTimeWindow", ToString(storeOption))
-        
-        self:DestroyWindow(self.playFirstTimeWindow)
-        self.playFirstTimeWindow = nil
-    
-    end
-
-end
-
-local function UpdatePlayFirstTimeWindow(self)
-
-    local showWindow = Client.GetOptionString("preventFirstTimeWindow", "false") == "false"
-
-    if showWindow and not self.playFirstTimeWindow then
-    
-        self.playFirstTimeWindow = self:CreateWindow()  
-        self.playFirstTimeWindow:SetWindowName("HINT")
-        self.playFirstTimeWindow:SetInitialVisible(false)
-        self.playFirstTimeWindow:SetIsVisible(false)
-        self.playFirstTimeWindow:DisableResizeTile()
-        self.playFirstTimeWindow:DisableSlideBar()
-        self.playFirstTimeWindow:DisableContentBox()
-        self.playFirstTimeWindow:SetCSSClass("first_time_window")
-        self.playFirstTimeWindow:DisableCloseButton()
-        //self.playFirstTimeWindow:AddEventCallbacks( { OnBlur = function(self) CloseFirstTimeWindow(self.scriptHandle) end } )
-        
-        local hint = CreateMenuElement(self.playFirstTimeWindow, "Font")
-        hint:SetCSSClass("first_time_message")
-        hint:SetText(Locale.ResolveString("PLAY_FIRST_TIME_MESSAGE"))
-        
-        local hintLink = CreateMenuElement(self.playFirstTimeWindow, "Image")
-        hintLink:SetCSSClass("first_time_video_link")
-        
-        hintLink.OnClick = function() SetMenuWebView("http://unknownworlds.com/spark/ns2/tutorials/tut0.html", Vector(Client.GetScreenWidth() * 0.8, Client.GetScreenHeight() * 0.8, 0)) end
-        hintLink:EnableHighlighting()
-        
-        self.showFirstTimeCheckbox = CreateMenuElement(self.playFirstTimeWindow, "Checkbox")
-        self.showFirstTimeCheckbox:SetCSSClass("firsttimecheckbox")
-        self.showFirstTimeCheckbox:SetValue(false)
-        
-        local dontShowAgain = CreateMenuElement(self.playFirstTimeWindow, "Font")
-        dontShowAgain:SetCSSClass("dontshowagain")
-        dontShowAgain:SetText(Locale.ResolveString("DONT_SHOW_AGAIN"))
-        
-        local okButton = CreateMenuElement(self.playFirstTimeWindow, "MenuButton")
-        okButton:SetCSSClass("small_bottom_right")
-        okButton:SetText("CLOSE")
-        
-        okButton:AddEventCallbacks({ OnClick = function (self) CloseFirstTimeWindow(self.scriptHandle) end })
-    
-    end
-    
-    if self.playFirstTimeWindow then
-        self.playFirstTimeWindow:SetIsVisible(showWindow)
-    end
-
-end
-
 local function CreateJoinServerPage(self)
 
     self:CreateServerListWindow()
     self:CreateServerDetailsWindow()
-    self.playWindow:AddEventCallbacks({ 
-        OnShow =
-            function(self) UpdatePlayFirstTimeWindow(self.scriptHandle) end,
-        OnHide =
-            function(self) CloseFirstTimeWindow(self.scriptHandle) end 
-    })
     
 end
 

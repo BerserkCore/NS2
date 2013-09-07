@@ -279,13 +279,9 @@ if Server then
     
 end
 
-function Alien:GetHasBiomassHealth()
-    return true
-end
-
 function Alien:UpdateHealthAmount(bioMassLevel, maxLevel)
 
-    local level = self:GetHasBiomassHealth() and math.max(0, bioMassLevel) or 0
+    local level = math.max(0, bioMassLevel - 1) or 0
     local newMaxHealth = self:GetBaseHealth() + level * self:GetHealthPerBioMass()
 
     if newMaxHealth ~= self.maxHealth  then

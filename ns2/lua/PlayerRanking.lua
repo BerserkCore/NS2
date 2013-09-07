@@ -151,6 +151,7 @@ function PlayerRanking:EndGame(winningTeam)
             local gameInfo = {
 
                 serverIp = IPAddressToString(Server.GetIpAddress()),
+                port = Server.GetPort(),
                 mapName = Shared.GetMapName(),
                 gameTime = gameTime,
                 tournamentMode = GetTournamentModeEnabled(),

@@ -48,6 +48,15 @@ local kAmbientOcclusionModes = { "off", "medium", "high" }
 local kInfestationModes      = { "minimal", "rich" }
 local kParticleQualityModes  = { "low", "high" }
 local kRenderDevices         = Client.GetRenderDeviceNames()
+local kRenderDeviceDisplayNames = {}
+
+for i = 1, #kRenderDevices do
+    local name = kRenderDevices[i]
+    if name == "D3D11" or name == "OpenGL" then
+        name = name .. " (Beta)"
+    end
+    kRenderDeviceDisplayNames[i] = name
+end
     
 local kLocales =
     {
@@ -94,6 +103,18 @@ function GetServerPlayerSkill(serverIndex)
 end
 
 local gMainMenu
+
+function GUIMainMenu:TriggerOpenAnimation(window)
+
+    if not window:GetIsVisible() then
+
+        self.windowToOpen = window
+        self:SetShowWindowName(window:GetWindowName())
+
+    end
+
+end
+    
 
 function GUIMainMenu:Initialize()
 
@@ -172,27 +193,20 @@ function GUIMainMenu:Initialize()
     self:CreateAutoJoinWindow()
     self:CreateAlertWindow()
     
-    local TriggerOpenAnimation = function(window)
-    
-        if not window:GetIsVisible() then
-        
-            window.scriptHandle.windowToOpen = window
-            window.scriptHandle:SetShowWindowName(window:GetWindowName())
-            
-        end
-        
-    end
-    
     self.scanLine = CreateMenuElement(self.mainWindow, "Image")
     self.scanLine:SetCSSClass("scanline")
 
     self.tweetText = CreateMenuElement(self.mainWindow, "Ticker")
     
-    self.logo = CreateMenuElement(self.mainWindow, "Image")
-    self.logo:SetCSSClass("logo")
+    //self.logo = CreateMenuElement(self.mainWindow, "Image")
+    //self.logo:SetCSSClass("logo")
     
     self:CreateMenuBackground()
     self:CreateProfile()
+
+    local function TriggerOpenAnimation(window)
+        self:TriggerOpenAnimation(window)
+    end
     
     if MainMenu_IsInGame() then
     
@@ -229,14 +243,8 @@ function GUIMainMenu:Initialize()
         self.playLink = self:CreateMainLink("PLAY", "play_ingame", "04")
         self.playLink:AddEventCallbacks(
         {
-            OnClick = function(self)
-            
-                if not self.scriptHandle.playWindow then
-                    self.scriptHandle:CreatePlayWindow()
-                end
-                TriggerOpenAnimation(self.scriptHandle.playWindow)
-                self.scriptHandle:HideMenu()
-                
+            OnClick = function()
+                self:ActivatePlayWindow()
             end
         })
         
@@ -254,8 +262,8 @@ function GUIMainMenu:Initialize()
             end
         })
         
-        self.tutorialLink = self:CreateMainLink("TRAINING", "tutorial_ingame", "06")
-        self.tutorialLink:AddEventCallbacks(
+        self.trainingLink = self:CreateMainLink("TRAINING", "tutorial_ingame", "06")
+        self.trainingLink:AddEventCallbacks(
         {
             OnClick = function(self)
             
@@ -288,19 +296,13 @@ function GUIMainMenu:Initialize()
         self.playLink = self:CreateMainLink("PLAY", "play", "01")
         self.playLink:AddEventCallbacks(
         {
-            OnClick = function(self)
-            
-                if not self.scriptHandle.playWindow then
-                    self.scriptHandle:CreatePlayWindow()
-                end
-                TriggerOpenAnimation(self.scriptHandle.playWindow)
-                self.scriptHandle:HideMenu()
-                
+            OnClick = function()
+                self:OnPlayClicked()
             end
         })
         
-        self.tutorialLink = self:CreateMainLink("TRAINING", "tutorial", "02")
-        self.tutorialLink:AddEventCallbacks(
+        self.trainingLink = self:CreateMainLink("TRAINING", "tutorial", "02")
+        self.trainingLink:AddEventCallbacks(
         {
             OnClick = function(self)
             
@@ -340,8 +342,20 @@ function GUIMainMenu:Initialize()
                 
             end
         })
+
+        self.creditsLink = self:CreateMainLink("CREDITS", "credits", "05" )
+        self.creditsLink:AddEventCallbacks(
+        {
+            OnClick = function()
+
+                self:HideMenu()
+                self.creditsScript = GetGUIManager():CreateGUIScript("menu/GUICredits")
+                self.creditsScript.closeEvent:AddHandler( self, function() self:ShowMenu() end)
+
+            end
+        })
         
-        self.quitLink = self:CreateMainLink("EXIT", "exit", "05")
+        self.quitLink = self:CreateMainLink("EXIT", "exit", "06")
         self.quitLink:AddEventCallbacks(
         {
             OnClick = function(self)
@@ -2219,7 +2233,7 @@ function GUIMainMenu:CreateOptionWindow()
                 name   = "RenderDevice",
                 label  = "DEVICE",
                 type   = "select",
-                values = kRenderDevices,
+                values = kRenderDeviceDisplayNames,
                 callback = function(formElement) SaveSecondaryGraphicsOptions(self) self:UpdateRestartMessage() end,
             },  
             {
@@ -2569,7 +2583,7 @@ function GUIMainMenu:ShowMenu()
     self.menuBackground:SetIsVisible(true)
     self.menuBackground:SetCSSClass("menu_bg_show", false)
     
-    self.logo:SetIsVisible(true)
+    //self.logo:SetIsVisible(true)
     
     if self.newsScript then
         self.newsScript:SetIsVisible(true)
@@ -2594,7 +2608,7 @@ function GUIMainMenu:HideMenu()
         self.modsLink:SetIsVisible(false)
     end
     self.playLink:SetIsVisible(false)
-    self.tutorialLink:SetIsVisible(false)
+    self.trainingLink:SetIsVisible(false)
     self.optionLink:SetIsVisible(false)
     if self.quitLink then
         self.quitLink:SetIsVisible(false)
@@ -2603,7 +2617,7 @@ function GUIMainMenu:HideMenu()
         self.disconnectLink:SetIsVisible(false)
     end
     
-    self.logo:SetIsVisible(false)
+    //self.logo:SetIsVisible(false)
     if self.newsScript then
         self.newsScript:SetIsVisible(false)
     end
@@ -2644,7 +2658,7 @@ function GUIMainMenu:OnAnimationCompleted(animatedItem, animationName, itemHandl
             table.insert(animBackgroundLink, self.voteLink)
         end
         table.insert(animBackgroundLink, self.playLink)
-        table.insert(animBackgroundLink, self.tutorialLink)
+        table.insert(animBackgroundLink, self.trainingLink)
         table.insert(animBackgroundLink, self.optionLink)
         
         for i = 1, #animBackgroundLink do        
@@ -2682,7 +2696,7 @@ function GUIMainMenu:OnAnimationCompleted(animatedItem, animationName, itemHandl
                 self.modsLink:SetIsVisible(true)
             end
             self.playLink:SetIsVisible(true)
-            self.tutorialLink:SetIsVisible(true)
+            self.trainingLink:SetIsVisible(true)
             self.optionLink:SetIsVisible(true)
             if self.quitLink then
                 self.quitLink:SetIsVisible(true)
@@ -2878,6 +2892,83 @@ function GUIMainMenu:MaybeCreateFirstRunWindow()
         end})
 
 end
+
+function GUIMainMenu:ActivatePlayWindow()
+
+    if not self.playWindow then
+        self:CreatePlayWindow()
+    end
+    self:TriggerOpenAnimation(self.playWindow)
+    self:HideMenu()
+
+end
+
+//----------------------------------------
+//  
+//----------------------------------------
+function GUIMainMenu:OnPlayClicked()
+
+    local isRookie = Client.GetOptionBoolean( kRookieOptionsKey, true )
+    local doneTutorial = Client.GetOptionBoolean( "playedTutorial", false )
+    local stopNagging = Client.GetOptionBoolean( "disableTutorialNag", false )
+
+    // TEMP TMEP
+    /*
+    isRookie = true
+    DebugPrint(ToString(isRookie).." "..ToString(doneTutorial).." "..ToString(stopNagging))
+    */
+
+    if not isRookie or doneTutorial or stopNagging then
+        self:ActivatePlayWindow()
+        return
+    end
+
+    self.tutorialNagWindow = self:CreateWindow()  
+    self.tutorialNagWindow:SetWindowName("HINT")
+    self.tutorialNagWindow:SetInitialVisible(true)
+    self.tutorialNagWindow:SetIsVisible(true)
+    self.tutorialNagWindow:DisableResizeTile()
+    self.tutorialNagWindow:DisableSlideBar()
+    self.tutorialNagWindow:DisableContentBox()
+    self.tutorialNagWindow:SetCSSClass("tutnag_window")
+    self.tutorialNagWindow:DisableCloseButton()
+    self.tutorialNagWindow:SetLayer(kGUILayerMainMenuDialogs)
+    
+    local hint = CreateMenuElement(self.tutorialNagWindow, "Font")
+    hint:SetCSSClass("first_run_msg")
+    hint:SetText(Locale.ResolveString("TUTNAG_MSG"))
+    hint:SetTextClipped( true, 400, 400 )
+
+    local okButton = CreateMenuElement(self.tutorialNagWindow, "MenuButton")
+    okButton:SetCSSClass("tutnag_play")
+    okButton:SetText(Locale.ResolveString("TUTNAG_PLAY"))
+    okButton:AddEventCallbacks({ OnClick = function()
+            self:DestroyWindow( self.tutorialNagWindow )
+            self.tutorialNagWindow = nil
+            self:StartTutorial()
+        end})
+
+    local skipButton = CreateMenuElement(self.tutorialNagWindow, "MenuButton")
+    skipButton:SetCSSClass("tutnag_later")
+    skipButton:SetText(Locale.ResolveString("TUTNAG_LATER"))
+    skipButton:AddEventCallbacks({OnClick = function()
+            self:DestroyWindow( self.tutorialNagWindow )
+            self.tutorialNagWindow = nil
+            self:ActivatePlayWindow()
+        end})
+
+    local skipButton = CreateMenuElement(self.tutorialNagWindow, "MenuButton")
+    skipButton:SetCSSClass("tutnag_stop")
+    skipButton:SetText(Locale.ResolveString("TUTNAG_STOP"))
+    skipButton:AddEventCallbacks({OnClick = function()
+            self:DestroyWindow( self.tutorialNagWindow )
+            self.tutorialNagWindow = nil
+            Client.SetOptionBoolean( "disableTutorialNag", true )
+            self:ActivatePlayWindow()
+        end})
+
+end
+
 
 Event.Hook("SoundDeviceListChanged", OnSoundDeviceListChanged)
 Event.Hook("OptionsChanged", OnOptionsChanged)

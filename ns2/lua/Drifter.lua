@@ -468,7 +468,7 @@ function Drifter:ProcessEnzymeOrder(moveSpeed, deltaTime)
     
     if currentOrder ~= nil then
     
-        local targetPos = currentOrder:GetLocation() + Vector(0, 0.1, 0)
+        local targetPos = currentOrder:GetLocation() + Vector(0, 0.4, 0)
         
         // check if we can reach the destinaiton
         if self:GetIsInCloudRange(targetPos) then

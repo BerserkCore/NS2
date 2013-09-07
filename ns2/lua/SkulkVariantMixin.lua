@@ -63,9 +63,7 @@ if Server then
             self:SetModel(modelName, kSkulkAnimationGraph)
 
         else
-
             Print("ERROR: Client tried to request skulk variant they do not have yet")
-
         end
 
         if changed then

@@ -482,10 +482,6 @@ local function UpdateAirStrafe(self, input, velocity, deltaTime)
 
 end
 
-function Lerk:GetHasBiomassHealth()
-    return GetHasTech(self, kTechId.UpgradeLerk)
-end
-
 function Lerk:GetIsSmallTarget()
     return true
 end

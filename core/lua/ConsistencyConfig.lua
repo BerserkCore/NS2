@@ -13,7 +13,8 @@ local consistencyConfigFileName = "ConsistencyConfig.json"
 // Write out the default file if it doesn't exist.
 local defaultConfig = { check = { "game_setup.xml", "*.lua", "*.hlsl", "*.shader", "*.screenfx", "*.surface_shader", "*.fxh", "*.render_setup", "*.shader_template", "*.level",
                                   "*.dds", "*.jpg", "*.png", "*.cinematic", "*.material", "*.model", "*.animation_graph", "*.polygons", "*.fev", "*.fsb" },
-                        ignore = { "ui/*.dds", "*_view*.dds", "*_view*.material", "*_view*.model", "models/marine/hands/*"  } }
+                        ignore = { "ui/*.dds", "*_view*.dds", "*_view*.material", "*_view*.model", "models/marine/hands/*"  },
+                        restrict = { "lua/entry/*.entry" } }
 WriteDefaultConfigFile(consistencyConfigFileName, defaultConfig)
 
 /** 
@@ -38,5 +39,14 @@ if consistencyConfig then
             Shared.Message("Skipped " .. numHashed .. " " .. ignore[c] .. " files for consistency")
         end
     end
+    
+    if type(consistencyConfig.restrict) == "table" then
+        local check = consistencyConfig.restrict
+        for c = 1, #check do
+            local numHashed = Server.AddRestrictedFileHashes(check[c])
+            Shared.Message("Hashed " .. numHashed .. " " .. check[c] .. " files for consistency")
+        end
+    end
+    
     
 end

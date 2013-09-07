@@ -63,7 +63,7 @@ Whip.kFov = 360
 Whip.kTargetCheckTime = .3
 Whip.kRange = 8
 Whip.kAreaEffectRadius = 3
-Whip.kDamage = 50
+Whip.kDamage = kWhipSlapDamage
 Whip.kMoveSpeed = 3.5
 Whip.kMaxMoveSpeedParam = 10
 

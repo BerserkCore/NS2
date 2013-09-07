@@ -13,6 +13,7 @@ Script.Load("lua/TechTreeConstants.lua")
 Script.Load("lua/VoiceOver.lua")
 Script.Load("lua/InsightNetworkMessages.lua")
 Script.Load("lua/SharedDecal.lua")
+Script.Load("lua/BadgeMixin.lua")
 
 local kCameraShakeMessage =
 {
@@ -371,7 +372,11 @@ local kScoresMessage =
     isCommander = "boolean",
     isRookie = "boolean",
     status = "enum kPlayerStatus",
-    isSpectator = "boolean"
+    isSpectator = "boolean",
+
+    // we need these here, since not all players are relevant to all others
+    hasPAXBadge = "boolean",
+    reinforcedTierNum = "integer (0 to "..#kReinforcedTierData..")",
 }
 
 function BuildScoresMessage(scorePlayer, sendToPlayer)
@@ -403,6 +408,9 @@ function BuildScoresMessage(scorePlayer, sendToPlayer)
     t.isRookie = ConditionalValue(isEnemy, false, scorePlayer:GetIsRookie())
     t.status = ConditionalValue(isEnemy, kPlayerStatus.Hidden, scorePlayer:GetPlayerStatusDesc())
     t.isSpectator = ConditionalValue(isEnemy, false, scorePlayer:isa("Spectator"))
+
+    t.hasPAXBadge = scorePlayer.hasPAXBadge
+    t.reinforcedTierNum = scorePlayer.reinforcedTierNum
     
     return t
     

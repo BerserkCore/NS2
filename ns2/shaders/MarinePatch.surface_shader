@@ -5,25 +5,42 @@
         <input name="numRows" type="float">4</input>			
         <input name="numColumns" type="float">4</input>			
 		<input name="atlas" type="texture" address="wrap"/>
+		<input name="opacityMap" type="texture" address="wrap"/>
 
         <!-- should be specified via game -->
         <!-- Row major index. 0 is the top-left rect -->
-        <input name="patchIndex" type="float">0</input>			
+        <!-- pass in -1 for no patch -->
+        <input name="patchIndex" type="float">1</input>			
 	</inputs>
+
+	<params>
+		<param name="alphaTest">true</param>
+	</params>
 	
 	<code>
-		void MaterialShader(in Material_Input input, inout Material material)
+	<![CDATA[
+		void MaterialShader( in Material_Input input, inout Material material )
 		{
-            float2 uv = input.texCoord;
-            int col = patchIndex % numColumns;
-            int row = patchIndex / numColumns;
-            uv.u = (col+uv.u) * 1.0/numColumns;
-            uv.v = (row+uv.v) * 1.0/numRows;
-			float4 albedo = tex2D(atlas, uv);
-			material.albedo 	= albedo.rgb;
-			material.opacity    = albedo.a;
+            if( patchIndex >= 0 )
+            {
+                float2 uv = input.texCoord;
+                float row = floor(patchIndex / numColumns);
+                float col = patchIndex - row*numColumns;
+                uv.x = (col+uv.x) / numColumns;
+                uv.y = (row+uv.y) / numRows;
+                float3 albedo = tex2D(atlas, uv);
+                material.albedo	= albedo.rgb;
+                material.opacity = tex2D(opacityMap, uv).r;
+                //material.opacity = 1;
+            }
+            else
+            {
+                material.albedo = float3(1,0,0);
+                material.opacity = 0;
+            }
             material.id = 1;    // for alien vision
 		}
+	]]>
 	</code>
 
 </shader>

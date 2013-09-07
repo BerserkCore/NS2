@@ -374,13 +374,6 @@ kIconColors =
 
 function GetHasDLC(productId, client)
 
-    // TEMP TEMP
-/*
-    if true then
-        return true
-    end
-    */
-
     if productId == nil then
         return true
     end
@@ -448,7 +441,6 @@ end
 
 kShoulderPad2ProductId =
 {
-    nil,
     kShoulderPadProductId,
     kShadowProductId,
 }

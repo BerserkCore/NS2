@@ -261,11 +261,6 @@ function Marine:OnUpdateRender()
         
     end
 
-    // update player patch
-    if self:GetRenderModel() ~= nil then
-        self:GetRenderModel():SetMaterialParameter("shoulderPadIndex", self.shoulderPadIndex)
-    end
-    
 end
 
 function Marine:AddNotification(locationId, techId)

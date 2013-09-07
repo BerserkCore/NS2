@@ -16,27 +16,28 @@ Script.Load("lua/bots/BotMotion.lua")
 Script.Load("lua/bots/MarineBrain.lua")
 Script.Load("lua/bots/SkulkBrain.lua")
 
-local kBotNames = {
-    "Flayra",
-    "m4x0r",
-    "Ooghi",
-    "Breadman",
-    "Squeal Like a Pig",
-    "Chops",
-    "Numerik",
-    "SteveRock",
-    "Comprox",
-    "MonsieurEvil",
-    "Joev",
-    "puzl",
-    "Crispix",
-    "Kouji_San",
-    "TychoCelchuuu",
-    "Insane",
-    "CoolCookieCooks",
-    "devildog",
-    "tommyd",
-    "Relic25"
+local kBotPersonalSettings = {
+    { name = "Flayra", isMale = true },
+    { name = "m4x0r", isMale = true },
+    { name = "Ooghi", isMale = true },
+    { name = "Breadman", isMale = true },
+    { name = "Squeal Like a Pig", isMale = true },
+    { name = "Chops", isMale = true },
+    { name = "Numerik", isMale = true },
+    { name = "SteveRock", isMale = true },
+    { name = "Comprox", isMale = true },
+    { name = "MonsieurEvil", isMale = true },
+    { name = "Joev", isMale = true },
+    { name = "puzl", isMale = true },
+    { name = "Crispix", isMale = true },
+    { name = "Kouji_San", isMale = true },
+    { name = "TychoCelchuuu", isMale = true },
+    { name = "Insane", isMale = true },
+    { name = "CoolCookieCooks", isMale = true },
+    { name = "devildog", isMale = true },
+    { name = "tommyd", isMale = true },
+    { name = "Relic25", isMale = true },
+    { name = "Rantology", isMale = false },
 }
 
 class 'PlayerBot' (Bot)
@@ -69,34 +70,27 @@ function PlayerBot:GetNamePrefix()
     return "[BOT] "
 end
 
-function PlayerBot:UpdateName()
+function PlayerBot:UpdateNameAndGender()
 
     // Set name after a bit of time to simulate real players
-    if self.botSetName == nil and math.random() < .1 then
+    if self.botSetName == nil and math.random() < .2 then
 
         local player = self:GetPlayer()
         local name = player:GetName()
-        if name and string.find(string.lower(name), string.lower("Bot")) ~= nil then
-    
-            local numNames = table.maxn(kBotNames)
-            local index = Clamp(math.ceil(math.random() * numNames), 1, numNames)
-            self.botSetName = true
-            
-            name = self:GetNamePrefix() .. TrimName(kBotNames[index]) 
-            
-            // Treat "NsPlayer" as special.
-            if name ~= player:GetName() and name ~= kDefaultPlayerName and string.len(name) > 0 then
-            
-                local prevName = player:GetName()
-                player:SetName(name)
-                
-                if prevName ~= player:GetName() then
-                    Server.Broadcast(nil, string.format("%s is now known as %s.", prevName, player:GetName()))
-                end
-                
-            end
-            
-        end
+        local settings = kBotPersonalSettings[ math.random(1,#kBotPersonalSettings) ]
+
+        self.botSetName = true
+        
+        name = self:GetNamePrefix()..TrimName(settings.name)
+        player:SetName(name)
+
+        // set gender
+        self.client.variantData = {
+            isMale = settings.isMale,
+            marineVariant = kDefaultMarineVariant,
+            skulkVariant = kDefaultSkulkVariant,
+        }
+        self.client:GetControllingPlayer():OnClientUpdated(self.client)
         
     end
     
@@ -252,8 +246,6 @@ function PlayerBot:OnThink()
         self.initializedBot = true
     end
         
-    self:UpdateName()
-    
-
+    self:UpdateNameAndGender()
     
 end
