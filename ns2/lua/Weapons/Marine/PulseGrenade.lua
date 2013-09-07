@@ -139,4 +139,23 @@ function PulseGrenade:GetDeathIconIndex()
     return kDeathMessageIcon.PulseGrenade
 end
 
+if Server then
+
+    function PulseGrenade:OnUpdate(deltaTime)
+    
+        PredictedProjectile.OnUpdate(self, deltaTime)
+
+        for _, enemy in ipairs( GetEntitiesForTeamWithinRange("Alien", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), 3) ) do
+        
+            if enemy:GetIsAlive() then
+                self:Detonate()
+                break
+            end
+        
+        end
+
+    end
+
+end
+
 Shared.LinkClassToMap("PulseGrenade", PulseGrenade.kMapName, networkVars)

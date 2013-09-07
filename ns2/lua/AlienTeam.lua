@@ -328,13 +328,15 @@ local function AssignPlayerToEgg(self, player, enemyTeamPosition)
     
     // use non-preevolved eggs sorted by "critical hives position"
     local lifeFormEgg = nil
+    
+    local spawnPoint = player:GetDesiredSpawnPoint()
 
-    if not enemyTeamPosition then
-        enemyTeamPosition = player:GetOrigin()
+    if not spawnPoint then
+        spawnPoint = enemyTeamPosition or player:GetOrigin()
     end
 
     local eggs = GetEntitiesForTeam("Egg", self:GetTeamNumber())        
-    Shared.SortEntitiesByDistance(enemyTeamPosition, eggs)
+    Shared.SortEntitiesByDistance(spawnPoint, eggs)
     
     // Find the closest egg, doesn't matter which Hive owns it.
     for _, egg in ipairs(eggs) do
@@ -971,3 +973,14 @@ function AlienTeam:OnEvolved(techId)
     end
 
 end
+
+local function OnSetDesiredSpawnPoint(client, message)
+
+    local player = client:GetControllingPlayer()
+    if player then
+        player.desiredSpawnPoint = message.desiredSpawnPoint
+    end
+
+end
+Server.HookNetworkMessage("SetDesiredSpawnPoint", OnSetDesiredSpawnPoint)
+

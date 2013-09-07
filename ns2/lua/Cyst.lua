@@ -759,8 +759,7 @@ function FindPathToClosestParent(origin)
     local closestConnectedPathLength = 100000
     
     local currentPath = PointArray()
-    local closestConnectedPath = PointArray()
-    
+
     local closestParent = nil
     local closestConnectedParent = nil
     
@@ -768,7 +767,7 @@ function FindPathToClosestParent(origin)
     
         local parent = parents[i]
         
-        if parent:GetIsAlive() and (not parent:isa("Hive") or parent:GetIsBuilt()) then
+        if parent:GetIsAlive() and ((parent:isa("Cyst") and parent:GetIsConnected()) or (parent:isa("Hive") and parent:GetIsBuilt())) then
         
             local path = PointArray()
             Pathing.GetPathPoints(parent:GetOrigin() + kPointOffset, origin + kPointOffset, path)
@@ -779,18 +778,6 @@ function FindPathToClosestParent(origin)
                 ASSERT(false)
                 //DebugPrint("path length %s, points %s", ToString(pathLength), ToString(#path))
                 break
-            end
-            
-            if ( parent:isa("Cyst") and parent:GetIsConnected() ) or parent:isa("Hive") then
-            
-                if pathLength < closestConnectedPathLength then
-            
-                    closestConnectedPath = path
-                    closestConnectedPathLength = pathLength
-                    closestConnectedParent = parent
-                
-                end
-                
             end
             
             if currentPathLength > pathLength then
@@ -805,10 +792,6 @@ function FindPathToClosestParent(origin)
         
         end
     
-    end
-    
-    if closestConnectedPathLength < kCystMaxParentRange and closestParent ~= closestConnectedParent then
-        return closestConnectedPath, closestConnectedParent
     end
     
     return currentPath, closestParent
@@ -860,9 +843,13 @@ function GetCystPoints(origin)
                     if groundTrace.fraction == 1 then                        
                         return {}, nil                        
                     end
-                
-                    table.insert(splitPoints, groundTrace.endPoint)
-                    table.insert(normals, groundTrace.normal)
+                    
+                    //if #GetEntitiesWithinRange("Cyst", groundTrace.endPoint, 2) == 0 then
+                    
+                        table.insert(splitPoints, groundTrace.endPoint)
+                        table.insert(normals, groundTrace.normal)
+                    
+                    //end
                     
                 end
             
@@ -872,9 +859,14 @@ function GetCystPoints(origin)
                 if groundTrace.fraction == 1 then                        
                     return {}, nil                        
                 end
+                
+                //if #GetEntitiesWithinRange("Cyst", groundTrace.endPoint, 2) == 0 then
             
-                table.insert(splitPoints, groundTrace.endPoint)
-                table.insert(normals, groundTrace.normal)
+                    table.insert(splitPoints, groundTrace.endPoint)
+                    table.insert(normals, groundTrace.normal)
+                
+                //end
+                
                 currentDistance = (path[i] - point):GetLength()
                 
             end

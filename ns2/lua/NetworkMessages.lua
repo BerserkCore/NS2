@@ -88,27 +88,26 @@ function ParseSelectUnitMessage(message)
     return message.teamNumber, Shared.GetEntity(message.unitId), message.selected, message.keepSelection
 end
 
-function BuildConnectMessage(armorId, isMale)
+function BuildConnectMessage(isMale, marineVariant, skulkVariant)
 
     local t = { }
-    t.armorId = armorId
     t.isMale = isMale
+    t.marineVariant = marineVariant
+    t.skulkVariant = skulkVariant
     return t
     
 end
 
-function ParseConnectMessage(message)
-    return message.armorId, message.isMale
-end
-
 local kConnectMessage =
 {
-    armorId = "enum kArmorType",
-    isMale = "boolean"
+    isMale = "boolean",
+    marineVariant = "enum kMarineVariant",
+    skulkVariant = "enum kSkulkVariant",
 }
 Shared.RegisterNetworkMessage("ConnectMessage", kConnectMessage)
 
-Shared.RegisterNetworkMessage("SetPlayerVariant", { armorId = "enum kArmorType", isMale = "boolean" })
+local kSetPlayerVariantMessage = kConnectMessage
+Shared.RegisterNetworkMessage("SetPlayerVariant", kSetPlayerVariantMessage)
 
 function BuildVoiceMessage(voiceId)
 
@@ -1046,6 +1045,8 @@ Shared.RegisterNetworkMessage("ServerHidden", { hidden = "boolean" })
 Shared.RegisterNetworkMessage("SetClientTeamNumber", { teamNumber = string.format("integer (-1 to %d)", kRandomTeamType) })
 Shared.RegisterNetworkMessage("WaitingForAutoTeamBalance", { waiting = "boolean" })
 Shared.RegisterNetworkMessage("SetTimeWaveSpawnEnds", { time = "time" })
+Shared.RegisterNetworkMessage("SetIsRespawning", { isRespawning = "boolean" })
+Shared.RegisterNetworkMessage("SetDesiredSpawnPoint", { desiredSpawnPoint = "position" })
 
 local kTeamNumDef = "integer (" .. kTeamInvalid .. " to " .. kSpectatorIndex .. ")"
 Shared.RegisterNetworkMessage("DeathMessage", { killerIsPlayer = "boolean", killerId = "integer", killerTeamNumber = kTeamNumDef, iconIndex = "enum kDeathMessageIcon", targetIsPlayer = "boolean", targetId = "integer", targetTeamNumber = kTeamNumDef })

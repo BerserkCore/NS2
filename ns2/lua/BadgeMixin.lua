@@ -7,11 +7,17 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================    
 
 // Code given to players during PAX 2012 week.
-local kPAX2012ProductId = 4931
 
 kBadges = enum({ 'None', 'PAX2012' })
-local kBadgeData = { }
-kBadgeData[kBadges.PAX2012] = { Id = kPAX2012ProductId, Texture = "ui/badge_pax2012.dds" }
+local kBadgeData =
+{
+    [kBadges.PAX2012] = { Texture = "ui/badge_pax2012.dds", ProductId = 4931 }
+}
+
+function BadgeMixin_GetMaxBadges()
+    // +1 for donation rewards
+    return #kBadges-1 + 1
+end
 
 BadgeMixin = CreateMixin( BadgeMixin )
 BadgeMixin.type = "Badge"
@@ -32,7 +38,7 @@ if Server then
         for badgeEnum, badgeData in pairs(kBadgeData) do
         
             local client = Server.GetOwner(self)
-            if client and Server.GetIsDlcAuthorized(client, badgeData.Id) then
+            if client and Server.GetIsDlcAuthorized(client, badgeData.ProductId) then
             
                 self:SetBadge(badgeEnum)
                 break

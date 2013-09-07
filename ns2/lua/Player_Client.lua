@@ -3483,6 +3483,29 @@ function PlayerUI_GetStaticMapBlips()
             
         end
         
+        if GetPlayerIsSpawning() then
+        
+            local spawnPosition = GetDesiredSpawnPosition()
+            
+            if spawnPosition then
+            
+                local i = numBlips * 8
+            
+                blipsData[i + 1] = spawnPosition.x
+                blipsData[i + 2] = spawnPosition.z
+                blipsData[i + 3] = 0
+                blipsData[i + 4] = 0
+                blipsData[i + 5] = 0
+                blipsData[i + 6] = kMinimapBlipType.MoveOrder
+                blipsData[i + 7] = kMinimapBlipTeamFriendly
+                blipsData[i + 8] = false
+                
+                numBlips = numBlips + 1
+            
+            end
+        
+        end
+        
         if player:isa("Fade") then
         
             local vortexAbility = player:GetWeapon(Vortex.kMapName)

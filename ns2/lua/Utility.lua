@@ -114,6 +114,10 @@ function GetAspectRatio()
 
 end
 
+function GetEnumCount(enumTable)
+    return table.countkeys(enumTable)/2
+end
+
 // Enums are tables with keys with the string, values of the enum number
 function EnumToString(enumTable, enumNumber)
 

@@ -368,30 +368,90 @@ kIconColors =
     [kNeutralTeamType] = Color(1, 1, 1, 1),
 }
 
-// TODO: should move this keys, functions into a separate file (Products.lua?)
+//----------------------------------------
+//  DLC stuff
+//----------------------------------------
 
-// If player bought Special Edition
-kSpecialEditionProductId = 4930
-kDeluxeEditionProductId = 4932
+function GetHasDLC(productId, client)
 
-kArmorType = enum( { 'Green', 'Black', 'Deluxe'})
+    // TEMP TEMP
+/*
+    if true then
+        return true
+    end
+    */
 
-function GetHasBlackArmor(client)
+    if productId == nil then
+        return true
+    end
 
     if Client then    
-        return Client.GetIsDlcAuthorized(kSpecialEditionProductId)    
+        assert( client == nil )
+        return Client.GetIsDlcAuthorized(productId)    
     elseif Server and client then
-        return Server.GetIsDlcAuthorized(client, kSpecialEditionProductId)
+        assert( client ~= nil )
+        return Server.GetIsDlcAuthorized(client, productId)
+    else
+        return false
     end
-    
+
 end
 
-function GetHasDeluxeEdition(client)
+kSpecialEditionProductId = 4930
+kDeluxeEditionProductId = 4932
+kShoulderPadProductId = 250891
+kAssaultMarineProductId = 250892
+kShadowProductId = 250893
 
-    if Client then    
-        return Client.GetIsDlcAuthorized(kDeluxeEditionProductId)
-    elseif Server and client then    
-        return Server.GetIsDlcAuthorized(client, kDeluxeEditionProductId)
+// DLC player variants
+// "code" is the key
+
+// TODO we can really just get rid of the enum. use array-of-structures pattern, and use #kMarineVariants to network vars
+
+kMarineVariant = enum({"green", "special", "deluxe", "assault", "eliteassault"})
+kMarineVariantData =
+{
+    [kMarineVariant.green]        =  { productId = nil                      , displayName = "Green"         , modelFilePart = ""              , viewModelFilePart = ""              }  , 
+    [kMarineVariant.special]      =  { productId = kSpecialEditionProductId , displayName = "Black"         , modelFilePart = "_special"      , viewModelFilePart = "_special"      }  , 
+    [kMarineVariant.deluxe]       =  { productId = kDeluxeEditionProductId  , displayName = "Deluxe"        , modelFilePart = "_special_v1"   , viewModelFilePart = "_deluxe"       }  , 
+    [kMarineVariant.assault]      =  { productId = kAssaultMarineProductId  , displayName = "Assault"       , modelFilePart = "_assault"      , viewModelFilePart = "_assault"      }  , 
+    [kMarineVariant.eliteassault] =  { productId = kShadowProductId         , displayName = "Elite Assault" , modelFilePart = "_eliteassault" , viewModelFilePart = "_eliteassault" }  , 
+}
+kDefaultMarineVariant = kMarineVariant.green
+
+kSkulkVariant = enum({"normal", "shadow"})
+kSkulkVariantData = 
+{
+    [kSkulkVariant.normal] =  { productId = nil              , displayName = "Normal" , modelFilePart = ""        , viewModelFilePart = ""        }  , 
+    [kSkulkVariant.shadow] =  { productId = kShadowProductId , displayName = "Shadow" , modelFilePart = "_shadow"/*TEMP TEMP*/ , viewModelFilePart = ""/* TEMP TEMP*/ }  , 
+}
+kDefaultSkulkVariant = kSkulkVariant.normal
+
+function FindVariant( data, displayName )
+
+    for var, data in pairs(data) do
+        if data.displayName == displayName then
+            return var
+        end
     end
+    return nil
 
+end
+
+function GetVariantName( data, var )
+    return data[var].displayName
+end
+
+function GetHasVariant(data, var, client)
+    return GetHasDLC( data[var].productId, client )
+end
+
+kShoulderPad2ProductId =
+{
+    nil,
+    kShoulderPadProductId,
+    kShadowProductId,
+}
+function GetHasShoulderPad(index, client)
+    return GetHasDLC( kShoulderPad2ProductId[index], client )
 end

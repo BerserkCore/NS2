@@ -1,0 +1,29 @@
+<shader>
+	
+	<inputs>
+        <!-- should be specified via material file -->
+        <input name="numRows" type="float">4</input>			
+        <input name="numColumns" type="float">4</input>			
+		<input name="atlas" type="texture" address="wrap"/>
+
+        <!-- should be specified via game -->
+        <!-- Row major index. 0 is the top-left rect -->
+        <input name="patchIndex" type="float">0</input>			
+	</inputs>
+	
+	<code>
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+            float2 uv = input.texCoord;
+            int col = patchIndex % numColumns;
+            int row = patchIndex / numColumns;
+            uv.u = (col+uv.u) * 1.0/numColumns;
+            uv.v = (row+uv.v) * 1.0/numRows;
+			float4 albedo = tex2D(atlas, uv);
+			material.albedo 	= albedo.rgb;
+			material.opacity    = albedo.a;
+            material.id = 1;    // for alien vision
+		}
+	</code>
+
+</shader>

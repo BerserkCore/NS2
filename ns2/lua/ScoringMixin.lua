@@ -85,7 +85,8 @@ if Server then
         self.deaths = player.deaths or 0
         self.playTime = player.playTime or 0
         self.commanderTime = player.commanderTime or 0
-        
+        self.marineTime = player.marineTime or 0
+        self.alienTime = player.alienTime or 0
         
         self.totalKills = player.totalKills
         self.totalAssists = player.totalAssists
@@ -105,6 +106,14 @@ if Server then
         return self.playTime
     end
     
+    function ScoringMixin:GetMarinePlayTime()
+        return self.marineTime
+    end
+    
+    function ScoringMixin:GetAlienPlayTime()
+        return self.alienTime
+    end
+    
     function ScoringMixin:GetCommanderTime()
         return self.commanderTime
     end
@@ -119,6 +128,14 @@ if Server then
             self.playTime = 0
         end
         
+        if not self.marineTime then
+            self.marineTime = 0
+        end
+        
+        if not self.alienTime then
+            self.alienTime = 0
+        end    
+        
         if self:GetIsPlaying() then
         
             if self:isa("Commander") then
@@ -126,6 +143,14 @@ if Server then
             end
             
             self.playTime = self.playTime + deltaTime
+            
+            if self:GetTeamType() == kMarineTeamType then
+                self.marineTime = self.marineTime + deltaTime
+            end
+            
+            if self:GetTeamType() == kAlienTeamType then
+                self.alienTime = self.alienTime + deltaTime
+            end
         
         end
     
@@ -196,6 +221,8 @@ function ScoringMixin:ResetScores()
     
     self.commanderTime = 0
     self.playTime = 0
+    self.marineTime = 0
+    self.alienTime = 0
 
 end
 

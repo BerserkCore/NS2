@@ -39,7 +39,7 @@ Script.Load("lua/CorrodeMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/PhaseGateUserMixin.lua")
 Script.Load("lua/Weapons/PredictedProjectile.lua")
-Script.Load("lua/PlayerVariantMixin.lua")
+Script.Load("lua/MarineVariantMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -55,37 +55,8 @@ elseif Client then
     Script.Load("lua/Marine_Client.lua")
 end
 
-local kViewModelTemplates = { green = "_view.model", special = "_view_special.model", deluxe = "_view_deluxe.model" }
-function GenerateMarineViewModelPaths(weaponName)
-
-    local viewModels = { male = { }, female = { } }
-    
-    for name, suffix in pairs(kViewModelTemplates) do
-        viewModels.male[name] = PrecacheAsset("models/marine/" .. weaponName .. "/" .. weaponName .. suffix)
-    end
-    
-    for name, suffix in pairs(kViewModelTemplates) do
-        viewModels.female[name] = PrecacheAsset("models/marine/" .. weaponName .. "/female_" .. weaponName .. suffix)
-    end
-    
-    return viewModels
-    
-end
-
 Shared.PrecacheSurfaceShader("models/marine/marine.surface_shader")
 Shared.PrecacheSurfaceShader("models/marine/marine_noemissive.surface_shader")
-
-Marine.kMarineAnimationGraph = PrecacheAsset("models/marine/male/male.animation_graph")
-
--- Generate 3rd person models.
-Marine.kModelNames = { male = { }, female = { } }
-local kModelTemplates = { green = ".model", special = "_special.model", deluxe = "_special_v1.model" }
-for name, suffix in pairs(kModelTemplates) do
-    Marine.kModelNames.male[name] = PrecacheAsset("models/marine/male/male" .. suffix)
-end
-for name, suffix in pairs(kModelTemplates) do
-    Marine.kModelNames.female[name] = PrecacheAsset("models/marine/female/female" .. suffix)
-end
 
 Marine.kFlashlightSoundName = PrecacheAsset("sound/NS2.fev/common/light")
 Marine.kGunPickupSound = PrecacheAsset("sound/NS2.fev/marine/common/pickup_gun")
@@ -160,7 +131,7 @@ local networkVars =
     
     strafeJumped = "private compensated boolean",
     
-    timeLastBeacon = "private time"
+    timeLastBeacon = "private time",
     
 }
 
@@ -185,7 +156,7 @@ AddMixinNetworkVars(WebableMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(PhaseGateUserMixin, networkVars)
-AddMixinNetworkVars(PlayerVariantMixin, networkVars)
+AddMixinNetworkVars(MarineVariantMixin, networkVars)
 AddMixinNetworkVars(ScoringMixin, networkVars)
 
 function Marine:OnCreate()
@@ -213,7 +184,7 @@ function Marine:OnCreate()
     InitMixin(self, TunnelUserMixin)
     InitMixin(self, PhaseGateUserMixin)
     InitMixin(self, PredictedProjectileShooterMixin)
-    InitMixin(self, PlayerVariantMixin)
+    InitMixin(self, MarineVariantMixin)
     
     if Server then
     
@@ -281,7 +252,7 @@ function Marine:OnInitialized()
     
     // SetModel must be called before Player.OnInitialized is called so the attach points in
     // the Marine are valid to attach weapons to. This is far too subtle...
-    self:SetModel(Marine.kModelNames[self:GetSex()][self:GetVariant()], Marine.kMarineAnimationGraph)
+    self:SetModel(self:GetVariantModel(), MarineVariantMixin.kMarineAnimationGraph)
     
     Player.OnInitialized(self)
     
@@ -940,5 +911,6 @@ end
 function Marine:GetIsStunAllowed()
     return not self.timeLastStun or self.timeLastStun + kDisruptMarineTimeout < Shared.GetTime() and not self:GetIsVortexed()
 end
+
 
 Shared.LinkClassToMap("Marine", Marine.kMapName, networkVars, true)

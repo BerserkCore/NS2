@@ -13,7 +13,7 @@ GUIWorldText.kYAnim = -30
 
 kCommanderMessageVerticalOffset = GUIScale(90)
 
-local kMinDistanceToCenter = GUIScale(-40)
+local kMinDistanceToCenter = GUIScale(64)
 
 local function CreateMessageItem(self)
 
@@ -122,28 +122,32 @@ function GUIWorldText:UpdateDamageMessage(message, messageItem, useColor, deltaT
     
     local player = Client.GetLocalPlayer()
     local viewCoords = player:GetViewCoords()
-
+    
+    // Adjust down a little so it doesn't overlap the reticle
+    local inFrontOfPlayer = viewCoords.origin + viewCoords.zAxis * 1 - viewCoords.yAxis * .15
+    
     // Blend between just below the crosshair to the actual world point - to make sure you always see the damage feedback!
     local animationScalar = math.sin(animationFraction * math.pi / 2)
-
-    local direction = GetNormalizedVector(message.position - viewCoords.origin)
+    local worldInterpPosition = Vector( inFrontOfPlayer.x + (message.position.x - inFrontOfPlayer.x) * animationScalar, 
+                                        inFrontOfPlayer.y + (message.position.y - inFrontOfPlayer.y) * animationScalar, 
+                                        inFrontOfPlayer.z + (message.position.z - inFrontOfPlayer.z) * animationScalar)
+    
+    local direction = GetNormalizedVector(worldInterpPosition - viewCoords.origin)
     local inFront = viewCoords.zAxis:DotProduct(direction) > 0
     messageItem:SetIsVisible(inFront)
 
-    screenPos = Client.WorldToScreen(message.position)
+    screenPos = Client.WorldToScreen(worldInterpPosition)
 
     if not self.screenCenter then
         self.screenCenter = Vector(Client.GetScreenWidth()/2, Client.GetScreenHeight()/2, 0)
     end
     
-    screenPos.y = math.min(self.screenCenter.y + kMinDistanceToCenter, screenPos.y)
-    /*
     local toCenter = screenPos - self.screenCenter
 
     if toCenter:GetLength() < kMinDistanceToCenter then
         screenPos = self.screenCenter + GetNormalizedVectorXY(toCenter) * kMinDistanceToCenter
     end
-    */
+
     messageItem:SetPosition(screenPos)
     
     // Fades to invisible after half the life time

@@ -268,7 +268,7 @@ function CreateVoiceMessage(player, voiceId)
     if soundData then
     
         local soundName = soundData.Sound
-        if HasMixin(player, "PlayerVariant") and player:GetSex() == "female" then
+        if player:isa("Marine") and not player:GetIsMale() and soundData.SoundFemale ~= nil then
             soundName = soundData.SoundFemale
         end
         
@@ -305,36 +305,6 @@ local function OnVoiceMessage(client, message)
         CreateVoiceMessage(player, voiceId)  
     end
 
-end
-
-local function UpdatePlayerVariant(client, armorType, isMale)
-
-    if client then
-    
-        local allowed = armorType == kArmorType.Green or
-                       (armorType == kArmorType.Black and GetHasBlackArmor(client)) or
-                       (armorType == kArmorType.Deluxe and GetHasDeluxeEdition(client))
-        
-        if allowed then
-            client.armorType = armorType
-        end
-        
-        client.sexType = isMale and "male" or "female"
-        
-        local player = client:GetControllingPlayer()
-        if player then
-            player:OnClientUpdated(client)
-        end
-        
-    end
-    
-end
-
-local function OnConnectMessage(client, message)
-
-    local armorType, isMale = ParseConnectMessage(message)
-    UpdatePlayerVariant(client, armorType, isMale)
-    
 end
 
 local function OnSetNameMessage(client, message)
@@ -409,10 +379,25 @@ end
 Server.HookNetworkMessage("SwitchFirstPersonSpectatePlayer", OnSwitchFirstPersonSpectatePlayer)
 
 local function OnSetPlayerVariant(client, message)
-    UpdatePlayerVariant(client, message.armorId, message.isMale)
-end
-Server.HookNetworkMessage("SetPlayerVariant", OnSetPlayerVariant)
 
+    if client then
+
+        client.variantData = message
+        
+        local player = client:GetControllingPlayer()
+        if player then
+            player:OnClientUpdated(client)
+        end
+        
+    end
+    
+end
+
+local function OnConnectMessage(client, message)
+    OnSetPlayerVariant( client, message )
+end
+
+Server.HookNetworkMessage("SetPlayerVariant", OnSetPlayerVariant)
 Server.HookNetworkMessage("SelectUnit", OnCommandSelectUnit)
 Server.HookNetworkMessage("SelectHotkeyGroup", OnCommandParseSelectHotkeyGroup)
 Server.HookNetworkMessage("CreateHotKeyGroup", OnCommandParseCreateHotkeyGroup)

@@ -30,7 +30,7 @@ local function GetAttackUrgency(bot, mem)
 
     if mem.btype == kMinimapBlipType.PowerPoint then
         local powerPoint = ent
-        if powerPoint ~= nil and powerPoint:GetIsSighted() and powerPoint:GetIsSocketed() then
+        if powerPoint ~= nil and powerPoint:GetIsSocketed() then
             return 0.65
         else
             return 0

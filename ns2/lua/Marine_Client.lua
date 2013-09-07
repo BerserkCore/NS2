@@ -260,6 +260,11 @@ function Marine:OnUpdateRender()
         self.flashlight:SetAtmosphericDensity(density)
         
     end
+
+    // update player patch
+    if self:GetRenderModel() ~= nil then
+        self:GetRenderModel():SetMaterialParameter("shoulderPadIndex", self.shoulderPadIndex)
+    end
     
 end
 

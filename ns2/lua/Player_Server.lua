@@ -774,23 +774,8 @@ function Player:SetRookieMode(rookieMode)
 end
 
 function Player:OnClientUpdated(client)
-
-    if client then
-    
-        if HasMixin(self, "PlayerVariant") then
-        
-            local variant = "green"
-            if client.armorType == kArmorType.Black and GetHasBlackArmor(client) then
-                variant = "special"
-            elseif client.armorType == kArmorType.Deluxe and GetHasDeluxeEdition(client) then
-                variant = "deluxe"
-            end
-            self:SetVariant(variant, client.sexType or "male")
-            
-        end
-        
-    end
-    
+    // override me
+    //DebugPrint("Player:OnClientUpdated")
 end
 
 // only use intensity value here to reduce traffic

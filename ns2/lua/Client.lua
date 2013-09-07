@@ -501,10 +501,12 @@ function OnUpdateClient(deltaTime)
     
     if not optionsSent then
     
-        local armorType = StringToEnum(kArmorType, Client.GetOptionString("armorType", "Green"))
+        local marineVariant = Client.GetOptionInteger("marineVariant", kDefaultMarineVariant)
+        local skulkVariant = Client.GetOptionInteger("skulkVariant", kDefaultSkulkVariant)
         local isMale = Client.GetOptionString("sexType", "Male") == "Male"
-        Client.SendNetworkMessage("ConnectMessage", BuildConnectMessage(armorType, isMale), true)
-        
+        Client.SendNetworkMessage("ConnectMessage",
+                BuildConnectMessage(isMale, marineVariant, skulkVariant),
+                true)
         optionsSent = true
         
     end

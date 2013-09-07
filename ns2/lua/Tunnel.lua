@@ -423,14 +423,16 @@ if Server then
         self.exitAConnected = exitA and exitA:GetIsAlive()
         self.exitBConnected = exitB and exitB:GetIsAlive()
         self.exitAUsed = self.timeExitAUsed + 0.2 > Shared.GetTime()
-        self.exitBUsed = self.timeExitBUsed + 0.2 > Shared.GetTime()
+        self.exitBUsed = self.timeExitBUsed + 0.2 > Shared.GetTime() 
         
         if exitA then
             exitA.allowDigest = self.exitAConnected and self.exitBConnected
+            self:UpdateExit(exitA)
         end
         
         if exitB then
             exitB.allowDigest = self.exitAConnected and self.exitBConnected
+            self:UpdateExit(exitB)
         end
 
         // collapse when no exist has been found. free clientId for possible reuse later

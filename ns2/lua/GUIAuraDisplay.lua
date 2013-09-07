@@ -8,6 +8,8 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Shared.PrecacheSurfaceShader("shaders/GUIAura.surface_shader")
+
 class 'GUIAuraDisplay' (GUIScript)
 
 local kIconSize = Vector(80, 80, 0)

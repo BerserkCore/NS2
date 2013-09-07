@@ -250,7 +250,8 @@ local function UpdateScoreDisplay(self, deltaTime)
         
         local resAwardedString = ""
         if resAwarded > 0 then
-            resAwardedString = string.format(" (+%d res)", resAwarded)
+            resAwarded = math.round(resAwarded * 10) / 10
+            resAwardedString = string.format(" (+%s res)", ToString(resAwarded))
         end
         
         self.scoreDisplay:SetText(string.format("+%s%s", tostring(newScore), resAwardedString))

@@ -207,13 +207,6 @@ function TechNode:GetCost()
     return self.cost
 end
 
-// Nodes that have been researched and will never be allowed again this game
-function TechNode:GetIsForeverUnavailable()
-
-    return (self.techType == kTechType.Research) and self.researched
-
-end
-
 function TechNode:SetResearchProgress(progress)
     self.researchProgress = progress
 end

@@ -13,7 +13,8 @@ Script.Load("lua/Mixins/JumpMoveMixin.lua")
 Script.Load("lua/Mixins/CrouchMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/ScoringMixin.lua")
-Script.Load("lua/PlayerVariantMixin.lua")
+Script.Load("lua/Marine.lua")
+Script.Load("lua/MarineVariantMixin.lua")
 
 /**
  * ReadyRoomPlayer is a simple Player class that adds the required Move type mixin
@@ -23,8 +24,6 @@ class 'ReadyRoomPlayer' (Player)
 
 ReadyRoomPlayer.kMapName = "ready_room_player"
 
-local kAnimationGraph = PrecacheAsset("models/marine/male/male.animation_graph")
-
 local networkVars = { }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -33,7 +32,7 @@ AddMixinNetworkVars(JumpMoveMixin, networkVars)
 AddMixinNetworkVars(CrouchMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(ScoringMixin, networkVars)
-AddMixinNetworkVars(PlayerVariantMixin, networkVars)
+AddMixinNetworkVars(MarineVariantMixin, networkVars)
 
 function ReadyRoomPlayer:OnCreate()
 
@@ -43,7 +42,7 @@ function ReadyRoomPlayer:OnCreate()
     InitMixin(self, CrouchMoveMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kDefaultFov })
     InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
-    InitMixin(self, PlayerVariantMixin)
+    InitMixin(self, MarineVariantMixin )
     
     Player.OnCreate(self)
     
@@ -53,7 +52,7 @@ function ReadyRoomPlayer:OnInitialized()
 
     Player.OnInitialized(self)
     
-    self:SetModel(Marine.kModelNames["male"]["green"], kAnimationGraph)
+    self:SetModel(MarineVariantMixin.kDefaultModelName, MarineVariantMixin.kMarineAnimationGraph)
     
 end
 
@@ -73,13 +72,6 @@ end
 
 function ReadyRoomPlayer:GetHealthbarOffset()
     return 0.8
-end
-
-function ReadyRoomPlayer:OnVariantUpdated()
-
-    local modelName = Marine.kModelNames[self:GetSex()][self:GetVariant()]
-    self:SetModel(modelName, Marine.kMarineAnimationGraph)
-    
 end
 
 Shared.LinkClassToMap("ReadyRoomPlayer", ReadyRoomPlayer.kMapName, networkVars)

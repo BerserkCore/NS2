@@ -24,6 +24,7 @@ Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
 Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/SkulkVariantMixin.lua")
 
 class 'Skulk' (Alien)
 
@@ -96,6 +97,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(SkulkVariantMixin, networkVars)
 
 function Skulk:OnCreate()
 
@@ -106,6 +108,7 @@ function Skulk:OnCreate()
     InitMixin(self, CelerityMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kSkulkFov })
     InitMixin(self, WallMovementMixin)
+    InitMixin(self, SkulkVariantMixin)
     
     Alien.OnCreate(self)
 
@@ -130,7 +133,7 @@ function Skulk:OnInitialized()
     // the Skulk is initialized on the client.
     self.currentWallWalkingAngles = Angles(0.0, 0.0, 0.0)
     
-    self:SetModel(Skulk.kModelName, kSkulkAnimationGraph)
+    self:SetModel(self:GetVariantModel(), kSkulkAnimationGraph)
     
     self.wallWalking = false
     self.wallWalkingNormalGoal = Vector.yAxis

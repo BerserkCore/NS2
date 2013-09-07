@@ -52,6 +52,9 @@ GUIScoreboard.kPlayerItemHeight = 32
 GUIScoreboard.kPlayerSpacing = 4
 GUIScoreboard.kPlayerVoiceChatIconSize = 20
 
+local kPlayerBadgeIconSize = 20
+local kPlayerBadgeRightPadding = 4
+
 // Color constants.
 GUIScoreboard.kBlueColor = ColorIntToColor(kMarineTeamColor)
 GUIScoreboard.kBlueHighlightColor = Color(0.30, 0.69, 1, 1)
@@ -681,6 +684,14 @@ function GUIScoreboard:CreatePlayerItem()
     playerIndexItem:SetPosition(Vector(15, 5, 0))
     playerIndexItem:SetColor(Color(0.5, 0.5, 0.5, 1))
     playerItem:AddChild(playerIndexItem)
+
+    // TEMP
+    local badgeTextures = {
+        "ui/badge_pax2012.dds",
+        "ui/badge_pax2012.dds",
+        "ui/badge_pax2012.dds",
+    }
+    local numBadges = #badgeTextures
     
     // Player name text item.
     local playerNameItem = GUIManager:CreateTextItem()
@@ -688,15 +699,35 @@ function GUIScoreboard:CreatePlayerItem()
     playerNameItem:SetAnchor(GUIItem.Left, GUIItem.Top)
     playerNameItem:SetTextAlignmentX(GUIItem.Align_Min)
     playerNameItem:SetTextAlignmentY(GUIItem.Align_Min)
-    playerNameItem:SetPosition(Vector(35, 5, 0))
+    playerNameItem:SetPosition(Vector(
+                15
+                + GUIScoreboard.kPlayerVoiceChatIconSize
+                + numBadges * (kPlayerBadgeIconSize+kPlayerBadgeRightPadding),
+                5, 0))
     playerNameItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(playerNameItem)
     
+    // Player badges
+    for i = 1,numBadges do
+
+        local xPosition = -i * (kPlayerBadgeIconSize+kPlayerBadgeRightPadding)
+
+        local playerBadge = GUIManager:CreateGraphicItem()
+        playerBadge:SetSize(Vector(kPlayerBadgeIconSize, kPlayerBadgeIconSize, 0))
+        playerBadge:SetAnchor(GUIItem.Left, GUIItem.Top)
+        playerBadge:SetPosition(Vector(xPosition, 0, 0))
+        playerBadge:SetTexture("ui/badge_pax2012.dds")
+        playerNameItem:AddChild(playerBadge)
+
+    end
+
     // Player voice icon item.
     local playerVoiceIcon = GUIManager:CreateGraphicItem()
     playerVoiceIcon:SetSize(Vector(GUIScoreboard.kPlayerVoiceChatIconSize, GUIScoreboard.kPlayerVoiceChatIconSize, 0))
     playerVoiceIcon:SetAnchor(GUIItem.Left, GUIItem.Top)
-    playerVoiceIcon:SetPosition(Vector(-GUIScoreboard.kPlayerVoiceChatIconSize - 0, 0, 0))
+    playerVoiceIcon:SetPosition(Vector(
+                -GUIScoreboard.kPlayerVoiceChatIconSize - numBadges * (kPlayerBadgeIconSize+kPlayerBadgeRightPadding),
+                0, 0))
     playerVoiceIcon:SetTexture("ui/speaker.dds")
     playerNameItem:AddChild(playerVoiceIcon)
     

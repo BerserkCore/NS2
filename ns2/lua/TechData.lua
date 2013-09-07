@@ -190,14 +190,14 @@ function BuildTechData()
         { [kTechDataId] = kTechId.TransformResources, [kTechDataResearchTimeKey] = kTransformResourcesTime, [kTechDataDisplayName] = "TRANSFORM_RESOURCES",   [kTechDataCostKey] = kTransformResourcesCost,   [kTechDataTooltipInfo] = "TRANSFORM_RESOURCES_TOOLTIP",},   
 
         // Ready room player is the default player, hence the ReadyRoomPlayer.kMapName
-        { [kTechDataId] = kTechId.ReadyRoomPlayer,        [kTechDataDisplayName] = "READY_ROOM_PLAYER", [kTechDataMapName] = ReadyRoomPlayer.kMapName, [kTechDataModel] = Marine.kModelNames["male"]["green"], [kTechDataMaxExtents] = Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents) },
+        { [kTechDataId] = kTechId.ReadyRoomPlayer,        [kTechDataDisplayName] = "READY_ROOM_PLAYER", [kTechDataMapName] = ReadyRoomPlayer.kMapName, [kTechDataModel] = MarineVariantMixin.kModelNames["male"]["green"], [kTechDataMaxExtents] = Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents) },
         
         // Spectators classes.
         { [kTechDataId] = kTechId.Spectator,              [kTechDataModel] = "" },
         { [kTechDataId] = kTechId.AlienSpectator,         [kTechDataModel] = "" },
         
         // Marine classes
-        { [kTechDataId] = kTechId.Marine,      [kTechDataDisplayName] = "MARINE", [kTechDataMapName] = Marine.kMapName, [kTechDataModel] = Marine.kModelNames["male"]["green"], [kTechDataMaxExtents] = Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents), [kTechDataMaxHealth] = Marine.kHealth, [kTechDataEngagementDistance] = kPlayerEngagementDistance, [kTechDataPointValue] = kMarinePointValue},
+        { [kTechDataId] = kTechId.Marine,      [kTechDataDisplayName] = "MARINE", [kTechDataMapName] = Marine.kMapName, [kTechDataModel] = MarineVariantMixin.kModelNames["male"]["green"], [kTechDataMaxExtents] = Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents), [kTechDataMaxHealth] = Marine.kHealth, [kTechDataEngagementDistance] = kPlayerEngagementDistance, [kTechDataPointValue] = kMarinePointValue},
         { [kTechDataId] = kTechId.Exo,              [kTechDataDisplayName] = "EXOSUIT", [kTechDataTooltipInfo] = "EXOSUIT_TOOLTIP", [kTechDataMapName] = Exo.kMapName, [kTechDataMaxExtents] = Vector(Exo.kXZExtents, Exo.kYExtents, Exo.kXZExtents), [kTechDataMaxHealth] = kExosuitHealth, [kTechDataEngagementDistance] = kExoEngagementDistance, [kTechDataPointValue] = kExosuitPointValue},
         { [kTechDataId] = kTechId.MarineCommander,     [kTechDataDisplayName] = "MARINE_COMMANDER", [kTechDataMapName] = MarineCommander.kMapName, [kTechDataModel] = ""},
         { [kTechDataId] = kTechId.JetpackMarine,   [kTechDataHint] = "JETPACK_HINT",    [kTechDataDisplayName] = "JETPACK", [kTechDataMapName] = JetpackMarine.kMapName, [kTechDataModel] = JetpackMarine.kModelName, [kTechDataMaxExtents] = Vector(Player.kXZExtents, Player.kYExtents, Player.kXZExtents), [kTechDataMaxHealth] = JetpackMarine.kHealth, [kTechDataEngagementDistance] = kPlayerEngagementDistance, [kTechDataPointValue] = kMarinePointValue},

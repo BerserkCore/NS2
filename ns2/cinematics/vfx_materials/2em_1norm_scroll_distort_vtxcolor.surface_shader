@@ -46,7 +46,7 @@
 
 			material.emissive 	=  ((emiss1.rgb * input.color.r) + (emiss2.rgb * input.color.g)) * tint;
 			material.transmissionColor = transmissionColor;
-			material.ssDistortion = vsNormal.xy * input.color.b;
+			material.ssDistortion = vsNormal.xy * input.color.b * normIntensity;
 		}
 	]]>		
 	</code>

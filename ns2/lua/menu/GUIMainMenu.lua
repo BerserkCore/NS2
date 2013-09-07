@@ -41,7 +41,9 @@ local kMaxSensitivity = 20
 local kMinAcceleration = 1
 local kMaxAcceleration = 1.4
 
-local kWindowModes           = { "windowed", "fullscreen", "fullscreen-windowed" }
+local kWindowModeIds         = { "windowed", "fullscreen", "fullscreen-windowed" }
+local kWindowModeNames       = { "WINDOWED", "FULLSCREEN", "FULLSCREEN WINDOWED" }
+
 local kAmbientOcclusionModes = { "off", "medium", "high" }
 local kInfestationModes      = { "minimal", "rich" }
 local kParticleQualityModes  = { "low", "high" }
@@ -1535,7 +1537,11 @@ local function InitOptions(optionElements)
     local screenResIdx          = OptionsDialogUI_GetScreenResolutionsIndex()
     local visualDetailIdx       = OptionsDialogUI_GetVisualDetailSettingsIndex()
     local display               = OptionsDialogUI_GetDisplay()
-    local windowMode            = table.find(kWindowModes, OptionsDialogUI_GetWindowMode())
+
+    local windowMode            = table.find(kWindowModeIds, OptionsDialogUI_GetWindowModeId()) or 1
+    local windowModes           = OptionsDialogUI_GetWindowModes()
+    local windowModeOptionIndex = table.find(windowModes, windowMode) or 1
+    
     local displayBuffering      = Client.GetOptionInteger("graphics/display/display-buffering", 0)
     local textureStreaming      = Client.GetOptionBoolean("graphics/texture-streaming", false)
     local ambientOcclusion      = Client.GetOptionString("graphics/display/ambient-occlusion", kAmbientOcclusionModes[1])
@@ -1548,21 +1554,38 @@ local function InitOptions(optionElements)
     local decalLifeTime         = Client.GetOptionFloat("graphics/decallifetime", 0.2)
     
     local minimapZoom = Client.GetOptionFloat("minimap-zoom", 0.75)
-    local armorType = Client.GetOptionString("armorType", "")
+    local marineVariant = Client.GetOptionInteger("marineVariant", -1)
+    local skulkVariant = Client.GetOptionInteger("skulkVariant", -1)
     
-    if string.len(armorType) == 0 then
-    
-        if GetHasBlackArmor() then
-            armorType = "Black"
-        elseif GetHasDeluxeEdition() then
-            armorType = "Deluxe"
-        else
-            armorType = "Green"
+    // if not set explicitly, always use the highest available tier
+    if marineVariant == -1 then
+
+        for variant = 1,GetEnumCount(kMarineVariant) do
+        DebugPrint("checking variant "..GetVariantName(kMarineVariantData, variant))
+            if GetHasVariant( kMarineVariantData, variant ) then
+                marineVariant = variant
+                // do not break - use the highest one they have
+            end
         end
         
     end
-    
-    Client.SetOptionString("armorType", armorType)
+
+    if skulkVariant == -1 then
+
+        for variant = 1,GetEnumCount(kSkulkVariant),1 do
+            if GetHasVariant( kSkulkVariantData, variant ) then
+                skulkVariant = variant
+                // do not break - use the highest one they have
+            end
+        end
+        
+    end
+
+    assert( marineVariant ~= -1 )
+    assert( skulkVariant ~= -1 )
+
+    Client.SetOptionInteger("marineVariant", marineVariant)
+    Client.SetOptionInteger("skulkVariant", skulkVariant)
     
     local sexType = Client.GetOptionString("sexType", "Male")
     Client.SetOptionString("sexType", sexType)
@@ -1621,7 +1644,7 @@ local function InitOptions(optionElements)
 
     optionElements.RenderDevice:SetOptionActive( table.find(kRenderDevices, renderDevice) )
     optionElements.Display:SetOptionActive( display + 1 )
-    optionElements.WindowMode:SetOptionActive( windowMode )
+    optionElements.WindowMode:SetOptionActive( windowModeOptionIndex )
     optionElements.DisplayBuffering:SetOptionActive( displayBuffering + 1 )
     optionElements.Resolution:SetOptionActive( screenResIdx )
     optionElements.Shadows:SetOptionActive( BoolToIndex(shadows) )
@@ -1636,7 +1659,8 @@ local function InitOptions(optionElements)
     optionElements.Reflections:SetOptionActive( BoolToIndex(reflections) )
     optionElements.FOVAdjustment:SetValue(fovAdjustment)
     optionElements.MinimapZoom:SetValue(minimapZoom)
-    optionElements.ArmorType:SetValue(armorType)
+    optionElements.MarineVariantName:SetValue(GetVariantName(kMarineVariantData,marineVariant))
+    optionElements.SkulkVariantName:SetValue(GetVariantName(kSkulkVariantData,skulkVariant))
     optionElements.SexType:SetValue(sexType)
     optionElements.DecalLifeTime:SetValue(decalLifeTime)
     optionElements.CameraAnimation:SetValue(cameraAnimation)
@@ -1744,10 +1768,21 @@ function OnDisplayChanged(oldDisplay, newDisplay)
 end
 
 
-local function SendArmorAndSexUpdate(armorType, sexType)
+local function SendPlayerVariantUpdate(marineVariant, sexType, skulkVariant)
+
+    assert( marineVariant ~= -1 )
+    assert( marineVariant ~= nil )
+    assert( skulkVariant ~= -1 )
+    assert( skulkVariant ~= nil )
 
     if MainMenu_IsInGame() then
-        Client.SendNetworkMessage("SetPlayerVariant", { armorId = StringToEnum(kArmorType, armorType), isMale = string.lower(sexType) == "male" }, true)
+        Client.SendNetworkMessage("SetPlayerVariant",
+                {
+                    marineVariant = marineVariant,
+                    skulkVariant = skulkVariant,
+                    isMale = string.lower(sexType) == "male",
+                },
+                true)
     end
     
 end
@@ -1770,7 +1805,10 @@ local function SaveOptions(mainMenu)
     local screenResIdx          = mainMenu.optionElements.Resolution:GetActiveOptionIndex()
     local visualDetailIdx       = mainMenu.optionElements.Detail:GetActiveOptionIndex()
     local displayBuffering      = mainMenu.optionElements.DisplayBuffering:GetActiveOptionIndex() - 1
-    local windowMode            = mainMenu.optionElements.WindowMode:GetActiveOptionIndex()
+    
+    local windowModeOptionIndex = mainMenu.optionElements.WindowMode:GetActiveOptionIndex()
+    local windowMode            = OptionsDialogUI_GetWindowModes()[windowModeOptionIndex]
+
     local shadows               = mainMenu.optionElements.Shadows:GetActiveOptionIndex() > 1
     local bloom                 = mainMenu.optionElements.Bloom:GetActiveOptionIndex() > 1
     local atmospherics          = mainMenu.optionElements.Atmospherics:GetActiveOptionIndex() > 1
@@ -1781,7 +1819,8 @@ local function SaveOptions(mainMenu)
     local musicVol              = mainMenu.optionElements.MusicVolume:GetValue() * 100
     local voiceVol              = mainMenu.optionElements.VoiceVolume:GetValue() * 100
     
-    local armorType             = mainMenu.optionElements.ArmorType:GetValue()
+    local marineVariantName     = mainMenu.optionElements.MarineVariantName:GetValue()
+    local skulkVariantName      = mainMenu.optionElements.SkulkVariantName:GetValue()
     local sexType               = mainMenu.optionElements.SexType:GetValue()
     local cameraAnimation       = mainMenu.optionElements.CameraAnimation:GetActiveOptionIndex() > 1
     local physicsGpuAcceleration = mainMenu.optionElements.PhysicsGpuAcceleration:GetActiveOptionIndex() > 1
@@ -1798,10 +1837,14 @@ local function SaveOptions(mainMenu)
     Client.SetOptionBoolean(kRookieOptionsKey, rookieMode)
     Client.SetOptionBoolean("CameraAnimation", cameraAnimation)
     Client.SetOptionBoolean(kPhysicsGpuAccelerationKey, physicsGpuAcceleration)
-    Client.SetOptionString("armorType", armorType)
+    Client.SetOptionInteger("marineVariant", FindVariant( kMarineVariantData, marineVariantName ) )
+    Client.SetOptionInteger("skulkVariant", FindVariant( kSkulkVariantData, skulkVariantName ) )
     Client.SetOptionString("sexType", sexType)
     
-    SendArmorAndSexUpdate(armorType, sexType)
+    SendPlayerVariantUpdate(
+            FindVariant( kMarineVariantData, marineVariantName ),
+            sexType,
+            FindVariant( kSkulkVariantData, skulkVariantName ) )
     
     Client.SetOptionFloat("input/mouse/acceleration-amount", accelerationAmount)
     
@@ -1814,7 +1857,7 @@ local function SaveOptions(mainMenu)
         visualDetailIdx,
         soundVol,
         musicVol,
-        kWindowModes[windowMode],
+        kWindowModeIds[windowMode],
         shadows,
         bloom,
         atmospherics,
@@ -1976,6 +2019,11 @@ function GUIMainMenu:CreateOptionWindow()
 
     local displays = OptionsDialogUI_GetDisplays()    
     local windowModes = OptionsDialogUI_GetWindowModes()
+    local windowModeNames = {}
+    for i = 1, #windowModes do
+        table.insert(windowModeNames, kWindowModeNames[windowModes[i]])
+    end 
+
     local screenResolutions = OptionsDialogUI_GetScreenResolutions()
     local soundOutputDevices = OptionsDialogUI_GetSoundDeviceNames(Client.SoundDeviceType_Output)
     local soundInputDevices = OptionsDialogUI_GetSoundDeviceNames(Client.SoundDeviceType_Input)
@@ -1985,14 +2033,18 @@ function GUIMainMenu:CreateOptionWindow()
         languages[i] = kLocales[i].label
     end
     
-    local armorTypes = { "Green" }
-    
-    if GetHasBlackArmor() then
-        table.insert(armorTypes, "Black")
+    local marineVariantNames = {}
+    local skulkVariantNames = {}
+
+    //DebugPrint("we have "..GetEnumCount(kMarineVariant).." marine variants")
+    //DebugPrint("we have "..GetEnumCount(kSkulkVariant).." skulk variants")
+
+    for key,value in pairs(kMarineVariantData) do
+        marineVariantNames[ key ] = value.displayName
     end
-    
-    if GetHasDeluxeEdition() then
-        table.insert(armorTypes, "Deluxe")
+
+    for key,value in pairs(kSkulkVariantData) do
+        skulkVariantNames[ key ] = value.displayName
     end
     
     local sexTypes = { "Male", "Female" }
@@ -2075,18 +2127,24 @@ function GUIMainMenu:CreateOptionWindow()
             },
             
             {
-                name    = "ArmorType",
-                label   = "ARMOR TYPE",
+                name    = "MarineVariantName",
+                label   = "MARINE ARMOR",
                 type    = "select",
-                values  = armorTypes
+                values  = marineVariantNames
             },
-            
             {
                 name    = "SexType",
-                label   = "SEX",
+                label   = "MARINE GENDER",
                 type    = "select",
                 values  = sexTypes
             },
+            {
+                name = "SkulkVariantName",
+                label = "SKULK TYPE",
+                type = "select",
+                values = skulkVariantNames,
+            },
+            
             
             {
                 name    = "CameraAnimation",
@@ -2098,7 +2156,7 @@ function GUIMainMenu:CreateOptionWindow()
             
             {
                 name    = "PhysicsGpuAcceleration",
-                label   = "PhysX GPU Acceleration",
+                label   = "PHYSX GPU ACCELERATION",
                 type    = "select",
                 values  = { "OFF", "ON" },
                 callback = StorePhysicsGpuAccelerationOption
@@ -2180,7 +2238,7 @@ function GUIMainMenu:CreateOptionWindow()
                 name   = "WindowMode",            
                 label  = "WINDOW MODE",
                 type   = "select",
-                values = windowModes,
+                values = windowModeNames,
             },
             {   
                 name   = "DisplayBuffering",            

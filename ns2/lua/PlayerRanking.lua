@@ -13,6 +13,8 @@ local kMinPlayTime = 5 * 60
 // don't track games which are shorter than a minute
 local kMinMatchTime = 60
 
+local gRankingDisabled = false
+
 // client side utility functions
 
 function PlayerRankingUI_GetRelativeSkillFraction()
@@ -70,6 +72,10 @@ function PlayerRanking:GetGameMode()
 end    
 
 function PlayerRanking:OnUpdate()
+    
+    if gRankingDisabled then
+        return
+    end    
 
     PROFILE("PlayerRanking:OnUpdate")
 
@@ -91,6 +97,8 @@ function PlayerRanking:OnUpdate()
                         steamId = steamId,
                         nickname = player:GetName() or "",
                         playTime = player:GetPlayTime(),
+                        marineTime = player:GetMarinePlayTime(),
+                        alienTime = player:GetAlienPlayTime(),
                         kills = player:GetKills(),
                         deaths = player:GetDeaths(),
                         assists = player:GetAssistKills(),
@@ -107,6 +115,8 @@ function PlayerRanking:OnUpdate()
                     playerData.steamId = steamId
                     playerData.nickname = player:GetName() or ""
                     playerData.playTime = player:GetPlayTime()
+                    playerData.marineTime = player:GetMarinePlayTime()
+                    playerData.alienTime = player:GetAlienPlayTime()
                     playerData.kills = player:GetKills()
                     playerData.deaths = player:GetDeaths()
                     playerData.assists = player:GetAssistKills()
@@ -127,6 +137,10 @@ end
 function PlayerRanking:EndGame(winningTeam)
 
     PROFILE("PlayerRanking:EndGame")
+    
+    if gRankingDisabled then
+        return
+    end 
 
     if self.gameStarted and self:GetTrackServer() then
     
@@ -185,6 +199,8 @@ function PlayerRanking:InsertPlayerData(playerTable, recordedData, winningTeam, 
             steamId = recordedData.steamId,
             nickname = recordedData.nickname or "",
             playTime = recordedData.playTime,
+            marineTime = recordedData.marineTime,
+            alienTime = recordedData.alienTime,
             kills = recordedData.kills,
             deaths = recordedData.deaths,
             assists = recordedData.assists,
@@ -257,7 +273,6 @@ end
 if Server then
 
     local gPlayerData = {}
-    local gNumPlayers = 0
     local gSendRequestNow = false
     local gGameStarted = false
     
@@ -270,6 +285,8 @@ if Server then
             
             if obj then
             
+                gPlayerData[steamId..""] = obj
+            
                 // its possible that the server does not send all data we want, need to check for nil here to not cause any script errors later:            
                 obj.kills = obj.kills or 0
                 obj.assists = obj.assists or 0
@@ -278,10 +295,8 @@ if Server then
                 obj.score = obj.score or 0
                 obj.playTime = obj.playTime or 0
                 obj.level = obj.level or 0
-            
+
             end
-            
-            gPlayerData[steamId..""] = obj
             
             //Print("player data of %s: %s", ToString(steamId), ToString(obj))
         
@@ -312,9 +327,10 @@ if Server then
     local function UpdatePlayerStats()
     
         PROFILE("PlayerRanking:UpdatePlayerStats")
-    
-        local playerUpdated = false
-        local currentPlayerNum = 0
+            
+        if gRankingDisabled then
+            return
+        end 
 
         for _, player in ipairs(GetEntitiesWithMixin("Scoring")) do  
         
@@ -322,44 +338,63 @@ if Server then
             if client and not client:GetIsVirtual() then
             
                 local steamId = client:GetUserId()
-                currentPlayerNum = currentPlayerNum + 1
+                local playerData = gPlayerData[steamId..""]
             
-                if gSendRequestNow then
+                if gSendRequestNow or not playerData then
+
+                    if not playerData then
+                    
+                        playerData = {}
+                        
+                        playerData.kills = 0
+                        playerData.assists = 0
+                        playerData.deaths = 0
+                        playerData.skill = 0
+                        playerData.score = 0
+                        playerData.playTime = 0
+                        playerData.level = 0
+                        
+                        gPlayerData[steamId..""] = playerData
+                    
+                    end
             
                     //DebugPrint("send player data request for %s", ToString(steamId))
                     local requestUrl = kPlayerRankingRequestUrl .. steamId
                     Shared.SendHTTPRequest(requestUrl, "GET", { }, PlayerDataResponse(steamId))
-                    playerUpdated = true
                 
                 end
-                
-                local playerData = gPlayerData[steamId..""]
-                if playerData then
-                
-                    player:SetTotalKills(playerData.kills)
-                    player:SetTotalAssists(playerData.assists)
-                    player:SetTotalDeaths(playerData.deaths)
-                    player:SetPlayerSkill(playerData.skill)
-                    player:SetTotalScore(playerData.score)
-                    player:SetTotalPlayTime(playerData.playTime)
-                    player:SetPlayerLevel(playerData.level)
-                
-                end
+
+                player:SetTotalKills(playerData.kills)
+                player:SetTotalAssists(playerData.assists)
+                player:SetTotalDeaths(playerData.deaths)
+                player:SetPlayerSkill(playerData.skill)
+                player:SetTotalScore(playerData.score)
+                player:SetTotalPlayTime(playerData.playTime)
+                player:SetPlayerLevel(playerData.level)
             
             end
         
         end
         
-        if playerUpdated then
-            gSendRequestNow = false
-        elseif currentPlayerNum ~= gNumPlayers or GetGameEnded() then        
+        gSendRequestNow = false
+        
+        if GetGameEnded() then
             gSendRequestNow = true
-            gNumPlayers = currentPlayerNum
         end
 
     end
 
     Event.Hook("UpdateServer", UpdatePlayerStats)
+    
+    
+    local function OnCommandDisableRanking()
+    
+        gRankingDisabled = not gRankingDisabled
+        Print("player ranking %s", ToString(not gRankingDisabled))
+        
+    end
+    
+    Event.Hook("Console_disableranking", OnCommandDisableRanking)
 
 end
 

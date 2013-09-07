@@ -219,8 +219,9 @@ function Weapon:OnDraw(player, previousWeaponMapName)
         player:SetViewModel(nil, nil)
     end
     
-    if HasMixin(player, "PlayerVariant") then
-        player:SetViewModel(self:GetViewModelName(player:GetSex(), player:GetVariant()), self)
+    // hacky..
+    if HasMixin(player, "MarineVariant") then
+        player:SetViewModel(self:GetViewModelName(player:GetGenderString(), player:GetVariant()), self)
     else
         player:SetViewModel(self:GetViewModelName(), self)
     end
@@ -255,6 +256,8 @@ local function SharedUpdate(self)
     // Handle dropping on the client
     if Client then
         self:UpdateDropped()
+
+
     end
     
 end

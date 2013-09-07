@@ -55,6 +55,13 @@ local function UpdateWaveTime(self)
     
     Server.SendNetworkMessage(Server.GetOwner(self), "SetTimeWaveSpawnEnds", { time = self.timeWaveSpawnEnd }, true)
     
+    if not self.sentRespawnMessage then
+    
+        Server.SendNetworkMessage(Server.GetOwner(self), "SetIsRespawning", { isRespawning = true }, true)
+        self.sentRespawnMessage = true
+        
+    end
+    
     return true
     
 end
@@ -96,6 +103,17 @@ function AlienSpectator:OnInitialized()
 end
 
 if Server then
+
+    function AlienSpectator:GetDesiredSpawnPoint()
+        return self.desiredSpawnPoint
+    end    
+
+    function AlienSpectator:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extraValues)
+    
+        Server.SendNetworkMessage(Server.GetOwner(self), "SetIsRespawning", { isRespawning = false }, true)    
+        return TeamSpectator.Replace(self, mapName, newTeamNumber, preserveWeapons, atOrigin, extraValues)
+    
+    end
 
     function AlienSpectator:GetWaveSpawnEndTime()
         return self.timeWaveSpawnEnd

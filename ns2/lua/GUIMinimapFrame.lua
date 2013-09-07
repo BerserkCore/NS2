@@ -12,6 +12,21 @@ Script.Load("lua/GUIMinimap.lua")
 
 class 'GUIMinimapFrame' (GUIMinimap)
 
+local desiredSpawnPosition = nil
+local isRespawning = false
+local function OnSetIsRespawning(message)
+    isRespawning = message.isRespawning
+end
+Client.HookNetworkMessage("SetIsRespawning", OnSetIsRespawning)
+
+function GetPlayerIsSpawning()
+    return isRespawning
+end
+
+function GetDesiredSpawnPosition()
+    return desiredSpawnPosition
+end
+
 GUIMinimapFrame.kModeMini = 0
 GUIMinimapFrame.kModeBig = 1
 GUIMinimapFrame.kModeZoom = 2
@@ -44,6 +59,36 @@ function GUIMinimapFrame:Initialize()
     self:InitSmokeyBackground()
     self:InitFrame()
     
+    self.chooseSpawnText = GetGUIManager():CreateTextItem()
+    self.chooseSpawnText:SetText("open minimap to choose a spawn point.")
+    self.chooseSpawnText:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
+    self.chooseSpawnText:SetTextAlignmentX(GUIItem.Align_Center)
+    self.chooseSpawnText:SetTextAlignmentY(GUIItem.Align_Max)
+    self.chooseSpawnText:SetFontName("fonts/AgencyFB_large.fnt")
+    self.chooseSpawnText:SetPosition(Vector(0, GUIScale(-128), 0))
+    
+    self.chooseSpawnText:SetIsVisible(false)
+    
+    self.showingMouse = false
+
+end
+
+function GUIMinimapFrame:Uninitialize()
+
+    GUIMinimap.Uninitialize(self)
+    
+    if self.chooseSpawnText then
+        GUI.DestroyItem(self.chooseSpawnText)
+        self.chooseSpawnText = nil
+    end
+    
+    if self.showingMouse then
+    
+        MouseTracker_SetIsVisible(false)
+        self.showingMouse = false
+        
+    end
+
 end
 
 function GUIMinimapFrame:InitFrame()
@@ -78,17 +123,73 @@ function GUIMinimapFrame:InitSmokeyBackground()
 
 end
 
+function GUIMinimapFrame:SendKeyEvent(key, down)
+
+    local handledInput = false
+    local choosingSpawn = isRespawning and self.background:GetIsVisible()
+    
+    if isRespawning and GetIsBinding(key, "ShowMap") then
+    
+        if not down then
+    
+            local showMap = not self.background:GetIsVisible()
+            self:ShowMap(showMap)
+            self:SetBackgroundMode(GUIMinimapFrame.kModeBig)
+        
+        end
+        
+        handledInput = true
+    
+    elseif choosingSpawn and key == InputKey.MouseButton0 then
+
+        local mouseX, mouseY = Client.GetCursorPosScreen()
+        local containsPoint, withinX, withinY = GUIItemContainsPoint(self.minimap, mouseX, mouseY)
+        if containsPoint then
+        
+            // perform action only on key up, but also consume key down even, otherwise mouse0 is not being processed correctly 
+            if not down then
+            
+                local newDesiredPosition = MinimapToWorld(nil, withinX / self:GetMinimapSize().x, withinY / self:GetMinimapSize().y)
+                
+                if newDesiredPosition ~= desiredSpawnPosition then
+                
+                    desiredSpawnPosition = newDesiredPosition
+                    Client.SendNetworkMessage("SetDesiredSpawnPoint", { desiredSpawnPoint = desiredSpawnPosition }, true)
+                    
+                end
+
+            end
+            
+            handledInput = true
+        
+        end
+    
+    else
+        handledInput = GUIMinimap.SendKeyEvent(self, key, down)    
+    end
+    
+    return handledInput
+
+end
+
 function GUIMinimapFrame:Update(deltaTime)
 
     PROFILE("GUIMinimapFrame:Update")
     
+    local showMouse = self.background:GetIsVisible() and isRespawning
+    if showMouse ~= self.showingMouse then
+    
+        MouseTracker_SetIsVisible(showMouse, "ui/Cursor_MenuDefault.dds", true)
+        self.showingMouse = showMouse
+        
+    end
+
+    self.chooseSpawnText:SetIsVisible(not self.background:GetIsVisible() and isRespawning)
+    
     self.minimapFrame:SetIsVisible(PlayerUI_GetTeamType() == kMarineTeamType and self.comMode == GUIMinimapFrame.kModeMini)
     self.smokeyBackground:SetIsVisible(PlayerUI_GetTeamType() == kAlienTeamType and self.comMode == GUIMinimapFrame.kModeMini)
     
-    if self.comMode == GUIMinimapFrame.kModeBig then
-        //self.background:SetTexture(nil)
-        
-    elseif PlayerUI_IsOverhead() then
+    if PlayerUI_IsOverhead() and self.comMode ~= GUIMinimapFrame.kModeBig then
         
         if PlayerUI_IsACommander() then
         
@@ -98,31 +199,31 @@ function GUIMinimapFrame:Update(deltaTime)
             else
                 self.background:SetIsVisible(false)
             end
-            
-            //GUISetTextureCoordinatesTable(self.background, GUIMinimapFrame.kBackgroundTextureCoords)
-            
-        else
 
+        else
             self.background:SetIsVisible(true)
-            //self.background:SetTexture(GUIMinimapFrame.kBackgroundTextureSpec)
-            //self.background:SetTexturePixelCoordinates(unpack({0,0,572,548}))
-            
         end
 
     end
     
     if self.comMode == GUIMinimapFrame.kModeZoom then
+    
         if self.desiredZoom ~= self.zoom then
+        
             local currSqrt = math.sqrt(self.zoom)
             local zoomSpeed = 0.8
             if self.zoom < self.desiredZoom then
+            
                 currSqrt = currSqrt + deltaTime*zoomSpeed
                 self:SetZoom(Clamp(currSqrt*currSqrt, 0, self.desiredZoom))
+                
             else
                 currSqrt = currSqrt - deltaTime*zoomSpeed
                 self:SetZoom(Clamp(currSqrt*currSqrt, self.desiredZoom, 1))
             end
+            
         end
+        
     end
     
     GUIMinimap.Update(self, deltaTime)
@@ -130,9 +231,11 @@ function GUIMinimapFrame:Update(deltaTime)
 end
 
 function GUIMinimapFrame:SetZoom(zoom)
+
     self.zoom = zoom
     self:SetScale(kBigSizeScale * zoom)
     self:SetBlipScale(zoom)
+    
 end
 
 function GUIMinimapFrame:SetDesiredZoom(desiredZoom)

@@ -428,7 +428,7 @@ kBoneShieldEnergyPerSecond = 15
 kStartBoneShieldCost = 10
 
 kStompEnergyCost = 30
-kStompDamageType = kDamageType.Structural
+kStompDamageType = kDamageType.Heavy
 kStompDamage = 40
 kStompRange = 12
 kDisruptMarineTime = 2

@@ -60,12 +60,11 @@ end
 
 function OptionsDialogUI_GetWindowModes()
 
-    local modeNames = { "WINDOWED", "FULLSCREEN", "FULLSCREEN WINDOWED" }
     local numWindowModes = Client.GetNumWindowModes()
     local result = {}
-        
+
     for index = 1, numWindowModes do
-        table.insert(result, modeNames[Client.GetWindowMode(index) + 1])
+        table.insert(result, Client.GetWindowMode(index) + 1)
     end
 
     return result
@@ -207,7 +206,7 @@ end
  * windowed - true/false run in windowed mode
  * invMouse - true/false (true == mouse is inverted)
  */
-function OptionsDialogUI_SetValues(nickname, mouseSens, display, screenResIdx, visualDetailIdx, soundVol, musicVol, windowMode, shadows, bloom, atmospherics, anisotropicFiltering, antiAliasing, invMouse, voiceVol)
+function OptionsDialogUI_SetValues(nickname, mouseSens, display, screenResIdx, visualDetailIdx, soundVol, musicVol, windowModeId, shadows, bloom, atmospherics, anisotropicFiltering, antiAliasing, invMouse, voiceVol)
 
     Client.SetOptionString( kNicknameOptionsKey, nickname )
     
@@ -225,7 +224,7 @@ function OptionsDialogUI_SetValues(nickname, mouseSens, display, screenResIdx, v
     OptionsDialogUI_SetMusicVolume( musicVol )
     OptionsDialogUI_SetVoiceVolume( voiceVol )
     
-    Client.SetOptionString ( kWindowModeOptionsKey, windowMode )
+    Client.SetOptionString ( kWindowModeOptionsKey, windowModeId )
     
     Client.SetOptionBoolean ( kShadowsOptionsKey, shadows )
     Client.SetOptionBoolean ( kBloomOptionsKey, bloom )
@@ -265,7 +264,7 @@ end
 /**
  * Get windowed or not
  */
-function OptionsDialogUI_GetWindowMode()
+function OptionsDialogUI_GetWindowModeId()
     return Client.GetOptionString( kWindowModeOptionsKey, "windowed" )
 end
 

@@ -9,6 +9,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/BadgeMixin.lua")
 
 class 'GUIUnitStatus' (GUIAnimatedScript)
 
@@ -308,12 +309,20 @@ local function CreateBlipItem(self)
     newBlip.BorderMask:SetStencilFunc(GUIItem.NotEqual)
     newBlip.Border:AddChild(newBlip.BorderMask)
     
-    newBlip.Badge = GUIManager:CreateGraphicItem()
-    newBlip.Badge:SetAnchor(GUIItem.Left, GUIItem.Top)
-    newBlip.Badge:SetSize(GUIUnitStatus.kBadgeSize)
-    newBlip.Badge:SetPosition(Vector(-GUIUnitStatus.kBadgeSize.x, 0, 0))
-    newBlip.Badge:SetIsVisible(false)
-    newBlip.Badge:SetInheritsParentAlpha(true)
+    newBlip.Badges = {}
+    for i = 1,math.random(1, BadgeMixin_GetMaxBadges()) do
+
+        local badge = GUIManager:CreateGraphicItem()
+        badge:SetAnchor(GUIItem.Left, GUIItem.Top)
+        badge:SetSize(GUIUnitStatus.kBadgeSize)
+        badge:SetPosition(Vector(i * (GUIUnitStatus.kBadgeSize.x+5), -GUIUnitStatus.kBadgeSize.y, 0))
+        badge:SetIsVisible(false)
+        badge:SetInheritsParentAlpha(true)
+
+        table.insert( newBlip.Badges, badge )
+        newBlip.statusBg:AddChild(badge)
+
+    end
     
     newBlip.statusBg:AddChild(newBlip.smokeyBackground)
     newBlip.statusBg:AddChild(newBlip.HealthBarBg)
@@ -322,7 +331,6 @@ local function CreateBlipItem(self)
     newBlip.statusBg:AddChild(newBlip.HintText)
     
     newBlip.statusBg:AddChild(newBlip.Border)
-    newBlip.statusBg:AddChild(newBlip.Badge)
     newBlip.statusBg:SetColor(Color(0,0,0,0))
     
     newBlip.GraphicsItem:AddChild(newBlip.ProgressingIcon)
@@ -483,8 +491,15 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         updateBlip.BorderMask:SetIsVisible(teamType == kMarineTeamType and blipData.IsCrossHairTarget)
         updateBlip.smokeyBackground:SetIsVisible(teamType == kAlienTeamType and blipData.HealthFraction ~= 0)
 
-        updateBlip.Badge:SetTexture(blipData.BadgeTexture)
-        updateBlip.Badge:SetIsVisible(string.len(blipData.BadgeTexture) > 0)
+    // TEMP
+        for i = 1,#updateBlip.Badges do
+
+            local badge = updateBlip.Badges[i]
+            badge:SetTexture("ui/badge_pax2012.dds")
+            //badge:SetIsVisible(string.len(blipData.BadgeTexture) > 0)
+            badge:SetIsVisible(true)
+
+        end
         
         if blipData.HasWelder and blipData.IsCrossHairTarget and not updateBlip.welderIcon then
         

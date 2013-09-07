@@ -150,6 +150,10 @@ end
 function Exosuit:OnTouch(recipient)    
 end
 
+function Exosuit:GetArmorUseFractionOverride()
+    return 1.0
+end
+
 if Server then
 
     function Exosuit:OnUpdate(deltaTime)

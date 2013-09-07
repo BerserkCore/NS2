@@ -88,14 +88,8 @@ end
 function GUIAlienSpectatorHUD:Update(deltaTime)
 
     local waitingForTeamBalance = PlayerUI_GetIsWaitingForTeamBalance()
-    // Assume the UI should display when not controlling a player (spectating a player).
-    local displayUI = not Client.GetIsControllingPlayer()
-    
-    // Do not display while not on the Alien team (on the spectator team).
-    local clientTeam = Client.GetLocalClientTeamNumber()
-    displayUI = displayUI and clientTeam == kTeam2Index
-    
-    local isVisible = not waitingForTeamBalance and displayUI
+
+    local isVisible = not waitingForTeamBalance and GetPlayerIsSpawning()
     self.spawnText:SetIsVisible(isVisible)
     self.eggIcon:SetIsVisible(isVisible)
     
