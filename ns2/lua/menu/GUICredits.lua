@@ -26,31 +26,40 @@ function GUICredits:Initialize()
     self.webContainer:SetAnchor(GUIItem.Middle, GUIItem.Center)
     self.webContainer:SetPosition(Vector(-width/2, -height/2, 0))
     self.webContainer:SetTexture(kTextureName)
+    self.webContainer:SetIsVisible(false)
     
-    self.prevMouseDown = false
     self.closeEvent = Event()
     self.closeEvent:Initialize()
+
+    self.buttonDown = { [InputKey.MouseButton0] = false, [InputKey.MouseButton1] = false, [InputKey.MouseButton2] = false }
     
 end
 
 function GUICredits:SendKeyEvent(key, down, amount)
 
-    if key == InputKey.MouseButton0 and down ~= self.prevMouseDown then
-
-        self.prevMouseDown = down
+    local isScrollingKey = false
     
-        local mouseX, mouseY = Client.GetCursorPosScreen()
-        local containsPoint = GUIItemContainsPoint(self.webContainer, mouseX, mouseY)
+    if type(self.buttonDown[key]) == "boolean" then
+        isScrollingKey = true
+    end
+
+    local mouseX, mouseY = Client.GetCursorPosScreen()
+    if isScrollingKey then
+    
+        local containsPoint, withinX, withinY = GUIItemContainsPoint(self.webContainer, mouseX, mouseY)
         
-        if containsPoint then
+        // If we pressed the button inside the window, always send it the button up
+        // even if the cursor was outside the window.
+        if containsPoint or (not down and self.buttonDown[key]) then
         
+            local buttonCode = key - InputKey.MouseButton0
             if down then
-            Print("down")
-                self.webView:OnMouseDown(0)
+                self.webView:OnMouseDown(buttonCode)
             else
-            Print("up")
-                self.webView:OnMouseUp(0)
+                self.webView:OnMouseUp(buttonCode)
             end
+            
+            self.buttonDown[key] = down
             
             return true
             
@@ -78,3 +87,19 @@ function GUICredits:Uninitialize()
     
 end
 
+function GUICredits:Update()
+
+    // don't show until the URL is loaded
+    if not self.webContainer:GetIsVisible() then
+        if self.webView:GetUrlLoaded() then
+            self.webContainer:SetIsVisible(true)
+        end
+    end
+
+    local mouseX, mouseY = Client.GetCursorPosScreen()
+    local containsPoint, withinX, withinY = GUIItemContainsPoint(self.webContainer, mouseX, mouseY)
+    if containsPoint or self.buttonDown[InputKey.MouseButton0] or self.buttonDown[InputKey.MouseButton1] or self.buttonDown[InputKey.MouseButton2] then
+        self.webView:OnMouseMove(withinX, withinY)
+    end
+
+end

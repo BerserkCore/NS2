@@ -28,7 +28,6 @@ local kMainMenuLinkColor = Color(137 / 255, 137 / 255, 137 / 255, 1)
 
 class 'GUIMainMenu' (GUIAnimatedScript)
 
-Script.Load("lua/menu/GUIMainMenu_FindPeople.lua")
 Script.Load("lua/menu/GUIMainMenu_PlayNow.lua")
 Script.Load("lua/menu/GUIMainMenu_Mods.lua")
 Script.Load("lua/menu/GUIMainMenu_Training.lua")
@@ -2513,8 +2512,6 @@ function GUIMainMenu:Update(deltaTime)
             
         end
         
-        self:UpdateFindPeople(deltaTime)
-
         if self.playNowWindow then
             self.playNowWindow:UpdateLogic(self)
         end

@@ -163,10 +163,6 @@ local function CreateHostGamePage(self)
     
 end
 
-local function CreateFindPeoplePage(self)
-    self:CreateFindPeopleWindow()
-end
-
 local function ShowServerWindow(self)
 
     self.playWindow.updateButton:SetIsVisible(true)
@@ -207,7 +203,6 @@ function GUIMainMenu:SetPlayContentInvisible(cssClass)
 
     HideServerWindow(self)
     self.createGame:SetIsVisible(false)
-    self.findPeopleWindow:SetIsVisible(false)
     self.playNowWindow:SetIsVisible(false)
     self.hostGameButton:SetIsVisible(false)
     
@@ -246,7 +241,6 @@ function GUIMainMenu:CreatePlayWindow()
     local tabs = 
         {
             { label = "JOIN", func = function(self) self.scriptHandle:SetPlayContentInvisible("serverbrowse_content") ShowServerWindow(self.scriptHandle) end },
-            //{ label = "PICK UP GAME", func = function(self) self.scriptHandle:SetPlayContentInvisible("play_content") self.scriptHandle.findPeopleWindow:SetIsVisible(true) end},
             { label = "QUICK JOIN", func = function(self) self.scriptHandle:SetPlayContentInvisible("play_content") self.scriptHandle.playNowWindow:SetIsVisible(true) end },
             { label = "START SERVER", func = function(self) self.scriptHandle:SetPlayContentInvisible("play_content") self.scriptHandle.createGame:SetIsVisible(true) self.scriptHandle.hostGameButton:SetIsVisible(true) end }
         }
@@ -284,7 +278,6 @@ function GUIMainMenu:CreatePlayWindow()
     CreateJoinServerPage(self)
     CreatePlayNowPage(self)
     CreateHostGamePage(self)
-    CreateFindPeoplePage(self)
     
     self:SetPlayContentInvisible()
     ShowServerWindow(self)

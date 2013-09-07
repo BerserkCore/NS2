@@ -434,24 +434,17 @@ function Flamethrower:GetHasSecondary(player)
 end
 
 function Flamethrower:GetSwingSensitivity()
-    return .8
+    return 0.8
 end
 
 function Flamethrower:Dropped(prevOwner)
 
     ClipWeapon.Dropped(self, prevOwner)
-
+    
     if Server then
     
         self.createParticleEffects = false
         self.loopingFireSound:Stop()
-        
-    elseif Client then
-    
-        if self.trailCinematic then
-            Client.DestroyTrailCinematic(self.trailCinematic)
-            self.trailCinematic = nil
-        end
         
     end
     

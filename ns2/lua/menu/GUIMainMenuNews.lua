@@ -52,8 +52,11 @@ function GUIMainMenuNews:Uninitialize()
     self.webView = nil
 
     GUI.DestroyItem(self.logo)
+    self.logo = nil
     GUI.DestroyItem(self.reinforceButton)
+    self.reinforceButton = nil
     GUI.DestroyItem(self.storeButton)
+    self.storeButton = nil
     
 end
 
