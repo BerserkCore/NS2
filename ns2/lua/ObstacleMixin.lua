@@ -70,10 +70,15 @@ end
 
 function ObstacleMixin:AddToMesh()
 
-   if PathingUtility_GetIsPathingMeshInitialized() then
+    if PathingUtility_GetIsPathingMeshInitialized() then
+   
+        if self.obstacleId ~= -1 then
+            Pathing.RemoveObstacle(self.obstacleId)
+            gAllObstacles[self] = nil
+        end
 
-       local position, radius, height = self:_GetPathingInfo()   
-       self.obstacleId = Pathing.AddObstacle(position, radius, height) 
+        local position, radius, height = self:_GetPathingInfo()   
+        self.obstacleId = Pathing.AddObstacle(position, radius, height) 
       
         if self.obstacleId ~= -1 then
         

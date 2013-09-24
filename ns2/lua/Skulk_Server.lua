@@ -18,7 +18,7 @@ function Skulk:InitWeapons()
 end
 
 function Skulk:GetTierTwoTechId()
-    return kTechId.None
+    return kTechId.Leap
 end
 
 function Skulk:GetTierThreeTechId()

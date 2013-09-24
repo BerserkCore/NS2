@@ -94,7 +94,7 @@ end
 
 function PulseGrenade:Detonate(targetHit)
 
-    local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kPulseGrenadeEnergyDamageRadius)
+    local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kPulseGrenadeEnergyDamageRadius)
     table.removevalue(hitEntities, self)
 
     if targetHit then
@@ -106,11 +106,6 @@ function PulseGrenade:Detonate(targetHit)
             targetHit:SetElectrified(kElectrifiedDuration)
         end
         
-    end
-    
-    local owner = self:GetOwner()
-    if owner then
-        table.insertunique(hitEntities, owner)
     end
     
     RadiusDamage(hitEntities, self:GetOrigin(), kPulseGrenadeDamageRadius, kPulseGrenadeDamage, self)

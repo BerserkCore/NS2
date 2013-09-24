@@ -415,8 +415,8 @@ kDefaultMarineVariant = kMarineVariant.green
 kSkulkVariant = enum({"normal", "shadow"})
 kSkulkVariantData = 
 {
-    [kSkulkVariant.normal] =  { productId = nil              , displayName = "Normal" , modelFilePart = ""        , viewModelFilePart = ""        }  , 
-    [kSkulkVariant.shadow] =  { productId = kShadowProductId , displayName = "Shadow" , modelFilePart = "_shadow"/*TEMP TEMP*/ , viewModelFilePart = ""/* TEMP TEMP*/ }  , 
+    [kSkulkVariant.normal] =  { productId = nil              , displayName = "Normal" , modelFilePart = ""        , viewModelFilePart = "" } , 
+    [kSkulkVariant.shadow] =  { productId = kShadowProductId , displayName = "Shadow" , modelFilePart = "_shadow" , viewModelFilePart = "" } , 
 }
 kDefaultSkulkVariant = kSkulkVariant.normal
 
@@ -447,3 +447,4 @@ kShoulderPad2ProductId =
 function GetHasShoulderPad(index, client)
     return GetHasDLC( kShoulderPad2ProductId[index], client )
 end
+

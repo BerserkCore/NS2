@@ -27,7 +27,7 @@ function UpdateCharge(dt, chargeAmount, timeSinceLastShot)
     chargeCircle:GetRightSide():SetColor(Color(1, colorAmt, colorAmt, 1))
     
     for s = 1, #cooldownSquares do
-        cooldownSquares[s]:SetIsVisible(timeSinceLastShot < (0.25 * s))
+        cooldownSquares[s]:SetIsVisible(timeSinceLastShot < (s * 1.4 / 4))
     end
     
     chargeCircle:SetPercentage(chargeAmount)

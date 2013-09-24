@@ -49,15 +49,6 @@ function GUIDeathScreen:Initialize()
     self.playerName:SetTextAlignmentY(GUIItem.Align_Center)
     self.playerName:SetInheritsParentAlpha(true)
     self.weaponIcon:AddChild(self.playerName)    
-
-    self.feintText = self:CreateAnimatedTextItem()
-    self.feintText:SetText(Locale.ResolveString("FEINTING_DEATH"))
-    self.feintText:SetFontName(kFontName)
-    self.feintText:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    self.feintText:SetTextAlignmentX(GUIItem.Align_Center)
-    self.feintText:SetTextAlignmentY(GUIItem.Align_Center)
-    self.feintText:SetColor(Color(1, 1, 1, 0))
-    self.feintText:SetInheritsParentAlpha(false)
     
     self.lastIsDead = PlayerUI_GetIsDead()
     
@@ -77,7 +68,7 @@ function GUIDeathScreen:Update(deltaTime)
     
     GUIAnimatedScript.Update(self, deltaTime)
     
-    local isDead = (PlayerUI_GetIsDead() or PlayerUI_GetIsFeinting() ) and not PlayerUI_GetIsSpecating()
+    local isDead = PlayerUI_GetIsDead() and not PlayerUI_GetIsSpecating()
     
     if isDead ~= self.lastIsDead then
     
@@ -108,25 +99,12 @@ function GUIDeathScreen:Update(deltaTime)
             
             self.weaponIcon:SetTexturePixelCoordinates(xOffset, yOffset, xOffset + iconWidth, yOffset + iconHeight)
             self.weaponIcon:FadeIn(0.5, "FADE_DEATH_ICON")
-            
-            if PlayerUI_GetIsFeinting() then
-            
-                self.feintText:FadeIn(0.2, "FADE_DEATH_FEINT")
-                self.background:SetColor(Color(0, 0, 0, 0.6), 0.5, "FADE_DEATH_SCREEN")
-                self.weaponIcon:SetIsVisible(false)
-                
-            else
-            
-                self.weaponIcon:SetIsVisible(true)
-                self.background:FadeIn(2, "FADE_DEATH_SCREEN")
-                
-            end
+            self.background:FadeIn(2, "FADE_DEATH_SCREEN")
             
         else
         
             self.background:FadeOut(0.5, "FADE_DEATH_SCREEN")
             self.weaponIcon:FadeOut(1.5, "FADE_DEATH_ICON")
-            self.feintText:FadeOut(1.5, "FADE_DEATH_FEINT")
             
         end
         

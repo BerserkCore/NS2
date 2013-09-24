@@ -83,7 +83,6 @@ local networkVars =
     timeLastWallJump = "private compensated time",
     jumpLandSpeed = "private compensated float",
     dashing = "compensated boolean",
-    hasLeap = "private boolean",
 
 }
 
@@ -290,7 +289,8 @@ function Skulk:GetPlayFootsteps()
 end
 
 function Skulk:GetTriggerLandEffect()
-    return Alien.GetTriggerLandEffect(self) and not self.movementModiferState
+    local xzSpeed = self:GetVelocity():GetLengthXZ()
+    return Alien.GetTriggerLandEffect(self) and (not self.movementModiferState or xzSpeed > 7)
 end
 
 // Update wall-walking from current origin
@@ -602,10 +602,6 @@ function Skulk:OnProcessMove(input)
     Alien.OnProcessMove(self, input)
     
     //UpdateDashEffects(self)
-    
-    if Server then    
-        self.hasLeap = GetIsTechUnlocked(self, kTechId.Leap)    
-    end
 
 end
 

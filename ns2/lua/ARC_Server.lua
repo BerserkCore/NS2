@@ -240,15 +240,22 @@ local function PerformAttack(self)
     
         self:TriggerEffects("arc_firing")    
         // Play big hit sound at origin
-        self:TriggerEffects("arc_hit_primary", {effecthostcoords = Coords.GetTranslation(self.targetPosition)})
+        
+        // don't pass triggering entity so the sound / cinematic will always be relevant for everyone
+        GetEffectManager():TriggerEffects("arc_hit_primary", {effecthostcoords = Coords.GetTranslation(self.targetPosition)})
+        
         local hitEntities = GetEntitiesWithMixinWithinRange("Live", self.targetPosition, ARC.kSplashRadius)
 
         // Do damage to every target in range
         RadiusDamage(hitEntities, self.targetPosition, ARC.kSplashRadius, ARC.kAttackDamage, self, true)
 
         // Play hit effect on each
-        for index, target in ipairs(hitEntities) do        
-            target:TriggerEffects("arc_hit_secondary")            
+        for index, target in ipairs(hitEntities) do
+        
+            if HasMixin(target, "Effects") then
+                target:TriggerEffects("arc_hit_secondary")
+            end 
+           
         end
         
         TEST_EVENT("ARC attacked entity")

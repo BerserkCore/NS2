@@ -163,7 +163,7 @@ if Server then
         
         end
         
-        if self:isa("Player") and attacker then
+        if self:isa("Player") and attacker and GetAreEnemies(self, attacker) then
         
             if attacker:isa("Player") then
                 attacker:AddKill()

@@ -44,8 +44,6 @@ if Server then
 
         Player.OnClientUpdated( self, client )
 
-        DebugPrint("SkulkVariantMixin:OnVariantRequest")
-
         local data = client.variantData
         if data == nil then
             return

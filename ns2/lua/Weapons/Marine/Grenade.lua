@@ -95,7 +95,7 @@ if Server then
     function Grenade:Detonate(targetHit)
     
         // Do damage to nearby targets.
-        local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kGrenadeLauncherGrenadeDamageRadius)
+        local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kGrenadeLauncherGrenadeDamageRadius)
         
         // Remove grenade and add firing player.
         table.removevalue(hitEntities, self)
@@ -105,13 +105,7 @@ if Server then
             table.removevalue(hitEntities, targetHit)
             self:DoDamage(kGrenadeLauncherGrenadeDamage, targetHit, targetHit:GetOrigin(), GetNormalizedVector(targetHit:GetOrigin() - self:GetOrigin()), "none")
         end
-        
-        local owner = self:GetOwner()
-        // It is possible this grenade does not have an owner.
-        if owner then
-            table.insertunique(hitEntities, owner)
-        end
-        
+
         RadiusDamage(hitEntities, self:GetOrigin(), kGrenadeLauncherGrenadeDamageRadius, kGrenadeLauncherGrenadeDamage, self)
         
         // TODO: use what is defined in the material file

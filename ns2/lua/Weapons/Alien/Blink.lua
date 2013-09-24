@@ -47,7 +47,7 @@ function Blink:OnHolster(player)
 end
 
 function Blink:GetHasSecondary(player)
-    return true // player:GetHasTwoHives()
+    return true
 end
 
 function Blink:GetSecondaryAttackRequiresPress()

@@ -22,6 +22,7 @@ function Hive:OnResearchComplete(researchId)
 
     local success = false
     local hiveTypeChosen = false
+    self.biomassResearchFraction = 0
     
     local newTechId = kTechId.Hive
     
@@ -80,6 +81,10 @@ function Hive:UpdateResearch()
         researchNode:SetResearchProgress(self.researchProgress)
         techTree:SetTechNodeChanged(researchNode, string.format("researchProgress = %.2f", self.researchProgress)) 
         
+    end
+    
+    if researchId == kTechId.ResearchBioMassOne or researchId == kTechId.ResearchBioMassTwo then
+        self.biomassResearchFraction = self:GetResearchProgress()
     end
 
 end
@@ -305,6 +310,10 @@ function Hive:PerformActivation(techId, position, normal, commander)
         
         if egg then
             egg.manuallySpawned = true
+        end
+        
+        if success then
+            self:TriggerEffects("hatch")
         end
         
     elseif techId == kTechId.Drifter then

@@ -14,7 +14,7 @@ local kUpgradeIconRowSize = 6
 local kIconIndexToUpgradeId = {
     kTechId.None, kTechId.None, kTechId.None, kTechId.None, kTechId.None, kTechId.None, 
     kTechId.None, kTechId.None, kTechId.Carapace, kTechId.Regeneration,
-    kTechId.None, kTechId.None, kTechId.Adrenaline, kTechId.None, kTechId.Feint, kTechId.None, 
+    kTechId.None, kTechId.None, kTechId.Adrenaline, kTechId.None, kTechId.None, 
     kTechId.Stomp, kTechId.BoneShield, kTechId.Leap, kTechId.None, kTechId.None, kTechId.None, 
 }
 

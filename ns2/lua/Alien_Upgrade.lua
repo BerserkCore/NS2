@@ -107,10 +107,6 @@ function GetHasRegenerationUpgrade(callingEntity)
     return HasUpgrade(callingEntity, kTechId.Regeneration)
 end
 
-function GetHasFeintUpgrade(callingEntity)
-    return HasUpgrade(callingEntity, kTechId.Feint)
-end
-
 function GetHasAdrenalineUpgrade(callingEntity)
     return HasUpgrade(callingEntity, kTechId.Adrenaline)
 end

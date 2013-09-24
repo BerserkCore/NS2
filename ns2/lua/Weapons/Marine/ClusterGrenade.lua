@@ -104,19 +104,14 @@ function ClusterGrenade:Detonate(targetHit)
 
     CreateFragments(self)
 
-    local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kClusterGrenadeDamageRadius)
+    local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kClusterGrenadeDamageRadius)
     table.removevalue(hitEntities, self)
 
     if targetHit then
         table.removevalue(hitEntities, targetHit)
         self:DoDamage(kClusterGrenadeDamage, targetHit, targetHit:GetOrigin(), GetNormalizedVector(targetHit:GetOrigin() - self:GetOrigin()), "none")
     end
-    
-    local owner = self:GetOwner()
-    if owner then
-        table.insertunique(hitEntities, owner)
-    end
-    
+
     RadiusDamage(hitEntities, self:GetOrigin(), kClusterGrenadeDamageRadius, kClusterGrenadeDamage, self)
     
     local surface = GetSurfaceFromEntity(targetHit)
@@ -177,26 +172,17 @@ end
 
 function ClusterFragment:Detonate(targetHit)
 
-    local hitEntities = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), kClusterFragmentDamageRadius)
+    local hitEntities = GetEntitiesWithMixinWithinRange("Live", self:GetOrigin(), kClusterFragmentDamageRadius)
     table.removevalue(hitEntities, self)
 
     if targetHit then
         table.removevalue(hitEntities, targetHit)
         self:DoDamage(kClusterFragmentDamage, targetHit, targetHit:GetOrigin(), GetNormalizedVector(targetHit:GetOrigin() - self:GetOrigin()), "none")
     end
-    
-    local owner = self:GetOwner()
-    if owner then
-        table.insertunique(hitEntities, owner)
-    end
-    
+
     RadiusDamage(hitEntities, self:GetOrigin(), kClusterFragmentDamageRadius, kClusterFragmentDamage, self)
     
     local surface = GetSurfaceFromEntity(targetHit)
-    
-    if GetIsVortexed(self) then
-        surface = "ethereal"
-    end
 
     local params = { surface = surface }
     if not targetHit then

@@ -220,15 +220,9 @@ function MarineTeam:Update(timePassed)
         CheckForNoIPs(self)
     end
     
-    local newArmorLevel = GetArmorLevel(self)
-    if self.armorLevel ~= newArmorLevel then
-    
-        self.armorLevel = newArmorLevel
-    
-        for index, player in ipairs(GetEntitiesForTeam("Player", self:GetTeamNumber())) do
-            player:UpdateArmorAmount(self.armorLevel)
-        end
-    
+    local armorLevel = GetArmorLevel(self)
+    for index, player in ipairs(GetEntitiesForTeam("Player", self:GetTeamNumber())) do
+        player:UpdateArmorAmount(armorLevel)
     end
     
 end

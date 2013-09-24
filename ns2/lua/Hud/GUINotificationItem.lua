@@ -51,7 +51,7 @@ function CreateNotificationItem(scriptHandle, locationName, techId, scale, paren
 
 end
 
-function DestroyItem(script, item)
+function DestroyNotificationItem(item)
     item:Destroy()
 end
 

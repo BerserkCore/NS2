@@ -19,7 +19,7 @@ LeapMixin.overrideFunctions =
 }
 
 function LeapMixin:GetHasSecondary(player)
-    return player.hasLeap
+    return player.twoHives
 end
 
 function LeapMixin:GetSecondaryEnergyCost(player)

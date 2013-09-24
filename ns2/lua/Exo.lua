@@ -25,6 +25,7 @@ Script.Load("lua/NanoShieldMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
 Script.Load("lua/MarineActionFinderMixin.lua")
 Script.Load("lua/WebableMixin.lua")
+Script.Load("lua/MarineVariantMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
@@ -130,9 +131,12 @@ AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(ScoringMixin, networkVars)
 AddMixinNetworkVars(WebableMixin, networkVars)
+AddMixinNetworkVars(MarineVariantMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
+    assert(Server)
+    
     if not GetIsVortexed(self) then
     
         local nearbyEggs = GetEntitiesWithinRange("Egg", self:GetOrigin(), kSmashEggRange)
@@ -170,10 +174,13 @@ function Exo:OnCreate()
     InitMixin(self, ParasiteMixin)
     InitMixin(self, MarineActionFinderMixin)
     InitMixin(self, WebableMixin)
+    InitMixin(self, MarineVariantMixin)
     
     self:SetIgnoreHealth(true)
     
-    self:AddTimedCallback(SmashNearbyEggs, 0.1)
+    if Server then
+        self:AddTimedCallback(SmashNearbyEggs, 0.1)
+    end
     
     self.deployed = false
     
@@ -325,6 +332,11 @@ local function ShowHUD(self, show)
         ClientUI.GetScript("Hud/Marine/GUIExoHUD"):SetIsVisible(show)
     end
     
+end
+
+-- The Exo doesn't want the model to change. Only cares about the sex of the Marine inside.
+function Exo:GetIgnoreVariantModels()
+    return true
 end
 
 function Exo:GetHasDualGuns()

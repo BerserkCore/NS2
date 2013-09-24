@@ -1574,7 +1574,6 @@ local function InitOptions(optionElements)
     if marineVariant == -1 then
 
         for variant = 1,GetEnumCount(kMarineVariant) do
-        DebugPrint("checking variant "..GetVariantName(kMarineVariantData, variant))
             if GetHasVariant( kMarineVariantData, variant ) then
                 marineVariant = variant
                 // do not break - use the highest one they have
@@ -2053,11 +2052,15 @@ function GUIMainMenu:CreateOptionWindow()
     //DebugPrint("we have "..GetEnumCount(kSkulkVariant).." skulk variants")
 
     for key,value in pairs(kMarineVariantData) do
-        marineVariantNames[ key ] = value.displayName
+        if GetHasVariant( kMarineVariantData, key ) then
+            table.insert( marineVariantNames, value.displayName )
+        end
     end
 
     for key,value in pairs(kSkulkVariantData) do
-        skulkVariantNames[ key ] = value.displayName
+        if GetHasVariant( kSkulkVariantData, key ) then
+            table.insert( skulkVariantNames, value.displayName )
+        end
     end
     
     local sexTypes = { "Male", "Female" }

@@ -19,7 +19,7 @@ class 'SporeCloud' (Entity)
 SporeCloud.kMapName = "sporecloud"
 
 SporeCloud.kLoopingEffect = PrecacheAsset("cinematics/alien/lerk/spore_trail.cinematic")
-SporeCloud.kLoopingEffectAlien = PrecacheAsset("cinematics/alien/lerk/spore_trail.cinematic") // PrecacheAsset("cinematics/alien/lerk/spore_trail_alien.cinematic")
+SporeCloud.kLoopingEffectAlien = PrecacheAsset("cinematics/alien/lerk/spore_trail_alien.cinematic")
 //SporeCloud.kFadeOutEffect = PrecacheAsset("cinematics/alien/lerk/spore_trail_fadeout.cinematic")
 
 // Damage per think interval (from NS1)

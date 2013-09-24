@@ -90,8 +90,6 @@ function Scoreboard_OnResetGame()
         playerRecord.Resources = 0
         playerRecord.Status = ""
         playerRecord.IsSpectator = false
-        playerRecord.hasPAXBadge = false
-        playerRecord.reinforcedTierNum = 0
         
     end 
 
@@ -104,7 +102,7 @@ function Scoreboard_OnClientDisconnect(clientIndex)
     
 end
 
-function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists, hasPAXBadge, reinforcedTierNum)
+function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists )
 
     // Lookup record for player and update it
     for i = 1, table.maxn(playerData) do
@@ -126,8 +124,6 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
             playerRecord.Resources = resources
             playerRecord.Status = status
             playerRecord.IsSpectator = isSpectator
-            playerRecord.hasPAXBadge = hasPAXBadge
-            playerRecord.reinforcedTierNum = reinforcedTierNum
             
             Scoreboard_Sort()
             
@@ -153,8 +149,6 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
     playerRecord.Ping = 0
     playerRecord.Status = status
     playerRecord.IsSpectator = isSpectator
-    playerRecord.hasPAXBadge = hasPAXBadge
-    playerRecord.reinforcedTierNum = reinforcedTierNum
     
     table.insert(playerData, playerRecord )
     

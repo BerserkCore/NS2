@@ -95,6 +95,14 @@ kAlienStructureEffects =
         }    
     },
     
+    shade_ink = 
+    {
+        effects =
+        {
+            {sound = "sound/NS2.fev/alien/structures/whip/fury"},
+        }
+    },
+    
     death =
     {
         alienStructureDeathParticleEffect =
@@ -309,7 +317,7 @@ kAlienStructureEffects =
         whipBombHitEffects = 
         {
             // TODO: trigger custom whip bomb hit sound
-            {sound = "sound/NS2.fev/alien/gorge/bilebomb_hit"},
+            {sound = "sound/NS2.fev/alien/gorge/spit_hit_marine"},
             {cinematic = "cinematics/alien/whip/bomb_hit.cinematic", done = true},
         },
     },

@@ -91,9 +91,7 @@ local networkVars =
     landedAfterBlink = "private compensated boolean",  
     
     timeOfLastPhase = "time",
-    hasEtherealGate = "boolean",
-    
-    hasShadowStep = "private boolean"
+    hasEtherealGate = "boolean"
     
 }
 
@@ -347,7 +345,7 @@ function Fade:GetRecentlyBlinked(player)
 end
 
 function Fade:GetHasShadowStepAbility()
-    return self.hasShadowStep
+    return self:GetHasOneHive()
 end
 
 function Fade:GetHasShadowStepCooldown()
@@ -359,7 +357,7 @@ function Fade:GetMovementSpecialTechId()
 end
 
 function Fade:GetHasMovementSpecial()
-    return self.hasShadowStep or self:GetTeamNumber() == kTeamReadyRoom
+    return self:GetHasOneHive() or self:GetTeamNumber() == kTeamReadyRoom
 end
 
 function Fade:GetMovementSpecialEnergyCost()
@@ -434,9 +432,7 @@ function Fade:OnProcessMove(input)
         if self.isScanned and self.timeLastScan + kFadeScanDuration < Shared.GetTime() then
             self.isScanned = false
         end
-        
-        self.hasShadowStep = GetIsTechUnlocked(self, kTechId.ShadowStep) == true or GetGamerules():GetAllTech()
-        
+
     end
     
     // move without manipulating velocity

@@ -28,6 +28,10 @@ local function SetNextText(self)
 
     self.currentTextIndex = (self.currentTextIndex % #self.tweets) + 1
     
+    if self.tweets[self.currentTextIndex] == nil or self.tweets[self.currentTextIndex]["retweet_count"] == nil then
+        return
+    end
+    
     if not self.tweets[self.currentTextIndex]["retweet_count"] == 0 then
     
         self.retweetCount = self.retweetcount + 1
@@ -62,13 +66,8 @@ function Ticker:Initialize()
     self.nextTime = 4
     self.currentTextIndex = 0
     
-    local params =
-    {
-        user_id = "NS2",
-        screen_name = "NS2"
-    }
+    Shared.SendHTTPRequest("http://unknownworlds.com/scripts/ns2twitter.php", "GET", { }, function(response)
     
-    Shared.SendHTTPRequest("https://api.twitter.com/1/statuses/user_timeline.json", "GET", params, function(response)
         local obj, pos, err = json.decode(response, 1, nil)
         
         if err or obj["errors"] or obj["error"] then
@@ -86,74 +85,107 @@ function Ticker:Initialize()
             
         end
         
-        self:AddEventCallbacks({ OnClick = OpenTweet })
+        local eventCallbacks =
+        {
+            OnClick = OpenTweet,
+            
+            OnMouseOver = function(self, buttonPressed)
+                self:SetBackgroundColor(Color(0.2, 0.2, 0.2, 1))
+            end,
+            
+            OnMouseOut = function(self, buttonPressed)
+            
+                if self.originalBackgroundColor then
+                    self:SetBackgroundColor(self.originalBackgroundColor)
+                end
+                
+            end
+        }
+        
+        self:AddEventCallbacks(eventCallbacks)
         
     end)
     
 end
 
+local kFadeInMax = 0.7
 local function UpdateTextAlpha(self)
 
     for i, f in ipairs(self.fonts) do
+    
         local color = f:GetTextColor()
         color.a = self.textAlpha
-        f:SetTextColor( color )
+        f:SetTextColor(color)
+        
     end
-
+    
+    local bgColor = self:GetBackground():GetColor()
+    -- We want the background to be fully opaque once faded in.
+    bgColor.a = self.textAlpha * (1 / kFadeInMax)
+    self:SetBackgroundColor(bgColor)
+    
 end
 
 local function UpdateFadeIn(self, deltaTime)
 
     PROFILE("UpdateFadeIn")
-
+    
     UpdateTextAlpha(self)
-
-    if self.textAlpha > 0.7 then
-        self.animState = 'wait'
+    
+    if self.textAlpha >= kFadeInMax then
+    
+        self.animState = "wait"
+        self.textAlpha = kFadeInMax
+        
     end
-
+    
     self.textAlpha = self.textAlpha + deltaTime
+    
 end
 
 local function UpdateFadeOut(self, deltaTime)
 
     PROFILE("UpdateFadeOut")
-
+    
     UpdateTextAlpha(self)
-
+    
     if self.textAlpha < 0 then
-
+    
         SetNextText(self)
-
-        self.animState = 'in'
-        self.textAlpha = 0.0
+        
+        self.animState = "in"
+        self.textAlpha = 0
+        
     end
-
+    
     self.textAlpha = self.textAlpha - deltaTime
+    
 end
 
 function Ticker:Update(deltaTime)
 
     PROFILE("Ticker:Update")
-
+    
     if self.tweets == nil then
         return
     end
-
-    if self.animState == 'in' then
+    
+    if self.animState == "in" then
         UpdateFadeIn(self, deltaTime)
-    elseif self.animState == 'wait' then
-
+    elseif self.animState == "wait" then
+    
         self.nextTime = self.nextTime - 0.5 * deltaTime
         if self.nextTime < 0 then
-            self.animState = 'out'
+        
+            self.animState = "out"
             self.nextTime = 4
+            
         end
-
-    elseif self.animState == 'out' then
+        
+    elseif self.animState == "out" then
         UpdateFadeOut(self, deltaTime)
     end
-
+    
 end
 
 function Ticker:GetTagName()
@@ -163,47 +195,46 @@ end
 function Ticker:RenderText(text)
 
     PROFILE("Ticker:RenderText")
-
+    
     self:ClearChildren()
-
+    
     -- Format the text
     text = text:gsub([[ ?\#[Ff][Bb] ?]], "")
-
     text = "[ " .. text .. " ]"
-
-    self.texts = {}
+    
+    self.texts = { }
     local m, M = text:find("(@[a-zA-z1-9_]*)")
     while  m ~= nil do
-
-        table.insert(self.texts, text:sub(1,m-1) )
-        table.insert(self.texts, text:sub(m,M) )
-        text = text:sub(M+1)
-
+    
+        table.insert(self.texts, text:sub(1,m - 1))
+        table.insert(self.texts, text:sub(m, M))
+        text = text:sub(M + 1)
+        
         m, M = text:find("(@[a-zA-z1-9_]*)")
-
+        
     end
     
     table.insert(self.texts, text)
-
-    self.fonts = {}
+    
+    self.fonts = { }
     for i, txt in ipairs(self.texts) do
-
-        table.insert(self.fonts, CreateMenuElement(self, "Font") )
+    
+        table.insert(self.fonts, CreateMenuElement(self, "Font"))
         self.fonts[i]:SetText(txt)
-
+        
         if i % 2 == 0 then
             self.fonts[i]:AddCSSClass("tweet_name")
         end
-
+        
         if i > 1 then
-            self.fonts[i]:SetLeftOffset( self.fonts[i-1]:GetWidth() )
+            self.fonts[i]:SetLeftOffset(self.fonts[i-1]:GetWidth())
         end
-
+        
     end
     
     self:UpdateBackGroundSize()
     UpdateTextAlpha(self)
-
+    
 end
 
 function Ticker:UpdateBackGroundSize()
@@ -211,31 +242,34 @@ function Ticker:UpdateBackGroundSize()
     local bgSize = Vector(0, 0, 0)
     
     for i, el in ipairs(self.fonts) do
-
-        bgSize.x = bgSize.x + el:GetWidth()    
+    
+        bgSize.x = bgSize.x + el:GetWidth()
         bgSize.y = el:GetHeight()
-
+        
         if i > 1 then
-            self.fonts[i]:SetLeftOffset( self.fonts[i-1]:GetWidth() )
+            self.fonts[i]:SetLeftOffset(self.fonts[i-1]:GetWidth())
         end
-
+        
     end
     
     self:SetBackgroundSize(bgSize, true)
-
+    
     self:ReloadCSSClass()
-
+    
+    self.originalBackgroundColor = self.originalBackgroundColor or self:GetBackground():GetColor()
+    
     for i, _ in ipairs(self.fonts) do
-
+    
         if i > 1 then
-
+        
             local w = 0
-            for k= 1, i-1 do
+            for k= 1, i - 1 do
                 w = w + self.fonts[k]:GetWidth()
             end
-            self.fonts[i]:SetLeftOffset( w )
+            self.fonts[i]:SetLeftOffset(w)
+            
         end
-
+        
     end
     
 end

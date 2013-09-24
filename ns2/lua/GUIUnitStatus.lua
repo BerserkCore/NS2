@@ -9,7 +9,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/BadgeMixin.lua")
+Script.Load("lua/Badges_Shared.lua")
 
 class 'GUIUnitStatus' (GUIAnimatedScript)
 
@@ -311,7 +311,7 @@ local function CreateBlipItem(self)
     
     // Create badge icon items
     newBlip.Badges = {}
-    for i = 1,BadgeMixin_GetMaxBadges() do
+    for i = 1,Badges_GetMaxBadges() do
 
         local badge = GUIManager:CreateGraphicItem()
         badge:SetAnchor(GUIItem.Left, GUIItem.Top)

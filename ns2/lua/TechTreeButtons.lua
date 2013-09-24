@@ -36,6 +36,16 @@ end
 // Init icon offsets.
 local kTechIdToMaterialOffset = {}
 
+kTechIdToMaterialOffset[kTechId.BioMassOne] = 112 
+kTechIdToMaterialOffset[kTechId.BioMassTwo] = 112 
+kTechIdToMaterialOffset[kTechId.BioMassThree] = 112 
+kTechIdToMaterialOffset[kTechId.BioMassFour] = 112 
+kTechIdToMaterialOffset[kTechId.BioMassFive] = 112 
+kTechIdToMaterialOffset[kTechId.BioMassSix] = 112 
+kTechIdToMaterialOffset[kTechId.BioMassSeven] = 112
+kTechIdToMaterialOffset[kTechId.BioMassEight] = 112
+kTechIdToMaterialOffset[kTechId.BioMassNine] = 112
+
 kTechIdToMaterialOffset[kTechId.CollectResources] = 143
 kTechIdToMaterialOffset[kTechId.TransformResources] = 120
 
@@ -341,6 +351,7 @@ kTechIdToMaterialOffset[kTechId.HallucinateShift] = 20
 kTechIdToMaterialOffset[kTechId.HallucinateHarvester] = 16
 
 kTechIdToMaterialOffset[kTechId.Hydra] = 100
+kTechIdToMaterialOffset[kTechId.Clog] = 114
 
 kTechIdToMaterialOffset[kTechId.MarineAlertSentryUnderAttack] = 123
 kTechIdToMaterialOffset[kTechId.MarineAlertSoldierUnderAttack] = 123

@@ -317,6 +317,7 @@ end
 
 local function GestatePlayer(self, player, fromTechId)
 
+    player.oneHive = false
     player.twoHives = false
     player.threeHives = false
 

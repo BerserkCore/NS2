@@ -77,7 +77,7 @@ function AiBombardAttackType:ValidateTarget(target)
         
         // As we can lob on the target, we keep shooting as long as its inside range and detected
         // should probably stop and detarget after a few balls if we don't do any damage?
-        if target and target:GetIsSighted() then
+        if target and (not HasMixin(target, "LOS") or target:GetIsSighted()) then
             return range < self.targetSelector.range
         end
         
@@ -112,6 +112,18 @@ function AiBombardAttackType:OnHit()
     if direction then
         self:FlingBomb(bombStart, targetPos, direction, speed)
     end
+    
+end
+
+function AiBombardAttackType:IsValid()
+
+    local onFire = HasMixin(self.aiEntity, "Fire") and self.aiEntity:GetIsOnFire()
+
+    if self.targetLocation then
+        return self:ValidateLocation(self.targetLocation) and not onFire
+    end
+    
+    return self:ValidateTarget(self:GetTarget()) and not onFire
     
 end
 

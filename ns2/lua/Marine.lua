@@ -533,9 +533,6 @@ function Marine:GetMaxSpeed(possible)
     
 end
 
-function Marine:OnClampSpeed(input, velocity)
-end
-
 function Marine:GetFootstepSpeedScalar()
     return Clamp(self:GetVelocityLength() / (Marine.kRunMaxSpeed * self:GetCatalystMoveSpeedModifier() * self:GetSlowSpeedModifier()), 0, 1)
 end

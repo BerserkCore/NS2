@@ -9,7 +9,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
-Script.Load("lua/BadgeMixin.lua")
+Script.Load("lua/BadgeMixin.lua")   // really should be renamed
 
 function OnCommandCommMarqueeSelect(client, message)
     
@@ -270,7 +270,7 @@ function CreateVoiceMessage(player, voiceId)
     //  Respect special reinforced reward VO
     //----------------------------------------
     local tier = kReinforcedTierData[ player.reinforcedTierNum ]
-    if tier ~= nil and tier.voiceOverMapping[voiceId] ~= nil then
+    if tier ~= nil and tier.voiceOverMapping ~= nil and tier.voiceOverMapping[voiceId] ~= nil then
         voiceId = tier.voiceOverMapping[voiceId]
     end
 
@@ -278,8 +278,8 @@ function CreateVoiceMessage(player, voiceId)
     if soundData then
     
         local soundName = soundData.Sound
-
-        if player:isa("Marine") and not player:GetIsMale() and soundData.SoundFemale ~= nil then
+        
+        if HasMixin(player, "MarineVariant") and not player:GetIsMale() and soundData.SoundFemale ~= nil then
             soundName = soundData.SoundFemale
         end
         

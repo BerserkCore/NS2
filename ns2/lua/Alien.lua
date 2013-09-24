@@ -19,7 +19,6 @@ Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/EnergizeMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/HiveVisionMixin.lua")
-Script.Load("lua/FeintMixin.lua")
 Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/LOSMixin.lua")
 Script.Load("lua/SelectableMixin.lua")
@@ -81,6 +80,7 @@ local networkVars =
     
     movementModiferState = "boolean",
     
+    oneHive = "private boolean",
     twoHives = "private boolean",
     threeHives = "private boolean",
     
@@ -109,7 +109,6 @@ AddMixinNetworkVars(UmbraMixin, networkVars)
 AddMixinNetworkVars(CatalystMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
 AddMixinNetworkVars(EnergizeMixin, networkVars)
-AddMixinNetworkVars(FeintMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
@@ -125,7 +124,6 @@ function Alien:OnCreate()
     InitMixin(self, UmbraMixin)
     InitMixin(self, CatalystMixin)
     InitMixin(self, EnergizeMixin)
-    InitMixin(self, FeintMixin)
     InitMixin(self, CombatMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, SelectableMixin)
@@ -149,6 +147,7 @@ function Alien:OnCreate()
     self.darkVisionTime = 0
     self.darkVisionEndTime = 0
     
+    self.oneHive = false
     self.twoHives = false
     self.threeHives = false
     self.enzymed = false
@@ -171,6 +170,14 @@ function Alien:OnCreate()
     
 end
 
+function Alien:OnJoinTeam()
+
+    self.oneHive = false
+    self.twoHives = false
+    self.threeHives = false
+
+end
+
 function Alien:OnInitialized()
 
     Player.OnInitialized(self)
@@ -183,7 +190,7 @@ function Alien:OnInitialized()
     if Server then
     
         InitMixin(self, InfestationTrackerMixin)
-        UpdateAbilityAvailability(self, self:GetTierTwoTechId(), self:GetTierThreeTechId())
+        UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
         
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
@@ -281,7 +288,7 @@ end
 
 function Alien:UpdateHealthAmount(bioMassLevel, maxLevel)
 
-    local level = math.max(0, bioMassLevel - 1) or 0
+    local level = math.max(0, bioMassLevel - 1)
     local newMaxHealth = self:GetBaseHealth() + level * self:GetHealthPerBioMass()
 
     if newMaxHealth ~= self.maxHealth  then
@@ -327,6 +334,10 @@ end
 
 function Alien:GetSlowSpeedModifier()
     return Player.GetSlowSpeedModifier(self) * self:GetCarapaceMovementScalar()
+end
+
+function Alien:GetHasOneHive()
+    return self.oneHive
 end
 
 function Alien:GetHasTwoHives()
@@ -430,6 +441,11 @@ function Alien:GetMaxBackwardSpeedScalar()
     return Alien.kWalkBackwardSpeedScalar
 end
 
+// for marquee selection
+function Alien:GetIsMoveable()
+    return false
+end
+
 function Alien:SetDarkVision(state)
     self.darkVisionOn = state
     self.darkVisionSpectatorOn = state
@@ -438,16 +454,6 @@ end
 function Alien:HandleButtons(input)
 
     PROFILE("Alien:HandleButtons")   
-
-    if self:GetIsFeinting() then
-    
-        // The following inputs are disabled when feinting.
-        input.commands = bit.band(input.commands, bit.bnot(bit.bor(Move.Use, Move.Buy, Move.Jump,
-                                                                   Move.PrimaryAttack, Move.SecondaryAttack,
-                                                                   Move.NextWeapon, Move.PrevWeapon, Move.Reload,
-                                                                   Move.Taunt, Move.Weapon1, Move.Weapon2,
-                                                                   Move.Weapon3, Move.Weapon4, Move.Weapon5, Move.Crouch)))
-    end
     
     Player.HandleButtons(self, input)
     
@@ -509,15 +515,10 @@ function Alien:GetArmorFullyUpgradedAmount()
 end
 
 function Alien:GetCanBeHealedOverride()
-    return self:GetIsAlive() and not self:GetIsFeinting()
-end    
-
-
-function Alien:MovementModifierChanged(newMovementModifierState, input)
+    return self:GetIsAlive()
 end
 
-// aliens don't clamp their speed
-function Alien:OnClampSpeed(input, velocity)
+function Alien:MovementModifierChanged(newMovementModifierState, input)
 end
 
 /**
@@ -561,7 +562,7 @@ function Alien:OnCatalystEnd()
 end
 
 function Alien:GetCanTakeDamageOverride()
-    return Player.GetCanTakeDamageOverride(self) and not self:GetIsFeinting()
+    return Player.GetCanTakeDamageOverride(self)
 end
 
 function Alien:GetEffectParams(tableParams)

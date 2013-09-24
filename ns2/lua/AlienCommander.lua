@@ -52,8 +52,9 @@ AlienCommander.kHealTarget = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_
 AlienCommander.kSpendResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_nanites")
 AlienCommander.kSpendTeamResourcesSoundName =  PrecacheAsset("sound/NS2.fev/alien/commander/spend_metal")
 AlienCommander.kBoneWallSpawnSound = PrecacheAsset("sound/NS2.fev/alien/common/infestation_spikes")
+AlienCommander.kShiftHatch = PrecacheAsset("sound/NS2.fev/alien/structures/shift/recall")
 AlienCommander.kHealWaveSound = PrecacheAsset("sound/NS2.fev/alien/common/frenzy")
-AlienCommander.kShadeInkSound = PrecacheAsset("sound/NS2.fev/alien/structures/shade/cloak_triggered_2D")
+AlienCommander.kShadeInkSound = PrecacheAsset("sound/NS2.fev/alien/structures/whip/fury")
 AlienCommander.kCreateCystSound = PrecacheAsset("sound/NS2.fev/alien/commander/DI_drop_2D")
 AlienCommander.kCreateMistSound = PrecacheAsset("sound/NS2.fev/alien/commander/catalyze_2D")
 AlienCommander.kRupterSound = PrecacheAsset("sound/NS2.fev/alien/structures/generic_spawn_large")
@@ -146,7 +147,7 @@ function AlienCommander:OnProcessMove(input)
     
     if Server then
     
-        UpdateAbilityAvailability(self, self.tierTwoTechId, self.tierThreeTechId)
+        UpdateAbilityAvailability(self, self.tierOneTechId, self.tierTwoTechId, self.tierThreeTechId)
         
         self.shellCount = Clamp( #GetEntitiesForTeam("Shell", self:GetTeamNumber()), 0, 3)
         self.spurCount = Clamp( #GetEntitiesForTeam("Spur", self:GetTeamNumber()), 0, 3)
@@ -292,7 +293,9 @@ if Server then
         
             local soundToPlay = nil
             
-            if techId == kTechId.BoneWall then
+            if techId == kTechId.ShiftHatch then
+                soundToPlay = AlienCommander.kShiftHatch
+            elseif techId == kTechId.BoneWall then
                 soundToPlay = AlienCommander.kBoneWallSpawnSound
             elseif techId == kTechId.HealWave then
                 soundToPlay = AlienCommander.kHealWaveSound

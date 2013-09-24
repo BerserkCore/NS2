@@ -222,8 +222,6 @@ local function AddDeathMessage(killerIsPlayer, killerIndex, killerTeamNumber, ic
                 resOverride = kVeilCost + kCamouflageResearchCost
             elseif techIdString == "AuraVeil" then
                 resOverride = kVeilCost + kAuraResearchCost
-            elseif techIdString == "FeintVeil" then
-                resOverride = kVeilCost + kFeintResearchCost
             elseif techIdString == "CeleritySpur" then
                 resOverride = kSpurCost + kCelerityResearchCost
             elseif techIdString == "HypermutationSpur" then

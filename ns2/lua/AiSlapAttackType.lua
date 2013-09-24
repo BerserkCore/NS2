@@ -67,5 +67,18 @@ function AiSlapAttackType:OnHit()
     
 end
 
+
+function AiSlapAttackType:IsValid()
+
+    local onFire = HasMixin(self.aiEntity, "Fire") and self.aiEntity:GetIsOnFire()
+
+    if self.targetLocation then
+        return self:ValidateLocation(self.targetLocation) and not onFire
+    end
+    
+    return self:ValidateTarget(self:GetTarget()) and not onFire
+    
+end
+
 function AiSlapAttackType:OnStart()
 end

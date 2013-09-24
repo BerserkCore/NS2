@@ -255,11 +255,7 @@ function Whip:OnDestroy()
         self.movingSound = nil
     end
     
-end
-
-function Whip:GetIsMoveable()
-    return true
-end    
+end 
 
 function Whip:GetMaturityRate()
     return kWhipMaturationTime
@@ -302,11 +298,15 @@ function Whip:GetTechButtons(techId)
 
     local techButtons = nil
 
-    techButtons = { kTechId.Attack, kTechId.Move, kTechId.None, kTechId.None,  
+    techButtons = { kTechId.Slap, kTechId.Move, kTechId.None, kTechId.None,  
                     kTechId.UpgradeSkulk, kTechId.None, kTechId.None, kTechId.None }
     
-    if self.rooted then
-        techButtons[3] = kTechId.Slap
+    if self:GetIsMature() then
+        techButtons[1] = kTechId.WhipBombard
+    end
+    
+    if self.moving then
+        techButtons[2] = kTechId.Stop
     end
     
     return techButtons

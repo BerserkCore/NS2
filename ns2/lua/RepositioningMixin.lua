@@ -137,9 +137,10 @@ function RepositioningMixin:ToggleRepositioning()
             
             baseYaw = entity:FindBetterPosition( GetYawFromVector(entity:GetOrigin() - self:GetOrigin()), baseYaw, 0 )
             
-            if entity.RemoveFromMesh ~= nil then
+            if HasMixin(entity, "Obstacle") then
                 entity:RemoveFromMesh()
             end
+            
         end
     
     end
@@ -209,7 +210,7 @@ function RepositioningMixin:PerformRepositioning(deltaTime)
             self:_AdjustRepositioningHeight()
             self:ToggleRepositioning()
             
-            if self.AddToMesh ~= nil then
+            if HasMixin(self, "Obstacle") and self.obstacleId == -1 then
                 self:AddToMesh()
             end
             
@@ -256,6 +257,10 @@ function RepositioningMixin:_GetShouldCheckPosition()
     
     return not self.initialSpaceChecked
 
+end
+
+function RepositioningMixin:OnTeleportEnd()
+    self:ToggleRepositioning()
 end
 
 function RepositioningMixin:OnUpdate(deltaTime)

@@ -29,6 +29,7 @@ function Alien:Reset()
 
     Player.Reset(self)
     
+    self.oneHive = false
     self.twoHives = false
     self.threeHives = false
     
@@ -50,7 +51,7 @@ function Alien:OnProcessMove(input)
     if not self:GetIsDestroyed() then
     
         // Calculate two and three hives so abilities for abilities        
-        UpdateAbilityAvailability(self, self:GetTierTwoTechId(), self:GetTierThreeTechId())
+        UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
 
         self.enzymed = self.timeWhenEnzymeExpires > Shared.GetTime()
         self.electrified = self.timeElectrifyEnds > Shared.GetTime()
@@ -198,6 +199,7 @@ function Alien:ProcessBuyAction(techIds)
             newPlayer:SetGestationData(upgradeManager:GetUpgrades(), self:GetTechId(), self:GetHealthFraction(), self:GetArmorScalar())
             
             if oldLifeFormTechId and lifeFormTechId and oldLifeFormTechId ~= lifeFormTechId then
+                newPlayer.oneHive = false
                 newPlayer.twoHives = false
                 newPlayer.threeHives = false
             end
@@ -216,6 +218,10 @@ function Alien:ProcessBuyAction(techIds)
     
 end
 
+function Alien:GetTierOneTechId()
+    return kTechId.None
+end
+
 function Alien:GetTierTwoTechId()
     return kTechId.None
 end
@@ -229,6 +235,7 @@ function Alien:OnKill(attacker, doer, point, direction)
     Player.OnKill(self, attacker, doer, point, direction)
     
     self.storedHyperMutationCost = 0
+    self.oneHive = false
     self.twoHives = false
     self.threeHives = false
     
@@ -238,6 +245,7 @@ function Alien:CopyPlayerDataFrom(player)
 
     Player.CopyPlayerDataFrom(self, player)
     
+    self.oneHive = player.oneHive
     self.twoHives = player.twoHives
     self.threeHives = player.threeHives
     

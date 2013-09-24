@@ -87,8 +87,7 @@ local networkVars =
     stooping = "boolean",
     stoopIntensity = "compensated interpolated float",
     charging = "private boolean",
-    rumbleSoundId = "entityid",
-    hasCharge = "private boolean"
+    rumbleSoundId = "entityid"
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -497,7 +496,7 @@ function Onos:OnUpdateAnimationInput(modelMixin)
 end
 
 function Onos:GetHasMovementSpecial()
-    return self.hasCharge or self:GetTeamNumber() == kTeamReadyRoom 
+    return self:GetHasOneHive() or self:GetTeamNumber() == kTeamReadyRoom 
 end
 
 function Onos:GetMovementSpecialEnergyCost()
@@ -534,10 +533,6 @@ function Onos:OnProcessMove(input)
     end
     
     SharedUpdate(self, input.time)
-    
-    if Server then
-        self.hasCharge = GetIsTechUnlocked(self, kTechId.Charge) == true or GetGamerules():GetAllTech()
-    end
     
 end
 
@@ -624,10 +619,6 @@ end
 local kOnosEngageOffset = Vector(0, 1.3, 0)
 function Onos:GetEngagementPointOverride()
     return self:GetOrigin() + kOnosEngageOffset
-end
-
-function Onos:OnClampSpeed(input, velocity)
-    Player.OnClampSpeed(self, input, velocity)
 end
 
 local kBlockDoers =

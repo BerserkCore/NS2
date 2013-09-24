@@ -106,7 +106,7 @@ function Hydra:OnUpdate(deltaTime)
             
             if self.target then
             
-                if self.timeOfNextFire == nil or Shared.GetTime() > self.timeOfNextFire then               
+                if not self:GetIsOnFire() and (self.timeOfNextFire == nil or Shared.GetTime() > self.timeOfNextFire) then               
                     self:AttackTarget()
                 end
                 

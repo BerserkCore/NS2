@@ -428,6 +428,10 @@ function Hallucination:OnUpdateAnimationInput(modelMixin)
 
 end
 
+function Hallucination:GetIsMoveable()
+    return true
+end
+
 function Hallucination:OnUpdatePoseParameters()
     self:SetPoseParam("grow", 1)    
 end
@@ -527,6 +531,7 @@ if Server then
         end    
         
     end
+
     
     function Hallucination:UpdateBuildOrder(deltaTime)
     

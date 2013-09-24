@@ -89,52 +89,59 @@ end
 
 if Server then
 
-    // Usually because the client connected or changed their options
+    // Usually because the client connected or changed their options.
     function MarineVariantMixin:OnClientUpdated(client)
-
+    
         Player.OnClientUpdated(self, client)
-
+        
         local data = client.variantData
         if data == nil then
             return
         end
-
+        
         local changed = data.isMale ~= self.isMale or data.marineVariant ~= self.variant
-
+        
         self.isMale = data.isMale
-
-        if GetHasVariant( kMarineVariantData, data.marineVariant, client ) then
-
-            // cleared, pass info to clients
+        
+        // Some entities using MarineVariantMixin don't care about model changes.
+        if self.GetIgnoreVariantModels and self:GetIgnoreVariantModels() then
+            return
+        end
+        
+        if GetHasVariant(kMarineVariantData, data.marineVariant, client) then
+        
+            // Cleared, pass info to clients.
             self.variant = data.marineVariant
-            assert( self.variant ~= -1 )
+            assert(self.variant ~= -1)
             local modelName = self:GetVariantModel()
-            assert( modelName ~= "" )
+            assert(modelName ~= "")
             self:SetModel(modelName, MarineVariantMixin.kMarineAnimationGraph)
-
+            
         else
             Print("ERROR: Client tried to request marine variant they do not have yet")
         end
-            
-        // set the highest level shoulder pad
+        
+        // Set the highest level shoulder pad.
         self.shoulderPadIndex = 0
         for padId = 1, #kShoulderPad2ProductId do
-
-            if GetHasShoulderPad( padId, client ) then
+        
+            if GetHasShoulderPad(padId, client) then
                 self.shoulderPadIndex = padId
             end
-
+            
         end
-
+        
         if changed then
-            // trigger a weapon switch, to update the view model
+        
+            // Trigger a weapon switch, to update the view model
             if self:GetActiveWeapon() ~= nil then
                 self:GetActiveWeapon():OnDraw(self)
             end
+            
         end
-
+        
     end
-
+    
 end
 
 if Client then

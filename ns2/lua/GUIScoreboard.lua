@@ -665,13 +665,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         currentPlayerIndex = currentPlayerIndex + 1
 
         // update badges info
-        local ent = Shared.GetEntity( playerRecord.EntityId )
-        if ent ~= nil then
-            // trust local ent data if available
-            SetPlayerItemBadges( player, BadgeMixin_GetBadgeTextures("scoreboard", ent) )
-        else
-            SetPlayerItemBadges( player, BadgeMixin_GetBadgeTextures("scoreboard", playerRecord) )
-        end
+        SetPlayerItemBadges( player, Badges_GetBadgeTextures(clientIndex, "scoreboard") )
         
     end
 
@@ -741,7 +735,7 @@ function GUIScoreboard:CreatePlayerItem()
     //----------------------------------------
     //  Badge icons
     //----------------------------------------
-    local maxBadges = BadgeMixin_GetMaxBadges()
+    local maxBadges = Badges_GetMaxBadges()
     local badgeItems = {}
     
     // Player badges

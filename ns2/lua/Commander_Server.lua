@@ -95,10 +95,12 @@ function Commander:CopyPlayerDataFrom(player)
     
     self.storedHyperMutationCost = player.storedHyperMutationCost
     
+    self.oneHive = player.oneHive
     self.twoHives = player.twoHives
     self.threeHives = player.threeHives
     
     if player:isa("Alien") then    
+        self.tierOneTechId = player:GetTierOneTechId()
         self.tierTwoTechId = player:GetTierTwoTechId()
         self.tierThreeTechId = player:GetTierThreeTechId()
     end

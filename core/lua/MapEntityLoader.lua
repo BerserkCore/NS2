@@ -286,6 +286,17 @@ local function LoadReflectionProbe(className, groupName, values)
     end
     table.insert(Client.reflectionProbeList, renderReflectionProbe)
     
+    if values.__editorData ~= nil then
+        cubemap = values.__editorData.reflection_probe_cubemap
+    end
+
+    // TEMP: Disabling this for now, since editor-rendered cube maps are b0rked
+    /*
+    if cubemap ~= nil and cubemap:GetSize() > 0 then
+        renderReflectionProbe:SetCubeMapRaw( values.__editorData.reflection_probe_cubemap )
+    end
+    */
+    
     return true
         
 end

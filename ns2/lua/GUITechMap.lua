@@ -150,7 +150,8 @@ function GUITechMap:Initialize()
     self.background:SetPosition(-kBackgroundSize * 0.5)
     self.background:SetAnchor(GUIItem.Middle, GUIItem.Center)
     self.background:SetIsVisible(true)
-    self.background:SetColor(Color(0,0,0,0))
+    self.background:SetColor(Color(0.0,0.0,0.0,0.4))
+    self.background:SetLayer(kGUILayerScoreboard)
     
     self.teamType = PlayerUI_GetTeamType()
     
@@ -177,8 +178,6 @@ function GUITechMap:Initialize()
         table.insert(self.lines, CreateLine(self, startPoint, endPoint, self.teamType))
     
     end
-    
-    
 
 end
 
@@ -213,6 +212,15 @@ function GUITechMap:GetIsVisible()
 end
 
 function GUITechMap:Update(deltaTime)
+
+    local teamType = PlayerUI_GetTeamType()
+    // reload the tech map. its possible that the script is not destroyed when changing player class in some cases and would use therefor the incorrect tech map
+    if teamType ~= self.teamType then
+    
+        self:Uninitialize()
+        self:Initialize()
+        
+    end
 
     self.hoverTechId = nil
     
@@ -288,7 +296,7 @@ function GUITechMap:Update(deltaTime)
                             
                         end
 
-                    elseif techNode:GetIsBuy() and techNode:GetAvailable() then
+                    elseif (techNode:GetIsBuy() or techNode:GetIsActivation()) and techNode:GetAvailable() then
                         status = kTechStatus.Available
                     end
                     

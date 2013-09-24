@@ -372,6 +372,7 @@ if Server then
                 player:SetTotalScore(playerData.score)
                 player:SetTotalPlayTime(playerData.playTime)
                 player:SetPlayerLevel(playerData.level)
+                player:SetReinforcedTier(playerData.reinforcedTier)
             
             end
         

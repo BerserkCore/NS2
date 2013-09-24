@@ -242,6 +242,7 @@ function Shade:TriggerInk()
 
     // Create ShadeInk entity in world at this position with a small offset
     CreateEntity(ShadeInk.kMapName, self:GetOrigin() + Vector(0, 0.2, 0), self:GetTeamNumber())
+    self:TriggerEffects("shade_ink")
     return true
 
 end

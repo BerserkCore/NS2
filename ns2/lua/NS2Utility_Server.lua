@@ -457,7 +457,7 @@ local function CheckHasPrereq(teamNumber, techId)
 
 end
 
-function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
+function UpdateAbilityAvailability(forAlien, tierOneTechId, tierTwoTechId, tierThreeTechId)
 
     local time = Shared.GetTime()
     if forAlien.timeOfLastNumHivesUpdate == nil or (time > forAlien.timeOfLastNumHivesUpdate + 0.5) then
@@ -465,6 +465,17 @@ function UpdateAbilityAvailability(forAlien, tierTwoTechId, tierThreeTechId)
         local team = forAlien:GetTeam()
         if team and team.GetTechTree then
         
+            local hasOneHiveNow = GetGamerules():GetAllTech() or (tierOneTechId ~= nil and tierOneTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierOneTechId))
+            local oneHive = forAlien.oneHive
+            // Don't lose abilities unless you die.
+            forAlien.oneHive = forAlien.oneHive or hasOneHiveNow
+
+            if forAlien.oneHive then
+                UnlockAbility(forAlien, tierOneTechId)
+            else
+                LockAbility(forAlien, tierOneTechId)
+            end
+            
             local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierTwoTechId))
             local hadTwoHives = forAlien.twoHives
             // Don't lose abilities unless you die.

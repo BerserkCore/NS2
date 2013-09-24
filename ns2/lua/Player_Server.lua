@@ -357,6 +357,7 @@ function Player:CopyPlayerDataFrom(player)
     self.timeOfLastDamage = player.timeOfLastDamage
     self.spawnBlockTime = player.spawnBlockTime
     self.spawnReductionTime = player.spawnReductionTime
+	self.desiredSpawnPoint = player.desiredSpawnPoint
     
     // ScriptActor and Actor fields
     self:SetAngles(player:GetAngles())
@@ -710,15 +711,6 @@ end
 
 function Player:SetDarwinMode(darwinMode)
     self.darwinMode = darwinMode
-end
-
-function Player:UpdateArmorAmount()
-
-    // note: some player may have maxArmor == 0
-    local armorPercent = self.maxArmor > 0 and self.armor/self.maxArmor or 0
-    self.maxArmor = self:GetArmorAmount()
-    self:SetArmor(self.maxArmor * armorPercent)
-    
 end
 
 function Player:GetIsInterestedInAlert(techId)

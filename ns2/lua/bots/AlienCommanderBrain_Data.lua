@@ -47,7 +47,6 @@ kAlienComBrainActions =
     CreateUpgradeStructureAction( kTechId.UpgradeSilenceVeil       , 1.0+math.random(), kTechId.Silence ) , 
     CreateUpgradeStructureAction( kTechId.UpgradeCamouflageVeil    , 1.0+math.random(), kTechId.Camouflage ) , 
     CreateUpgradeStructureAction( kTechId.UpgradeAuraVeil          , 1.0+math.random(), kTechId.Aura ) , 
-    CreateUpgradeStructureAction( kTechId.UpgradeFeintVeil         , 1.0+math.random(), kTechId.Feint ) , 
     CreateUpgradeStructureAction( kTechId.UpgradeRegenerationShell , 1.0+math.random(), kTechId.Regeneration ) , 
     CreateUpgradeStructureAction( kTechId.UpgradeCarapaceShell     , 1.0+math.random(), kTechId.Carapace ) , 
 

@@ -212,7 +212,7 @@ end
 
 function Crag:GetMatureMaxHealth()
     return kMatureCragHealth
-end 
+end
 
 function Crag:GetMatureMaxArmor()
     return kMatureCragArmor
@@ -327,10 +327,8 @@ function Crag:OnUpdate(deltaTime)
         
         if self.timeLastCragUpdate + Crag.kThinkInterval < Shared.GetTime() then
         
-            if self:GetIsBuilt() then
-            
-                self:UpdateHealing()
-                
+            if GetIsUnitActive(self) then            
+                self:UpdateHealing()                
             end
 
             self.healingActive = self:GetIsHealingActive()

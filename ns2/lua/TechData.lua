@@ -585,8 +585,7 @@ function BuildTechData()
         { [kTechDataId] = kTechId.Camouflage,     [kTechDataCategory] = kTechId.ShadeHive,   [kTechDataDisplayName] = "CAMOUFLAGE",     [kTechDataSponitorCode] = "M",   [kTechDataTooltipInfo] = "CAMOUFLAGE_TOOLTIP", [kTechDataCostKey] = kCamouflageCost },
         { [kTechDataId] = kTechId.Phantom,        [kTechDataCategory] = kTechId.ShadeHive,   [kTechDataDisplayName] = "PHANTOM",     [kTechDataSponitorCode] = "M",   [kTechDataTooltipInfo] = "PHANTOM_TOOLTIP", [kTechDataCostKey] = kCamouflageCost },
         { [kTechDataId] = kTechId.Aura,           [kTechDataCategory] = kTechId.ShadeHive,   [kTechDataDisplayName] = "AURA",     [kTechDataSponitorCode] = "M",   [kTechDataTooltipInfo] = "AURA_TOOLTIP", [kTechDataCostKey] = kAuraCost },
-        { [kTechDataId] = kTechId.Feint,          [kTechDataCategory] = kTechId.ShadeHive,   [kTechDataDisplayName] = "FEINT",          [kTechDataSponitorCode] = "F",   [kTechDataTooltipInfo] = "FEINT_TOOLTIP", [kTechDataCostKey] = kFeintCost },
-        
+
         { [kTechDataId] = kTechId.Celerity,       [kTechDataCategory] = kTechId.ShiftHive,   [kTechDataDisplayName] = "CELERITY",       [kTechDataSponitorCode] = "L",   [kTechDataTooltipInfo] = "CELERITY_TOOLTIP", [kTechDataCostKey] = kCelerityCost },
         { [kTechDataId] = kTechId.Adrenaline,     [kTechDataCategory] = kTechId.ShiftHive,   [kTechDataDisplayName] = "ADRENALINE",     [kTechDataSponitorCode] = "A",   [kTechDataTooltipInfo] = "ADRENALINE_TOOLTIP", [kTechDataCostKey] = kAdrenalineCost },
         { [kTechDataId] = kTechId.HyperMutation,  [kTechDataCategory] = kTechId.ShiftHive,   [kTechDataDisplayName] = "HYPERMUTATION",  [kTechDataSponitorCode] = "H",   [kTechDataTooltipInfo] = "HYPERMUTATION_TOOLTIP", [kTechDataCostKey] = kHyperMutationCost },

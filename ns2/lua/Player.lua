@@ -448,15 +448,6 @@ function Player:OnInitialized()
     
 end
 
-function DisablePlayerDanger(player)
-
-    // Stop looping music.
-    if player:GetIsLocalPlayer() then
-        Client.StopMusic("danger")
-    end
-    
-end
-
 /**
  * Called when the player entity is destroyed.
  */
@@ -491,8 +482,6 @@ function Player:OnDestroy()
             self.unitStatusDisplay = nil
             
         end
-        
-        DisablePlayerDanger(self)
         
     elseif Server then
         self:RemoveSpectators(nil)
@@ -1138,43 +1127,6 @@ function Player:GetCrouchSpeedScalar()
     return Player.kCrouchSpeedScalar
 end
 
-// Make sure we can't move faster than our max speed (esp. when holding
-// down multiple keys, going down ramps, etc.)
-function Player:OnClampSpeed(input, velocity)
-
-    PROFILE("Player:OnClampSpeed")
-    
-    // Don't clamp speed when stunned, so we can go flying
-    if HasMixin(self, "Stun") and self:GetIsStunned() then
-        return velocity
-    end
-    
-    if self:PerformsVerticalMove() then
-        moveSpeed = velocity:GetLength()   
-    else
-        moveSpeed = velocity:GetLengthXZ()   
-    end
-    
-    local maxSpeed = self:GetMaxSpeed()
-    
-    // Players moving backwards can't go full speed.
-    if input.move.z < 0 then
-        maxSpeed = maxSpeed * self:GetMaxBackwardSpeedScalar()
-    end
-    
-    if moveSpeed > maxSpeed then
-    
-        local velocityY = velocity.y
-        velocity:Scale(maxSpeed / moveSpeed)
-        
-        if not self:PerformsVerticalMove() then
-            velocity.y = velocityY
-        end
-        
-    end
-    
-end
-
 // Allow child classes to alter player's move at beginning of frame. Alter amount they
 // can move by scaling input.move, remove key presses, etc.
 function Player:AdjustMove(input)
@@ -1300,7 +1252,8 @@ function Player:UpdateViewAngles(input)
 end   
 
 function Player:GetTriggerLandEffect()
-    return not HasMixin(self, "CrouchMove") or not self:GetCrouching()
+    local xzSpeed = self:GetVelocity():GetLengthXZ()
+    return not HasMixin(self, "CrouchMove") or not self:GetCrouching() or (xzSpeed / self:GetMaxSpeed()) > 0.9
 end
 
 function Player:OnGroundChanged(onGround, impactForce, normal, velocity)
@@ -1770,7 +1723,7 @@ function Player:GetIsIdle()
 end
 
 function Player:GetPlayIdleSound()
-    return self:GetIsAlive() and (self:GetVelocityLength() / self:GetMaxSpeed()) > 0.5
+    return self:GetIsAlive() and (self:GetVelocityLength() / self:GetMaxSpeed()) > 0.65
 end
 
 local function CheckSpaceAboveForJump(self)
@@ -2510,8 +2463,14 @@ function Player:UpdateArmorAmount(armorLevel)
 
     // note: some player may have maxArmor == 0
     local armorPercent = self.maxArmor > 0 and self.armor/self.maxArmor or 0
-    self.maxArmor = self:GetArmorAmount(armorLevel)
-    self:SetArmor(self.maxArmor * armorPercent)
+    local newMaxArmor = self:GetArmorAmount(armorLevel)
+    
+    if newMaxArmor ~= self.maxArmor then    
+    
+        self.maxArmor = newMaxArmor
+        self:SetArmor(self.maxArmor * armorPercent)
+        
+    end
     
 end
 

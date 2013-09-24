@@ -457,14 +457,6 @@ function JetpackMarine:GetIsJetpacking()
     return self.jetpacking and (self:GetFuel()> 0) and not self:GetIsStunned()
 end
 
-function JetpackMarine:OnClampSpeed(input, velocity)
-
-    if self:GetIsJetpacking() then
-        Player.OnClampSpeed(self, input, velocity)
-    end
-    
-end
-
 /**
  * Since Jetpack is a child of JetpackMarine, we need to manually
  * call ProcessMoveOnModel() on it so animations play properly.

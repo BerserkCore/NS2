@@ -176,7 +176,13 @@ function Shockwave:Detonate()
     local origin = self:GetOrigin()
 
     local groundTrace = Shared.TraceRay(origin, origin - Vector.yAxis * 3, CollisionRep.Move, PhysicsMask.Movement, EntityFilterAllButIsa("Tunnel"))
-    local enemies = GetEntitiesWithMixinForTeamWithinRange("Live", GetEnemyTeamNumber(self:GetTeamNumber()), groundTrace.endPoint, 2.2)
+    local enemies = GetEntitiesWithMixinWithinRange("Live", groundTrace.endPoint, 2.2)
+    
+    // never damage the owner
+    local owner = self:GetOwner()
+    if owner then
+        table.removevalue(enemies, owner)
+    end
     
     if groundTrace.fraction < 1 then
     

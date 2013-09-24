@@ -17,10 +17,13 @@ function Onos:InitWeapons()
     
 end
 
+function Onos:GetTierOneTechId()
+    return kTechId.Charge
+end
+
 function Onos:GetTierTwoTechId()
     return kTechId.BoneShield
 end
-
 
 function Onos:GetTierThreeTechId()
     return kTechId.Stomp

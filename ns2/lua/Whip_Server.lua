@@ -21,7 +21,7 @@ function Whip:UpdateOrders(deltaTime)
         self.moving = false
         self.move_speed = 0
         
-        if currentOrder and currentOrder:GetType() == kTechId.Move then
+        if currentOrder and currentOrder:GetType() == kTechId.Move and not self:GetIsTeleporting() then
         
             if not self.rooted and self:GetIsUnblocked() then
             
@@ -47,7 +47,7 @@ function Whip:UpdateOrders(deltaTime)
         end
         
         // Attack on our own
-        if self.rooted then
+        if self.rooted and not self:GetIsOnFire() then
             self:UpdateAiAttacks(deltaTime)
         end
         
@@ -201,6 +201,7 @@ end
 function Whip:OnTeleportEnd()
     // invalidate static target table
     self:AttackerMoved()
+    self:ResetPathing()
 end
 
 function Whip:GetIsFuryActive()
@@ -263,11 +264,11 @@ function Whip:PerformAction(techNode, position)
 
     local success = false
     
-    if techNode:GetTechId() == kTechId.Cancel then
+    if techNode:GetTechId() == kTechId.Cancel or techNode:GetTechId() == kTechId.Stop then
     
         self:ClearOrders()
         success = true
-        
+
     end
     
     return success

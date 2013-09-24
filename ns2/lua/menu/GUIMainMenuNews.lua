@@ -62,7 +62,7 @@ end
 
 function GUIMainMenuNews:SendKeyEvent(key, down, amount)
 
-    if not self.isVisible then
+    if not self.isVisible or not MainMenu_GetIsOpened() then
         return
     end
 

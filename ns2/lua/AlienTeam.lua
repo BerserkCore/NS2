@@ -49,6 +49,7 @@ function AlienTeam:Initialize(teamName, teamNumber)
     self.bioMassLevel = 0
     self.bioMassAlertLevel = 0
     self.maxBioMassLevel = 0
+    self.bioMassFraction = 0
     
 end
 
@@ -64,6 +65,7 @@ function AlienTeam:OnInitialized()
     self.bioMassLevel = 0
     self.bioMassAlertLevel = 0
     self.maxBioMassLevel = 0
+    self.bioMassFraction = 0
     
 end
 
@@ -75,30 +77,101 @@ function AlienTeam:GetEggCount()
     return self.eggCount or 0
 end
 
+local function SortByBioMassAdd(ent1, ent2)
+    
+    local bioMassAdd1 = ent1.biomassResearchFraction
+    if not ent1:GetIsBuilt() then
+        bioMassAdd1 = ent1:GetBuiltFraction()
+    end
+    
+    local bioMassAdd2 = ent2.biomassResearchFraction
+    if not ent2:GetIsBuilt() then
+        bioMassAdd2 = ent2:GetBuiltFraction()
+    end
+    
+    return bioMassAdd1 > bioMassAdd2
+    
+end
+
+local kBioMassTechIds =
+{
+    kTechId.BioMassOne,
+    kTechId.BioMassTwo,
+    kTechId.BioMassThree,
+    kTechId.BioMassFour,
+    kTechId.BioMassFive,
+    kTechId.BioMassSix,
+    kTechId.BioMassSeven,
+    kTechId.BioMassEight,
+    kTechId.BioMassNine
+}
 function AlienTeam:UpdateBioMassLevel()
 
     local lastBioMassLevel = self.bioMassLevel
 
     self.bioMassLevel = 0
     self.bioMassAlertLevel = 0
+    self.bioMassFraction = 0
+    local extraBioMass = 0
+    local progress = 0
     
-    local ents = GetEntitiesWithMixinForTeam("Biomass", self:GetTeamNumber()) // GetEntitiesForTeam("Hive", self:GetTeamNumber())
+
+    local ents = GetEntitiesForTeam("Hive", self:GetTeamNumber())
+    table.sort(ents, SortByBioMassAdd)
+
+    for index, entity in ipairs(ents) do
     
-    for _, entity in ipairs(ents) do
-    
-        if GetIsUnitActive(entity) then
+        if entity:GetIsAlive() then
     
             local currentBioMass = entity:GetBioMassLevel()
             self.bioMassLevel = self.bioMassLevel + currentBioMass
 
-            if HasMixin(entity, "Combat") and Shared.GetTime() - entity:GetTimeLastDamageTaken() < 7 then
+
+
+            local bioMassAdd = entity.biomassResearchFraction
+            
+            if not entity:GetIsBuilt() then
+                bioMassAdd = bioMassAdd + entity:GetBuiltFraction()
+            end
+            
+            if index == 1 then
+                progress = bioMassAdd
+            end
+        
+            currentBioMass = currentBioMass + bioMassAdd
+
+            
+            currentBioMass = currentBioMass * entity:GetHealthScalar()
+            
+            self.bioMassFraction = self.bioMassFraction + currentBioMass
+            
+            if Shared.GetTime() - entity:GetTimeLastDamageTaken() < 7 then
                 self.bioMassAlertLevel = self.bioMassAlertLevel + currentBioMass
+            end
+
+        end
+    
+    end
+    
+    if self.techTree then
+    
+        for i = 1, #kBioMassTechIds do
+        
+            local techId = kBioMassTechIds[i]
+            local techNode = self.techTree:GetTechNode(techId)
+            if techNode then
+            
+                local techNodeProgress = i == self.bioMassLevel + 1 and progress or 0     
+                techNode:SetResearchProgress(techNodeProgress)
+                self.techTree:SetTechNodeChanged(techNode, string.format("researchProgress = %.2f", techNodeProgress))                 
+            
             end
         
         end
     
     end
-    
+
+
     if lastBioMassLevel ~= self.bioMassLevel and self.techTree then
         self.techTree:SetTechChanged()
     end
@@ -127,6 +200,9 @@ function AlienTeam:GetBioMassAlertLevel()
     return self.bioMassAlertLevel
 end
 
+function AlienTeam:GetBioMassFraction()
+    return self.bioMassFraction
+end
 local function RemoveGorgeStructureFromClient(self, techId, clientId)
 
     local structureTypeTable = self.clientOwnedStructures[clientId]
@@ -621,7 +697,6 @@ function AlienTeam:InitTechTree()
     
     self.techTree:AddPassive(kTechId.Infestation)
     self.techTree:AddPassive(kTechId.SpawnAlien)
-    self.techTree:AddPassive(kTechId.Slap)
     self.techTree:AddPassive(kTechId.CollectResources, kTechId.Harvester)
     
     // Add markers (orders)
@@ -691,8 +766,8 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuildNode(kTechId.Whip,                      kTechId.None,                kTechId.None)
     self.techTree:AddUpgradeNode(kTechId.EvolveBombard,             kTechId.None,                kTechId.None)
 
-    self.techTree:AddActivation(kTechId.WhipBombard)
-    self.techTree:AddActivation(kTechId.WhipBombardCancel)
+    self.techTree:AddPassive(kTechId.WhipBombard)
+    self.techTree:AddPassive(kTechId.Slap)
     self.techTree:AddActivation(kTechId.WhipUnroot)
     self.techTree:AddActivation(kTechId.WhipRoot)
     
@@ -777,7 +852,6 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuyNode(kTechId.Xenocide,          kTechId.BioMassSeven, kTechId.UpgradeSkulk, kTechId.AllAliens)
     
     // gorge researches
-    self.techTree:AddResearchNode(kTechId.GorgeTunnelTech,  kTechId.BioMassOne, kTechId.None, kTechId.AllAliens)
     self.techTree:AddResearchNode(kTechId.UpgradeGorge,     kTechId.BioMassOne, kTechId.Hive)
     self.techTree:AddBuyNode(kTechId.BabblerEgg,            kTechId.BioMassOne, kTechId.UpgradeGorge, kTechId.AllAliens)
     self.techTree:AddBuyNode(kTechId.BabblerAbility,        kTechId.BioMassOne, kTechId.UpgradeGorge)
@@ -802,7 +876,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuyNode(kTechId.Stomp,             kTechId.BioMassNine, kTechId.UpgradeOnos, kTechId.AllAliens)     
 
     // gorge structures
-    self.techTree:AddBuildNode(kTechId.GorgeTunnel,       kTechId.GorgeTunnelTech)
+    self.techTree:AddBuildNode(kTechId.GorgeTunnel)
     self.techTree:AddBuildNode(kTechId.Hydra)
     self.techTree:AddBuildNode(kTechId.Clog)
 

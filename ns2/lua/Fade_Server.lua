@@ -16,6 +16,10 @@ function Fade:InitWeapons()
     
 end
 
+function Fade:GetTierOneTechId()
+    return kTechId.ShadowStep
+end
+
 function Fade:GetTierTwoTechId()
     return kTechId.Vortex
 end

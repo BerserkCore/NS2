@@ -124,6 +124,10 @@ function DrifterEgg:OverrideGetStatusInfo()
 
 end
 
+function DrifterEgg:GetIsMoveable()
+    return true
+end
+
 function DrifterEgg:GetHatchProgress()
     return Clamp((Shared.GetTime() - self.creationTime) / kDrifterHatchTime, 0, 1)
 end
@@ -162,6 +166,11 @@ if Server then
         drifter:ProcessRallyOrder(self)
         drifter:SetHealth(self:GetHealth())
         drifter:SetArmor(self:GetArmor())
+        
+        // inherit selection
+        drifter.selectionMask = self.selectionMask
+        drifter.hotGroupNumber = self.hotGroupNumber
+        
         self:TriggerEffects("death")
         
         local techTree = self:GetTeam():GetTechTree()    

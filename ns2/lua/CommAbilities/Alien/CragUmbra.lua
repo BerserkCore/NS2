@@ -104,12 +104,23 @@ if Server then
     
         CommanderAbility.OnUpdate(self, deltaTime)
         
-        if self.destination then
+        if self.destination and not self.doneTraveling then
         
             local travelVector = self.destination - self:GetOrigin()
             if travelVector:GetLength() > 0.3 then
                 local distanceFraction = (self.destination - self:GetOrigin()):GetLength() / CragUmbra.kMaxRange
                 self:SetOrigin( self:GetOrigin() + GetNormalizedVector(travelVector) * deltaTime * CragUmbra.kTravelSpeed * distanceFraction )
+            else
+            
+                self.doneTraveling = true
+                for _, umbraCloud in ipairs(GetEntitiesForTeamWithinRange("CragUmbra", self:GetTeamNumber(), self:GetOrigin(), 5)) do
+                    
+                    if umbraCloud ~= self then
+                        DestroyEntity(umbraCloud)
+                    end
+                    
+                end
+            
             end
         
         end

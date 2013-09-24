@@ -179,14 +179,7 @@ function MAC:OnCreate()
     InitMixin(self, ParasiteMixin)
     
     if Server then
-    
         InitMixin(self, RepositioningMixin)
-        
-        // This Mixin must be inited inside this OnInitialized() function.
-        if not HasMixin(self, "MapBlip") then
-            InitMixin(self, MapBlipMixin)
-        end
-
     elseif Client then
         InitMixin(self, CommanderGlowMixin)
     end
@@ -213,6 +206,11 @@ function MAC:OnInitialized()
         InitMixin(self, MobileTargetMixin)
         InitMixin(self, SupplyUserMixin)
         InitMixin(self, InfestationTrackerMixin)
+        
+        // This Mixin must be inited inside this OnInitialized() function.
+        if not HasMixin(self, "MapBlip") then
+            InitMixin(self, MapBlipMixin)
+        end
         
         self.jetsSound = Server.CreateEntity(SoundEffect.kMapName)
         self.jetsSound:SetAsset(kJetsSound)

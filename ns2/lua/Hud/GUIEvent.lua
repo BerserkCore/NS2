@@ -245,6 +245,16 @@ function GUIEvent:SetIsVisible(isVisible)
     self.frame:SetIsVisible(isVisible)
 end
 
+local function ClearNotifications(self)
+
+    for index, notification in ipairs (self.displayedNotifications) do
+        DestroyNotificationItem(notification)
+    end
+    
+    self.displayedNotifications = { }
+    
+end
+
 function GUIEvent:Reset(scale)
 
     self.scale = scale
@@ -293,18 +303,8 @@ function GUIEvent:Reset(scale)
     self.unlockFlash:SetUniformScale(self.scale)
     self.unlockFlash:SetSize(kBackgroundSize * sizeScale)
     
-    self:ClearNotifications()
-
-end
-
-function GUIEvent:ClearNotifications()
-
-    for index, notification in ipairs (self.displayedNotifications) do
-        _DestroyNotification(notification)   
-    end
-
-    self.displayedNotifications = {}
-
+    ClearNotifications(self)
+    
 end
 
 function GUIEvent:SetFrameHeight(height, animDuration)

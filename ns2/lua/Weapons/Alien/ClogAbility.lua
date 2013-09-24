@@ -62,12 +62,6 @@ function ClogAbility:GetDropRange()
     return 3
 end
 
-/*
-function ClogAbility:IsAllowed(player)
-    return player and player.GetHasTwoHives and player:GetHasTwoHives()
-end
-*/
-
 function ClogAbility:GetPrimaryAttackDelay()
     return 1.0
 end

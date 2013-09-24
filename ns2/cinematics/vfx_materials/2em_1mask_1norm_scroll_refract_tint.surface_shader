@@ -15,7 +15,7 @@
 		<input name="norm2Coord" type="float4" /> 
 		<input name="normIntensity" type="float">0.10</input> 
 		<input name="addBlending" type="float"></input>
-		
+		<input name="intensity" type="float">1.0</input> 
 	</inputs>	
 
 	<params>
@@ -47,10 +47,10 @@
 		// Blending
 			if (addBlending == 1)
 			{
-				material.emissive 	=  (emiss1.rgb + emiss2.rgb )*mask1.rgb  * tint   ;
+				material.emissive 	=  (emiss1.rgb + emiss2.rgb )*mask1.rgb  * tint * intensity  ;
 
 			} else {
-			   	material.emissive 	=  (emiss1.rgb  * emiss2.rgb)* mask1.rgb * tint   ;
+			   	material.emissive 	=  (emiss1.rgb  * emiss2.rgb)* mask1.rgb * tint * intensity  ;
 			}
 
 			

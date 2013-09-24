@@ -101,6 +101,8 @@ function Hive:OnCreate()
     
     if Server then
     
+        self.biomassResearchFraction = 0
+    
         self.cystChildren = { }
         
         self.lastImpulseFireTime = Shared.GetTime()
@@ -258,7 +260,7 @@ end
 
 function Hive:GetTechButtons(techId)
 
-    local techButtons = { kTechId.ShiftHatch, kTechId.None, kTechId.GorgeTunnelTech, kTechId.UpgradeGorge,
+    local techButtons = { kTechId.ShiftHatch, kTechId.None, kTechId.UpgradeGorge, kTechId.None,
                           kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 
     if self:GetTechId() == kTechId.Hive then

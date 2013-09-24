@@ -66,6 +66,10 @@ function TeleportMixin:GetTeleportSinkIn()
     
 end   
 
+function TeleportMixin:GetIsTeleporting()
+    return self.isTeleporting
+end
+
 function TeleportMixin:GetCanTeleport()
 
     local canTeleport = true
@@ -151,6 +155,16 @@ local function GetRandomSpawn(self, destinationOrigin)
 
 end
 
+local function AddObstacle(self)
+
+    if self.obstacleId == -1 then
+        self:AddToMesh()
+    end    
+       
+    return false
+ 
+end
+
 local function PerformTeleport(self)
 
     local destinationEntity = Shared.GetEntity(self.destinationEntityId)
@@ -168,22 +182,17 @@ local function PerformTeleport(self)
         end
         
         if destinationCoords then
-        
-            /*
+
             if HasMixin(self, "Obstacle") then
-                Print("remove from mesh")
                 self:RemoveFromMesh()
             end
-            */
         
             self:SetCoords(destinationCoords)
-            
-            /*
+
             if HasMixin(self, "Obstacle") then
-                Print("Add to mesh")
-                self:AddToMesh()
+                // this needs to be delayed, otherwise the obstacle is created too early and stacked up structures would not be able to push each other away
+                self:AddTimedCallback(AddObstacle, 3)
             end
-            */
             
             local location = GetLocationForPoint(self:GetOrigin())
             local locationName = location and location:GetName() or ""

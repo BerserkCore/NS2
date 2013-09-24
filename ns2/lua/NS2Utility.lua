@@ -2692,16 +2692,7 @@ function UpdateAlienStructureMove(self, deltaTime)
     if Server then
 
         local currentOrder = self:GetCurrentOrder()
-        if GetIsUnitActive(self) and currentOrder and currentOrder:GetType() == kTechId.Move then
-        
-            /*
-            if not self.timeLastShiftCheck or self.timeLastShiftCheck + 0.5 < Shared.GetTime() then
-                
-                self.shiftBoost = self:isa("Shift") or #GetEntitiesForTeamWithinRange("Shift", self:GetTeamNumber(), self:GetOrigin(), 8) > 0
-                self.timeLastShiftCheck = Shared.GetTime()
-            
-            end
-            */
+        if GetIsUnitActive(self) and currentOrder and currentOrder:GetType() == kTechId.Move and (not HasMixin(self, "TeleportAble") or not self:GetIsTeleporting()) then
 
             local speed = self:GetMaxSpeed()
             if self.shiftBoost then
@@ -2724,9 +2715,21 @@ function UpdateAlienStructureMove(self, deltaTime)
         if HasMixin(self, "Obstacle") then
 
             if currentOrder and currentOrder:GetType() == kTechId.Move then
+            
                 self:RemoveFromMesh()
-            elseif self.obstacleId == -1 then
+            
+                if not self.removedMesh then            
+                    
+                    self.removedMesh = true
+                    self:OnObstacleChanged()
+                
+                end
+                
+            elseif self.removedMesh then
+            
                 self:AddToMesh()
+                self.removedMesh = false
+                
             end
 
         end   
