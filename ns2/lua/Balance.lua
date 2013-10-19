@@ -134,7 +134,7 @@ kDualMinigunTechResearchCost = 30
 kClawRailgunTechResearchCost = 30
 kDualRailgunTechResearchCost = 30
 
-kCatPackTechResearchCost = 20
+kCatPackTechResearchCost = 15
 kWeapons1ResearchCost = 20
 kWeapons2ResearchCost = 30
 kWeapons3ResearchCost = 40
@@ -443,7 +443,7 @@ kMelee2DamageScalar = 1.2
 kMelee3DamageScalar = 1.3
 
 kWhipSlapDamage = 50
-kWhipBombardDamage = 400
+kWhipBombardDamage = 250
 kWhipBombardDamageType = kDamageType.Corrode
 kWhipBombardRadius = 6
 kWhipBombardRange = 10

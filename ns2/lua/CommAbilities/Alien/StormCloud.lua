@@ -45,7 +45,7 @@ function StormCloud:GetType()
     return StormCloud.kType
 end
 
-function StormCloud:GetThinkTime()
+function StormCloud:GetUpdateTime()
     return StormCloud.kThinkTime
 end
 

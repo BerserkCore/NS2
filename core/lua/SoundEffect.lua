@@ -161,6 +161,14 @@ function SoundEffect:GetIsPlaying()
     return self.playing
 end
 
+function SoundEffect:GetSoundIndex()
+    return self.assetIndex
+end
+
+function SoundEffect:GetSoundName()
+    return Shared.GetSoundName(self.assetIndex)
+end
+
 function GetSoundEffectLength(soundName)
 
     local fixedAssetPath = ""
@@ -235,6 +243,11 @@ if Server then
     
         self.playing = false
         self.startTime = 0
+        
+        -- Destroy when stopped if this is not a map entity and not set to loop.
+        if not self:GetIsMapEntity() and self.assetLength >= 0 then
+            DestroyEntity(self)
+        end
         
     end
     

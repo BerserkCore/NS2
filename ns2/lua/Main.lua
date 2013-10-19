@@ -19,6 +19,21 @@ local renderCamera = nil
     
 MenuManager.SetMenuCinematic("cinematics/main_menu.cinematic")
 
+// Precache the common surface shaders.
+Shared.PrecacheSurfaceShader("shaders/Model.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/Emissive.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/Model_emissive.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/Model_alpha.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/ViewModel.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/ViewModel_emissive.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/Decal.surface_shader")
+Shared.PrecacheSurfaceShader("shaders/Decal_emissive.surface_shader")
+
+local function InitializeRenderCamera()
+    renderCamera = Client.CreateRenderCamera()
+    renderCamera:SetRenderSetup("renderer/Deferred.render_setup") 
+end
+
 local function OnUpdateRender()
 
     local cullingMode = RenderCamera.CullingMode_Occlusion
@@ -41,9 +56,6 @@ end
 
 local function OnLoadComplete(message)
     
-    renderCamera = Client.CreateRenderCamera()
-    renderCamera:SetRenderSetup("renderer/Deferred.render_setup") 
-    
     Render_SyncRenderOptions()
     OptionsDialogUI_SyncSoundVolumes()
     
@@ -62,3 +74,6 @@ Event.Hook("LoadComplete", OnLoadComplete)
 // Run bot-related unit tests. These are quick and silent.
 Script.Load("lua/bots/UnitTests.lua")
 
+// Initialize the camera at load time, so that the render setup will be
+// properly precached during the loading screen.
+InitializeRenderCamera()

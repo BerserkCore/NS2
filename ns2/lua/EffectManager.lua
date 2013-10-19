@@ -712,6 +712,20 @@ function EffectManager:InternalTriggerSound(effectTable, triggeringParams, trigg
         // Make sure sounds are stopped for this player too.
         Shared.StopSound(player, soundAssetName)
         
+        if triggeringEntity then
+        
+            -- Stop sound entities parented to the triggering entity.
+            for i = triggeringEntity:GetNumChildren() - 1, 0, -1 do
+            
+                local child = triggeringEntity:GetChildAtIndex(i)
+                if child:isa("SoundEffect") and child:GetParent() == triggeringEntity and child:GetSoundName() == soundAssetName then
+                    child:Stop()
+                end
+                
+            end
+            
+        end
+        
         success = true
         
     end

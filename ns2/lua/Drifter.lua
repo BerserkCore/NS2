@@ -448,10 +448,18 @@ function Drifter:ProcessGrowOrder(moveSpeed, deltaTime)
             self:CompletedCurrentOrder()
         else
         
-            local targetPos = target:GetOrigin()        
-            if (targetPos - self:GetOrigin()):GetLength() > 3 then
+            local targetPos = target:GetOrigin()  
+            local toTarget = targetPos - self:GetOrigin()
+                // Continuously turn towards the target. But don't mess with path finding movement if it was done.
+
+            if (toTarget):GetLength() > 3 then
                 self:MoveToTarget(PhysicsMask.AIMovement, targetPos, moveSpeed, deltaTime)
             else
+            
+                if toTarget then
+                    self:SmoothTurn(deltaTime, GetNormalizedVector(toTarget), 0)
+                end
+            
                 target:RefreshDrifterConstruct()
                 self.constructing = true
             end

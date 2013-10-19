@@ -17,7 +17,7 @@ MucousMembrane.kMapName = "mucousmembrane"
 MucousMembrane.kSplashEffect = PrecacheAsset("cinematics/alien/mucousmembrane.cinematic")
 MucousMembrane.kType = CommanderAbility.kType.Repeat
 MucousMembrane.kLifeSpan = 2.5
-MucousMembrane.kThinkTime = 0.1
+MucousMembrane.kThinkTime = 0.2
 
 MucousMembrane.kRadius = 8
 
@@ -37,30 +37,6 @@ function MucousMembrane:OnInitialized()
 
 end
 
-local function GetEntityRecentlyHealed(entityId, time)
-
-    for index, pair in ipairs(gHealedByMucousMembrane) do
-        if pair[1] == entityId and pair[2] > Shared.GetTime() - MucousMembrane.kThinkTime then
-            return true
-        end
-    end
-    
-    return false
-    
-end
-
-local function SetEntityRecentlyHealed(entityId)
-
-    for index, pair in ipairs(gHealedByMucousMembrane) do
-        if pair[1] == entityId then
-            table.remove(gHealedByMucousMembrane, index)
-        end
-    end
-    
-    table.insert(gHealedByMucousMembrane, {entityId, Shared.GetTime()})
-    
-end
-
 function MucousMembrane:GetRepeatCinematic()
     return MucousMembrane.kSplashEffect
 end
@@ -69,7 +45,7 @@ function MucousMembrane:GetType()
     return MucousMembrane.kType
 end
 
-function MucousMembrane:GetThinkTime()
+function MucousMembrane:GetUpdateTime()
     return MucousMembrane.kThinkTime
 end
 
@@ -80,19 +56,21 @@ end
 if Server then
 
     function MucousMembrane:Perform()
-        
+        /*
+        if not self.totalHeal then
+            self.totalHeal = 0
+        end
+        */
         for _, unit in ipairs(GetEntitiesWithMixinForTeamWithinRange("Live", self:GetTeamNumber(), self:GetOrigin(), MucousMembrane.kRadius)) do
-        
-            if not GetEntityRecentlyHealed(unit:GetId()) then
-                
-                local addArmor = Clamp(unit:GetMaxArmor() * MucousMembrane.kThinkTime * 0.5, 3, 40)
-                //Print("%s healarmor %s", ToString(unit), ToString(addArmor))
-                unit:SetArmor(unit:GetArmor() + addArmor)
-                SetEntityRecentlyHealed(unit:GetId())
-            
-            end
+
+            local addArmor = Clamp(unit:GetMaxArmor() * MucousMembrane.kThinkTime * 0.25, 1, 8)
+            //local oldArmor = unit:GetArmor()
+            unit:SetArmor(unit:GetArmor() + addArmor)
+            //self.totalHeal = self.totalHeal + math.max(0, unit:GetArmor() - oldArmor)
             
         end
+        
+        //DebugPrint(ToString(self.totalHeal))
 
     end
 

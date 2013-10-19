@@ -42,6 +42,7 @@ Script.Load("lua/VotingChangeMap.lua")
 Script.Load("lua/VotingResetGame.lua")
 Script.Load("lua/VotingRandomizeRR.lua")
 Script.Load("lua/Badges_Client.lua")
+Script.Load("lua/Mantis.lua")
 
 Script.Load("lua/ConsoleCommands_Client.lua")
 Script.Load("lua/NetworkMessages_Client.lua")
@@ -96,6 +97,11 @@ end
 // For logging total time played for rookie mode, even with map switch
 local timePlayed = nil
 local kTimePlayedOptionsKey = "timePlayedSeconds"
+
+local function InitializeRenderCamera()
+    gRenderCamera = Client.CreateRenderCamera()
+    gRenderCamera:SetRenderSetup("renderer/Deferred.render_setup")
+end
 
 function GetRenderCameraCoords()
 
@@ -1107,9 +1113,6 @@ end
 
 
 local function OnLoadComplete()
-
-    gRenderCamera = Client.CreateRenderCamera()
-    gRenderCamera:SetRenderSetup("renderer/Deferred.render_setup")
     
     Render_SyncRenderOptions()
     Input_SyncInputOptions()
@@ -1246,3 +1249,7 @@ function()
 end)
 
 Script.Load("lua/PostLoadMod.lua")
+
+// Initialize the camera at load time, so that the render setup will be
+// properly precached during the loading screen.
+InitializeRenderCamera()

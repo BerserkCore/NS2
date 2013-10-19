@@ -22,6 +22,7 @@ local kViewMaterialName = "cinematics/vfx_materials/umbra_view.material"
 if Client then
     Shared.PrecacheSurfaceShader("cinematics/vfx_materials/umbra.surface_shader")
     Shared.PrecacheSurfaceShader("cinematics/vfx_materials/umbra_view.surface_shader")
+    Shared.PrecacheSurfaceShader("cinematics/vfx_materials/2em_1mask_1norm_scroll_refract_tint.surface_shader")
 end
 
 local kEffectInterval = 0.1

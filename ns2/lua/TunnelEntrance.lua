@@ -436,6 +436,11 @@ if Server then
         if team then
             team:UpdateClientOwnedStructures(self:GetId())
         end
+        
+        local tunnel = Shared.GetEntity(self.tunnelId)
+        if tunnel then
+            tunnel:RemoveExit(self)
+        end
     
     end  
 

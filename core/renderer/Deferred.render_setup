@@ -415,15 +415,6 @@ layers =
             generator                       = "fullscreen"
             parameters                      = { blendTexture = { resource="accumulation_8" linear=true } }
         }            
-
-        // Render the background
-        {
-            name                            = "background"
-            color_targets                   = "accumulation_1"
-            depth_stencil_target            = "back_buffer_depth_stencil"
-            generator                       = "background"
-            technique                       = "WriteEmissive"
-        }    
         
         // Forward shade translucent surfaces
         {
@@ -462,6 +453,14 @@ layers =
             objects_mask                    = "decal"
         }
 
+        // Render the background
+        {
+            name                            = "background"
+            color_targets                   = "accumulation_1"
+            depth_stencil_target            = "back_buffer_depth_stencil"
+            generator                       = "background"
+            technique                       = "WriteEmissive"
+        } 
         //----------------------------------------
         //  Refraction
         //----------------------------------------

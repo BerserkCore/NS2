@@ -111,11 +111,15 @@ end
 local kFadeInMax = 0.7
 local function UpdateTextAlpha(self)
 
-    for i, f in ipairs(self.fonts) do
+    if self.fonts then
     
-        local color = f:GetTextColor()
-        color.a = self.textAlpha
-        f:SetTextColor(color)
+        for i, f in ipairs(self.fonts) do
+        
+            local color = f:GetTextColor()
+            color.a = self.textAlpha
+            f:SetTextColor(color)
+            
+        end
         
     end
     

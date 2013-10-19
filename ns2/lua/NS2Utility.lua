@@ -2665,8 +2665,12 @@ function GetBulletTargets(startPoint, endPoint, spreadDirection, bulletSize, fil
     
         trace = Shared.TraceRay(startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, traceFilter)
         if not trace.entity then
+        
+            -- Limit the box trace to the point where the ray hit as an optimization.
+            local boxTraceEndPoint = trace.fraction ~= 1 and trace.endPoint or endPoint
             local extents = GetDirectedExtentsForDiameter(spreadDirection, bulletSize)
-            trace = Shared.TraceBox(extents, startPoint, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, traceFilter)
+            trace = Shared.TraceBox(extents, startPoint, boxTraceEndPoint, CollisionRep.Damage, PhysicsMask.Bullets, traceFilter)
+            
         end
         
         if trace.entity and not table.contains(targets, trace.entity) then

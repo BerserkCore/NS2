@@ -146,7 +146,7 @@ function ClipWeapon:GetSpread()
 end
 
 function ClipWeapon:GetRange()
-    return 8012
+    return 100
 end
 
 function ClipWeapon:GetAmmo()

@@ -283,6 +283,22 @@ if Server then
         end
     
     end
+    
+    function Tunnel:RemoveExit(exit)
+    
+        local exitId = exit:GetId()
+        
+        if self.exitAId == exitId then
+            self.exitAId = Entity.invalidId
+            self.exitAEntityPosition = Vector(self.exitBEntityPosition)
+        end
+        
+        if self.exitBId == exitId then
+            self.exitBId = Entity.invalidId
+            self.exitBEntityPosition = Vector(self.exitAEntityPosition)
+        end
+    
+    end
  
     function Tunnel:AddExit(exit)
     

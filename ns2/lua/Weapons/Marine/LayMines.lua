@@ -310,7 +310,7 @@ function LayMines:GetPositionForStructure(player)
     
         if trace.entity == nil then
             isPositionValid = true
-        elseif not trace.entity:isa("ScriptActor") and not trace.entity:isa("Clog") then
+        elseif not trace.entity:isa("ScriptActor") and not trace.entity:isa("Clog") and not trace.entity:isa("Web") then
             isPositionValid = true
         end
         

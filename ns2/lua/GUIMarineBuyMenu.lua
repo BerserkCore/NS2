@@ -812,8 +812,8 @@ function GUIMarineBuyMenu:SendKeyEvent(key, down)
         
     end
     
-    // No matter what, this menu consumes MouseButton0.
-    if key == InputKey.MouseButton0 then
+    // No matter what, this menu consumes MouseButton0/1.
+    if key == InputKey.MouseButton0 or key == InputKey.MouseButton1 then
         inputHandled = true
     end
     

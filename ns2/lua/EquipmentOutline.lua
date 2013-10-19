@@ -29,10 +29,10 @@ end
 
 function EquipmentOutline_Shudown()
 
-    Client.DestroyRenderCamera(_camera)
+    Client.DestroyRenderCamera(EquipmentOutline_camera)
     EquipmentOutline_camera = nil
     
-    Client.DestroyScreenEffect(_screenEffect)
+    Client.DestroyScreenEffect(EquipmentOutline_screenEffect)
     EquipmentOutline_screenEffect = nil
     
 end

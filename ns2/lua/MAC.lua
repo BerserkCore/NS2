@@ -121,33 +121,33 @@ AddMixinNetworkVars(ParasiteMixin, networkVars)
 local function GetIsWeldedByOtherMAC(self, target)
 
     if target then
-        
+    
         for _, mac in ipairs(GetEntitiesForTeam("MAC", self:GetTeamNumber())) do
-
+        
             if self ~= mac then
             
                 if mac.secondaryTargetId ~= nil and Shared.GetEntity(mac.secondaryTargetId) == target then
                     return true
                 end
-            
+                
                 local currentOrder = mac:GetCurrentOrder()
                 local orderTarget = nil
                 if currentOrder and currentOrder:GetParam() ~= nil then
                     orderTarget = Shared.GetEntity(currentOrder:GetParam())
-                end 
+                end
                 
                 if currentOrder and orderTarget == target and (currentOrder:GetType() == kTechId.FollowAndWeld or currentOrder:GetType() == kTechId.Weld or currentOrder:GetType() == kTechId.AutoWeld) then
                     return true
                 end
-            
+                
             end
-        
+            
         end
         
     end
     
     return false
-
+    
 end
 
 function MAC:OnCreate()
@@ -251,10 +251,12 @@ end
 function MAC:OnEntityChange(oldId)
 
     if oldId == self.secondaryTargetId then
+    
         self.secondaryOrderType = nil
         self.secondaryTargetId = nil
+        
     end
-
+    
 end
 
 local function GetAutomaticOrder(self)
@@ -698,6 +700,14 @@ local function FindSomethingToDo(self)
     end
     
     return false
+    
+end
+
+function MAC:OnOrderGiven(order)
+
+    -- Clear out secondary order when an order is explicitly given to this MAC.
+    self.secondaryOrderType = nil
+    self.secondaryTargetId = nil
     
 end
 

@@ -21,7 +21,7 @@ Rifle.kModelName = PrecacheAsset("models/marine/rifle/rifle.model")
 local kViewModels = GenerateMarineViewModelPaths("rifle")
 local kAnimationGraph = PrecacheAsset("models/marine/rifle/rifle_view.animation_graph")
 
-local kRange = 250
+local kRange = 100
 // 4 degrees in NS1
 local kSpread = Math.Radians(2.8)
 

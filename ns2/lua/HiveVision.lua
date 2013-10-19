@@ -28,10 +28,10 @@ end
 
 function HiveVision_Shutdown()
 
-    Client.DestroyRenderCamera(_camera)
+    Client.DestroyRenderCamera(HiveVision_camera)
     HiveVision_camera = nil
     
-    Client.DestroyScreenEffect(_screenEffect)
+    Client.DestroyScreenEffect(HiveVision_screenEffect)
     HiveVision_screenEffect = nil
     
 end

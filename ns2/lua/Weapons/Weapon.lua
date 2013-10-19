@@ -119,7 +119,7 @@ function Weapon:GetViewModelName()
 end
 
 function Weapon:GetRange()
-    return 8012
+    return 100
 end
 
 function Weapon:GetHasSecondary(player)

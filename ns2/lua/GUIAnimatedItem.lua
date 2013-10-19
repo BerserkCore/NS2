@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\GUIAnimatedItem.lua
 //
-// Created by: Andreas Urwalek (a_urwa@sbox.tugraz.at)
+// Created by: Andreas Urwalek (andi@unknownworlds.com)
 //
 // Manages creation/destruction and update of animated gui items. There are no looping or oscilating
 // animation types pre defined, but those can be easily realised through callbacks which gives way more
