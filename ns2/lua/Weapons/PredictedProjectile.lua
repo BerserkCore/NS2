@@ -107,8 +107,8 @@ local function UpdateProjectiles(self, input, predict)
         
         if not Server then
  
-            local coords = entry.coords 
-            if entry.Controller.velocity:GetLengthSquared() > 0.5 then
+            local coords = entry.coords
+            if not coords or entry.Controller.velocity:GetLengthSquared() > 0.5 then
                 coords = Coords.GetLookIn(entry.Controller:GetPosition(), GetNormalizedVector(entry.Controller.velocity))
             else    
                 coords.origin = entry.Controller:GetPosition()

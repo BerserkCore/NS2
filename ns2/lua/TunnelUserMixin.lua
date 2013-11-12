@@ -31,6 +31,7 @@ function TunnelUserMixin:__initmixin()
     self.clientTimeTunnelUsed = -20
     self.timeTunnelUsed = 0
     self.canUseTunnel = true
+    self.disableMovement = false
     
     if Server then
         self.timeSinkInStarted = nil
@@ -54,20 +55,24 @@ end
 // move the player closer to the tunnel entrance model
 local function UpdateSinkIn(self, deltaTime)
 
-    local tunnelEntrance = GetNearbyTunnelEntrance(self)        
+    local tunnelEntrance = GetNearbyTunnelEntrance(self)
     if tunnelEntrance and tunnelEntrance:GetIsBuilt() and tunnelEntrance:GetIsConnected() then
     
+        self.disableMovement = true
+        
         if not self.timeSinkInStarted then
             self.timeSinkInStarted = Shared.GetTime()
         end
-    
+        
         local desiredPosition = tunnelEntrance:GetOrigin()
-
+        
         local move = desiredPosition - self:GetOrigin()
         local moveLength = move:GetLength()
         if moveLength < 0.3 then
+        
             move:Normalize()
             move:Scale(0.3)
+            
         end
         
         local origin = self:GetOrigin()
@@ -85,6 +90,8 @@ local function UpdateSinkIn(self, deltaTime)
             tunnelEntrance:SuckinEntity(self)            
         end
         
+    else
+        self.disableMovement = false
     end
 
 end
@@ -166,10 +173,10 @@ end
 // called before processmove. disable move when sinking in
 function TunnelUserMixin:HandleButtonsMixin(input)
 
-    if self:GetIsEnteringTunnel() then    
-        self:SetVelocity(Vector(0, 0, 0))        
+    if self:GetIsEnteringTunnel() and self.disableMovement then
+        self:SetVelocity(Vector(0, 0, 0))
     end
-
+    
 end
 
 function TunnelUserMixin:OnProcessMove(input)
