@@ -15,6 +15,14 @@ local function MakeBadgeInfo2(name, ddsPrefix)
     }
 end
 
+local function MakeWCBadgeInfo(ddsPrefix)
+    return {
+        name = ddsPrefix,
+        unitStatusTexture = "ui/badges/"..ddsPrefix.."_32x32.dds",
+        scoreboardTexture = "ui/badges/"..ddsPrefix.."_20x20.dds",
+    }
+end
+
 // All non-tier badges go here
 gBadgesData =
 {
@@ -27,6 +35,7 @@ gBadgesData =
     MakeBadgeInfo("squad5_blue"),
     MakeBadgeInfo("squad5_silver"),
     MakeBadgeInfo("squad5_gold"),
+
     MakeBadgeInfo2("reinforced1", "game_tier1_blue"),
     MakeBadgeInfo2("reinforced2", "game_tier2_silver"),
     MakeBadgeInfo2("reinforced3", "game_tier3_gold"),
@@ -35,6 +44,12 @@ gBadgesData =
     MakeBadgeInfo2("reinforced6", "game_tier6_onos"),
     MakeBadgeInfo2("reinforced7", "game_tier7_Insider"),
     MakeBadgeInfo2("reinforced8", "game_tier8_GameDirector"),
+
+    MakeWCBadgeInfo("wc2013_supporter"),
+    MakeWCBadgeInfo("wc2013_silver"),
+    MakeWCBadgeInfo("wc2013_gold"),
+    MakeWCBadgeInfo("wc2013_shadow"),
+    
     // The only DLC one
     { name = "pax2012",
         productId = 4931,

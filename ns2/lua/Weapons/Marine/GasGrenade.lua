@@ -12,7 +12,7 @@ Script.Load("lua/OwnerMixin.lua")
 class 'GasGrenade' (PredictedProjectile)
 
 GasGrenade.kMapName = "gasgrenadeprojectile"
-GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_nerve.model")
+GasGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_nerve_world.model")
 GasGrenade.kUseServerPosition = true
 
 GasGrenade.kRadius = 0.17

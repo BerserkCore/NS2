@@ -11,7 +11,7 @@ Script.Load("lua/Weapons/Projectile.lua")
 class 'ClusterGrenade' (PredictedProjectile)
 
 ClusterGrenade.kMapName = "clustergrenadeprojectile"
-ClusterGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster.model")
+ClusterGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_cluster_world.model")
 
 local networkVars = { }
 

@@ -38,8 +38,19 @@ end
 function GhostModelUI_GetModelName()
 
     local player = Client.GetLocalPlayer()
-    if player and player.GetGhostModelTechId then
-        return LookupTechData(player:GetGhostModelTechId(), kTechDataModel)    
+    if player then
+    
+        local modelName = nil
+        if player.GetGhostModelOverride then
+            modelName = player:GetGhostModelOverride()
+        end
+        
+        if not modelName and player.GetGhostModelTechId then
+            modelName = LookupTechData(player:GetGhostModelTechId(), kTechDataModel)
+        end
+        
+        return modelName
+        
     end
     
 end

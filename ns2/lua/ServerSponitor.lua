@@ -216,6 +216,7 @@ function ServerSponitor:OnStartMatch()
         isRookieServer = Server.GetIsRookieFriendly(),
         modIds = CollectActiveModIds(),
         tournamentMode = self.tournamentMode,
+        averageSkill = GetGameInfoEntity():GetAveragePlayerSkill()
     })
     
     SendSponitorRequest(kSponitor2Url.."matchStart", "POST", { data = jsonData },
@@ -284,6 +285,7 @@ function ServerSponitor:OnEndMatch(winningTeam)
             avgRookies2 = stats2.avgNumRookiesSum / stats2.numPlayerCountSamples,
             totalTResMined1 = stats1.team:GetTotalTeamResources(),
             totalTResMined2 = stats2.team:GetTotalTeamResources(),
+            averageSkill = GetGameInfoEntity():GetAveragePlayerSkill()
         })
         
         SendSponitorRequest(kSponitor2Url .. "matchEnd", "POST", { data = jsonData })

@@ -204,6 +204,10 @@ local function PerformTeleport(self)
             if self.OnTeleportEnd then
                 self:OnTeleportEnd(destinationEntity)
             end
+            
+            if HasMixin(self, "StaticTarget") then
+                self:StaticTargetMoved()
+            end
 
         else
             // teleport has failed, give back resources to shift

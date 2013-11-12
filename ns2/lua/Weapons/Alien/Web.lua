@@ -85,16 +85,15 @@ function Web:OnCreate()
     self:SetPropagate(Entity.Propagate_Mask)
     self:SetRelevancyDistance(kMaxRelevancyDistance)
     
-    self:SetPhysicsType(PhysicsType.Kinematic)
-    self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
-    
 end
 
 function Web:OnInitialized()
 
     self:SetModel(Web.kModelName, kAnimationGraph)
-    self:SetPhysicsGroup(PhysicsGroup.SmallStructuresGroup)
     
+    self:SetPhysicsType(PhysicsType.Kinematic)
+    self:SetPhysicsGroup(PhysicsGroup.WebsGroup)  
+  
 end
 
 if Server then

@@ -107,12 +107,19 @@ local function UpdateProjectiles(self, input, predict)
         
         if not Server then
  
-            local coords = Coords.GetLookIn(entry.Controller:GetPosition(), GetNormalizedVector(entry.Controller.velocity))
+            local coords = entry.coords 
+            if entry.Controller.velocity:GetLengthSquared() > 0.5 then
+                coords = Coords.GetLookIn(entry.Controller:GetPosition(), GetNormalizedVector(entry.Controller.velocity))
+            else    
+                coords.origin = entry.Controller:GetPosition()
+            end    
+                
             local isVisible = entry.Controller.stopSimulation ~= true
  
             if entry.Model then
                 entry.Model:SetCoords(coords)
                 entry.Model:SetIsVisible(isVisible)
+                entry.coords = coords
             end
             
             if entry.Cinematic then
@@ -272,6 +279,9 @@ function ProjectileController:Move(offset, velocity)
     local normal = nil
     local impact = false
     local endPoint = nil
+    local impactVector = nil
+    //local newDirection = GetNormalizedVector(offset)
+    //local oldSpeed = velocity:GetLength()
     
     for i = 1, 3 do
     
@@ -299,14 +309,9 @@ function ProjectileController:Move(offset, velocity)
             if trace.entity then
                 hitEntity = trace.entity
             end
-            
-            if velocity ~= nil then
 
-                local newVelocity = velocity - velocity:GetProjection(trace.normal) * 0.25
-                VectorCopy(newVelocity, velocity)
-                
-            end
-            
+            //newDirection = GetNormalizedVector(newDirection - newDirection:GetProjection(trace.normal))
+
         else
             break
         end
@@ -314,7 +319,20 @@ function ProjectileController:Move(offset, velocity)
     end
     
     if normal then
+
         normal:Normalize()
+    
+        local impactForce = math.max(0, (-normal):DotProduct(velocity))
+        local speed = velocity:Normalize()
+        local steepImpact = Clamp((-normal):DotProduct(velocity), 0, 0.6)
+
+        local direction = GetNormalizedVector(velocity * (1 - steepImpact) + normal * steepImpact)
+        VectorCopy(direction, velocity)
+
+        velocity:Scale(math.max(0, speed - impactForce * (0.75 + math.max(0, normal.y) * 0.25) ))
+        
+        //DebugPrint("grenade speed %s, impact force %s", ToString(oldSpeed), ToString(impactForce))
+    
     end
 
     return impact, hitEntity, normal, endPoint
@@ -331,7 +349,7 @@ function ProjectileController:Update(deltaTime, projectile, predict)
         velocity.y = velocity.y - deltaTime * self.gravity
     
         // apply friction
-        ApplyFriction(velocity, self.friction, deltaTime)
+        //ApplyFriction(velocity, self.friction, deltaTime)
 
         // update position
         local impact, hitEntity, normal, endPoint = self:Move(velocity * deltaTime, velocity)
@@ -351,8 +369,10 @@ function ProjectileController:Update(deltaTime, projectile, predict)
             end
             
             // bounce
+            /*
             local impactForce = math.max(0, (-normal):DotProduct(velocity))
-            velocity:Add(impactForce * normal * self.bounce * 2)
+            velocity:Add(impactForce * normal * 0.4)
+            */
             
             self.stopSimulation = self.clearOnImpact or ( hitEntity ~= nil and HasMixin(hitEntity, "Team") and hitEntity:GetTeamNumber() == self.detonateWithTeam )
             self.stopSimulation = self.stopSimulation and oldEnough
@@ -520,7 +540,7 @@ if Server then
             end
         
             local vel = self.projectileController.velocity
-            if vel:GetLengthSquared() > 0 then
+            if vel:GetLengthSquared() > 0.5 then
             
                 local coords = Coords.GetLookIn(self.projectileController:GetPosition(), GetNormalizedVector(vel))
                 self:SetCoords(coords)

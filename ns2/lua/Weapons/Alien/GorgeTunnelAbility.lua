@@ -17,7 +17,19 @@ function GorgeTunnelAbility:GetEnergyCost(player)
 end
 
 function GorgeTunnelAbility:GetGhostModelName(ability)
+
+    local player = ability:GetParent()
+    if player and player:isa("Gorge") then
+    
+        local variant = player:GetVariant()
+        if variant == kGorgeVariant.shadow then
+            return TunnelEntrance.kModelNameShadow
+        end
+        
+    end
+    
     return TunnelEntrance.kModelName
+    
 end
 
 function GorgeTunnelAbility:GetDropStructureId()
@@ -49,6 +61,15 @@ function GorgeTunnelAbility:GetDropRange()
     return 1.5
 end
 
+local kExtents = Vector(0.4, 0.4, 0.4)
+local function IsPathable(position)
+
+    local noBuild = Pathing.GetIsFlagSet(position, kExtents, Pathing.PolyFlag_NoBuild)
+    local walk = Pathing.GetIsFlagSet(position, kExtents, Pathing.PolyFlag_Walk)
+    return not noBuild and walk
+    
+end
+
 function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
 
     local valid = false
@@ -56,7 +77,10 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
     /// allow only on even surfaces
     if surfaceNormal then
     
-        if surfaceNormal:DotProduct(kUpVector) > 0.9 then
+        if not IsPathable(position) then
+            valid = false
+    
+        elseif surfaceNormal:DotProduct(kUpVector) > 0.9 then
         
             valid = true
         

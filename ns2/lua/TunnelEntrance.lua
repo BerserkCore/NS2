@@ -46,7 +46,8 @@ TunnelEntrance.kMapName = "tunnelentrance"
 local kDigestDuration = 1.5
 local kTunnelInfestationRadius = 7
 
-TunnelEntrance.kModelName = PrecacheAsset("models/alien/tunnel/mouth.model") PrecacheAsset("models/props/generic/generic_crate_01.model")
+TunnelEntrance.kModelName = PrecacheAsset("models/alien/tunnel/mouth.model")
+TunnelEntrance.kModelNameShadow = PrecacheAsset("models/alien/tunnel/mouth_shadow.model")
 local kAnimationGraph = PrecacheAsset("models/alien/tunnel/mouth.animation_graph")
 
 local networkVars = { 
@@ -150,8 +151,11 @@ function TunnelEntrance:OnCreate()
     InitMixin(self, TeleportMixin)
     
     if Server then
+    
         InitMixin(self, InfestationTrackerMixin)
         self.connected = false
+        self.tunnelId = Entity.invalidId
+        
     elseif Client then
         InitMixin(self, CommanderGlowMixin)     
     end
@@ -204,6 +208,16 @@ function TunnelEntrance:OnDestroy()
         Client.DestroyRenderDecal(self.decal)
         self.decal = nil
         
+    end
+    
+end
+
+function TunnelEntrance:SetVariant(gorgeVariant)
+
+    if gorgeVariant == kGorgeVariant.shadow then
+        self:SetModel(TunnelEntrance.kModelNameShadow, kAnimationGraph)
+    else
+        self:SetModel(TunnelEntrance.kModelName, kAnimationGraph)
     end
     
 end
@@ -343,8 +357,11 @@ if Server then
 
     function TunnelEntrance:OnUpdate(deltaTime)
 
-        ScriptActor.OnUpdate(self, deltaTime)        
-        self.connected = self.tunnelId ~= nil and self.tunnelId ~= Entity.invalidId and Shared.GetEntity(self.tunnelId) ~= nil
+        ScriptActor.OnUpdate(self, deltaTime)    
+
+        local tunnel = self:GetTunnelEntity()
+    
+        self.connected = tunnel ~= nil and not tunnel:GetIsDeadEnd()
         self.beingUsed = self.timeLastInteraction + 0.1 > Shared.GetTime()  
         self.destLocationId = ComputeDestinationLocationId(self)
         

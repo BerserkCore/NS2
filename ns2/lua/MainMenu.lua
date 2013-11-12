@@ -353,7 +353,7 @@ function MainMenu_OnOpenMenu()
 end
 
 function MainMenu_OnCloseMenu()
-    StartSoundEffect(kLoopingMenuSound)    
+    Shared.StopSound(nil, kLoopingMenuSound)
 end
 
 function MainMenu_LoadNewsURL(url)

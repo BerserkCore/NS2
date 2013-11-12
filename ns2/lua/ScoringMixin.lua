@@ -46,7 +46,7 @@ function ScoringMixin:AddScore(points, res)
         if points ~= nil and points ~= 0 then
         
             local displayRes = ConditionalValue(type(res) == "number", res, 0)
-            Server.SendCommand(self, string.format("points %s %s", tostring(points), tostring(displayRes)))
+            Server.SendNetworkMessage(Server.GetOwner(self), "ScoreUpdate", { points = points, res = displayRes }, true)
             self.score = Clamp(self.score + points, 0, self:GetMixinConstants().kMaxScore or 100)
             self:SetScoreboardChanged(true)
             

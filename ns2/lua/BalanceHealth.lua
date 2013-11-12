@@ -116,7 +116,7 @@ kCystHealth = 70	kCystArmor = 0
 kMatureCystHealth = 550	kMatureCystArmor = 0	kCystPointValue = 1
 
 kBoneWallHealth = 300 kBoneWallArmor = 300
-kContaminationHealth = 1000 kContaminationArmor = 0
+kContaminationHealth = 2000 kContaminationArmor = 0
 
 kPowerPointHealth = 2000	kPowerPointArmor = 1000	kPowerPointPointValue = 10
 kDoorHealth = 2000	kDoorArmor = 1000	kDoorPointValue = 0

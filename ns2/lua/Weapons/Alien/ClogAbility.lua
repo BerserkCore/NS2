@@ -67,7 +67,19 @@ function ClogAbility:GetPrimaryAttackDelay()
 end
 
 function ClogAbility:GetGhostModelName(ability)
+
+    local player = ability:GetParent()
+    if player and player:isa("Gorge") then
+    
+        local variant = player:GetVariant()
+        if variant == kGorgeVariant.shadow then
+            return Clog.kModelNameShadow
+        end
+        
+    end
+    
     return Clog.kModelName
+    
 end
 
 function ClogAbility:GetDropStructureId()

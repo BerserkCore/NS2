@@ -246,6 +246,16 @@ local function RemoveGorgeStructureFromClient(self, techId, clientId)
     
 end
 
+local function ApplyGorgeStructureTheme(structure, player)
+
+    assert(player:isa("Gorge"))
+    
+    if structure.SetVariant then
+        structure:SetVariant(player:GetVariant())
+    end
+    
+end
+
 function AlienTeam:AddGorgeStructure(player, structure)
 
     if player ~= nil and structure ~= nil then
@@ -265,6 +275,8 @@ function AlienTeam:AddGorgeStructure(player, structure)
         end
         
         table.insertunique(structureTypeTable[techId], structureId)
+        
+        ApplyGorgeStructureTheme(structure, player)
         
         local numAllowedStructure = LookupTechData(techId, kTechDataMaxAmount, -1) //* self:GetNumHives()
         
@@ -843,6 +855,10 @@ function AlienTeam:InitTechTree()
     self.techTree:AddSpecial(kTechId.TwoShifts)
     self.techTree:AddSpecial(kTechId.TwoShades)
     self.techTree:AddSpecial(kTechId.TwoCrags)
+    
+    self.techTree:AddBuyNode(kTechId.ContaminationTech, kTechId.BioMassNine)
+    self.techTree:AddBuyNode(kTechId.RuptureTech, kTechId.BioMassTwo)
+    self.techTree:AddBuyNode(kTechId.BoneWallTech, kTechId.BioMassThree)
     
     // abilities unlocked by bio mass: 
     

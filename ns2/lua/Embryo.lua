@@ -126,7 +126,7 @@ local function UpdateGestation(self)
             end
             
             local healthScalar = self.storedHealthScalar or 1
-            local armorScalar = self.storedArmoryScalar or 1
+            local armorScalar = self.storedArmorScalar or 1
 
             newPlayer:SetHealth(healthScalar * LookupTechData(self.gestationTypeTechId, kTechDataMaxHealth))
             newPlayer:SetArmor(armorScalar * LookupTechData(self.gestationTypeTechId, kTechDataMaxArmor))

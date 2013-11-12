@@ -274,7 +274,7 @@ local function PredictGoal(self, velocity)
         local movementDir = GetNormalizedVector(velocity)
         local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(movementDir * 2.5, 3, nil, false)
 
-        if averageSurfaceNormal then        
+        if averageSurfaceNormal and (not hitEntities or #hitEntities == 0) then        
             goal = averageSurfaceNormal    
         end
 

@@ -25,6 +25,7 @@ Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
 Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/LerkVariantMixin.lua")
 
 class 'Lerk' (Alien)
 
@@ -53,7 +54,6 @@ local networkVars =
     wallGripNormalGoal = "private compensated vector",
     wallGripAllowed = "private compensated boolean",
     flapPressed = "private compensated boolean",
-
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -64,6 +64,7 @@ AddMixinNetworkVars(CrouchMoveMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
 AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(LerkVariantMixin, networkVars)
 
 // if the user hits a wall and holds the use key and the resulting speed is < this, grip starts
 Lerk.kWallGripMaxSpeed = 4
@@ -106,6 +107,7 @@ function Lerk:OnCreate()
     InitMixin(self, CelerityMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kLerkFov })
     InitMixin(self, WallMovementMixin)
+    InitMixin(self, LerkVariantMixin)
     
     Alien.OnCreate(self)
     

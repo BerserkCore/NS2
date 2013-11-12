@@ -75,18 +75,37 @@ local function GetIsEquipment(techId)
 
 end
 
+// dont use the nano shield entity anymore. it does nothing special and is instantly destroyed
 function MarineCommander:TriggerNanoShield(position)    
 
     local success = false
+    local closest = nil
+
+    local entities = GetEntitiesWithMixinForTeamWithinRange("NanoShieldAble", self:GetTeamNumber(), position, 6)
+    local distance = 1000
     
-    local nanoShield = CreateEntity(NanoShield.kMapName, position, self:GetTeamNumber())
+    Shared.SortEntitiesByDistance(position, entities)
     
-    if nanoShield:GetWasSuccess() then
+    for _, entity in ipairs(entities) do
+    
+        local entityDistance = (entity:GetOrigin() - position):GetLength()
+        if entity:GetCanBeNanoShielded() and ( not closest or ( entityDistance < distance ) ) then
+    
+            closest = entity
+            distance = entityDistance
+    
+        end
+    
+    end
+
+    if closest then
     
         Shared.PlayPrivateSound(self, MarineCommander.kTriggerNanoShieldSound, nil, 1.0, self:GetOrigin())
+        closest:ActivateNanoShield()
         self:ProcessSuccessAction(kTechId.NanoShield)
         success = true
-        
+        TEST_EVENT("NanoShield activated")
+
     else
         self:TriggerInvalidSound()
     end
@@ -118,14 +137,17 @@ function MarineCommander:ProcessTechTreeActionForEntity(techNode, position, norm
     local keepProcessing = false
     
     if techId == kTechId.Scan then
+    
         success = self:TriggerScan(position, trace)
         keepProcessing = false
         
     elseif techId == kTechId.NanoShield then
-        success = self:TriggerNanoShield(position)   
+    
+        success = self:TriggerNanoShield(position)
         keepProcessing = false
         
     elseif techId == kTechId.PowerSurge then
+    
         success = self:TriggerPowerSurge(position, entity, trace)   
         keepProcessing = false 
      

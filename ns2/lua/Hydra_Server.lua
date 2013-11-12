@@ -80,10 +80,12 @@ function Hydra:AttackTarget()
 end
 
 function Hydra:OnOwnerChanged(oldOwner, newOwner)
+
     self.hydraParentId = Entity.invalidId
     if newOwner ~= nil then
-        self.hydraParentId = newOwner:GetId()    
-    end    
+        self.hydraParentId = newOwner:GetId()
+    end
+    
 end
 
 function Hydra:OnUpdate(deltaTime)

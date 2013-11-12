@@ -300,8 +300,10 @@ function TrailCinematic:Update(deltaTime)
         shouldReset = true
     end
     
-    local totalLength = self.trailLength * self.lastLengthFraction
+    local totalLength = self.trailLength
+    local maxLength = self.trailLength * self.lastLengthFraction
     local segmentLength = totalLength / (self.numSegments - 1)
+    local visibleUntilSegment = math.floor(maxLength / segmentLength)
     
     // update segment positions
     for index, segment in ipairs(self.segments) do
@@ -340,6 +342,16 @@ function TrailCinematic:Update(deltaTime)
             
             if segment.cinematic then
                 segment.cinematic:SetCoords(segment.coords)   
+            end
+            
+            if self.collidesWithWorld and segment.cinematic then
+                
+                if index - 1 > visibleUntilSegment then
+                    segment.cinematic:SetIsVisible(false)
+                elseif segment.visible then
+                    segment.cinematic:SetIsVisible(true)
+                end
+                
             end
             
             local prevSegmentOrigin = self.segments[index - 1].coords.origin
@@ -436,9 +448,9 @@ end
 
 function TrailCinematic:_UpdateSegmentVisible(segmentIndex)
 
-    local fraction =  (Client.GetTime() - self.timeOfVisibilityChange) / self.visibilityChangeDuration
+    local fraction = (Client.GetTime() - self.timeOfVisibilityChange) / self.visibilityChangeDuration
     local visible = self.segments[segmentIndex].visible
-
+    
     if self:GetIsVisible() and math.ceil(fraction * self.numSegments) >= segmentIndex then
         visible = true
     end

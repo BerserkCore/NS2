@@ -714,6 +714,10 @@ elseif Client then
     
 end
 
+function LiveMixin:GetCanBeNanoShieldedOverride(resultTable)
+    resultTable.shieldedAllowed = resultTable.shieldedAllowed and self:GetIsAlive()
+end
+
 // Change health and max health when changing techIds
 function LiveMixin:UpdateHealthValues(newTechId)
 

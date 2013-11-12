@@ -55,7 +55,7 @@ end
 local function UpdateSinkIn(self, deltaTime)
 
     local tunnelEntrance = GetNearbyTunnelEntrance(self)        
-    if tunnelEntrance and tunnelEntrance:GetIsBuilt() then
+    if tunnelEntrance and tunnelEntrance:GetIsBuilt() and tunnelEntrance:GetIsConnected() then
     
         if not self.timeSinkInStarted then
             self.timeSinkInStarted = Shared.GetTime()

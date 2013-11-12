@@ -13,7 +13,7 @@ class 'PulseGrenade' (PredictedProjectile)
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/elec_trails.surface_shader")
 
 PulseGrenade.kMapName = "pulsegrenadeprojectile"
-PulseGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse.model")
+PulseGrenade.kModelName = PrecacheAsset("models/marine/grenades/gr_pulse_world.model")
 
 PulseGrenade.kRadius = 0.17
 PulseGrenade.kClearOnImpact = false

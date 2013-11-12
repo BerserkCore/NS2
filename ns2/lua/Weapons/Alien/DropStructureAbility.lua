@@ -546,6 +546,16 @@ function DropStructureAbility:GetGhostModelTechId()
 
 end
 
+function DropStructureAbility:GetGhostModelName(player)
+
+    if self.activeStructure ~= nil and self:GetActiveStructure().GetGhostModelName then
+        return self:GetActiveStructure():GetGhostModelName(self)
+    end
+    
+    return nil
+    
+end
+
 if Client then
 
     function DropStructureAbility:OnProcessIntermediate(input)

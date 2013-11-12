@@ -58,7 +58,7 @@ function GUIPing:Update(deltaTime)
     
     // Fade out when closer to screen center.
     local distanceToScreenCenter = math.abs((position - Vector(Client.GetScreenWidth() * 0.5, Client.GetScreenHeight() * 0.5, 0)):GetLength())
-    self.pingItem.Frame:SetColor(Color(1, 1, 1, (distanceToScreenCenter / self.screenDiagonalLength) + 0.5))
+    self.pingItem.Frame:SetColor(Color(1, 1, 1, (distanceToScreenCenter / GUIScale(400)) + 0.1 ))
     
     self.pingItem.Frame:SetPosition(position)
     

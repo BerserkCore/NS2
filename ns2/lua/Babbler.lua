@@ -25,6 +25,7 @@ class 'Babbler' (ScriptActor)
 Babbler.kMapName = "babbler"
 
 Babbler.kModelName = PrecacheAsset("models/alien/babbler/babbler.model")
+Babbler.kModelNameShadow = PrecacheAsset("models/alien/babbler/babbler_shadow.model")
 local kAnimationGraph = PrecacheAsset("models/alien/babbler/babbler.animation_graph")
 
 Babbler.kMass = 15
@@ -184,6 +185,15 @@ function Babbler:OnDestroy()
 
 end
 
+function Babbler:SetVariant(gorgeVariant)
+
+    if gorgeVariant == kGorgeVariant.shadow then
+        self:SetModel(Babbler.kModelNameShadow, kAnimationGraph)
+    else
+        self:SetModel(Babbler.kModelName, kAnimationGraph)
+    end
+    
+end
 
 function Babbler:GetIsClinged()
     return self.clinged

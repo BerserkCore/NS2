@@ -1285,9 +1285,9 @@ if Server then
             elseif not player:isa("Commander") then
             
                 // Give new players starting resources. Mark players as "having played" the game (so they don't get starting res if
-                // they join a team again, etc.)
+                // they join a team again, etc.) Also, don't award initial resources to any client marked as blockPersonalResources (previous Commanders).
                 local success, played = GetUserPlayedInGame(self, newPlayer)
-                if success and not played then
+                if success and not played and not newPlayerClient.blockPersonalResources then
                     newPlayer:SetResources(kPlayerInitialIndivRes)
                 end
                 

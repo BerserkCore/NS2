@@ -218,6 +218,11 @@ local function OnSetClientTeamNumber(message)
 end
 Client.HookNetworkMessage("SetClientTeamNumber", OnSetClientTeamNumber)
 
+local function OnScoreUpdate(message)
+    ScoreDisplayUI_SetNewScore(message.points, message.res)
+end
+Client.HookNetworkMessage("ScoreUpdate", OnScoreUpdate)
+
 local function OnMessageAutoConcedeWarning(message)
 
     local warningText = StringReformat(Locale.ResolveString("AUTO_CONCEDE_WARNING"), { time = message.time, teamName = message.team1Conceding and "Marines" or "Aliens" })

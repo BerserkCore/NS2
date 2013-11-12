@@ -58,6 +58,8 @@ if Client then
             local valid, data, message = ValidateResponse(json.decode(response))
             if valid then
                 responder(data)
+            else
+                Shared.Message("S3 request failed: " .. message)
             end
             
         end

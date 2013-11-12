@@ -25,6 +25,7 @@ Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/RailgunTargetMixin.lua")
 Script.Load("lua/Weapons/PredictedProjectile.lua")
 Script.Load("lua/IdleMixin.lua")
+Script.Load("lua/GorgeVariantMixin.lua")
 
 class 'Gorge' (Alien)
 
@@ -51,6 +52,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(BabblerClingMixin, networkVars)
 AddMixinNetworkVars(TunnelUserMixin, networkVars)
 AddMixinNetworkVars(IdleMixin, networkVars)
+AddMixinNetworkVars(GorgeVariantMixin, networkVars)
 
 Gorge.kMapName = "gorge"
 
@@ -90,6 +92,7 @@ function Gorge:OnCreate()
     InitMixin(self, CrouchMoveMixin)
     InitMixin(self, CelerityMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kGorgeFov })
+    InitMixin(self, GorgeVariantMixin)
     
     Alien.OnCreate(self)
     
@@ -482,8 +485,17 @@ if Client then
         
         return false
         
-    end    
-
+    end
+    
+    function Gorge:GetGhostModelOverride()
+    
+        local weapon = self:GetActiveWeapon()
+        if weapon and weapon:isa("DropStructureAbility") and weapon.GetGhostModelName then
+            return weapon:GetGhostModelName(self)
+        end
+        
+    end
+    
     function Gorge:GetGhostModelTechId()
     
         local weapon = self:GetActiveWeapon()
@@ -492,14 +504,14 @@ if Client then
         end
         
     end
-
+    
     function Gorge:GetGhostModelCoords()
     
         local weapon = self:GetActiveWeapon()
         if weapon and weapon:isa("DropStructureAbility") then
             return weapon:GetGhostModelCoords()
         end
-
+        
     end
     
     function Gorge:GetLastClickedPosition()

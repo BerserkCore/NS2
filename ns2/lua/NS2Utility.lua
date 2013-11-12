@@ -1967,7 +1967,7 @@ local kTraceOrder = { 4, 1, 3, 5, 7, 0, 2, 6, 8 }
   * Then we split the space into 9 parts and trace/select all of them, choose the "best" target. If no good target is found,
   * we use the middle trace for effects.
   */
-function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceRealAttack, scale, priorityFunc, filter)
+function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceRealAttack, scale, priorityFunc, filter, mask)
 
     scale = scale or 1
 
@@ -1976,6 +1976,8 @@ function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceR
     if not teamNumber then
         teamNumber = GetEnemyTeamNumber( player:GetTeamNumber() )
     end
+    
+    mask = mask or PhysicsMask.Melee
     
     local coords = optionalCoords or player:GetViewAngles():GetCoords()
     local axis = coords.zAxis
@@ -2013,7 +2015,7 @@ function CheckMeleeCapsule(weapon, player, damage, range, optionalCoords, traceR
         local dx = pointIndex % 3 - 1
         local dy = math.floor(pointIndex / 3) - 1
         local point = eyePoint + coords.xAxis * (dx * width / 3) + coords.yAxis * (dy * height / 3)
-        local trace, sp, ep = TraceMeleeBox(weapon, point, axis, extents, range, PhysicsMask.Melee, filter)
+        local trace, sp, ep = TraceMeleeBox(weapon, point, axis, extents, range, mask, filter)
         
         if dx == 0 and dy == 0 then
             middleTrace, middleStart = trace, sp
@@ -2705,15 +2707,33 @@ function UpdateAlienStructureMove(self, deltaTime)
         
             self:MoveToTarget(PhysicsMask.AIMovement, currentOrder:GetLocation(), speed, deltaTime)
             
+            if not self.distanceMoved then
+                self.distanceMoved = 0
+            end
+            
+            self.distanceMoved = self.distanceMoved + speed * deltaTime
+            
+            if self.distanceMoved > 1 then
+            
+                if HasMixin(self, "StaticTarget") then
+                    self:StaticTargetMoved()
+                end
+                
+                self.distanceMoved = 0
+                
+            end
+            
             if self:IsTargetReached(currentOrder:GetLocation(), kAIMoveOrderCompleteDistance) then
                 self:CompletedCurrentOrder()
                 self.moving = false
+                self.distanceMoved = 0
             else
                 self.moving = true            
             end
             
         else
             self.moving = false
+            self.distanceMoved = 0
         end
 
         if HasMixin(self, "Obstacle") then

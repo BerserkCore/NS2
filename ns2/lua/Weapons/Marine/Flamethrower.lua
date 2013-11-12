@@ -210,16 +210,16 @@ end
 
 local function ApplyConeDamage(self, player)
     
-    local barrelPoint = self:GetBarrelPoint() - Vector(0, 0.4, 0)
+    local eyePos  = player:GetEyePos()    
     local ents = {}
-    
-    local range = self:GetRange()
-    
-    local fireDirection = GetNormalizedVector((player:GetEyePos() - Vector(0, 0.3, 0) + player:GetViewCoords().zAxis * range) - barrelPoint)
+
+
+    local fireDirection = player:GetViewCoords().zAxis
     local extents = Vector(kConeWidth, kConeWidth, kConeWidth)
-    local remainingRange = range
-    local startPoint = barrelPoint
-    local filterEnts = {}
+    local remainingRange = self:GetRange()
+    
+    local startPoint = Vector(eyePos)
+    local filterEnts = {self, player}
     
     for i = 1, 20 do
     
@@ -227,7 +227,7 @@ local function ApplyConeDamage(self, player)
             break
         end
         
-        local trace = TraceMeleeBox(self, startPoint, fireDirection, extents, remainingRange, PhysicsMask.Bullets, EntityFilterList(filterEnts))
+        local trace = TraceMeleeBox(self, startPoint, fireDirection, extents, remainingRange, PhysicsMask.Flame, EntityFilterList(filterEnts))
         
         //DebugLine(startPoint, trace.endPoint, 0.3, 1, 0, 0, 1)        
         
@@ -249,7 +249,7 @@ local function ApplyConeDamage(self, player)
             else
             
                 // Make another trace to see if the shot should get deflected.
-                local lineTrace = Shared.TraceRay(startPoint, startPoint + remainingRange * fireDirection, CollisionRep.LOS, PhysicsMask.Melee, EntityFilterOne(player))
+                local lineTrace = Shared.TraceRay(startPoint, startPoint + remainingRange * fireDirection, CollisionRep.Damage, PhysicsMask.Flame, EntityFilterOne(player))
                 
                 if lineTrace.fraction < 0.8 then
                 
@@ -277,7 +277,7 @@ local function ApplyConeDamage(self, player)
     
         if ent ~= player then
         
-            local toEnemy = GetNormalizedVector(ent:GetModelOrigin() - barrelPoint)
+            local toEnemy = GetNormalizedVector(ent:GetModelOrigin() - eyePos)
             local health = ent:GetHealth()
             
             self:DoDamage(kFlamethrowerDamage, ent, ent:GetModelOrigin(), toEnemy)
@@ -309,7 +309,7 @@ local function ShootFlame(self, player)
     viewCoords.origin = self:GetBarrelPoint(player) + viewCoords.zAxis * (-0.4) + viewCoords.xAxis * (-0.2)
     local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * self:GetRange()
     
-    local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Damage, PhysicsMask.Bullets, EntityFilterAll())
+    local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Damage, PhysicsMask.Flame, EntityFilterAll())
     
     local range = (trace.endPoint - viewCoords.origin):GetLength()
     if range < 0 then
@@ -335,9 +335,7 @@ local function ShootFlame(self, player)
 end
 
 function Flamethrower:FirePrimary(player, bullets, range, penetration)
-    if not GetIsVortexed(player) then
-        ShootFlame(self, player)
-    end
+    ShootFlame(self, player)
 end
 
 function Flamethrower:GetDeathIconIndex()

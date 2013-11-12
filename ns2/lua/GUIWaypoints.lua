@@ -70,16 +70,7 @@ local function TriggerCircleInAnimation(self)
     self.animatedCircle:SetPosition(-circleMaxSize * 0.5)
     self.animatedCircle:SetSize(circleMaxSize)
     self.animatedCircle:SetRotation(Vector(0,0,0))
-    self.animatedCircle:SetColor(Color(1,1,1,0))
-    
-    local blinkCallback = function(script, item)
-    
-        item:SetColor(Color(1,1,1,1))
-        item:SetColor(Color(1,1,1,0.2), 1)
-        
-    end
-    
-    self.animatedCircle:SetColor(Color(1,1,1,0.3), 1, nil, AnimateSqRt, blinkCallback)
+
     self.animatedCircle:SetSize(circleMinSize, 1, nil, AnimateQuadratic)
     self.animatedCircle:SetPosition(-circleMinSize / 2, 1, nil, AnimateQuadratic)
     
@@ -508,11 +499,13 @@ local function AnimateFinalWaypoint(self)
         local id = finalWaypointData.id
         local showArrow = finalWaypointData.showArrow
         
-        self.waypointDirection:SetIsVisible(showArrow == true)
-        local direction = self.finalWaypoint:GetPosition() - Vector(Client.GetScreenWidth() / 2, Client.GetScreenHeight() / 2, 0)
-        local alphaFraction = math.abs(direction:GetLength()) / self.screenDiagonalLength
+        local screenCenter = Vector(Client.GetScreenWidth() / 2, Client.GetScreenHeight() / 2, 0)
         
-        self.finalWaypoint:SetColor(Color(1, 1, 1, alphaFraction * 2 + 0.1))
+        self.waypointDirection:SetIsVisible(showArrow == true)
+        
+        local alphaFraction = math.abs((Vector(x, y, 0) - screenCenter):GetLength()) / GUIScale(400) + 0.01
+        
+        self.finalWaypoint:SetColor(Color(1, 1, 1, alphaFraction))
         self.animatedCircle:SetColor(Color(1, 1, 1, alphaFraction))
         
         local size = Vector(scale, scale, 1)
@@ -520,6 +513,8 @@ local function AnimateFinalWaypoint(self)
         self.finalWaypoint:SetPosition(Vector(x - scale / 2, y - scale / 2, 0))
         self.finalWaypoint:SetSize(size)
         self.orderIcon:SetSize(size)
+        
+        local direction = self.finalWaypoint:GetPosition() - screenCenter
         
         if distance > 0 then
             self.finalDistanceText:SetText(tostring(math.floor(distance)) .. " " .. Locale.ResolveString("METERS"))
@@ -571,11 +566,11 @@ function GUIWaypoints:Update(deltaTime)
 
     PROFILE("GUIWaypoints:Update")
     
+    GUIAnimatedScript.Update(self, deltaTime)
+    
     UpdatePath(self, deltaTime)
     
     AnimateFinalWaypoint(self)
-    
-    GUIAnimatedScript.Update(self, deltaTime)
     
 end
 

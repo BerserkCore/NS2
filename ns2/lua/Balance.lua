@@ -324,7 +324,7 @@ kWeapons1DamageScalar = 1 + kDamagePerUpgradeScalar
 kWeapons2DamageScalar = 1 + kDamagePerUpgradeScalar * 2
 kWeapons3DamageScalar = 1 + kDamagePerUpgradeScalar * 3
 
-kNanoShieldDamageReductionDamage = 0.25
+kNanoShieldDamageReductionDamage = 0.68
 
 // ALIEN DAMAGE
 kBiteDamage = 75
@@ -488,7 +488,7 @@ kARCBuildTime = 7
 kARCSplashTechResearchTime = 30
 kARCArmorTechResearchTime = 30
 
-kNanoShieldDuration = 3
+kNanoShieldDuration = 5
 kSentryBuildTime = 3
 
 kNanoShieldResearchCost = 15
@@ -670,7 +670,6 @@ kNutrientMistMaturingIncrease = 66
 kObservatoryInitialEnergy = 25  kObservatoryMaxEnergy = 100
 kObservatoryScanCost = 3
 kObservatoryDistressBeaconCost = 10
-kScanCooldown = 1
 
 kMACInitialEnergy = 50  kMACMaxEnergy = 150
 kDrifterCost = 8

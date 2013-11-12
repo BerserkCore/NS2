@@ -38,8 +38,14 @@ function Scan:OnInitialized()
 
     CommanderAbility.OnInitialized(self)
     
-    if Server and not HasMixin(self, "MapBlip") then
-        InitMixin(self, MapBlipMixin)
+    if Server then
+    
+        DestroyEntitiesWithinRange("Scan", self:GetOrigin(), Scan.kScanDistance * 0.5, EntityFilterOne(self)) 
+    
+        if not HasMixin(self, "MapBlip") then
+            InitMixin(self, MapBlipMixin)
+        end
+        
     end
     
 end

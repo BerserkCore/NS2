@@ -140,8 +140,13 @@ for _, soundData in pairs(kSoundData) do
     
         PrecacheAsset(soundData.Sound)
         
-        soundData.SoundFemale = soundData.Sound .. "_female"
-        PrecacheAsset(soundData.SoundFemale)
+        -- Do not look for female versions of alien sounds.
+        if string.find(soundData.Sound, "sound/NS2.fev/alien/", 1) == nil then
+        
+            soundData.SoundFemale = soundData.Sound .. "_female"
+            PrecacheAsset(soundData.SoundFemale)
+            
+        end
         
     end
     

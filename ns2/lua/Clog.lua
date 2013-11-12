@@ -22,9 +22,11 @@ class 'Clog' (Entity)
 
 Clog.kMapName = "clog"
 
-Clog.kModelName = PrecacheAsset("models/alien/gorge/goowallnode.model")
+Clog.kModelName = PrecacheAsset("models/alien/gorge/clog.model")
+Clog.kModelNameShadow = PrecacheAsset("models/alien/gorge/clog_shadow.model")
+local kClogModelVariants = { [kGorgeVariant.normal] = Clog.kModelName, [kGorgeVariant.shadow] = Clog.kModelNameShadow }
 
-local networkVars = { }
+local networkVars = { variant = "enum kGorgeVariant" }
 
 Clog.kRadius = 0.67
 
@@ -66,6 +68,8 @@ function Clog:OnCreate()
     self:SetRelevancyDistance(kMaxRelevancyDistance)
     self:SetUpdates(true)
     
+    self.variant = kGorgeVariant.normal
+    
 end
 
 function Clog:OnInitialized()
@@ -96,15 +100,21 @@ function Clog:GetSimplePhysicsBodySize()
     return Clog.kRadius
 end
 
-function Clog:OnDestroy()
+local function ClearRenderModel(self)
 
     if self._renderModel ~= nil then
-    
         Client.DestroyRenderModel(self._renderModel)
-        self._renderModel = nil
-        
     end
+    self._renderModel = nil
+    
+end
 
+function Clog:OnDestroy()
+    ClearRenderModel(self)
+end
+
+function Clog:SetVariant(gorgeVariant)
+    self.variant = gorgeVariant
 end
 
 function Clog:SpaceClearForEntity(location)
@@ -179,18 +189,24 @@ elseif Client then
     function Clog:OnUpdateRender()
     
         PROFILE("Clog:OnUpdateRender")
-    
-        if self._renderModel then
-            self._renderModel:SetCoords(self:GetCoords())            
-            //DebugCapsule(self:GetOrigin(), self:GetOrigin(), Clog.kRadius, 0, 0.03)
-        else
-            self._renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)
-            self._renderModel:SetModel(Shared.GetModelIndex(Clog.kModelName))
-            self._renderModel:SetCoords(self:GetCoords())  
+        
+        if self.variant ~= self.renderVariant then
+            ClearRenderModel(self)
         end
-    
+        
+        if self._renderModel then
+            self._renderModel:SetCoords(self:GetCoords())
+        else
+        
+            self._renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)
+            self._renderModel:SetModel(Shared.GetModelIndex(kClogModelVariants[self.variant]))
+            self._renderModel:SetCoords(self:GetCoords())
+            self.renderVariant = self.variant
+            
+        end
+        
     end
-
+    
 end
 
 function Clog:GetEffectParams(tableParams)

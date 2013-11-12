@@ -802,7 +802,7 @@ end
 local kStrafeJumpForce = 1
 local kStrafeJumpDelay = 0.7
 function Marine:ModifyJump(input, velocity, jumpVelocity)
-    
+    /*
     local isStrafeJump = input.move.z == 0 and input.move.x ~= 0
     if isStrafeJump and self:GetTimeGroundTouched() + kStrafeJumpDelay < Shared.GetTime() then
     
@@ -816,7 +816,7 @@ function Marine:ModifyJump(input, velocity, jumpVelocity)
     end
     
     jumpVelocity:Scale(self:GetSlowSpeedModifier())
-    
+    */
 end
 
 function Marine:OnJump()

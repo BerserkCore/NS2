@@ -299,7 +299,7 @@ function GUIMarineStatus:Update(deltaTime, parameters)
         if currentHealth < self.lastHealth then
             self.healthText:DestroyAnimation("ANIM_TEXT")
             self.healthText:SetText(tostring(math.ceil(currentHealth)))
-            self.healthBar:DestroyAnimation("ANIM_HEALTH_SIZE")
+            self.healthBar:DestroyAnimations()
             self.healthBar:SetSize(healthBarSize)
             self.healthBar:SetTexturePixelCoordinates(unpack(pixelCoords))
         else

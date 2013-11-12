@@ -32,6 +32,8 @@ local kTrailCinematics =
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
+    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part2.cinematic"),
+    PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part3.cinematic"),
     PrecacheAsset("cinematics/marine/flamethrower/flame_trail_part3.cinematic"),
 }
 
@@ -204,7 +206,7 @@ function Flamethrower:InitTrailCinematic(effectType, player)
     self.trailCinematic = Client.CreateTrailCinematic(RenderScene.Zone_Default)
     
     local minHardeningValue = 0.5
-    local trailLengthMod = 0
+    local numFlameSegments = 6
 
     if effectType == kEffectType.FirstPerson then
     
@@ -224,8 +226,7 @@ function Flamethrower:InitTrailCinematic(effectType, player)
         // attach to third person fx node otherwise with an X offset since we align it along the X-Axis (the attackpoint is oriented in the model like that)
         self.trailCinematic:AttachTo(self, TRAIL_ALIGN_X,  Vector(0.3, 0, 0), "fxnode_flamethrowermuzzle")
         minHardeningValue = 0.1
-        
-        self.loadedFirstPersonEffect = false
+        numFlameSegments = 8
     
     end
     
@@ -233,7 +234,7 @@ function Flamethrower:InitTrailCinematic(effectType, player)
     self.trailCinematic:SetIsVisible(false)
     self.trailCinematic:SetRepeatStyle(Cinematic.Repeat_Endless)
     self.trailCinematic:SetOptions( {
-            numSegments = 6,
+            numSegments = numFlameSegments,
             collidesWithWorld = true,
             visibilityChangeDuration = 0.2,
             fadeOutCinematics = true,
@@ -259,7 +260,7 @@ function Flamethrower:CreateImpactEffect(player)
         viewCoords.origin = self:GetBarrelPoint(player) + viewCoords.zAxis * (-0.4) + viewCoords.xAxis * (-0.2)
         local endPoint = self:GetBarrelPoint(player) + viewCoords.xAxis * (-0.2) + viewCoords.yAxis * (-0.3) + viewCoords.zAxis * self:GetRange()
 
-        local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Default, PhysicsMask.Bullets, EntityFilterAll())
+        local trace = Shared.TraceRay(viewCoords.origin, endPoint, CollisionRep.Default, PhysicsMask.Flame, EntityFilterAll())
 
         local range = (trace.endPoint - viewCoords.origin):GetLength()
         if range < 0 then

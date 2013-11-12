@@ -127,7 +127,7 @@ function Tunnel:OnCreate()
         self.exitAConnected = false
         self.exitBConnected = false
         
-        self:SetPropagate(Entity.Propagate_Mask)
+        self:SetPropagate(Entity.Propagate_Always)
         self:SetRelevancyDistance(kMaxRelevancyDistance)
         
         self.collapsing = false
@@ -166,6 +166,10 @@ local function CreateRandomTunnelProps(self)
     
     end
 
+end
+
+function Tunnel:GetIsDeadEnd()
+    return not self.exitAConnected or not self.exitBConnected
 end
 
 function Tunnel:OnInitialized()
@@ -552,8 +556,8 @@ end
 
 function Tunnel:OnUpdatePoseParameters()
 
-    self:SetPoseParam("intensity_yn", self.flinchAAmount)
-    self:SetPoseParam("intensity_yp", self.flinchBAmount)
+    self:SetPoseParam("intensity_yn", self.flinchBAmount)
+    self:SetPoseParam("intensity_yp", self.flinchAAmount)
 
 end
 

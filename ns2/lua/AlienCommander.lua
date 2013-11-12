@@ -89,6 +89,19 @@ if Client then
     
 end
 
+function AlienCommander:OnCreate()
+
+    Commander.OnCreate(self)
+    
+    if Server then 
+        
+        local mask = bit.bor(kRelevantToReadyRoom, kRelevantToTeam2Unit, kRelevantToTeam2Commander)        
+        self:SetExcludeRelevancyMask(mask)    
+    
+    end
+
+end
+
 function AlienCommander:GetSelectionSound()
     return AlienCommander.kSelectSound
 end

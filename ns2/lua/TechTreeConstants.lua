@@ -153,11 +153,13 @@ kTechId = createTechIdEnum({
     
     'UpgradeSkulk', 'UpgradeGorge', 'UpgradeLerk', 'UpgradeFade', 'UpgradeOnos',
     
+    'ContaminationTech', 'RuptureTech', 'BoneWallTech',
+    
     // Skulk abilities    
     'Bite', 'Sneak', 'Parasite', 'Leap', 'Xenocide',
     
     // gorge abilities
-    'Spit', 'Spray', 'BellySlide', 'BabblerTech', 'BuildAbility', 'BabblerAbility', 'Babbler', 'BabblerEgg', 'GorgeTunnelTech', 'BileBomb',  'WebTech', 'Web',
+    'Spit', 'Spray', 'BellySlide', 'BabblerTech', 'BuildAbility', 'BabblerAbility', 'Babbler', 'BabblerEgg', 'GorgeTunnelTech', 'BileBomb',  'WebTech', 'Web', 'HydraTech',
 
     // lerk abilities
     'LerkBite', 'Cling', 'Spikes', 'Umbra', 'Spores',

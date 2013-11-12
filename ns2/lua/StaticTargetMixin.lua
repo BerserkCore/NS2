@@ -32,7 +32,9 @@ function StaticTargetMixin:OnDestroy()
 end
 
 function StaticTargetMixin:StaticTargetMoved()
-    TargetType.OnTargetMoved(self)
+    TargetType.OnDestroyEntity(self)
+    TargetType.OnCreateEntity(self)
+    //TargetType.OnTargetMoved(self)
 end
 
 

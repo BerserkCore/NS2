@@ -48,6 +48,7 @@ class 'Hydra' (ScriptActor)
 Hydra.kMapName = "hydra"
 
 Hydra.kModelName = PrecacheAsset("models/alien/hydra/hydra.model")
+Hydra.kModelNameShadow = PrecacheAsset("models/alien/hydra/hydra_shadow.model")
 Hydra.kAnimationGraph = PrecacheAsset("models/alien/hydra/hydra.animation_graph")
 
 Hydra.kSpikeSpeed = 50
@@ -195,6 +196,16 @@ function Hydra:OnDestroy()
         Client.DestroyRenderDecal(self.decal)
         self.decal = nil
         
+    end
+    
+end
+
+function Hydra:SetVariant(gorgeVariant)
+
+    if gorgeVariant == kGorgeVariant.shadow then
+        self:SetModel(Hydra.kModelNameShadow, Hydra.kAnimationGraph)
+    else
+        self:SetModel(Hydra.kModelName, Hydra.kAnimationGraph)
     end
     
 end

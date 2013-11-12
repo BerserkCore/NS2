@@ -222,14 +222,20 @@ function GUIBioMassDisplay:Update(deltaTime)
     local bioMassAlert = (teamInfo and teamInfo.GetBioMassAlertLevel) and teamInfo:GetBioMassAlertLevel() or 0
     local showGUI = player and (player:isa("Commander") or player:GetIsMinimapVisible() or player:GetBuyMenuIsDisplaying() or bioMassAlert > 0) or PlayerUI_GetIsTechMapVisible()
     
-    if player:isa("Commander") and not self.registered then
+    if player:isa("Commander") then
         
-        local script = GetGUIManager():GetGUIScriptSingle("GUICommanderTooltip")
-        if script then
-            script:Register(self)
-            self.registered = true
+        if not self.registered then
+        
+            local script = GetGUIManager():GetGUIScriptSingle("GUICommanderTooltip")
+            if script then
+                script:Register(self)
+                self.registered = true
+            end
+        
         end
         
+    else
+        self.registered = false
     end
     
     local overflow = math.max(0, bioMass - maxBioMass)
