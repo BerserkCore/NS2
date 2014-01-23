@@ -41,23 +41,23 @@ end
 if Server then
 
     function ClientModelMixin:SetCoords()
-        self:ForceUpdateUntil(Shared.GetTime() + 1)
+        self:ForceUpdateUntil(Shared.GetTime() + 2)
     end
 
     function ClientModelMixin:SetAngles()
-        self:ForceUpdateUntil(Shared.GetTime() + 1)
+        self:ForceUpdateUntil(Shared.GetTime() + 2)
     end
     
     function ClientModelMixin:SetOrigin()
-        self:ForceUpdateUntil(Shared.GetTime() + 1)
+        self:ForceUpdateUntil(Shared.GetTime() + 2)
     end
     
     function ClientModelMixin:SetAttachPoint()
-        self:ForceUpdateUntil(Shared.GetTime() + 1)
+        self:ForceUpdateUntil(Shared.GetTime() + 2)
     end
     
     function ClientModelMixin:OnConstructionComplete()
-        self:ForceUpdateUntil(Shared.GetTime() + 1)
+        self:ForceUpdateUntil(Shared.GetTime() + 2)
     end
 
     function ClientModelMixin:ForceUpdateUntil(time)
@@ -69,6 +69,7 @@ if Server then
     
         if math.floor(fraction * 10) ~= self.lastFractionTenth then
             self.lastFractionTenth = math.floor(fraction * 10)
+            self:ForceUpdateUntil(0.5)
             self:OnUpdatePhysics()
         end
         

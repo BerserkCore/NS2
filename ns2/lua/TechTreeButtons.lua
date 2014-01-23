@@ -377,7 +377,7 @@ kTechIdToMaterialOffset[kTechId.MarineAlertResearchComplete] = 101
 kTechIdToMaterialOffset[kTechId.MarineAlertManufactureComplete] = 131
 
 kTechIdToMaterialOffset[kTechId.AlienAlertNeedMist] = 56
-kTechIdToMaterialOffset[kTechId.AlienAlertNeedEnzyme] = 42
+kTechIdToMaterialOffset[kTechId.AlienAlertNeedDrifter] = 37
 kTechIdToMaterialOffset[kTechId.AlienAlertHiveUnderAttack] = 123
 kTechIdToMaterialOffset[kTechId.AlienAlertStructureUnderAttack] = 123
 kTechIdToMaterialOffset[kTechId.AlienAlertHarvesterUnderAttack] = 123

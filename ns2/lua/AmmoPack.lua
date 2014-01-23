@@ -35,7 +35,22 @@ function AmmoPack:OnTouch(recipient)
 
     local weapon = recipient:GetActiveWeapon()
     
-    if weapon and weapon:GiveAmmo(AmmoPack.kNumClips, false) then
+    local consumedPack = false
+    
+    for i = 0, recipient:GetNumChildren() - 1 do
+    
+        local child = recipient:GetChildAtIndex(i)
+        if child:isa("ClipWeapon") then
+        
+            if child:GiveAmmo(AmmoPack.kNumClips, false) then
+                consumedPack = true
+            end
+            
+        end
+        
+    end  
+    
+    if consumedPack then
         StartSoundEffectAtOrigin(AmmoPack.kPickupSound, recipient:GetOrigin())
     end
     
@@ -45,9 +60,22 @@ end
 
 function AmmoPack:GetIsValidRecipient(recipient)
 
+    local needsAmmo = false
+    
+    for i = 0, recipient:GetNumChildren() - 1 do
+    
+        local child = recipient:GetChildAtIndex(i)
+        if child:isa("ClipWeapon") and child:GetNeedsAmmo(false) then
+        
+            needsAmmo = true
+            break
+            
+        end
+        
+    end 
+
     // Ammo packs give ammo to clip as well (so pass true to GetNeedsAmmo())
-    local weapon = recipient:GetActiveWeapon()
-    return weapon ~= nil and weapon:isa("ClipWeapon") and weapon:GetNeedsAmmo(false) and not GetIsVortexed(recipient)
+    return needsAmmo
     
 end
 

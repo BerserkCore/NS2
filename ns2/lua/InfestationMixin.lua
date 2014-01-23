@@ -235,7 +235,7 @@ function InfestationMixin:UpdateInfestation(deltaTime)
         
         if Client then
             infestation:SetCloakFraction(cloakFraction)
-            infestation:SetIsVisible(visible and (not isOverHead or infestation.coords.yAxis.y > 0.5))
+            infestation:SetIsVisible(visible and (not isOverHead or infestation.coords.yAxis.y > 0.55))
         end
     
     end

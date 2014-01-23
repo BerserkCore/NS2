@@ -209,7 +209,7 @@ end
 
 local function SendRequest(self, voiceId)
 
-    if GetCanSendRequest(voiceId) then
+    if GetCanSendRequest(voiceId) and not MainMenu_GetIsOpened() then
 
         Client.SendNetworkMessage("VoiceMessage", BuildVoiceMessage(voiceId), true)
         gTimeLastMessageSend = Shared.GetTime()

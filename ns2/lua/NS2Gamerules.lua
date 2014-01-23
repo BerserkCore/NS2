@@ -690,7 +690,11 @@ if Server then
                 for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
                 
                     for index, spectator in ientitylist(spectators) do
-                        Server.SendNetworkMessage(spectator, "Health", BuildHealthMessage(player), false)
+                    
+                        if not spectator:GetIsFirstPerson() then
+                            Server.SendNetworkMessage(spectator, "Health", BuildHealthMessage(player), false)
+                        end
+                        
                     end
                     
                 end
@@ -717,7 +721,11 @@ if Server then
                 
                     local message = BuildTechPointsMessage(techpoint, powerNodes, eggs)
                     for _, spectator in ientitylist(spectators) do
-                        Server.SendNetworkMessage(spectator, "TechPoints", message, false)
+                    
+                        if not spectator:GetIsFirstPerson() then
+                            Server.SendNetworkMessage(spectator, "TechPoints", message, false)
+                        end
+                        
                     end
                     
                 end

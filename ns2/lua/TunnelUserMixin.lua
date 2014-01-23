@@ -228,6 +228,8 @@ end
 
 function TunnelUserMixin:OnCapsuleTraceHit(entity)
 
+    PROFILE("TunnelUserMixin:OnCapsuleTraceHit")
+
     if entity and entity:isa("TunnelEntrance") then
     
         self.enableTunnelEntranceCheck = true

@@ -134,6 +134,7 @@ function AiBombardAttackType:FlingBomb(bombStart, targetPos, direction, speed)
     // For callback purposes so we can adjust our aim
     bomb.intendedTargetPosition = targetPos
     bomb.shooter = self
+    bomb.shooterEntId = self.aiEntity:GetId()
     
     SetAnglesFromVector(bomb, direction)
 

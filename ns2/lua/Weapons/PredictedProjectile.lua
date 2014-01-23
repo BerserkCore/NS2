@@ -9,6 +9,28 @@
 PredictedProjectileShooterMixin = CreateMixin(PredictedProjectileShooterMixin)
 PredictedProjectileShooterMixin.type = "PredictedProjectile"
 
+local function UpdateRenderCoords(self)
+
+    if not self.renderCoords then
+        self.renderCoords = Coords.GetIdentity()
+    end
+    
+    if self.lastOrigin and self.lastOrigin ~= self:GetOrigin() then
+        
+        local direction = GetNormalizedVector(self:GetOrigin() - self.lastOrigin)
+        self.renderCoords.zAxis = direction
+        self.renderCoords.xAxis = self.renderCoords.yAxis:CrossProduct(self.renderCoords.zAxis)
+        self.renderCoords.xAxis:Normalize()
+        self.renderCoords.yAxis = self.renderCoords.zAxis:CrossProduct(self.renderCoords.xAxis)
+        self.renderCoords.yAxis:Normalize()
+        
+    end
+    
+    self.renderCoords.origin = self:GetOrigin()    
+    self.lastOrigin = self:GetOrigin()
+
+end
+
 local kMaxNumProjectiles = 200
 
 function PredictedProjectileShooterMixin:__initmixin()
@@ -107,23 +129,20 @@ local function UpdateProjectiles(self, input, predict)
         
         if not Server then
  
-            local coords = entry.coords
-            if not coords or entry.Controller.velocity:GetLengthSquared() > 0.5 then
-                coords = Coords.GetLookIn(entry.Controller:GetPosition(), GetNormalizedVector(entry.Controller.velocity))
-            else    
-                coords.origin = entry.Controller:GetPosition()
-            end    
-                
+            UpdateRenderCoords(entry.Controller)
+
+			local renderCoords = entry.Controller.renderCoords
+
             local isVisible = entry.Controller.stopSimulation ~= true
  
             if entry.Model then
-                entry.Model:SetCoords(coords)
+                entry.Model:SetCoords(renderCoords)
                 entry.Model:SetIsVisible(isVisible)
-                entry.coords = coords
+
             end
             
             if entry.Cinematic then
-                entry.Cinematic:SetCoords(coords)
+                entry.Cinematic:SetCoords(renderCoords)
                 entry.Cinematic:SetIsVisible(isVisible)
             end
         
@@ -259,6 +278,10 @@ function ProjectileController:Initialize(startPoint, velocity, radius, predictor
 
 end
 
+function ProjectileController:SetControllerPhysicsMask(mask)
+    self.mask = mask
+end
+
 local kNullVector = Vector(0,0,0)
 local function ApplyFriction(velocity, frictionForce, deltaTime)
 
@@ -289,7 +312,7 @@ function ProjectileController:Move(offset, velocity)
             break
         end
         
-        local trace = self.controller:Move(offset, CollisionRep.Move, CollisionRep.Move, PhysicsMask.PredictedProjectileGroup)
+        local trace = self.controller:Move(offset, CollisionRep.Damage, CollisionRep.Damage, self.mask or PhysicsMask.PredictedProjectileGroup)
         
         if trace.fraction < 1 then
         
@@ -363,16 +386,10 @@ function ProjectileController:Update(deltaTime, projectile, predict)
                 projectile:SetOrigin(endPoint)
                 
                 if projectile.ProcessHit then
-                    projectile:ProcessHit(hitEntity, nil, normal)
+                    projectile:ProcessHit(hitEntity, nil, normal, endPoint)
                 end   
                 
             end
-            
-            // bounce
-            /*
-            local impactForce = math.max(0, (-normal):DotProduct(velocity))
-            velocity:Add(impactForce * normal * 0.4)
-            */
             
             self.stopSimulation = self.clearOnImpact or ( hitEntity ~= nil and HasMixin(hitEntity, "Team") and hitEntity:GetTeamNumber() == self.detonateWithTeam )
             self.stopSimulation = self.stopSimulation and oldEnough
@@ -399,6 +416,9 @@ function ProjectileController:GetPosition()
     return self.controller:GetPosition()
 end    
 
+function ProjectileController:GetOrigin()
+    return self.controller:GetPosition()
+end
 function ProjectileController:Uninitialize()
     
     if self.controller ~= nil then
@@ -410,7 +430,6 @@ function ProjectileController:Uninitialize()
     
 end
 
-
 class 'PredictedProjectile' (Entity)
 
 PredictedProjectile.kMapName = "predictedprojectile"
@@ -418,7 +437,9 @@ PredictedProjectile.kMapName = "predictedprojectile"
 local networkVars =
 {
     ownerId = "entityid",
-    projectileId = "integer"
+    projectileId = "integer",
+    m_angles = "interpolated angles (by 10 [], by 10 [], by 10 [])",
+    m_origin = "compensated interpolated position (by 0.05 [2 3 5], by 0.05 [2 3 5], by 0.05 [2 3 5])",
 }
 
 AddMixinNetworkVars(TechMixin, networkVars)
@@ -529,6 +550,11 @@ function PredictedProjectile:SetProjectileController(controller, selfUpdate)
     self.selfUpdate = selfUpdate
 end
 
+function PredictedProjectile:SetControllerPhysicsMask(mask)
+    if self.projectileController then
+        self.projectileController:SetControllerPhysicsMask(mask)
+    end
+end
 if Server then
 
     function PredictedProjectile:OnUpdate(deltaTime)
@@ -539,13 +565,7 @@ if Server then
                 self.projectileController:Update(deltaTime)
             end
         
-            local vel = self.projectileController.velocity
-            if vel:GetLengthSquared() > 0.5 then
-            
-                local coords = Coords.GetLookIn(self.projectileController:GetPosition(), GetNormalizedVector(vel))
-                self:SetCoords(coords)
-                
-            end
+            self:SetOrigin(self.projectileController:GetOrigin())
             
         end
         
@@ -555,12 +575,14 @@ end
 
 function PredictedProjectile:OnUpdateRender()
 
+    UpdateRenderCoords(self)
+
     if self.renderModel then
-        self.renderModel:SetCoords(self:GetCoords())
+        self.renderModel:SetCoords(self.renderCoords)
     end
     
     if self.projectileCinematic then
-        self.projectileCinematic:SetCoords(self:GetCoords())
+        self.projectileCinematic:SetCoords(self.renderCoords)
     end
 
 end

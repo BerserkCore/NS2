@@ -53,7 +53,7 @@ function StabBlink:GetMeleeBase()
 end
 
 function StabBlink:GetDeathIconIndex()
-    return kDeathMessageIcon.Swipe
+    return kDeathMessageIcon.Stab
 end
 
 function StabBlink:GetSecondaryTechId()

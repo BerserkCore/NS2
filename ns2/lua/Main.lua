@@ -14,6 +14,7 @@ Script.Load("lua/Render.lua")
 Script.Load("lua/GUIManager.lua")
 Script.Load("lua/NS2Utility.lua")
 Script.Load("lua/MainMenu.lua")
+Script.Load("lua/SabotCoreClient.lua")
 
 local renderCamera = nil
     

@@ -88,7 +88,7 @@ kDefaultPlayerName = "NSPlayer"
 kDefaultWaypointGroup = "GroundWaypoints"
 kAirWaypointsGroup = "AirWaypoints"
 
-kMaxResources = 9999
+kMaxResources = 200
 
 // Max number of entities allowed in radius. Don't allow creating any more entities if this number is rearched.
 // Don't include players in count.
@@ -123,7 +123,7 @@ kHitEffectSurface = enum( { "metal", "door", "electronic", "organic", "rock", "t
 kHitEffectRelevancyDistance = 40
 kHitEffectMaxPosition = 1638 // used for precision in hiteffect message
 kTracerSpeed = 115
-kMaxHitEffectsPerSecond = 200
+kMaxHitEffectsPerSecond = 100
 
 kMainMenuFlash = "ui/main_menu.swf"
 
@@ -152,7 +152,7 @@ kDeathMessageIcon = enum( { 'None',
                             'Minigun', 'Vortex', 'LerkBite', 'Umbra', 
                             'Xenocide', 'Blink', 'Leap', 'Stomp',
                             'Consumed', 'GL', 'Recycled', 'Babbler', 'Railgun', 'BabblerAbility', 'GorgeTunnel', 'BoneShield',
-                            'ClusterGrenade', 'GasGrenade', 'PulseGrenade', 'StabBlink',
+                            'ClusterGrenade', 'GasGrenade', 'PulseGrenade', 'Stab', 'WhipBomb',
                             } )
 
 kMinimapBlipType = enum( { 'Undefined', 'TechPoint', 'ResourcePoint', 'Scan', 'EtherealGate', 'HighlightWorld',

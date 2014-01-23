@@ -35,6 +35,9 @@ WallMovementMixin.networkVars =
 {
 }
 
+local Shared_TraceRay = Shared.TraceRay
+local Shared_TraceCapsule = Shared.TraceCapsule
+
 function WallMovementMixin:__initmixin()
     self.smoothedYaw = self.viewYaw
 end
@@ -80,6 +83,8 @@ end
 
 function WallMovementMixin:GetAnglesFromWallNormal(normal)
 
+    PROFILE("WallMovementMixin:GetAnglesFromWallNormal")
+
     // Use the wall normal as Y, and try to point Z according to the view
     local c = Coords()
     c.yAxis = normal
@@ -106,25 +111,28 @@ function WallMovementMixin:GetAnglesFromWallNormal(normal)
 end
 
 function WallMovementMixin:ValidWallTrace(trace)
+
     if trace.fraction > 0 and trace.fraction < 1 then
         local entity = trace.entity
         return not entity or (not entity.GetIsWallWalkingAllowed or entity:GetIsWallWalkingAllowed(self))
     end
     return false 
+    
 end
 
 function WallMovementMixin:TraceWallNormal(startPoint, endPoint, result, feelerSize)
     
-    local theTrace = Shared.TraceCapsule(startPoint, endPoint, feelerSize, 0, CollisionRep.Move, PhysicsMask.AllButPCs, EntityFilterOneAndIsa(self, "Babbler"))
+    local theTrace = Shared_TraceCapsule(startPoint, endPoint, feelerSize, 0, CollisionRep.Move, PhysicsMask.AllButPCs, EntityFilterOneAndIsa(self, "Babbler"))
     
-    if self:ValidWallTrace(theTrace) then    
+    /* double-comment to see wall-walk traces
+    if Client then
+        DebugLine(startPoint, theTrace.endPoint, 5, 0,1,0,1)
+    end
+    /**/
+    
+    if self:ValidWallTrace(theTrace) then 
+   
         table.insert(result, theTrace.normal)
-        /* double-comment to see wall-walk traces
-        if Client then
-            DebugLine(startPoint, theTrace.endPoint, 5, 0,1,0,1)
-        end
-        /**/
-
         return true
         
     end
@@ -140,6 +148,8 @@ end
  * when jumping off a wall.
  */
 function WallMovementMixin:GetAverageWallWalkingNormal(extraRange, feelerSize)
+
+    PROFILE("WallMovementMixin:GetAverageWallWalkingNormal")
     
     local startPoint = Vector(self:GetOrigin())
     local extents = self:GetExtents()
@@ -147,49 +157,56 @@ function WallMovementMixin:GetAverageWallWalkingNormal(extraRange, feelerSize)
 
     local numTraces = 8
     local wallNormals = {}
-    
+
     // Trace in a circle around self, looking for walls we hit
     local wallWalkingRange = math.max(extents.x, extents.y) + extraRange
     local endPoint = Vector()
+    local directionVector
+    local angle
+    local normalFound = true
     
-    for i = 0, numTraces - 1 do
+    if not self.lastSuccessfullWallTraceDir or not self:TraceWallNormal(startPoint, startPoint + self.lastSuccessfullWallTraceDir * wallWalkingRange, wallNormals, feelerSize) then
+
+        normalFound = false
+
+        for i = 0, numTraces - 1 do
+        
+            angle = ((i * 360/numTraces) / 360) * math.pi * 2
+            directionVector = Vector(math.cos(angle), 0, math.sin(angle))
+            
+            // Avoid excess vector creation
+            endPoint.x = startPoint.x + directionVector.x * wallWalkingRange
+            endPoint.y = startPoint.y
+            endPoint.z = startPoint.z + directionVector.z * wallWalkingRange
+            
+            if self:TraceWallNormal(startPoint, endPoint, wallNormals, feelerSize) then
+            
+                self.lastSuccessfullWallTraceDir = directionVector
+                normalFound = true
+                break
+                
+            end   
+            
+        end
     
-        local angle = ((i * 360/numTraces) / 360) * math.pi * 2
-        local directionVector = Vector(math.cos(angle), 0, math.sin(angle))
-        
-        // Avoid excess vector creation
-        endPoint.x = startPoint.x + directionVector.x * wallWalkingRange
-        endPoint.y = startPoint.y
-        endPoint.z = startPoint.z + directionVector.z * wallWalkingRange
-        self:TraceWallNormal(startPoint, endPoint, wallNormals, feelerSize)
-        
     end
     
     // Trace above too.
-    self:TraceWallNormal(startPoint, startPoint + Vector(0, wallWalkingRange, 0), wallNormals, feelerSize)
-    
-    // Average results
-    local numNormals = table.maxn(wallNormals)
-    
-    if (numNormals > 0) then
+    if not normalFound then
+        normalFound = self:TraceWallNormal(startPoint, startPoint + Vector(0, wallWalkingRange, 0), wallNormals, feelerSize)
+    end
+
+    if normalFound then
     
         // Check if we are right above a surface we can stand on.
         // Even if we are in "wall walking mode", we want it to look
         // like it is standing on a surface if it is right above it.
-        local groundTrace = Shared.TraceRay(startPoint, startPoint + Vector(0, -wallWalkingRange, 0), CollisionRep.Move, PhysicsMask.AllButPCs, EntityFilterOne(self))
+        local groundTrace = Shared_TraceRay(startPoint, startPoint + Vector(0, -wallWalkingRange, 0), CollisionRep.Move, PhysicsMask.AllButPCs, EntityFilterOne(self))
         if (groundTrace.fraction > 0 and groundTrace.fraction < 1 and groundTrace.entity == nil) then
             return groundTrace.normal
         end
         
-        local average = Vector(0, 0, 0)
-    
-        for i,currentNormal in ipairs(wallNormals) do
-            average = average + currentNormal
-        end
-        
-        if (average:Normalize() > 0) then
-            return average
-        end
+        return wallNormals[1]
         
     end
     

@@ -180,7 +180,7 @@ kTechId = createTechIdEnum({
     'Carapace', 'Regeneration', 'Aura', 'Silence', 'Feint', 'Camouflage', 'Phantom', 'Celerity', 'Adrenaline', 'HyperMutation',  
     
     // Alien alerts
-    'AlienAlertNeedHarvester', 'AlienAlertNeedMist', 'AlienAlertNeedEnzyme', 'AlienAlertNeedHealing', 'AlienAlertStructureUnderAttack', 'AlienAlertHiveUnderAttack', 'AlienAlertHiveDying', 'AlienAlertHarvesterUnderAttack',
+    'AlienAlertNeedHarvester', 'AlienAlertNeedMist', 'AlienAlertNeedDrifter', 'AlienAlertNeedHealing', 'AlienAlertStructureUnderAttack', 'AlienAlertHiveUnderAttack', 'AlienAlertHiveDying', 'AlienAlertHarvesterUnderAttack',
     'AlienAlertLifeformUnderAttack', 'AlienAlertGorgeBuiltHarvester', 'AlienCommanderEjected',
     'AlienAlertOrderComplete',
     'AlienAlertNotEnoughResources', 'AlienAlertResearchComplete', 'AlienAlertManufactureComplete', 'AlienAlertUpgradeComplete', 'AlienAlertHiveComplete',

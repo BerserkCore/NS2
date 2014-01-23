@@ -27,7 +27,7 @@ class "ScenarioHandler"
 ScenarioHandler.kStartTag = "--- SCENARIO START ---"
 ScenarioHandler.kEndTag = "--- SCENARIO END ---"
 
-ScenarioHandler.kLoadPath = { "config://scenarios/${map}", "http://www.matsotech.se/ns2scenarios/${map}" }
+ScenarioHandler.kLoadPath = { "config://scenarios/${map}", "config/scenarios/${map}", "http://www.matsotech.se/ns2scenarios/${map}" }
 
 function ScenarioHandler:Init()
     
@@ -44,12 +44,13 @@ function ScenarioHandler:Init()
         OrientedEntityHandler():Init("ARC",kMarineTeamType),
         IgnoreEntityHandler():Init("Embryo"),
         IgnoreEntityHandler():Init("Egg", true), 
-         
+		
         OrientedEntityHandler():Init("CommandStation",kMarineTeamType),
         OrientedEntityHandler():Init("InfantryPortal",kMarineTeamType),
         OrientedEntityHandler():Init("ArmsLab",kMarineTeamType),
         OrientedEntityHandler():Init("Armory",kMarineTeamType),
         OrientedEntityHandler():Init("Sentry",kMarineTeamType),
+		OrientedEntityHandler():Init("SentryBattery",kMarineTeamType),
         OrientedEntityHandler():Init("PrototypeLab",kMarineTeamType),
         OrientedEntityHandler():Init("RoboticsFactory",kMarineTeamType),
         OrientedEntityHandler():Init("Observatory",kMarineTeamType),
@@ -65,6 +66,7 @@ function ScenarioHandler:Init()
         OrientedEntityHandler():Init("Shell",kAlienTeamType),
         OrientedEntityHandler():Init("Hydra",kAlienTeamType),
         OrientedEntityHandler():Init("Harvester",kAlienTeamType),
+		OrientedEntityHandler():Init("Contamination",kAlienTeamType),
         
     }
 

@@ -158,7 +158,7 @@ function Marine:UpdateClientEffects(deltaTime, isLocal)
         
         if self.buyMenu then
         
-            if not self:GetIsAlive() or not GetIsCloseToMenuStructure(self) then
+            if not self:GetIsAlive() or not GetIsCloseToMenuStructure(self) or self:GetIsStunned() then
                 self:CloseMenu()
             end
             

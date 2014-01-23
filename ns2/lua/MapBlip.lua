@@ -20,8 +20,8 @@ local networkVars =
     m_angles = "interpolated angles (by 10 [0], by 0.1 [3], by 10 [0])",
     mapBlipType = "enum kMinimapBlipType",
     mapBlipTeam = "integer (" .. ToString(kTeamInvalid) .. " to " .. ToString(kSpectatorIndex) .. ")",
+    isInCombat = "boolean",
     ownerEntityId = "entityid",
-    isInCombat = "boolean"
 }
 
 function MapBlip:OnCreate()

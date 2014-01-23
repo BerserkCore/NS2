@@ -17,7 +17,7 @@ kVoiceId = enum ({
     'RequestWeld', 'MarineRequestMedpack', 'MarineRequestAmmo', 'MarineRequestOrder', 
     'MarineTaunt', 'MarineTauntExclusive', 'MarineCovering', 'MarineFollowMe', 'MarineHostiles', 'MarineLetsMove',
     
-    'AlienRequestHarvester', 'AlienRequestHealing', 'AlienRequestMist', 'AlienRequestEnzyme',
+    'AlienRequestHarvester', 'AlienRequestHealing', 'AlienRequestMist', 'AlienRequestDrifter',
     'AlienTaunt', 'AlienFollowMe', 'AlienChuckle', 'EmbryoChuckle',
 
 
@@ -25,7 +25,7 @@ kVoiceId = enum ({
 
 local kAlienTauntSounds =
 {
-    [kTechId.Skulk] = "sound/NS2.fev/alien/skulk/taunt",
+    [kTechId.Skulk] = "sound/NS2.fev/alien/voiceovers/chuckle",
     [kTechId.Gorge] = "sound/NS2.fev/alien/gorge/taunt",
     [kTechId.Lerk] = "sound/NS2.fev/alien/lerk/taunt",
     [kTechId.Fade] = "sound/NS2.fev/alien/fade/taunt",
@@ -124,7 +124,7 @@ local kSoundData =
     // alien vote menu
     [kVoiceId.AlienRequestHarvester] = { Sound = "sound/NS2.fev/alien/voiceovers/follow_me", Description = "REQUEST_ALIEN_HARVESTER", KeyBind = "RequestOrder", AlertTechId = kTechId.AlienAlertNeedHarvester },
     [kVoiceId.AlienRequestMist] = { Sound = "sound/NS2.fev/alien/common/hatch", Description = "REQUEST_ALIEN_MIST", KeyBind = "RequestHealth", AlertTechId = kTechId.AlienAlertNeedMist },
-    [kVoiceId.AlienRequestEnzyme] = { Sound = "sound/NS2.fev/alien/voiceovers/follow_me", Description = "REQUEST_ALIEN_ENZYME", KeyBind = "RequestAmmo", AlertTechId = kTechId.AlienAlertNeedEnzyme },
+    [kVoiceId.AlienRequestDrifter] = { Sound = "sound/NS2.fev/alien/voiceovers/follow_me", Description = "REQUEST_ALIEN_DRIFTER", KeyBind = "RequestAmmo", AlertTechId = kTechId.AlienAlertNeedDrifter },
     [kVoiceId.AlienRequestHealing] = { Sound = "sound/NS2.fev/alien/voiceovers/need_healing", Description = "REQUEST_ALIEN_HEAL", KeyBind = "RequestHealth", AlertTechId = kTechId.None },
     [kVoiceId.AlienTaunt] = { Sound = "", Function = GetLifeFormSound, Description = "REQUEST_ALIEN_TAUNT", KeyBind = "Taunt", AlertTechId = kTechId.None },
     [kVoiceId.AlienFollowMe] = { Sound = "sound/NS2.fev/alien/voiceovers/follow_me", Description = "REQUEST_ALIEN_FOLLOWME", AlertTechId = kTechId.None },
@@ -164,7 +164,7 @@ local kMarineMenu =
 
 local kAlienMenu =
 {
-    [LEFT_MENU] = { kVoiceId.AlienRequestHealing, kVoiceId.AlienRequestEnzyme, kVoiceId.Ping },
+    [LEFT_MENU] = { kVoiceId.AlienRequestHealing, kVoiceId.AlienRequestDrifter, kVoiceId.Ping },
     [RIGHT_MENU] = { kVoiceId.AlienTaunt, kVoiceId.AlienChuckle }    
 }
 
@@ -185,7 +185,7 @@ local kRequestMenus =
     ["Skulk"] = kAlienMenu,
     ["Gorge"] =
     {
-        [LEFT_MENU] = { kVoiceId.AlienRequestHealing, kVoiceId.AlienRequestEnzyme, kVoiceId.AlienRequestHarvester, kVoiceId.Ping },
+        [LEFT_MENU] = { kVoiceId.AlienRequestHealing, kVoiceId.AlienRequestDrifter, kVoiceId.AlienRequestHarvester, kVoiceId.Ping },
         [RIGHT_MENU] = { kVoiceId.AlienTaunt, kVoiceId.AlienChuckle }    
     },
     

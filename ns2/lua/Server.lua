@@ -45,6 +45,7 @@ Script.Load("lua/dkjson.lua")
 Script.Load("lua/InfestationMap.lua")
 
 Script.Load("lua/NetworkDebug.lua")
+Script.Load("lua/SabotCoreServer.lua")
 
 Server.readyRoomSpawnList = table.array(32)
 

@@ -230,6 +230,8 @@ function ServerEntry:SetServerData(serverData)
         self.playerCount:SetText(string.format("%d/%d", serverData.numPlayers, (serverData.maxPlayers - numReservedSlots)))
         if serverData.numPlayers >= serverData.maxPlayers then
             self.playerCount:SetColor(kRed)
+        elseif serverData.numPlayers >= serverData.maxPlayers - numReservedSlots then
+            self.playerCount:SetColor(kYellow)
         else
             self.playerCount:SetColor(kWhite)
         end 

@@ -71,6 +71,8 @@ Alien.kEnergyAdrenalineRecuperationRate = 13
 
 PrecacheAsset("materials/infestation/infestation.dds")
 PrecacheAsset("materials/infestation/infestation_normal.dds")
+PrecacheAsset("models/alien/infestation/infestation2.model")
+PrecacheAsset("cinematics/vfx_materials/vfx_neuron_03.dds")
 
 local kDefaultAttackSpeed = 1
 

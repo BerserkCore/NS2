@@ -119,6 +119,8 @@ end
 
 function Weapon:OnCapsuleTraceHit(entity)
 
+    PROFILE("Weapon:OnCapsuleTraceHit")
+
     if self.OnCollision then
         self:OnCollision(entity)
     end

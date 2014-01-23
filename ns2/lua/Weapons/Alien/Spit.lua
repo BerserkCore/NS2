@@ -8,6 +8,7 @@
 
 Script.Load("lua/Weapons/PredictedProjectile.lua")
 Script.Load("lua/DamageMixin.lua")
+Script.Load("lua/SharedDecal.lua")
 
 Shared.PrecacheSurfaceShader("materials/infestation/spit_decal.surface_shader")
 
@@ -54,16 +55,18 @@ function Spit:GetDeathIconIndex()
 end
 
 
-function Spit:ProcessHit(targetHit, surface, normal)
+function Spit:ProcessHit(targetHit, surface, normal, hitPoint)
 
-    //TODO: create decal
-    
-    if Client or (Server and self:GetOwner() ~= targetHit) then
-        self:DoDamage(kSpitDamage, targetHit, self:GetOrigin() + normal * kHitEffectOffset, self:GetCoords().zAxis, surface, false, false)
-    end
-    
     if Server then
-        DestroyEntity(self) 
+    
+        if self:GetOwner() ~= targetHit then
+            self:DoDamage(kSpitDamage, targetHit, hitPoint, normal, "none", false, false)
+        end
+        
+        GetEffectManager():TriggerEffects("spit_hit", { effecthostcoords = self:GetCoords() })
+
+        DestroyEntity(self)
+        
     end
     
 end

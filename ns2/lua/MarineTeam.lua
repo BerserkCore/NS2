@@ -107,6 +107,8 @@ end
 // handled properly.
 function MarineTeam:UpdateGameMasks(timePassed)
 
+    PROFILE("MarineTeam:UpdateGameMasks")
+
     local beaconState = false
     
     for obsIndex, obs in ipairs(GetEntitiesForTeam("Observatory", self:GetTeamNumber())) do
@@ -131,6 +133,8 @@ function MarineTeam:UpdateGameMasks(timePassed)
 end
 
 local function CheckForNoIPs(self)
+
+    PROFILE("MarineTeam:CheckForNoIPs")
 
     if Shared.GetTime() - self.lastTimeNoIPsMessageSent >= kSendNoIPsMessageRate then
     
@@ -210,6 +214,8 @@ local function GetArmorLevel(self)
 end
 
 function MarineTeam:Update(timePassed)
+
+    PROFILE("MarineTeam:Update")
 
     PlayingTeam.Update(self, timePassed)
     

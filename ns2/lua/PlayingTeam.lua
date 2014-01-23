@@ -686,7 +686,7 @@ function PlayingTeam:RespawnPlayer(player, origin, angles)
         local spawnOrigin = GetRandomSpawnForCapsule(capsuleHeight, capsuleRadius, initialTechPoint:GetOrigin(), 2, 15, EntityFilterAll())
         
         if not spawnOrigin then
-            spawnOrigin = initialTechPoint:GetOrigin() + Vector(0.01, 0.2, 0)
+            spawnOrigin = initialTechPoint:GetOrigin() + Vector(2, 0.2, 2)
         end
         
         // Orient player towards tech point
@@ -781,11 +781,7 @@ function PlayingTeam:Update(timePassed)
     
     self:UpdateTechTree()
     
-    self:UpdateGameEffects(timePassed)
-    
     self:UpdateVotes()
-    
-    self:UpdateMinResTick()
 
     if GetGamerules():GetGameStarted() then
 
@@ -807,6 +803,8 @@ function PlayingTeam:Update(timePassed)
 end
 
 function PlayingTeam:UpdateMinResTick()
+
+	PROFILE("PlayingTeam:UpdateMinResTick")
 
     if not self.timeLastMinResUpdate or self.timeLastMinResUpdate + kResourceTowerResourceInterval * 2 <= Shared.GetTime() then
     
@@ -891,17 +889,6 @@ function PlayingTeam:UpdateTechTree()
 end
 
 function PlayingTeam:OnTechTreeUpdated()
-end
-
-// Update from alien team instead of in alien buildings think because we need to clear
-// game effect flag too.
-function PlayingTeam:UpdateGameEffects(timePassed)
-
-    PROFILE("PlayingTeam:UpdateGameEffects")  
-
-end
-
-function PlayingTeam:UpdateTeamSpecificGameEffects()
 end
 
 function PlayingTeam:VoteToGiveUp(votingPlayer)

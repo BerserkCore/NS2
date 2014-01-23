@@ -10,7 +10,7 @@ Script.Load("lua/ConfigFileUtility.lua")
 
 local mapCycleFileName = "MapCycle.json"
 
-local defaultConfig = { maps = { "ns2_biodome", "ns2_descent", "ns2_docking", "ns2_mineshaft", "ns2_refinery", "ns2_summit", "ns2_tram", "ns2_veil" }, time = 30, mode = "order" }
+local defaultConfig = { maps = { "ns2_eclipse", "ns2_biodome", "ns2_descent", "ns2_docking", "ns2_mineshaft", "ns2_refinery", "ns2_summit", "ns2_tram", "ns2_veil" }, time = 30, mode = "order" }
 WriteDefaultConfigFile(mapCycleFileName, defaultConfig)
 
 local cycle = LoadConfigFile(mapCycleFileName) or defaultConfig

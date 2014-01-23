@@ -62,6 +62,8 @@ local kBotPersonalSettings = {
     { name = "Tex", isMale = true },
     { name = "WDI", isMale = true },
     { name = "zaggynl", isMale = true },
+    { name = "sewlek", isMale = true },
+    { name = "Samusdroid", isMale = true },
 }
 
 class 'PlayerBot' (Bot)

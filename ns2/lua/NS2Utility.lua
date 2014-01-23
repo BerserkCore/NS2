@@ -2484,6 +2484,7 @@ function GetTexCoordsForTechId(techId)
         gTechIdPosition[kTechId.BuildAbility] = kDeathMessageIcon.BuildAbility
         gTechIdPosition[kTechId.Spray] = kDeathMessageIcon.Spray
         gTechIdPosition[kTechId.BileBomb] = kDeathMessageIcon.BileBomb
+        gTechIdPosition[kTechId.WhipBomb] = kDeathMessageIcon.WhipBomb
         gTechIdPosition[kTechId.BabblerAbility] = kDeathMessageIcon.BabblerAbility
         
         gTechIdPosition[kTechId.LerkBite] = kDeathMessageIcon.LerkBite
@@ -2492,7 +2493,7 @@ function GetTexCoordsForTechId(techId)
         gTechIdPosition[kTechId.Umbra] = kDeathMessageIcon.Umbra
         
         gTechIdPosition[kTechId.Swipe] = kDeathMessageIcon.Swipe
-        gTechIdPosition[kTechId.Stab] = kDeathMessageIcon.Swipe
+        gTechIdPosition[kTechId.Stab] = kDeathMessageIcon.Stab
         gTechIdPosition[kTechId.Blink] = kDeathMessageIcon.Blink
         gTechIdPosition[kTechId.Vortex] = kDeathMessageIcon.Vortex
         

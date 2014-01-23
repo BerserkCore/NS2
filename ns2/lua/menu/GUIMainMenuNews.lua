@@ -102,6 +102,9 @@ function GUIMainMenuNews:SendKeyEvent(key, down, amount)
             Client.ShowWebpage("www.redbubble.com/people/unknownworlds/shop")
         end
         
+        if GUIItemContainsPoint( self.logo, mouseX, mouseY ) then
+            Client.ShowWebpage("http://forums.unknownworlds.com/")
+        end
     elseif key == InputKey.MouseZ then
     
         -- This isn't working currently as the input is blocked by the main menu code in
@@ -159,6 +162,7 @@ function GUIMainMenuNews:Update(deltaTime)
     local logoWidth = width/2.0 - buttonSpacing/2
     local buttonHeight = logoWidth / logoAspect
     y = y - 8
+	
     self.reinforceButton:SetSize( Vector(logoWidth, buttonHeight, 0) )
     self.reinforceButton:SetAnchor(GUIItem.Right, GUIItem.Top)
     self.reinforceButton:SetPosition(Vector( -width-rightMargin, y, 0))

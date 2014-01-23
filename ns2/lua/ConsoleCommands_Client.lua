@@ -209,6 +209,10 @@ local function OnCommandGUIInfo()
     GUI.PrintItemInfoToLog()
 end
 
+local function OnCommandPlayMusic(name)
+    Client.PlayMusic(name)
+end
+
 function OnCommandPathingFill()
 
     local player = Client.GetLocalPlayer()
@@ -273,6 +277,7 @@ Event.Hook("Console_fps", OnCommandDisplayFPS)
 Event.Hook("Console_name", OnCommandSetName)
 Event.Hook("Console_cleardebuglines", OnCommandClearDebugLines)
 Event.Hook("Console_guiinfo", OnCommandGUIInfo)
+Event.Hook("Console_playmusic", OnCommandPlayMusic)
 
 // Options Console Commands
 Event.Hook("Console_setsoundvolume", OnCommandSetSoundVolume)

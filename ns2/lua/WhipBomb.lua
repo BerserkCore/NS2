@@ -11,6 +11,7 @@
 Script.Load("lua/Weapons/Projectile.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/DamageMixin.lua")
+Script.Load("lua/EntityChangeMixin.lua")
 
 class 'WhipBomb' (Projectile)
 
@@ -38,6 +39,10 @@ function WhipBomb:OnCreate()
     InitMixin(self, ModelMixin)
     InitMixin(self, TeamMixin)
     InitMixin(self, DamageMixin)
+    
+    if Server then
+        InitMixin(self, EntityChangeMixin)
+    end
     
     // Remember when we're created so we can fall off damage
     self.createTime = Shared.GetTime()
@@ -83,7 +88,7 @@ function WhipBomb:OnDestroy()
 end
 
 function WhipBomb:GetDeathIconIndex()
-    return kDeathMessageIcon.BileBomb
+    return kDeathMessageIcon.WhipBomb
 end
 
 function WhipBomb:GetDamageType()
@@ -91,6 +96,15 @@ function WhipBomb:GetDamageType()
 end
 
 if (Server) then
+
+    function WhipBomb:OnEntityChange(oldId)
+        
+        if oldId == self.shooterEntId then
+            self.shooter = nil
+            self.shooterEntId = nil
+        end
+        
+    end
 
     function WhipBomb:SetLifetime(lifetime)
         self:AddTimedCallback(WhipBomb.TimeUp, math.min(lifetime, WhipBomb.kLifetime))

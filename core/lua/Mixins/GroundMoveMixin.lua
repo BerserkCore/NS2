@@ -76,6 +76,8 @@ end
 
 local function GetOnGroundFraction(self)
 
+    PROFILE("GroundMoveMixin:GetOnGroundFraction")
+
     local transistionTime = not self.GetGroundTransistionTime and kAirGroundTransistionTime or self:GetGroundTransistionTime()
     local groundFraction = self.onGround and Clamp( (Shared.GetTime() - self.timeGroundTouched) / transistionTime, 0, 1) or 0
     groundFraction = CosFalloff(groundFraction)
@@ -92,12 +94,16 @@ end
 
 local function DoesStopMove(self, move, velocity)
 
+    PROFILE("GroundMoveMixin:DoesStopMove")
+
     local wishDir = GetNormalizedVectorXZ(self:GetViewCoords().zAxis) * move.z    
     return wishDir:DotProduct(GetNormalizedVectorXZ(velocity)) < -0.8
 
 end
 
 local function GetIsCloseToGround(self, distance)
+
+    PROFILE("GroundMoveMixin:GetIsCloseToGround")
 
     local onGround = false
     local normal = Vector()
@@ -125,6 +131,8 @@ local function GetIsCloseToGround(self, distance)
 end
 
 local function GetWishDir(self, move, simpleAcceleration, velocity)
+
+    PROFILE("GroundMoveMixin:GetWishDir")
 
     if simpleAcceleration == nil then
         simpleAcceleration = true
@@ -178,6 +186,8 @@ end
 
 function GroundMoveMixin:ModifyMaxSpeed(maxSpeedTable, input)
 
+    PROFILE("GroundMoveMixin:ModifyMaxSpeed")
+
 	local backwardsSpeedScalar = 1
 	
 	if input and input.move.z == -1 then
@@ -197,6 +207,8 @@ function GroundMoveMixin:ModifyMaxSpeed(maxSpeedTable, input)
 end
 
 local function AccelerateSimpleXZ(self, input, velocity, maxSpeedXZ, acceleration, deltaTime)
+
+    PROFILE("GroundMoveMixin:AccelerateSimpleXZ")
 
     maxSpeedXZ = math.max(velocity:GetLengthXZ(), maxSpeedXZ)
     // do XZ acceleration
@@ -221,6 +233,8 @@ end
 
 local function ForwardControl(self, deltaTime, velocity)
 
+    PROFILE("GroundMoveMixin:ForwardControl")
+
     local airControl = self:GetAirControl() * 2
 
     if airControl > 0 then
@@ -244,6 +258,8 @@ local function ForwardControl(self, deltaTime, velocity)
 end
 
 local function Accelerate(self, input, velocity, deltaTime)
+
+    PROFILE("GroundMoveMixin:Accelerate")
 
     local wishDir = GetWishDir(self, input.move, false, velocity)
     local prevXZSpeed = velocity:GetLengthXZ()
@@ -308,6 +324,8 @@ end
 
 local function ApplyGravity(self, input, velocity, deltaTime)
 
+    PROFILE("GroundMoveMixin:ApplyGravity")
+
     local gravityTable = { gravity = self:GetGravityForce(input) }
     if self.ModifyGravityForce then
         self:ModifyGravityForce(gravityTable)
@@ -318,6 +336,8 @@ local function ApplyGravity(self, input, velocity, deltaTime)
 end
 
 function GroundMoveMixin:GetFriction(input, velocity)
+
+    PROFILE("GroundMoveMixin:GetFriction")
 
     local friction = GetNormalizedVector(-velocity)
     local velocityLength = 0
@@ -350,6 +370,8 @@ end
 
 local function ApplyFriction(self, input, velocity, deltaTime)
 
+    PROFILE("GroundMoveMixin:ApplyFriction")
+
     // Add in the friction force.
     // GetFrictionForce is an expected callback.
     local friction = self:GetFriction(input, velocity) * deltaTime
@@ -377,6 +399,8 @@ end
 local kNetPrecision = 1/128 // should import from server
 function GroundMoveMixin:PreUpdateMove(input, runningPrediction)
 
+    PROFILE("GroundMoveMixin:PreUpdateMove")
+
     // use the full precision origin
     if self.fullPrecisionOrigin then
         local orig = self:GetOrigin()
@@ -392,6 +416,8 @@ function GroundMoveMixin:PreUpdateMove(input, runningPrediction)
 end
 
 local function DoStepMove(self, input, velocity, deltaTime)
+
+    PROFILE("GroundMoveMixin:DoStepMove")
     
     local oldOrigin = Vector(self:GetOrigin())
     local oldVelocity = Vector(velocity)
@@ -412,11 +438,17 @@ local function DoStepMove(self, input, velocity, deltaTime)
         // step down again
         local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(Vector(0, -stepAmount - horizMoveAmount * kDownSlopeFactor, 0), 1)
         
-        local onGround, normal = GetIsCloseToGround(self, 0.15)
-        
-        if onGround then
+        if averageSurfaceNormal and averageSurfaceNormal.y >= 0.5 then
             success = true
-        end
+        else    
+        
+            local onGround, normal = GetIsCloseToGround(self, 0.15)
+            
+            if onGround then
+                success = true
+            end
+            
+        end    
 
     end    
         
@@ -438,6 +470,8 @@ function GroundMoveMixin:GetCanStep()
 end    
 
 local function FlushCollisionCallbacks(self, velocity)
+
+    PROFILE("GroundMoveMixin:FlushCollisionCallbacks")
 
     if not self.onGround and self.storedNormal then
 
@@ -483,7 +517,7 @@ function GroundMoveMixin:UpdatePosition(input, velocity, deltaTime)
         local hitObstacle = false
     
         // check if we are allowed to step:
-        local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(velocity * deltaTime * 2.5, 3, nil, false)
+        local completedMove, hitEntities, averageSurfaceNormal = self:PerformMovement(velocity * deltaTime * 2.5, 1, nil, false)
   
         if stepAllowed and hitEntities then
         
@@ -563,6 +597,8 @@ end
 
 local function UpdateOnGround(self, input, velocity)
 
+    PROFILE("GroundMoveMixin:UpdateOnGround")
+
     local onGround, normal, hitEntities = GetIsCloseToGround(self, 0.15)
 
     if self.OverrideUpdateOnGround then
@@ -592,6 +628,8 @@ end
 // Update origin and velocity from input.
 function GroundMoveMixin:UpdateMove(input, runningPrediction)
 
+    PROFILE("GroundMoveMixin:UpdateMove")
+
     local deltaTime = input.time // math.min(kMaxDeltaTime, input.time)
     local velocity = self:GetVelocity()
     
@@ -607,6 +645,8 @@ function GroundMoveMixin:UpdateMove(input, runningPrediction)
 end
 
 function GroundMoveMixin:OnWorldCollision(normal, impactForce)
+
+    PROFILE("GroundMoveMixin:OnWorldCollision")
 
     if normal then
 

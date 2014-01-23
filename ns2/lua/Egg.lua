@@ -31,6 +31,7 @@ Script.Load("lua/UmbraMixin.lua")
 Script.Load("lua/MaturityMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/TeleportMixin.lua")
+Script.Load("lua/SleeperMixin.lua")
 
 class 'Egg' (ScriptActor)
 
@@ -137,6 +138,7 @@ function Egg:OnInitialized()
         end
         
         InitMixin(self, StaticTargetMixin)
+        InitMixin(self, SleeperMixin)
         
     elseif Client then
         InitMixin(self, UnitStatusMixin)
@@ -146,6 +148,10 @@ end
 
 function Egg:GetShowCrossHairText(toPlayer)
     return not GetAreEnemies(self, toPlayer)
+end    
+
+function Egg:GetCanSleep()
+    return true
 end    
 
 function Egg:GetMaturityRate()

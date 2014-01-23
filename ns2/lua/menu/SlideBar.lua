@@ -238,6 +238,17 @@ function SlideBar:ScrollMax()
     Scroll(self, self.slideButton:GetBackground():GetPosition() + Vector(16, 16, 0))
 end
 
+function SlideBar:ScrollTop()
+    Scroll(self, Vector(0, 0, 0))
+end
+
+function SlideBar:ScrollBottom()
+
+    local bottom = self:GetAvailableSpace().y
+    Scroll(self, Vector(0, bottom, 0))
+    
+end
+
 function SlideBar:SetValue(value)
 
     // scrollValue set in UpdateSlidePercentage() below through the Scroll() function.

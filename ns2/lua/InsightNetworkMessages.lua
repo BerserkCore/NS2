@@ -6,13 +6,16 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/Globals.lua")
+Script.Load("lua/LiveMixin.lua")
+
 local kHealthMessage =
 {
-    clientIndex = "entityid",
-    health = "integer",
-    maxHealth = "integer",
-    armor = "integer",
-    maxArmor = "integer"
+    clientIndex = "integer",
+    health = string.format("integer (0 to %s)", LiveMixin.kMaxHealth),
+    maxHealth = string.format("integer (0 to %s)", LiveMixin.kMaxHealth),
+    armor = string.format("integer (0 to %s)", LiveMixin.kMaxArmor),
+    maxArmor = string.format("integer (0 to %s)", LiveMixin.kMaxArmor),
 }
 
 function BuildHealthMessage(player)
@@ -34,13 +37,13 @@ Shared.RegisterNetworkMessage( "Health", kHealthMessage )
 local kTechPointsMessage =
 {
     entityIndex = "entityid",
-    teamNumber = "integer",
-    techId = "integer",
-    location = "integer",
-    healthFraction = "float",
-    powerNodeFraction = "float",
-    builtFraction = "float",
-    eggCount = "integer"
+    teamNumber = string.format("integer (-1 to %d)", kSpectatorIndex),
+    techId = "enum kTechId",
+    location = "resource",
+    healthFraction = "float (0 to 1 by 0.01)",
+    powerNodeFraction = "float (0 to 1 by 0.01)",
+    builtFraction = "float (0 to 1 by 0.01)",
+    eggCount = "integer (0 to 63)"
 }
 
 function BuildTechPointsMessage(techPoint, powerNodes, eggs)
@@ -50,6 +53,7 @@ function BuildTechPointsMessage(techPoint, powerNodes, eggs)
     t.entityIndex = techPoint:GetId()
     t.location = techPointLocation
     t.teamNumber = techPoint.occupiedTeam
+    t.techId = kTechId.None
     
     local structure = Shared.GetEntity(techPoint.attachedId)
     
@@ -73,7 +77,7 @@ function BuildTechPointsMessage(techPoint, powerNodes, eggs)
                 if powerNode:GetIsSocketed() then
                     t.powerNodeFraction = powerNode:GetHealthScalar()
                 else
-                    t.powerNodeFraction = -1
+                    t.powerNodeFraction = 0
                 end
                 
                 break
@@ -87,13 +91,13 @@ function BuildTechPointsMessage(techPoint, powerNodes, eggs)
         if structure:GetIsAlive() then
         
             -- Structure may not have a GetBuiltFraction() function (Hallucinations for example).
-            t.builtFraction = structure.GetBuiltFraction and structure:GetBuiltFraction() or -1
+            t.builtFraction = structure.GetBuiltFraction and structure:GetBuiltFraction() or 0
             t.healthFraction= structure:GetHealthScalar()
             
         else
         
-            t.builtFraction = -1
-            t.healthFraction= -1
+            t.builtFraction = 0
+            t.healthFraction= 0
             
         end
         

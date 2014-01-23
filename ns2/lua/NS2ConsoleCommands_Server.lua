@@ -1388,6 +1388,20 @@ local function OnCommandStoreLastPosition(client)
 
 end
 
+local function OnCommandEvolveLastUpgrades(client)
+
+    local player = client:GetControllingPlayer()
+    if player and player:isa("Alien") and player:GetIsAlive() and not player:isa("Embryo") then
+    
+        local upgrades = player.lastUpgradeList
+        if upgrades and #upgrades > 0 then
+            player:ProcessBuyAction(upgrades)
+        end
+    
+    end
+
+end
+
 
 // GC commands
 Event.Hook("Console_changegcsettingserver", OnCommandChangeGCSettingServer)
@@ -1496,6 +1510,8 @@ Event.Hook("Console_makegreenfemale", OnCommandGreenEditionFemale)
 Event.Hook("Console_makeblackfemale", OnCommandBlackEditionFemale)
 Event.Hook("Console_makespecialfemale", OnCommandMakeSpecialEditionFemale)
 Event.Hook("Console_make", OnCommandMake)
+
+Event.Hook("Console_evolvelastupgrades", OnCommandEvolveLastUpgrades)
 
 Event.Hook("Console_debugcommander", OnCommandDebugCommander)
 Event.Hook("Console_hell", OnCommandHell)

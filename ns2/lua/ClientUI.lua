@@ -16,7 +16,7 @@ local kShowOnTeam = { }
 kShowOnTeam["all"] = { GUIFeedback = true, GUIScoreboard = true, GUIDeathMessages = true, GUIChat = true,
                        GUIVoiceChat = true, GUIMinimapFrame = true, GUIMapAnnotations = true,
                        GUICommunicationStatusIcons = true, GUIUnitStatus = true, GUIDeathScreen = true,
-                       GUITipVideo = true, GUIVoteMenu = true, GUIStartVoteMenu = true }
+                       GUITipVideo = true, GUIVoteMenu = true, GUIStartVoteMenu = true, /*GUIGatherOverlay = true*/ }
 
 kShowOnTeam[kTeamReadyRoom] = { GUIReadyRoomOrders = true } // , GUIPlayerRanking = true }
 kShowOnTeam[kTeam1Index] = { }

@@ -129,6 +129,8 @@ end
 
 function CamouflageMixin:OnCapsuleTraceHit(entity)
 
+    PROFILE("CamouflageMixin:OnCapsuleTraceHit")
+
     if GetAreEnemies(self, entity) then
         self:TriggerUncamouflage()
     end

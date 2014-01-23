@@ -351,7 +351,11 @@ function Lerk:OverrideUpdateOnGround(onGround)
 end
 
 function Lerk:OnWorldCollision(normal)
+
+    PROFILE("Lerk:OnWorldCollision")
+    
     self.wallGripAllowed = normal.y < 0.5 and not self:GetCrouching()
+    
 end
 
 local function UpdateFlap(self, input, velocity)

@@ -28,7 +28,8 @@ local defaultConfig = {
                                 auto_kick_afk_time = 300,
                                 auto_kick_afk_capacity = 0.5,
                                 voting = { votekickplayer = true, votechangemap = true, voteresetgame = true, voterandomizerr = true },
-                                reserved_slots = { amount = 0, ids = { } }
+                                reserved_slots = { amount = 0, ids = { } },
+                                gather_server = false
                             },
                         tags = { "rookie" }
                       }

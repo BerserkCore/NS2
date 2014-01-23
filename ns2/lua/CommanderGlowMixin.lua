@@ -31,7 +31,7 @@ function CommanderGlowMixin:UpdateHighlight()
 
     // Show glowing outline for commander, to pick it out of the darkness
     local player = Client.GetLocalPlayer()
-    local visible = player ~= nil and (player:isa("Commander") or (player.GetIsOverhead and player:GetIsOverhead()))
+    local visible = player ~= nil and (player:isa("Commander"))
     
     // Don't show enemy structures as glowing
     if visible and self.GetTeamNumber and (player:GetTeamNumber() == GetEnemyTeamNumber(self:GetTeamNumber())) then
