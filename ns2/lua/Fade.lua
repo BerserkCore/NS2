@@ -266,7 +266,7 @@ function Fade:GetAirControl()
 end   
 
 function Fade:GetAirFriction()
-    return self:GetIsBlinking() and 0 or (0.17  - (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.01)
+    return (self:GetIsBlinking() or self:GetRecentlyShadowStepped()) and 0 or (0.17  - (GetHasCelerityUpgrade(self) and GetSpurLevel(self:GetTeamNumber()) or 0) * 0.01)
 end 
 
 function Fade:ModifyVelocity(input, velocity, deltaTime)
@@ -349,7 +349,11 @@ function Fade:GetHasShadowStepAbility()
 end
 
 function Fade:GetHasShadowStepCooldown()
-    return self.timeShadowStep + kShadowStepCooldown > Shared.GetTime() or self:GetIsBlinking()
+    return self.timeShadowStep + kShadowStepCooldown > Shared.GetTime()
+end
+
+function Fade:GetRecentlyShadowStepped()
+    return self.timeShadowStep + kShadowStepCooldown * 2 > Shared.GetTime()
 end
 
 function Fade:GetMovementSpecialTechId()

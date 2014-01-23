@@ -74,7 +74,8 @@ local kDrifterSelfOrderRange = 12
 
 Drifter.kFov = 360
 
-Drifter.kTurnSpeed = 4 * math.pi
+Drifter.kTurnSpeed = 1.8 * math.pi
+Drifter.kStormCloudTurnSpeed = 2.5 * math.pi
 
 // Control detection of drifters from enemy team units.
 local kDetectInterval = 0.5
@@ -239,7 +240,7 @@ function Drifter:OnDestroy()
 end
 
 function Drifter:GetTurnSpeedOverride()
-    return Drifter.kTurnSpeed
+    return self.stormCloudSpeed and Drifter.kStormCloudTurnSpeed or Drifter.kTurnSpeed
 end
 
 function Drifter:SetIncludeRelevancyMask(includeMask)
@@ -389,7 +390,7 @@ function Drifter:ProcessMoveOrder(moveSpeed, deltaTime)
     
         local hoverAdjustedLocation = currentOrder:GetLocation()
         
-        if self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, moveSpeed, deltaTime) then 
+        if self:MoveToTarget(PhysicsMask.AIMovement, hoverAdjustedLocation, moveSpeed, deltaTime) or (self:GetOrigin() - hoverAdjustedLocation):GetLengthXZ() < 0.5 then 
 
             if currentOrder:GetType() == kTechId.Move then
             
@@ -739,7 +740,7 @@ end
 
 function Drifter:GetTechButtons(techId)
 
-    local techButtons = { kTechId.EnzymeCloud, kTechId.Storm, kTechId.MucousMembrane, kTechId.Hallucinate,
+    local techButtons = { kTechId.EnzymeCloud, kTechId.Hallucinate, kTechId.MucousMembrane, kTechId.SelectHallucinations,
                           kTechId.Grow, kTechId.Move, kTechId.Patrol, kTechId.FollowAlien }
 /*
     if self.hasCelerity then

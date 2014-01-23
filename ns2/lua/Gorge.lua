@@ -39,7 +39,8 @@ local networkVars =
     timeSlideEnd = "private time",
     startedSliding = "private boolean",
     sliding = "boolean",
-    hasBellySlide = "private boolean"
+    hasBellySlide = "private boolean",    
+    timeOfLastPhase = "private time",
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)

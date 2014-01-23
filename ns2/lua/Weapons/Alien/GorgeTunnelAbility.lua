@@ -61,7 +61,7 @@ function GorgeTunnelAbility:GetDropRange()
     return 1.5
 end
 
-local kExtents = Vector(0.4, 0.4, 0.4)
+local kExtents = Vector(0.4, 0.5, 0.4) // 0.5 to account for pathing being too high/too low making it hard to palce tunnels
 local function IsPathable(position)
 
     local noBuild = Pathing.GetIsFlagSet(position, kExtents, Pathing.PolyFlag_NoBuild)
@@ -92,7 +92,7 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
             
                 local trace = Shared.TraceRay(traceStart, traceStart - Vector(0, kVerticalOffset + 0.1, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOneAndIsa(player, "Babbler"))
             
-                if trace.fraction < 0.65 or trace.fraction >= 1.0 then
+                if trace.fraction < 0.60 or trace.fraction >= 1.0 then //the max splope a tunnel can be placed on. Previously 0.65, lowered to make it easier to place tunnels in places like Cave
                     valid = false
                     break
                 end

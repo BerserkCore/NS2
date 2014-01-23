@@ -58,7 +58,7 @@ Armory.kBuyMenuUpgradesTexture = "ui/marine_buymenu_upgrades.dds"
 local kLoginAndResupplyTime = 0.3
 Armory.kHealAmount = 25
 Armory.kResupplyInterval = .8
-
+gArmoryHealthHeight = 1.4
 // Players can use menu and be supplied by armor inside this range
 Armory.kResupplyUseRange = 2.5
 
@@ -382,6 +382,10 @@ function Armory:GetItemList(forPlayer)
     
 end
 
+function Armory:GetHealthbarOffset()
+    return gArmoryHealthHeight
+end 
+
 if Server then
     /* not used anymore since all animation are now client side
     function Armory:OnTag(tagName)
@@ -425,7 +429,9 @@ function ArmoryAddon:OnCreate()
     if Server then
         self.creationTime = Shared.GetTime()
     end
-    
+	
+    gArmoryHealthHeight = 1.7
+	
 end
 
 function ArmoryAddon:OnInitialized()
@@ -433,6 +439,14 @@ function ArmoryAddon:OnInitialized()
     ScriptActor.OnInitialized(self)
     
     self:SetModel(Armory.kAdvancedArmoryChildModel, Armory.kAdvancedArmoryAnimationGraph)
+    
+end
+
+function ArmoryAddon:OnDestroy()
+
+    ScriptActor.OnDestroy(self)
+    
+    gArmoryHealthHeight = 1.4
     
 end
 
@@ -464,9 +478,5 @@ function ArmoryAddon:OnGetIsVisible(visibleTable, viewerTeamNumber)
     end
     
 end
-
-function Armory:GetHealthbarOffset()
-    return 1.5
-end 
 
 Shared.LinkClassToMap("ArmoryAddon", ArmoryAddon.kMapName, addonNetworkVars)

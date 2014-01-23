@@ -8,6 +8,15 @@
 
 kGeneralEffectData = 
 {
+    teleport_trigger = 
+    {
+        teleportEffect =
+        {
+            {cinematic = "cinematics/marine/infantryportal/player_spawn.cinematic"},
+            {sound = "sound/NS2.fev/marine/structures/infantry_portal_player_spawn"},
+        },
+    },
+
     pickup =
     {
         effects =
@@ -194,8 +203,7 @@ kGeneralEffectData =
             
             // alien
             {cinematic = "cinematics/alien/shade/spawn_halluzination.cinematic", classname = "Hallucination", done = true},  
-            {cinematic = "cinematics/alien/gorge/clog_spawn.cinematic", classname = "Clog", done = true},
-            
+
             {cinematic = "cinematics/alien/structures/spawn.cinematic", classname = "Egg", done = true},
             {cinematic = "cinematics/alien/structures/spawn_small.cinematic", classname = "Embryo", done = true},
             
@@ -416,13 +424,8 @@ kGeneralEffectData =
             {sound = "sound/NS2.fev/alien/onos/death", classname = "Onos", done = true},
             {sound = "sound/NS2.fev/marine/common/death_female", classname = "Marine", sex = "female", done = true},
             {sound = "sound/NS2.fev/marine/common/death", classname = "Marine", done = true},
-            {sound = "sound/NS2.fev/marine/structures/extractor_death", classname = "Extractor", done = true},
             {sound = "sound/NS2.fev/marine/structures/arc/death", classname = "ARC", done = true},
-            
-            // Note: PowerPoints are in game script
-            
-            {sound = "sound/NS2.fev/marine/power_node/destroyed_powerdown", classname = "SentryBattery"},
-            {sound = "sound/NS2.fev/marine/power_node/destroyed", classname = "SentryBattery", done = true},
+
         },
         
     },

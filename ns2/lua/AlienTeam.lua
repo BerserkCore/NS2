@@ -736,13 +736,14 @@ function AlienTeam:InitTechTree()
     self.techTree:AddBuildNode(kTechId.BoneWall, kTechId.BioMassThree)
     self.techTree:AddBuildNode(kTechId.Contamination, kTechId.BioMassNine)
     self.techTree:AddAction(kTechId.SelectDrifter)
+    self.techTree:AddAction(kTechId.SelectHallucinations, kTechId.ShadeHive)
     self.techTree:AddAction(kTechId.SelectShift, kTechId.ShiftHive)
     
     // Drifter triggered abilities
-    self.techTree:AddTargetedActivation(kTechId.EnzymeCloud,      kTechId.None,      kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.EnzymeCloud,      kTechId.ShiftHive,      kTechId.None)
     self.techTree:AddTargetedActivation(kTechId.Hallucinate,      kTechId.ShadeHive,      kTechId.None)
     self.techTree:AddTargetedActivation(kTechId.MucousMembrane,   kTechId.CragHive,      kTechId.None)    
-    self.techTree:AddTargetedActivation(kTechId.Storm,            kTechId.ShiftHive,       kTechId.None)
+    //self.techTree:AddTargetedActivation(kTechId.Storm,            kTechId.ShiftHive,       kTechId.None)
     self.techTree:AddActivation(kTechId.DestroyHallucination)
     
     // Drifter passive abilities
@@ -855,10 +856,6 @@ function AlienTeam:InitTechTree()
     self.techTree:AddSpecial(kTechId.TwoShifts)
     self.techTree:AddSpecial(kTechId.TwoShades)
     self.techTree:AddSpecial(kTechId.TwoCrags)
-    
-    self.techTree:AddBuyNode(kTechId.ContaminationTech, kTechId.BioMassNine)
-    self.techTree:AddBuyNode(kTechId.RuptureTech, kTechId.BioMassTwo)
-    self.techTree:AddBuyNode(kTechId.BoneWallTech, kTechId.BioMassThree)
     
     // abilities unlocked by bio mass: 
     

@@ -248,7 +248,7 @@ function GUIMainMenu:CreatePlayWindow()
     local xTabWidth = 256
 
     local tabBackground = CreateMenuElement(self.playWindow, "Image")
-    tabBackground:SetCSSClass("tab_background")
+    tabBackground:SetCSSClass("tab_background_playnow")
     tabBackground:SetIgnoreEvents(true)
     
     local tabAnimateTime = 0.1
@@ -265,7 +265,7 @@ function GUIMainMenu:CreatePlayWindow()
             end
         end
     
-        tabButton:SetCSSClass("tab")
+        tabButton:SetCSSClass("tab_playnow")
         tabButton:SetText(tab.label)
         tabButton:AddEventCallbacks({ OnClick = tab.func })
         tabButton:AddEventCallbacks({ OnClick = ShowTab })

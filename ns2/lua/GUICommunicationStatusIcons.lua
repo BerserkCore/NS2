@@ -168,10 +168,11 @@ local function UpdateIconsFromPlayers(self)
         
             local worldPoint = player:GetEngagementPoint()
             if player.GetHealthbarOffset then
-                worldPoint = worldPoint + player:GetHealthbarOffset()
+                iconCoordinates = Vector(worldPoint.x, worldPoint.y + player:GetHealthbarOffset(), worldPoint.z)   
+            else 
+                iconCoordinates = Vector(worldPoint.x, worldPoint.y, worldPoint.z)    
             end
-            
-            local screenPos = Client.WorldToScreen(worldPoint)
+            screenPos = Client.WorldToScreen(iconCoordinates) 
             local sizeScalar = 1 - toTarget:GetLength()/GUICommunicationStatusIcons.kDisplayRange
             local size = GUICommunicationStatusIcons.kMinSize + (GUICommunicationStatusIcons.kMaxSize - GUICommunicationStatusIcons.kMinSize) * sizeScalar
             icon:SetSize(size)

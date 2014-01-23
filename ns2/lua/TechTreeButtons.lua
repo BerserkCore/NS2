@@ -151,6 +151,7 @@ kTechIdToMaterialOffset[kTechId.ShiftHatch] = 46
 kTechIdToMaterialOffset[kTechId.ShiftEnergize] = 47
 
 kTechIdToMaterialOffset[kTechId.Hallucinate] = 126
+kTechIdToMaterialOffset[kTechId.SelectHallucinations] = 118
 kTechIdToMaterialOffset[kTechId.DestroyHallucination] = 139
 kTechIdToMaterialOffset[kTechId.DrifterCelerity] = 64
 kTechIdToMaterialOffset[kTechId.DrifterRegeneration] = 62

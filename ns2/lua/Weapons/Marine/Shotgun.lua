@@ -21,7 +21,8 @@ local kBulletSize = 0.016
 
 local networkVars =
 {
-    emptyPoseParam = "private float (0 to 1 by 0.01)"
+    emptyPoseParam = "private float (0 to 1 by 0.01)",
+    timeAttackStarted = "time",
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -150,6 +151,10 @@ local function LoadBullet(self)
     
 end
 
+function Shotgun:GetPrimaryMaxRateOfFire()
+    return kShotgunFireRate    
+end
+
 function Shotgun:OnTag(tagName)
 
     PROFILE("Shotgun:OnTag")
@@ -198,7 +203,7 @@ function Shotgun:FirePrimary(player)
 
     local viewAngles = player:GetViewAngles()
     viewAngles.roll = NetworkRandom() * math.pi * 2
-    
+
     local shootCoords = viewAngles:GetCoords()
 
     // Filter ourself out of the trace so that we don't hit ourselves.

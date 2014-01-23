@@ -16,6 +16,7 @@ Marine.kInfestationFootstepCinematic = PrecacheAsset("cinematics/marine/infestat
 Marine.kSpitHitCinematic = PrecacheAsset("cinematics/marine/spit_hit_1p.cinematic")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/rupture.surface_shader")
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/marine_highlight.surface_shader")
 
 Marine.kSpitHitEffectDuration = 1
 
@@ -260,6 +261,32 @@ function Marine:OnUpdateRender()
         self.flashlight:SetAtmosphericDensity(density)
         
     end
+    
+    local localPlayer = Client.GetLocalPlayer()
+    local showHighlight = localPlayer ~= nil and localPlayer:isa("Alien") and self:GetIsAlive()
+    
+    /* disabled for now
+    local model = self:GetRenderModel()
+
+    if model then
+    
+        if showHighlight and not self.marineHighlightMaterial then
+            
+            self.marineHighlightMaterial = AddMaterial(model, "cinematics/vfx_materials/marine_highlight.material")
+            
+        elseif not showHighlight and self.marineHighlightMaterial then
+        
+            RemoveMaterial(model, self.marineHighlightMaterial)
+            self.marineHighlightMaterial = nil
+        
+        end
+        
+        if self.marineHighlightMaterial then
+            self.marineHighlightMaterial:SetParameter("distance", (localPlayer:GetEyePos() - self:GetOrigin()):GetLength())
+        end
+    
+    end
+    */
 
 end
 

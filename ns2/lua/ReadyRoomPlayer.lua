@@ -11,6 +11,7 @@ Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
 Script.Load("lua/Mixins/JumpMoveMixin.lua")
 Script.Load("lua/Mixins/CrouchMoveMixin.lua")
+Script.Load("lua/Mixins/LadderMoveMixin.lua")
 Script.Load("lua/Mixins/CameraHolderMixin.lua")
 Script.Load("lua/ScoringMixin.lua")
 Script.Load("lua/Marine.lua")
@@ -30,6 +31,7 @@ AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(JumpMoveMixin, networkVars)
 AddMixinNetworkVars(CrouchMoveMixin, networkVars)
+AddMixinNetworkVars(LadderMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
 AddMixinNetworkVars(ScoringMixin, networkVars)
 AddMixinNetworkVars(MarineVariantMixin, networkVars)
@@ -40,6 +42,7 @@ function ReadyRoomPlayer:OnCreate()
     InitMixin(self, GroundMoveMixin)
     InitMixin(self, JumpMoveMixin)
     InitMixin(self, CrouchMoveMixin)
+    InitMixin(self, LadderMoveMixin)
     InitMixin(self, CameraHolderMixin, { kFov = kDefaultFov })
     InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
     InitMixin(self, MarineVariantMixin )
@@ -71,7 +74,7 @@ if Client then
 end
 
 function ReadyRoomPlayer:GetHealthbarOffset()
-    return 0.8
+    return 0.85
 end
 
 Shared.LinkClassToMap("ReadyRoomPlayer", ReadyRoomPlayer.kMapName, networkVars)

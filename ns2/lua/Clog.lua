@@ -175,7 +175,12 @@ if Server then
     
     function Clog:OnCreatedByGorge(gorge)
     
-        self:TriggerEffects("spawn", {effecthostcoords = self:GetCoords()})
+        if self.variant == 2 then
+            self:TriggerEffects("clog_spawn_shadow", {effecthostcoords = self:GetCoords()})
+        else
+            self:TriggerEffects("clog_spawn", {effecthostcoords = self:GetCoords()})
+        end
+        
         self:TriggerEffects("clog_slime")
     
     end
@@ -241,7 +246,6 @@ end
 function Clog:ComputeDamageOverride(attacker, damage, damageType, time)
 
     if damageType ~= kDamageType.Flame and damage >= Clog.kMaxShockDamage then
-        self:TriggerEffects("spawn", {effecthostcoords = self:GetCoords()})
         damage = Clog.kMaxShockDamage
     end
 

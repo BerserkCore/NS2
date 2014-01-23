@@ -122,6 +122,8 @@ function Axe:OnTag(tagName)
         
     elseif tagName == "attack_end" then
         self.sprintAllowed = true
+    elseif tagName == "deploy_end" then
+        self.sprintAllowed = true
     end
     
 end

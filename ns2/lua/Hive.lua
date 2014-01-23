@@ -158,6 +158,7 @@ function Hive:OnInitialized()
 end
 
 local kHelpArrowsCinematicName = PrecacheAsset("cinematics/alien/commander_arrow.cinematic")
+PrecacheAsset("models/misc/commander_arrow_aliens.model")
 
 if Client then
 

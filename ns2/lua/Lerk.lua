@@ -54,6 +54,7 @@ local networkVars =
     wallGripNormalGoal = "private compensated vector",
     wallGripAllowed = "private compensated boolean",
     flapPressed = "private compensated boolean",
+    timeOfLastPhase = "private time",
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)

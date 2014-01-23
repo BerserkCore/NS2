@@ -351,7 +351,7 @@ if Server then
         if techId == kTechId.SelectDrifter then
         
             SelectNearest(self, "Drifter")
-        
+
         elseif GetIsPheromone(techId) then
         
             success = CreatePheromone(techId, position, self:GetTeamNumber()) ~= nil
@@ -460,6 +460,19 @@ function AlienCommander:SetCurrentTech(techId)
     
         if not SelectNearest(self, "Drifter") then
             SelectNearest(self, "DrifterEgg")
+        end
+        
+        return
+        
+    elseif techId == kTechId.SelectHallucinations then
+
+        DeselectAllUnits(self:GetTeamNumber())
+        for _, hallucination in ipairs(GetEntitiesForTeam("Hallucination", self:GetTeamNumber())) do
+        
+            if hallucination:GetIsAlive() then
+                hallucination:SetSelected(self:GetTeamNumber(), true, true, true)
+            end
+        
         end
         
         return

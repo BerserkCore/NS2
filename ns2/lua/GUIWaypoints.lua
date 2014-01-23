@@ -162,6 +162,8 @@ local function InitMarineTexture(self)
     self.waypointDirection:SetColor(Color(1, 1, 1, 1))
     self.marineWaypointLoaded = true
     
+    self.usedTexture = kMarineTextureName
+    
 end
 
 local function InitAlienTexture(self)
@@ -177,6 +179,8 @@ local function InitAlienTexture(self)
     
     self.waypointDirection:SetColor(kAlienTeamColorFloat)
     self.marineWaypointLoaded = false
+    
+    self.usedTexture = kAlienTextureName
     
 end
 
@@ -482,13 +486,30 @@ local function AnimateFinalWaypoint(self)
     local finalWaypointData = PlayerUI_GetFinalWaypointInScreenspace()
     local showWayPoint = not PlayerUI_GetIsConstructing() and not PlayerUI_GetIsRepairing()
     
-    self.animatedCircle:SetIsVisible(showWayPoint)
+    local fullHUD = Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full
+    
+    self.animatedCircle:SetIsVisible(showWayPoint and fullHUD)
     self.finalWaypoint:SetIsVisible(showWayPoint)
     
     if finalWaypointData then
     
-        self.finalDistanceText:SetIsVisible(true)
-        self.finalNameText:SetIsVisible(true)
+        local useTexture
+    
+        if not fullHUD then
+            useTexture = kTransparentTexture    
+        elseif PlayerUI_GetTeamType() == kAlienTeamType then
+            useTexture = kAlienTextureName
+        else
+            useTexture = kMarineTextureName
+        end    
+    
+        if self.usedTexture ~= useTexture then
+            self.finalWaypoint:SetTexture(useTexture)
+            self.usedTexture = useTexture
+        end
+    
+        self.finalDistanceText:SetIsVisible(fullHUD)
+        self.finalNameText:SetIsVisible(fullHUD)
         
         local x = finalWaypointData.x
         local y = finalWaypointData.y

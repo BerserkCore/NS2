@@ -152,6 +152,14 @@ function Whip:ResetAttackBits()
     
 end
 
+function Whip:OnTeleport()
+
+    if self.rooted then
+        self:Unroot()
+    end
+    
+end
+
 function Whip:UpdateRootState()
 
     // Unroot whips if infestation recedes
@@ -161,7 +169,7 @@ function Whip:UpdateRootState()
     
     local currentOrder = self:GetCurrentOrder()
     
-    if not self.rooted and self:GetGameEffectMask(kGameEffect.OnInfestation) and (not currentOrder or currentOrder:GetType() ~= kTechId.Move) then
+    if not self.rooted and self:GetGameEffectMask(kGameEffect.OnInfestation) and (not currentOrder or currentOrder:GetType() ~= kTechId.Move) and not self:GetIsTeleporting() then
         self:Root()
     end
     

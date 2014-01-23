@@ -145,6 +145,9 @@ end
 function SentryBattery:GetRequiresPower()
     return false
 end
+function SentryBattery:GetHealthbarOffset()
+    return 0.75
+end 
 
 function GetSentryBatteryInRoom(origin)
 

@@ -23,12 +23,20 @@ local kXenocideSoundName = PrecacheAsset("sound/NS2.fev/alien/common/xenocide_st
 
 
 local networkVars = { }
-
+        
 local function TriggerXenocide(self, player)
 
     if Server then
-    
-        StartSoundEffectOnEntity(kXenocideSoundName, player)
+	
+        if not self.XenocideSoundName then
+            self.XenocideSoundName = Server.CreateEntity(SoundEffect.kMapName)
+            self.XenocideSoundName:SetAsset(kXenocideSoundName)
+            self.XenocideSoundName:SetParent(self)
+            self.XenocideSoundName:Start()
+        else 	
+		    self.XenocideSoundName:Start()	
+		end
+		//StartSoundEffectOnEntity(kXenocideSoundName, player)
         self.xenocideTimeLeft = kDetonateTime
         
     elseif Client and Client.GetLocalPlayer() == player then
@@ -54,15 +62,15 @@ local function CleanUI(self)
     end
     
 end
-
+    
 function XenocideLeap:OnDestroy()
 
     BiteLeap.OnDestroy(self)
-    
+	
     if Client then
         CleanUI(self)
     end
-    
+
 end
 
 function XenocideLeap:GetDeathIconIndex()
@@ -88,14 +96,14 @@ function XenocideLeap:GetRange()
 end
 
 function XenocideLeap:OnPrimaryAttack(player)
-
+    
     if player:GetEnergy() >= self:GetEnergyCost() then
     
         if not self.xenociding then
-        
+
             TriggerXenocide(self, player)
             self.xenociding = true
-            
+			
         else
         
             if self.xenocideTimeLeft and self.xenocideTimeLeft < kDetonateTime * 0.8 then
@@ -113,7 +121,7 @@ local function StopXenocide(self)
     CleanUI(self)
     
     self.xenociding = false
-    
+
 end
 
 function XenocideLeap:OnProcessMove(input)
@@ -136,14 +144,20 @@ function XenocideLeap:OnProcessMove(input)
                 local hitEntities = GetEntitiesWithMixinWithinRange("Live", player:GetOrigin(), kXenocideRange)
                 RadiusDamage(hitEntities, player:GetOrigin(), kXenocideRange, kXenocideDamage, self)
                 
-                player.spawnReductionTime = 12
+                player.spawnReductionTime = 4
                 
                 player:SetBypassRagdoll(true)
-                
+
                 player:Kill()
-                
+				
+                self.XenocideSoundName:Stop()
+                self.XenocideSoundName = nil
             end
-            
+        		if Server and not player:GetIsAlive() and self.XenocideSoundName and self.XenocideSoundName:GetIsPlaying() == true then
+					self.XenocideSoundName:Stop()
+					self.XenocideSoundName = nil					
+				end    
+
         elseif Client and not player:GetIsAlive() and self.xenocideGui then
             CleanUI(self)
         end

@@ -10,6 +10,7 @@ local kSheet1 = PrecacheAsset("ui/exosuit_HUD1.dds")
 local kSheet2 = PrecacheAsset("ui/exosuit_HUD2.dds")
 local kSheet3 = PrecacheAsset("ui/exosuit_HUD3.dds")
 local kSheet4 = PrecacheAsset("ui/exosuit_HUD4.dds")
+local kCrosshair = PrecacheAsset("ui/exo_crosshair.dds")
 
 local kTargetingReticuleCoords = { 185, 0, 354, 184 }
 
@@ -23,6 +24,9 @@ local kInnerRingCoords = { 0, 316, 330, 646 }
 local kOuterRingCoords = { 0, 0, 800, 490 }
 
 local kCrosshairCoords = { 495, 403, 639, 547 }
+
+
+local kCrosshairSize = Vector(64, 64, 0)
 
 local kTrackEntityDistance = 30
 
@@ -53,6 +57,14 @@ function GUIExoHUD:Initialize()
     self.staticRing:SetLayer(kGUILayerPlayerHUDForeground1)
     self.background:AddChild(self.staticRing)
     
+    self.crosshair = GUIManager:CreateGraphicItem()
+    self.crosshair:SetTexture(kCrosshair)
+    self.crosshair:SetSize(kCrosshairSize)
+    self.crosshair:SetAnchor(GUIItem.Middle, GUIItem.Center)
+    self.crosshair:SetPosition(Vector(-kCrosshairSize.x / 2, -kCrosshairSize.y / 2, 0))
+    self.crosshair:SetLayer(kGUILayerPlayerHUDForeground1)
+    self.background:AddChild(self.crosshair)
+    
     local leftInfoBar = GUIManager:CreateGraphicItem()
     leftInfoBar:SetTexture(kSheet1)
     leftInfoBar:SetTexturePixelCoordinates(unpack(kInfoBarLeftCoords))
@@ -72,6 +84,9 @@ function GUIExoHUD:Initialize()
     rightInfoBar:SetPosition(Vector(0, 0, 0))
     rightInfoBar:SetLayer(kGUILayerPlayerHUDForeground1)
     self.background:AddChild(rightInfoBar)
+    
+    self.leftInfoBar = leftInfoBar
+    self.rightInfoBar = rightInfoBar
     
     self.innerRing = GUIManager:CreateGraphicItem()
     self.innerRing:SetTexture(kSheet1)
@@ -93,14 +108,14 @@ function GUIExoHUD:Initialize()
     self.outerRing:SetLayer(kGUILayerPlayerHUDForeground1)
     self.background:AddChild(self.outerRing)
     
-    self.crosshair = GUIManager:CreateGraphicItem()
-    self.crosshair:SetTexture(kSheet1)
-    self.crosshair:SetTexturePixelCoordinates(unpack(kCrosshairCoords))
+    self.targetcrosshair = GUIManager:CreateGraphicItem()
+    self.targetcrosshair:SetTexture(kSheet1)
+    self.targetcrosshair:SetTexturePixelCoordinates(unpack(kCrosshairCoords))
     size = CoordsToSize(kCrosshairCoords)
-    self.crosshair:SetSize(size)
-    self.crosshair:SetLayer(kGUILayerPlayerHUDForeground1)
-    self.crosshair:SetIsVisible(false)
-    self.background:AddChild(self.crosshair)
+    self.targetcrosshair:SetSize(size)
+    self.targetcrosshair:SetLayer(kGUILayerPlayerHUDForeground1)
+    self.targetcrosshair:SetIsVisible(false)
+    self.background:AddChild(self.targetcrosshair)
     
     self.targets = { }
     
@@ -218,15 +233,15 @@ local function UpdateTargets(self)
     
     if closestToCrosshair ~= nil and closestDistToCrosshair < 50 then
     
-        self.crosshair:SetIsVisible(true)
+        self.targetcrosshair:SetIsVisible(true)
         local size = CoordsToSize(kCrosshairCoords) * (0.75 + (0.25 * ((math.sin(Shared.GetTime() * 7) + 1) / 2)))
         local scaledSize = size * closestToCrosshairScale
-        self.crosshair:SetSize(scaledSize)
-        self.crosshair:SetPosition(closestToCrosshair - scaledSize / 2)
-        self.crosshair:SetColor(Color(1, 1, 1, closestToCrosshairOpacity))
+        self.targetcrosshair:SetSize(scaledSize)
+        self.targetcrosshair:SetPosition(closestToCrosshair - scaledSize / 2)
+        self.targetcrosshair:SetColor(Color(1, 1, 1, closestToCrosshairOpacity))
         
     else
-        self.crosshair:SetIsVisible(false)
+        self.targetcrosshair:SetIsVisible(false)
     end
     
 end
@@ -236,16 +251,27 @@ local kAnimDuration = 1
 function GUIExoHUD:Update(deltaTime)
 
     PROFILE("GUIExoHUD:Update")
+
+    local fullMode = Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full
+
+    if fullMode then
     
-    self.ringRotation = self.ringRotation or 0
-    self.lastPlayerYaw = self.lastPlayerYaw or PlayerUI_GetYaw()
+        self.ringRotation = self.ringRotation or 0
+        self.lastPlayerYaw = self.lastPlayerYaw or PlayerUI_GetYaw()
+
+        local currentYaw = PlayerUI_GetYaw()
+        self.ringRotation = self.ringRotation + (GetAnglesDifference(self.lastPlayerYaw, currentYaw) * 0.25)
+        self.lastPlayerYaw = currentYaw
+        
+        self.innerRing:SetRotation(Vector(0, 0, -self.ringRotation))
+        self.outerRing:SetRotation(Vector(0, 0, self.ringRotation))
+
+    end
     
-    local currentYaw = PlayerUI_GetYaw()
-    self.ringRotation = self.ringRotation + (GetAnglesDifference(self.lastPlayerYaw, currentYaw) * 0.25)
-    self.lastPlayerYaw = currentYaw
-    
-    self.innerRing:SetRotation(Vector(0, 0, -self.ringRotation))
-    self.outerRing:SetRotation(Vector(0, 0, self.ringRotation))
+    self.innerRing:SetIsVisible(fullMode)
+    self.outerRing:SetIsVisible(fullMode)
+    self.leftInfoBar:SetIsVisible(fullMode)
+    self.rightInfoBar:SetIsVisible(fullMode)
     
     local timeLastDamage = PlayerUI_GetTimeDamageTaken()
     local animFraction = Clamp( (Shared.GetTime() - timeLastDamage) / kAnimDuration, 0, 1)
@@ -255,6 +281,8 @@ function GUIExoHUD:Update(deltaTime)
     self.staticRing:SetColor(color)    
     self.innerRing:SetColor(color)
     self.outerRing:SetColor(color)
+    
+    self.staticRing:SetIsVisible(fullMode)
     
     UpdateTargets(self)
     

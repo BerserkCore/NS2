@@ -110,7 +110,8 @@ function GUIObjectiveDisplay:Update(deltaTime)
         color.a = GUIObjectiveDisplay.kMinAlpha + (GUIObjectiveDisplay.kMaxAlpha - GUIObjectiveDisplay.kMinAlpha) * screenPosFraction
 
         // Don't draw existing objective markers if we turn off hints        
-        if Client.GetOptionBoolean( "showHints", true ) == false then
+local playerOrigin = PlayerUI_GetOrigin()
+        if Client.GetOptionBoolean( "showHints", true ) == false or GetIsPointInGorgeTunnel(playerOrigin)then
             color.a = 0
         end
         

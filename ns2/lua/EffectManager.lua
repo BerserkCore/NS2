@@ -180,10 +180,14 @@ local function InternalPrecacheEffectTable(self, globalEffectTable)
                     
                         for index, assetNameEntry in ipairs(assetEntry) do
                             Shared.RegisterDecalMaterial(assetNameEntry[2])
+							local materialToPrecache = string.gsub(assetNameEntry[2], "%.material", "")
+							self:PrecacheMaterial(materialToPrecache)
                         end
                         
                     else
                         Shared.RegisterDecalMaterial(assetEntry)
+						local materialToPrecache = string.gsub(assetEntry, "%.material", "")
+						self:PrecacheMaterial(materialToPrecache)
                     end
                     
                 elseif type(assetEntry) == "string" then
@@ -224,6 +228,13 @@ function EffectManager:PrecacheEffects()
         InternalPrecacheEffectTable(self, data)
     end
     
+end
+
+function EffectManager:PrecacheMaterial(material)
+	PrecacheAsset(material .. ".dds")
+    PrecacheAsset(material .. "_normal.dds")
+	PrecacheAsset(material .. "_opacity.dds")
+	PrecacheAsset(material .. "_specular.dds")
 end
 
 function EffectManager:GetQueuedText()

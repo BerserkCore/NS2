@@ -106,19 +106,23 @@ function Marine:SetRuptured()
 end
 
 function Marine:OnSprintStart()
-
     if self:GetIsAlive() then
-        StartSoundEffectOnEntity(Marine.kSprintStart, self)
+        if self:GetGenderString() == "female" then
+             StartSoundEffectOnEntity(Marine.kSprintStartFemale, self)
+        else 
+             StartSoundEffectOnEntity(Marine.kSprintStart, self)
+        end
     end
-
 end
-
+ 
 function Marine:OnSprintEnd(sprintDuration)
-
     if sprintDuration > 5 then
-        StartSoundEffectOnEntity(Marine.kSprintTiredEnd, self)
+        if self:GetGenderString() == "female" then
+             StartSoundEffectOnEntity(Marine.kSprintTiredEndFemale, self)
+        else 
+             StartSoundEffectOnEntity(Marine.kSprintTiredEnd, self)
+        end
     end
-
 end
 
 function Marine:InitWeapons()

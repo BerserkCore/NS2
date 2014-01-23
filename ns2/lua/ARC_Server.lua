@@ -12,6 +12,14 @@
 local kMoveParam = "move_speed"
 local kMuzzleNode = "fxnode_arcmuzzle"
 
+function ARC:OnEntityChange(oldId)
+
+    if self.targetedEntity == oldId then
+        self.targetedEntity = Entity.invalidId
+    end    
+
+end
+
 function ARC:UpdateMoveOrder(deltaTime)
 
     local currentOrder = self:GetCurrentOrder()
@@ -179,10 +187,16 @@ function ARC:UpdateOrders(deltaTime)
     
         if self.targetPosition then
         
+            local targetEntity = Shared.GetEntity(self.targetedEntity)
+            if targetEntity then
+                self.targetPosition = targetEntity:GetOrigin()
+            end
+            
             if self:ValidateTargetPosition(self.targetPosition) then
                 self:SetTargetDirection(self.targetPosition)
             else
                 self.targetPosition = nil
+                self.targetedEntity = Entity.invalidId
             end
             
         else
@@ -201,6 +215,7 @@ function ARC:UpdateOrders(deltaTime)
     elseif currentOrder then
     
         self.targetPosition = nil
+        self.targetedEntity = Entity.invalidId
         
         // Move ARC if it has an order and it can be moved.
         local canMove = self.deployMode == ARC.kDeployMode.Undeployed
@@ -212,6 +227,7 @@ function ARC:UpdateOrders(deltaTime)
         
     else
         self.targetPosition = nil
+        self.targetedEntity = Entity.invalidId
     end
     
 end
@@ -226,10 +242,14 @@ function ARC:AcquireTarget()
     
         self:SetMode(ARC.kMode.Targeting)
         self.targetPosition = finalTarget:GetOrigin()
+        self.targetedEntity = finalTarget:GetId()
         
     else
+    
         self:SetMode(ARC.kMode.Stationary)
         self.targetPosition = nil    
+        self.targetedEntity = Entity.invalidId
+        
     end
     
 end
@@ -264,6 +284,7 @@ local function PerformAttack(self)
     
     // reset target position and acquire new target
     self.targetPosition = nil
+    self.targetedEntity = Entity.invalidId
     
 end
 
@@ -303,6 +324,10 @@ function ARC:OnTag(tagName)
         self:TriggerEffects("arc_charge")
     elseif tagName == "attack_end" then
         self:SetMode(ARC.kMode.Targeting)
+    elseif tagName == "deploy_start" then
+        self:TriggerEffects("arc_deploying")
+    elseif tagName == "undeploy_start" then
+        self:TriggerEffects("arc_stop_charge")
     elseif tagName == "deploy_end" then
     
         // Clear orders when deployed so new ARC attack order will be used

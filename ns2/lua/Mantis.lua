@@ -21,7 +21,7 @@ if Server then
         Server.SendNetworkMessage("RefreshDisplayBug", data, true)
     end
     Server.HookNetworkMessage("RefreshDisplayBug", ForwardRefreshDisplayBug)
-    
+	
 end
 
 if Client then
@@ -31,7 +31,7 @@ if Client then
     local kRequestURL = "http://mantisfeed.tsadb.com"
     local sessionId = nil
     local displayedBugId = nil
-    
+    local reportSent = PrecacheAsset("sound/NS2.fev/common/chat")
     local function ValidateResponse(response)
     
         if response then
@@ -92,11 +92,11 @@ if Client then
         local function RefreshDisplayResponder(responseData)
         
             local bug = FindBugReport(responseData, tostring(displayedBugId))
-            
+		
             if not bug then
                 return
             end
-            
+
             -- Count up the votes.
             local accepts = 0
             local rejects = 0
@@ -109,9 +109,9 @@ if Client then
                 end
                 
             end
-            
-            DisplayMantisBug(bug.bugid, bug.summary, accepts, rejects)
-            
+
+                DisplayMantisBug(bug.bugid, bug.summary, accepts, rejects)
+
         end
         RequestS3(RefreshDisplayResponder)
         
@@ -120,7 +120,7 @@ if Client then
     local function DisplayBug(data)
     
         if displayedBugId == data.bugid then
-        
+
             displayedBugId = nil
             HideMantisBug()
             
@@ -135,7 +135,7 @@ if Client then
     Client.HookNetworkMessage("DisplayBug", DisplayBug)
     
     local function RefreshDisplayBug(data)
-    
+
         displayedBugId = data.bugid
         RefreshDisplay()
         
@@ -191,7 +191,7 @@ if Client then
     Event.Hook("Console_mantis_s3", HandleRequestS3)
     
     local function FeedbackResponse(bugId)
-    
+   
         return function(responseData)
             Client.SendNetworkMessage("RefreshDisplayBug", { bugid = tonumber(bugId) }, true)
         end
@@ -199,17 +199,22 @@ if Client then
     end
     
     local function HandleAccept(bugId)
+    local message = "Report number " .. ToString(bugId) .. " accepted"
         Shared.SendHTTPRequest(kRequestURL, "GET", { r = "feedback", id = bugId, value = "accept", PHPSESSID = sessionId }, FeedbackResponse(bugId))
+        Shared.ConsoleCommand("output " .. message)
+        StartSoundEffect(reportSent)
     end
     Event.Hook("Console_mantis_accept", HandleAccept)
     Event.Hook("Console_accept", HandleAccept)
     Event.Hook("Console_ma", HandleAccept)
     
     local function HandleReject(bugId)
-        Shared.SendHTTPRequest(kRequestURL, "GET", { r = "feedback", id = bugId, value = "reject", PHPSESSID = sessionId }, FeedbackResponse(budId))
+    local message = "Report number " .. ToString(bugId) .. " rejected"
+        Shared.SendHTTPRequest(kRequestURL, "GET", { r = "feedback", id = bugId, value = "reject", PHPSESSID = sessionId }, FeedbackResponse(bugId))
+        Shared.ConsoleCommand("output " .. message)
+        StartSoundEffect(reportSent)
     end
     Event.Hook("Console_mantis_reject", HandleReject)
     Event.Hook("Console_reject", HandleReject)
-    Event.Hook("Console_mr", HandleReject)
     
 end

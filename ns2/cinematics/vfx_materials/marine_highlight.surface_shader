@@ -1,0 +1,45 @@
+<shader>
+
+	<inputs>
+		<input name="normalMap" type="texture" address="wrap">materials/dev/dev_normal.dds</input>
+		<input name="distance" type="float">2</input>
+	</inputs>	
+
+	<params>
+		<param name="vsPosition">true</param>
+		<param name="vsNormal">true</param>
+		<param name="vsTangent">true</param>
+		<param name="vsBinormal">true</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+		
+			const float3 tint = float3(1, 0.2, 0) * 3;
+			float edge = clamp(6 - distance * 0.8, 1.5, 6);
+		
+			float3 tsNormal = DecodeNormal( tex2D(normalMap, input.texCoord ) );
+							
+			float3 vsNormal = tsNormal.x * input.vsTangent +
+							  tsNormal.y * input.vsBinormal +	
+							  tsNormal.z * input.vsNormal;
+									
+			vsNormal = normalize(vsNormal);
+			float3 vsView = normalize(input.vsPosition);
+			
+			float f = 1 - saturate(dot(vsView, -vsNormal));
+			material.emissive = tint * pow(f, edge);			
+			
+		}
+	]]>
+	</code>
+
+</shader>

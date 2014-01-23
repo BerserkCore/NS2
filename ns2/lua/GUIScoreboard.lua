@@ -19,7 +19,7 @@ GUIScoreboard.kClickForMouseTextSize = GUIScale(22)
 GUIScoreboard.kClickForMouseText = Locale.ResolveString("SB_CLICK_FOR_MOUSE")
 
 local kIconSize = GUIScale(Vector(40, 40, 0))
-local kIconOffset = GUIScale(Vector(0, -10, 0))
+local kIconOffset = GUIScale(Vector(-15, -10, 0))
 
 // Shared constants.
 GUIScoreboard.kTeamInfoFontName      = "fonts/Arial_15.fnt"
@@ -46,7 +46,7 @@ GUIScoreboard.kTeamItemWidth = 600
 GUIScoreboard.kTeamItemHeight = GUIScoreboard.kTeamNameFontSize + GUIScoreboard.kTeamInfoFontSize + 8
 GUIScoreboard.kTeamSpacing = 32
 GUIScoreboard.kTeamScoreColumnStartX = 200
-GUIScoreboard.kTeamColumnSpacingX = 50
+GUIScoreboard.kTeamColumnSpacingX = 40
 
 // Player constants.
 GUIScoreboard.kPlayerStatsFontSize = 16
@@ -151,12 +151,12 @@ local function CreateTeamBackground(self, teamNumber)
     statusItem:SetAnchor(GUIItem.Left, GUIItem.Top)
     statusItem:SetTextAlignmentX(GUIItem.Align_Min)
     statusItem:SetTextAlignmentY(GUIItem.Align_Min)
-    statusItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
+    statusItem:SetPosition(Vector(currentColumnX + 60, playerDataRowY, 0))
     statusItem:SetColor(color)
     statusItem:SetText("")
     teamItem:AddChild(statusItem)
     
-    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX * 2
+    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX * 2 + 33
     
     // Score text item.
     local scoreItem = GUIManager:CreateTextItem()
@@ -164,12 +164,12 @@ local function CreateTeamBackground(self, teamNumber)
     scoreItem:SetAnchor(GUIItem.Left, GUIItem.Top)
     scoreItem:SetTextAlignmentX(GUIItem.Align_Min)
     scoreItem:SetTextAlignmentY(GUIItem.Align_Min)
-    scoreItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
+    scoreItem:SetPosition(Vector(currentColumnX + 30, playerDataRowY, 0))
     scoreItem:SetColor(color)
     scoreItem:SetText(Locale.ResolveString("SB_SCORE"))
     teamItem:AddChild(scoreItem)
     
-    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
+    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX + 40
     
     // Kill text item.
     local killsItem = GUIManager:CreateTextItem()
@@ -772,11 +772,11 @@ function GUIScoreboard:CreatePlayerItem()
     statusItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     statusItem:SetTextAlignmentX(GUIItem.Align_Min)
     statusItem:SetTextAlignmentY(GUIItem.Align_Center)
-    statusItem:SetPosition(Vector(currentColumnX, 0, 0))
+    statusItem:SetPosition(Vector(currentColumnX + 60, 0, 0))
     statusItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(statusItem)
     
-    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX * 2
+    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX * 2 + 35
     
     // Score text item.
     local scoreItem = GUIManager:CreateTextItem()
@@ -784,11 +784,11 @@ function GUIScoreboard:CreatePlayerItem()
     scoreItem:SetAnchor(GUIItem.Left, GUIItem.Center)
     scoreItem:SetTextAlignmentX(GUIItem.Align_Min)
     scoreItem:SetTextAlignmentY(GUIItem.Align_Center)
-    scoreItem:SetPosition(Vector(currentColumnX, 0, 0))
+    scoreItem:SetPosition(Vector(currentColumnX + 30, 0, 0))
     scoreItem:SetColor(Color(1, 1, 1, 1))
     playerItem:AddChild(scoreItem)
     
-    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX
+    currentColumnX = currentColumnX + GUIScoreboard.kTeamColumnSpacingX + 30
     
     // Kill text item.
     local killsItem = GUIManager:CreateTextItem()

@@ -40,6 +40,7 @@ Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/PhaseGateUserMixin.lua")
 Script.Load("lua/Weapons/PredictedProjectile.lua")
 Script.Load("lua/MarineVariantMixin.lua")
+Script.Load("lua/MarineOutlineMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -70,6 +71,9 @@ Marine.kFlinchBigEffect = PrecacheAsset("cinematics/marine/hit_big.cinematic")
 Marine.kHitGroundStunnedSound = PrecacheAsset("sound/NS2.fev/marine/common/jump")
 Marine.kSprintStart = PrecacheAsset("sound/NS2.fev/marine/common/sprint_start")
 Marine.kSprintTiredEnd = PrecacheAsset("sound/NS2.fev/marine/common/sprint_tired")
+//The longer running sound, sprint_start, would be ideally the sprint_end soudn instead. That is what is done here
+Marine.kSprintStartFemale = PrecacheAsset("sound/NS2.fev/marine/common/sprint_tired_female")                                                                      
+Marine.kSprintTiredEndFemale = PrecacheAsset("sound/NS2.fev/marine/common/sprint_start_female")
 
 Marine.kEffectNode = "fxnode_playereffect"
 Marine.kHealth = kMarineHealth
@@ -92,7 +96,7 @@ Marine.kSpitSlowDuration = 3
 Marine.kWalkBackwardSpeedScalar = 0.4
 
 // start the get up animation after stun before giving back control
-Marine.kGetUpAnimationLength = 0.5
+Marine.kGetUpAnimationLength = 0
 
 // tracked per techId
 Marine.kMarineAlertTimeout = 4
@@ -107,6 +111,14 @@ Marine.kSprintInfestationAcceleration = 60
 Marine.kGroundFrictionForce = 16
 
 Marine.kAirStrafeWeight = 2
+
+PrecacheAsset("models/marine/rifle/rifle_shell_01.dds")
+PrecacheAsset("models/marine/rifle/rifle_shell_01_normal.dds")
+PrecacheAsset("models/marine/rifle/rifle_shell_01_spec.dds")
+PrecacheAsset("models/marine/rifle/rifle_view_shell.model")
+PrecacheAsset("models/marine/rifle/rifle_shell.model")
+PrecacheAsset("models/marine/arms_lab/arms_lab_holo.model")
+PrecacheAsset("models/effects/frag_metal_01.model")
 
 local networkVars =
 {      
@@ -281,6 +293,7 @@ function Marine:OnInitialized()
     elseif Client then
     
         InitMixin(self, HiveVisionMixin)
+        InitMixin(self, MarineOutlineMixin)
         
         self:AddHelpWidget("GUIMarineHealthRequestHelp", 2)
         self:AddHelpWidget("GUIMarineFlashlightHelp", 2)
@@ -768,11 +781,13 @@ function Marine:OnUpdateAnimationInput(modelMixin)
     
     Player.OnUpdateAnimationInput(self, modelMixin)
     
+    local animationLength = modelMixin:isa("ViewModel") and 0 or 0.5
+    
     if not self:GetIsJumping() and self:GetIsSprinting() then
         modelMixin:SetAnimationInput("move", "sprint")
     end
-    
-   if self:GetIsStunned() and self:GetRemainingStunTime() > 0.5 then
+
+    if self:GetIsStunned() and self:GetRemainingStunTime() > animationLength then
         modelMixin:SetAnimationInput("move", "stun")
     end
     

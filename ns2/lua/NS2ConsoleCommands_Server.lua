@@ -420,7 +420,7 @@ end
 local function OnCommandGive(client, itemName)
 
     local player = client:GetControllingPlayer()
-    if(Shared.GetCheatsEnabled() and itemName ~= nil) then
+    if(Shared.GetCheatsEnabled() and itemName ~= nil and itemName ~= "alien") then
         player:GiveItem(itemName)
         //player:SetActiveWeapon(itemName)
     end
@@ -430,7 +430,7 @@ end
 local function OnCommandSpawn(client, itemName, teamnum, useLastPos)
 
     local player = client:GetControllingPlayer()
-    if(Shared.GetCheatsEnabled() and itemName ~= nil) then
+    if(Shared.GetCheatsEnabled() and itemName ~= nil and itemName ~= "alien") then
     
         // trace along players zAxis and spawn the item there
         local startPoint = player:GetEyePos()

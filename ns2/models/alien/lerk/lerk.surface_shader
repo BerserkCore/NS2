@@ -6,6 +6,7 @@
 		<input name="specularMap" type="texture" address="wrap" />
 		<input name="opacityMap" type="texture" address="wrap" />
 		<input name="blendMap" type="texture" address="wrap">materials/effects/mesh_effects/skulk_view_blood.dds</input>
+		<input name="emissiveMap" type="texture" address="wrap" />
 		<input name="overlayMap" type="texture" address="wrap">models/misc/infestation/infestation.dds</input>
         <input name="hiddenAmount" type="float">0.0</input>
 	</inputs>
@@ -58,7 +59,7 @@
 
 			// Opacity
 			material.opacity = (opacity + f - 0.5) * tex2D(opacityMap, input.texCoord); 
-			
+			material.emissive   = tex2D(emissiveMap, input.texCoord).rgb;
 			material.id = 1; // to make it glow on Alien vision
 			
 		}

@@ -20,8 +20,6 @@ local kViewModels = GenerateMarineViewModelPaths("pistol")
 local kAnimationGraph = PrecacheAsset("models/marine/pistol/pistol_view.animation_graph")
 
 local kClipSize = 10
-// 10 bullets per second
-local kMaxRateOfFire = 10
 local kRange = 200
 local kSpread = Math.Radians(0.4)
 local kAltSpread = ClipWeapon.kCone0Degrees
@@ -199,7 +197,7 @@ function Pistol:GetHUDSlot()
 end
 
 function Pistol:GetPrimaryMaxRateOfFire()
-    return kMaxRateOfFire    
+    return kPistolRateOfFire    
 end
 
 function Pistol:GetPrimaryAttackRequiresPress()
@@ -220,10 +218,6 @@ end
 
 function Pistol:GetBulletDamage(target, endPoint)
     return ConditionalValue(self.altMode, kPistolAltDamage, kPistolDamage)
-end
-
-function Pistol:GetPrimaryIsBlocking()
-    return true
 end
 
 function Pistol:GetIsLaserActive()

@@ -50,6 +50,7 @@ local networkVars =
     timeLastBeacon = "private time",
     creationTime = "private time",
     ejecting = "compensated boolean",
+    timeOfLastPhase = "private time",
 }
 
 Exo.kMapName = "exo"
@@ -113,6 +114,8 @@ local kThrusterHorizontalAcceleration = 23
 local kHorizontalThrusterAddSpeed = 2.5
 
 local kExoEjectDuration = 3
+
+local gHurtCinematic = nil
 
 Exo.kXZExtents = 0.55
 Exo.kYExtents = 1.2
@@ -289,6 +292,8 @@ function Exo:OnInitialized()
     elseif Client then
     
         InitMixin(self, HiveVisionMixin)
+        InitMixin(self, MarineOutlineMixin)
+        
         self.clientThrustersActive = self.thrustersActive
 
         self.thrusterLeftCinematic = Client.CreateCinematic(RenderScene.Zone_Default)
@@ -456,8 +461,15 @@ function Exo:OnDestroy()
         Client.DestroyGUIView(self.armorDisplay)
         self.armorDisplay = nil
         
-    end
-    
+    end     
+    if Client then
+		if gHurtCinematic then
+		
+			Client.DestroyCinematic(gHurtCinematic)   
+			gHurtCinematic = nil
+			
+		end
+    end 
 end
 
 function Exo:GetMaxViewOffsetHeight()
@@ -809,14 +821,14 @@ if Server then
     end
     
     function Exo:OnKill(attacker, doer, point, direction)
-    
+
         Player.OnKill(self, attacker, doer, point, direction)
         
         local activeWeapon = self:GetActiveWeapon()
         if activeWeapon and activeWeapon.OnParentKilled then
             activeWeapon:OnParentKilled(attacker, doer, point, direction)
         end
-        
+    
         self:TriggerEffects("death", { classname = self:GetClassName(), effecthostcoords = Coords.GetTranslation(self:GetOrigin()) })
         
         if self.storedWeaponsIds then
@@ -876,6 +888,32 @@ if Client then
         
         Player.OnUpdateRender(self)
         
+        local localPlayer = Client.GetLocalPlayer()
+        local showHighlight = localPlayer ~= nil and localPlayer:isa("Alien") and self:GetIsAlive()
+        
+        /* disabled for now
+        local model = self:GetRenderModel()
+        
+        if model then
+        
+            if showHighlight and not self.marineHighlightMaterial then
+                
+                self.marineHighlightMaterial = AddMaterial(model, "cinematics/vfx_materials/marine_highlight.material")
+                
+            elseif not showHighlight and self.marineHighlightMaterial then
+            
+                RemoveMaterial(model, self.marineHighlightMaterial)
+                self.marineHighlightMaterial = nil
+            
+            end
+            
+            if self.marineHighlightMaterial then
+                self.marineHighlightMaterial:SetParameter("distance", (localPlayer:GetEyePos() - self:GetOrigin()):GetLength())
+            end
+        
+        end
+        */
+        
         local isLocal = self:GetIsLocalPlayer()
         local flashLightVisible = self.flashlightOn and (isLocal or self:GetIsVisible()) and self:GetIsAlive()
         local flaresVisible = flashLightVisible and (not isLocal or self:GetIsThirdPerson())
@@ -922,14 +960,14 @@ if Client then
                 
                 if healthScalar < .7 then
                 
-                    local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
+                    gHurtCinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
                     local cinematicName = kExoViewDamaged
                     
                     if healthScalar < .4 then
                         cinematicName = kExoViewHeavilyDamaged
                     end
                     
-                    cinematic:SetCinematic(cinematicName)
+                    gHurtCinematic:SetCinematic(cinematicName)
                 
                 end
                 

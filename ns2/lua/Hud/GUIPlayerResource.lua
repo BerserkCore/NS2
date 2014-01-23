@@ -214,6 +214,7 @@ function GUIPlayerResource:Update(deltaTime, parameters)
     
     self.personalText:SetText(ToString(math.floor(pRes * 10) / 10))
     self.teamText:SetText(string.format(Locale.ResolveString("TEAM_RES"), math.floor(tRes)))
+    self.teamText:SetIsVisible(Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full)
     
     if pRes > self.lastPersonalResources then
 

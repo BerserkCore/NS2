@@ -93,6 +93,10 @@ local kUnsocketedSocketModelName = PrecacheAsset("models/system/editor/power_nod
 local kUnsocketedAnimationGraph = nil
 
 local kSocketedModelName = PrecacheAsset("models/system/editor/power_node.model")
+PrecacheAsset("models/marine/powerpoint_impulse/powerpoint_impulse.dds")
+PrecacheAsset("models/marine/powerpoint_impulse/powerpoint_impulse.material")
+PrecacheAsset("models/marine/powerpoint_impulse/powerpoint_impulse.model")
+
 local kSocketedAnimationGraph = PrecacheAsset("models/system/editor/power_node.animation_graph")
 
 local kDamagedEffect = PrecacheAsset("cinematics/common/powerpoint_damaged.cinematic")

@@ -18,8 +18,8 @@ end
 local function MakeWCBadgeInfo(ddsPrefix)
     return {
         name = ddsPrefix,
-        unitStatusTexture = "ui/badges/"..ddsPrefix.."_32x32.dds",
-        scoreboardTexture = "ui/badges/"..ddsPrefix.."_20x20.dds",
+        unitStatusTexture = "ui/badges/"..ddsPrefix..".dds",
+        scoreboardTexture = "ui/badges/"..ddsPrefix.."_20.dds",
     }
 end
 
@@ -30,6 +30,7 @@ gBadgesData =
     MakeBadgeInfo("dev_retired"),
     MakeBadgeInfo("maptester"),
     MakeBadgeInfo("playtester"),
+    MakeBadgeInfo("ns1_playtester"),
     MakeBadgeInfo2("constellation", "constelation"),
     MakeBadgeInfo("hughnicorn"),
     MakeBadgeInfo("squad5_blue"),

@@ -310,13 +310,19 @@ local function GetPlayersToBeacon(self, toOrigin)
         
             // Don't respawn players that are already nearby.
             if not GetIsPlayerNearby(self, player, toOrigin) then
-                table.insert(players, player)
+            
+                if player:isa("Exo") then
+                    table.insert(players, 1, player)
+                else
+                    table.insert(players, player)
+                end
+                
             end
             
         end
         
     end
-    
+
     return players
     
 end
@@ -336,12 +342,10 @@ local function RespawnPlayer(self, player, distressOrigin)
         if player.TriggerBeaconEffects then
             player:TriggerBeaconEffects()
         end
-        
-    else
-        Print("Observatory:RespawnPlayer(): Couldn't find space to respawn player.")
+
     end
     
-    return spawnPoint ~= nil
+    return spawnPoint ~= nil, spawnPoint
     
 end
 
@@ -351,24 +355,62 @@ function Observatory:PerformDistressBeacon()
     self.distressBeaconSoundAlien:Stop()
     
     local anyPlayerWasBeaconed = false
+    local successfullPositions = {}
+    local successfullExoPositions = {}
+    local failedPlayers = {}
     
     local distressOrigin = self:GetDistressOrigin()
     if distressOrigin then
     
         for index, player in ipairs(GetPlayersToBeacon(self, distressOrigin)) do
         
-            local success = RespawnPlayer(self, player, distressOrigin)
+            local success, respawnPoint = RespawnPlayer(self, player, distressOrigin)
             if success then
+            
                 anyPlayerWasBeaconed = true
+                if player:isa("Exo") then
+                    table.insert(successfullExoPositions, respawnPoint)
+                end
+                    
+                table.insert(successfullPositions, respawnPoint)
+                
+            else
+                table.insert(failedPlayers, player)
             end
             
         end
         
         // Also respawn players that are spawning in at infantry portals near command station (use a little extra range to account for vertical difference)
         for index, ip in ipairs(GetEntitiesForTeamWithinRange("InfantryPortal", self:GetTeamNumber(), distressOrigin, kInfantryPortalAttachRange + 1)) do
+        
             ip:FinishSpawn()
+            local spawnPoint = ip:GetAttachPointOrigin("spawn_point")
+            table.insert(successfullPositions, spawnPoint)
+            
         end
         
+    end
+    
+    local usePositionIndex = 1
+    local numPosition = #successfullPositions
+
+    for i = 1, #failedPlayers do
+    
+        local player = failedPlayers[i]  
+    
+        if player:isa("Exo") then        
+            player:SetOrigin(successfullExoPositions[math.random(1, #successfullExoPositions)])        
+        else
+              
+            player:SetOrigin(successfullPositions[usePositionIndex])
+            if player.TriggerBeaconEffects then
+                player:TriggerBeaconEffects()
+            end
+            
+            usePositionIndex = Math.Wrap(usePositionIndex + 1, 1, numPosition)
+            
+        end    
+    
     end
 
     if anyPlayerWasBeaconed then

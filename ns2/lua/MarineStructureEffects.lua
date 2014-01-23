@@ -103,15 +103,9 @@ kMarineStructureEffects =
             {sound = "sound/NS2.fev/marine/structures/extractor_death", classname = "Extractor", done = true},
             {sound = "sound/NS2.fev/marine/power_node/destroyed_powerdown", classname = "PowerPoint", done = true},
             {sound = "sound/NS2.fev/marine/structures/generic_death", classname = "InfantryPortal", done = true},
+            
+            {sound = "sound/NS2.fev/marine/structures/power_down", classname = "SentryBattery"},
             {sound = "sound/NS2.fev/marine/structures/generic_death", classname = "SentryBattery", done = true},
-        },
-    },
-    
-    power_down =
-    {
-        powerDownEffects =
-        {
-            {sound = "sound/NS2.fev/marine/structures/power_down"},
         },
     },
 
@@ -364,7 +358,7 @@ kMarineStructureEffects =
             {stop_cinematic = "cinematics/marine/infantryportal/spin.cinematic", done = true},
         },
     },    
-    
+
     infantry_portal_spawn = 
     {
         ipSpawnEffect =

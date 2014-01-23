@@ -154,6 +154,7 @@ function ARC:OnCreate()
         InitMixin(self, SleeperMixin)
         
         self.targetPosition = nil
+        self.targetedEntity = Entity.invalidId
         
     elseif Client then
         InitMixin(self, CommanderGlowMixin)

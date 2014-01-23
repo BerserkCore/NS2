@@ -69,9 +69,9 @@ kAlienTechMap =
   
   { kTechId.BioMassOne, 3, 7, nil, "1" }, { kTechId.Drifter, 3, 8 }, { kTechId.BabblerEgg, 3, 9 },
   
-  { kTechId.BioMassTwo, 4, 7, nil, "2" }, {kTechId.RuptureTech, 4, 8},  { kTechId.ShadowStep, 4, 9 },
+  { kTechId.BioMassTwo, 4, 7, nil, "2" }, {kTechId.Rupture, 4, 8},  { kTechId.ShadowStep, 4, 9 },
   
-  { kTechId.BioMassThree, 5, 7, nil, "3" }, {kTechId.BoneWallTech, 5, 8}, {kTechId.BileBomb, 5, 9}, { kTechId.Charge, 5, 10 },
+  { kTechId.BioMassThree, 5, 7, nil, "3" }, {kTechId.BoneWall, 5, 8}, {kTechId.BileBomb, 5, 9}, { kTechId.Charge, 5, 10 },
 
   { kTechId.BioMassFour, 6, 7, nil, "4" }, {kTechId.Leap, 6, 8}, {kTechId.Umbra, 6, 9},
   
@@ -83,7 +83,7 @@ kAlienTechMap =
   
   { kTechId.BioMassEight, 10, 7, nil, "8" },  {kTechId.Stab, 10, 8}, 
   
-  { kTechId.BioMassNine, 11, 7, nil, "9" }, {kTechId.ContaminationTech, 11, 8}, {kTechId.Stomp, 11, 9}, 
+  { kTechId.BioMassNine, 11, 7, nil, "9" }, {kTechId.Contamination, 11, 8}, {kTechId.Stomp, 11, 9}, 
 
 }
 

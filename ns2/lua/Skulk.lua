@@ -82,8 +82,8 @@ local networkVars =
     timeOfLastJumpLand = "private compensated time",
     timeLastWallJump = "private compensated time",
     jumpLandSpeed = "private compensated float",
-    dashing = "compensated boolean",
-
+    dashing = "compensated boolean",    
+    timeOfLastPhase = "private time",
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)

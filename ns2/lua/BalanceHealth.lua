@@ -40,7 +40,7 @@ kParasitePlayerPointValue = 1
 kBuildPointValue = 5
 kRecyclePaybackScalar = 0.75
 
-kCarapaceHealReductionPerLevel = 0.1
+kCarapaceHealReductionPerLevel = 0.0
 
 kSkulkArmorFullyUpgradedAmount = 30
 kGorgeArmorFullyUpgradedAmount = 100
@@ -70,7 +70,7 @@ kSentryBatteryHealth = 600	kSentryBatteryArmor = 200	kSentryBatteryPointValue = 
 kHiveHealth = 4000	kHiveArmor = 750	kHivePointValue = 25
 kMatureHiveHealth = 6000 kMatureHiveArmor = 1400
 		
-kDrifterHealth = 180	kDrifterArmor = 80	kDrifterPointValue = 2
+kDrifterHealth = 300	kDrifterArmor = 20	kDrifterPointValue = 2
 kMACHealth = 300	kMACArmor = 50	kMACPointValue = 2
 kMineHealth = 80	kMineArmor = 10	kMinePointValue = 0
 		

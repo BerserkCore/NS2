@@ -23,8 +23,6 @@ ClipWeapon.kMapName = "clipweapon"
 
 local networkVars =
 {
-    blockingPrimary = "compensated boolean",
-    blockingSecondary = "compensated boolean",
     deployed = "boolean",
     
     ammo = "integer (0 to 511)",
@@ -35,7 +33,8 @@ local networkVars =
     
     timeAttackEnded = "time",
     
-    lastTimeSprinted = "time"
+    lastTimeSprinted = "time",
+    
 }
 
 // Weapon spread - from NS1/Half-life
@@ -59,12 +58,11 @@ function ClipWeapon:OnCreate()
     
     self.primaryAttacking = false
     self.secondaryAttacking = false
-    self.blockingPrimary = false
-    self.blockingSecondary = false
     self.timeAttackStarted = 0
     self.timeAttackEnded = 0
     self.deployed = false
     self.lastTimeSprinted = 0
+    self.shooting = false
     
     InitMixin(self, BulletsMixin)
     
@@ -75,12 +73,15 @@ local function CancelReload(self)
     if self:GetIsReloading() then
     
         self.reloading = false
-        self:TriggerEffects("reload_cancel")
-        
+        if Client then
+            self:TriggerEffects("reload_cancel")
+        end
+        if Server then
+            self:TriggerEffects("reload_cancel")
+        end
     end
     
 end
-
 function ClipWeapon:OnDestroy()
 
     Weapon.OnDestroy(self)
@@ -270,10 +271,6 @@ function ClipWeapon:GetPrimaryAttackRequiresPress()
     return false
 end
 
-function ClipWeapon:GetForcePrimaryAttackAnimation()
-    return true
-end
-
 function ClipWeapon:GetIsPrimaryAttackAllowed(player)
 
     if not player then
@@ -283,11 +280,9 @@ function ClipWeapon:GetIsPrimaryAttackAllowed(player)
     local sprintedRecently = (Shared.GetTime() - self.lastTimeSprinted) < kMaxTimeToSprintAfterAttack
     local attackAllowed = (not self:GetPrimaryAttackRequiresPress() or not player:GetPrimaryAttackLastFrame())
     attackAllowed = attackAllowed and (not self:GetIsReloading() or self:GetPrimaryCanInterruptReload())
-    attackAllowed = attackAllowed and not self.blockingSecondary
-    attackAllowed = attackAllowed and (not self:GetPrimaryIsBlocking() or not self.blockingPrimary)
     
     if attackAllowed and self.GetPrimaryMaxRateOfFire then
-        attackAllowed = (Shared.GetTime() - self.timeAttackStarted) > 1.0 / self:GetPrimaryMaxRateOfFire()
+        attackAllowed = (Shared.GetTime() - self.timeAttackStarted) >= self:GetPrimaryMaxRateOfFire()
         
         if not attackAllowed and self.OnMaxFireRateExceeded then
             self:OnMaxFireRateExceeded()
@@ -309,10 +304,6 @@ function ClipWeapon:OnPrimaryAttack(player)
             
             self.primaryAttacking = true
             self.timeAttackStarted = Shared.GetTime()
-            
-            if self:GetPrimaryIsBlocking() then
-                self.blockingPrimary = true
-            end
             
         elseif self.ammo > 0 then
         
@@ -341,6 +332,8 @@ function ClipWeapon:OnPrimaryAttackEnd(player)
         
     end
     
+    self.shooting = false
+    
 end
 
 function ClipWeapon:CreatePrimaryAttackEffect(player)
@@ -354,7 +347,6 @@ function ClipWeapon:OnSecondaryAttack(player)
 
     local sprintedRecently = (Shared.GetTime() - self.lastTimeSprinted) < kMaxTimeToSprintAfterAttack
     local attackAllowed = not sprintedRecently and (not self:GetIsReloading() or self:GetSecondaryCanInterruptReload()) and (not self:GetSecondaryAttackRequiresPress() or not player:GetSecondaryAttackLastFrame())
-    attackAllowed = attackAllowed and (not self:GetPrimaryIsBlocking() or not self.blockingPrimary) and not self.blockingSecondary
     
     if not player:GetIsSprinting() and self:GetIsDeployed() and attackAllowed and not self.primaryAttacking then
     
@@ -364,7 +356,6 @@ function ClipWeapon:OnSecondaryAttack(player)
         
         Weapon.OnSecondaryAttack(self, player)
         
-        self.blockingSecondary = true
         self.timeAttackStarted = Shared.GetTime()
         
     else
@@ -383,25 +374,11 @@ function ClipWeapon:OnSecondaryAttackEnd(player)
 end
 
 function ClipWeapon:GetPrimaryAttacking()
-
-    if self:GetPrimaryIsBlocking() then
-        return self.blockingPrimary
-    else
-        return self.primaryAttacking
-    end
-    
+    return self.primaryAttacking
 end
 
 function ClipWeapon:GetSecondaryAttacking()
-    return self.blockingSecondary
-end
-
-/**
- * By default, primary attack does not block anything else.
- * Child classes can override this behavior by returning true here.
- */
-function ClipWeapon:GetPrimaryIsBlocking()
-    return false
+    return self.secondaryAttacking
 end
 
 function ClipWeapon:GetBulletSize()
@@ -505,9 +482,7 @@ function ClipWeapon:CanReload()
 
     return self.ammo > 0 and
            self.clip < self:GetClipSize() and
-           not self.reloading and
-           not self.blockingPrimary and
-           not self.blockingSecondary
+           not self.reloading
     
 end
 
@@ -538,9 +513,10 @@ function ClipWeapon:OnHolster(player)
     CancelReload(self)
     
     self.deployed = false
-    self.blockingPrimary = false
-    self.blockingSecondary = false
     self.reloading = false
+    self.shooting = false
+    self.timeAttackStarted = 0
+    self.timeAttackEnded = 0
     
 end
 
@@ -571,6 +547,8 @@ function ClipWeapon:OnTag(tagName)
             
             Weapon.OnPrimaryAttack(self, player)
             
+            self.shooting = true
+            
             //DebugFireRate(self)
             
         end
@@ -578,15 +556,12 @@ function ClipWeapon:OnTag(tagName)
     elseif tagName == "reload" then
         FillClip(self)
         self.reloaded = true
+        self.shooting = false
     elseif tagName == "deploy_end" then
         self.deployed = true
     elseif tagName == "reload_end" and self.reloaded then
         self.reloading = false
         self.reloaded = false
-    elseif tagName == "attack_end" then
-        self.blockingPrimary = false
-    elseif tagName == "alt_attack_end" then
-        self.blockingSecondary = false
     elseif tagName == "shoot_empty" then
         self:TriggerEffects("clipweapon_empty")
     end
@@ -617,7 +592,9 @@ function ClipWeapon:OnUpdateAnimationInput(modelMixin)
     
         if self:GetIsReloading() then
             activity = "reload"
-        elseif self.primaryAttacking then
+            
+        // when manually setting the fire rate, its possible that primaryAttacking is false but timeAttackStarted has been set, skipping the input
+        elseif self.primaryAttacking or (self.GetPrimaryMaxRateOfFire and Shared.GetTime() < self.timeAttackStarted + self:GetPrimaryMaxRateOfFire() * 0.5) then
             activity = "primary"
         elseif self.secondaryAttacking then
             activity = "secondary"

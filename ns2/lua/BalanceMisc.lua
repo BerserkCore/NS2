@@ -126,7 +126,7 @@ kScanDuration = 10
 kScanRadius = 20
 
 // Distress Beacon (from NS1)
-kDistressBeaconRange = 15
+kDistressBeaconRange = 25
 kDistressBeaconTime = 3
 
 kEnergizeRange = 17
@@ -180,7 +180,7 @@ kLightShakeVariableSpeed = 30
 // Jetpack
 kUpgradedJetpackUseFuelRate = .19
 kJetpackUseFuelRate = .23
-kJetpackReplenishFuelRate = .28
+kJetpackReplenishFuelRate = .24
 
 // Mines
 kNumMines = 3

@@ -254,6 +254,24 @@ kAlienStructureEffects =
         } 
     },
     
+    clog_spawn =
+    {
+        clogSpawnEffects =
+
+        {
+            {cinematic = "cinematics/alien/gorge/clog_spawn.cinematic"},
+        } 
+    },
+
+    clog_spawn_shadow =
+
+    {
+        clogSpawnEffects =
+        {
+            {cinematic = "cinematics/alien/gorge/clog_spawn_shadow.cinematic"},
+        } 
+    },
+    
     hive_login =
     {
         hiveLoginEffects =

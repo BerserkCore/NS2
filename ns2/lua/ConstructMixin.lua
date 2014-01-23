@@ -102,7 +102,7 @@ local function SharedUpdate(self, deltaTime)
 
     if Server then
         
-        local effectTimeout = Shared.GetTime() - self.timeLastConstruct > 0.3
+        local effectTimeout = Shared.GetTime() - self.timeLastConstruct > 0.65
         self.underConstruction = not self:GetIsBuilt() and not effectTimeout
         
         // Only Alien structures auto build.

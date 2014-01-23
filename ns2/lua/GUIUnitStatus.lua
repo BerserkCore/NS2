@@ -105,6 +105,17 @@ local function GetColorForUnitState(unitStatus)
 
 end
 
+local function DestroyActiveBlips(self)
+
+    for _, blip in ipairs(self.activeBlipList) do
+        GUI.DestroyItem(blip.statusBg)
+        blip.GraphicsItem:Destroy()
+    end
+
+    self.activeBlipList = { }
+    
+end
+
 function GUIUnitStatus:Initialize()
 
     GUIAnimatedScript.Initialize(self)
@@ -112,6 +123,7 @@ function GUIUnitStatus:Initialize()
     self.activeBlipList = { }
     
     self.useMarineStyle = false
+    self.fullHUD = Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full
     
 end
 
@@ -119,12 +131,7 @@ function GUIUnitStatus:Uninitialize()
 
     GUIAnimatedScript.Uninitialize(self)
     
-    for _, blip in ipairs(self.activeBlipList) do
-        GUI.DestroyItem(blip.statusBg)
-        blip.GraphicsItem:Destroy()
-    end
-
-    self.activeBlipList = { }
+    DestroyActiveBlips(self)
     
 end
 
@@ -218,19 +225,21 @@ local function CreateBlipItem(self)
     newBlip.statusBg:SetPosition(-GUIUnitStatus.kStatusBgSize * .5 + GUIUnitStatus.kStatusBgOffset )
     newBlip.statusBg:SetClearsStencilBuffer(true)
     
-    newBlip.smokeyBackground = GetGUIManager():CreateGraphicItem()
-    newBlip.smokeyBackground:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    newBlip.smokeyBackground:SetSize(kSmokeyBackgroundSize)
-    newBlip.smokeyBackground:SetPosition(-kSmokeyBackgroundSize * .5)
-    newBlip.smokeyBackground:SetShader("shaders/GUISmoke.surface_shader")
-    newBlip.smokeyBackground:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
-    newBlip.smokeyBackground:SetFloatParameter("correctionX", 0.6)
-    newBlip.smokeyBackground:SetFloatParameter("correctionY", 0.3)
-    newBlip.smokeyBackground:SetTexture("ui/alien_logout_smkmask.dds")
-    --newBlip.smokeyBackground:SetTexturePixelCoordinates(0, 0, 128, 128)
-    newBlip.smokeyBackground:SetIsVisible(false)
-    newBlip.smokeyBackground:SetColor(Color(1,1,1,0.6))
-    newBlip.smokeyBackground:SetInheritsParentAlpha(true)
+    if self.fullHUD and teamType == kAlienTeamType then
+    
+        newBlip.smokeyBackground = GetGUIManager():CreateGraphicItem()
+        newBlip.smokeyBackground:SetAnchor(GUIItem.Middle, GUIItem.Center)
+        newBlip.smokeyBackground:SetSize(kSmokeyBackgroundSize)
+        newBlip.smokeyBackground:SetPosition(-kSmokeyBackgroundSize * .5)
+        newBlip.smokeyBackground:SetShader("shaders/GUISmoke.surface_shader")
+        newBlip.smokeyBackground:SetAdditionalTexture("noise", kBackgroundNoiseTexture)
+        newBlip.smokeyBackground:SetFloatParameter("correctionX", 0.6)
+        newBlip.smokeyBackground:SetFloatParameter("correctionY", 0.3)
+        newBlip.smokeyBackground:SetTexture("ui/alien_logout_smkmask.dds")
+        newBlip.smokeyBackground:SetColor(Color(1,1,1,0.6))
+        newBlip.smokeyBackground:SetInheritsParentAlpha(true)
+    
+    end
     
     newBlip.HealthBarBg = GetGUIManager():CreateGraphicItem()
     newBlip.HealthBarBg:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
@@ -292,22 +301,26 @@ local function CreateBlipItem(self)
     newBlip.HintText:SetScale(GUIUnitStatus.kFontScaleSmall)
     newBlip.HintText:SetPosition(GUIScale(Vector(0, 28, 0)))
     
-    newBlip.Border = GUIManager:CreateGraphicItem()
-    newBlip.Border:SetAnchor(GUIItem.Left, GUIItem.Top)
-    newBlip.Border:SetSize(GUIUnitStatus.kStatusBgSize)
-    newBlip.Border:SetTexture(neutralTexture)
-    newBlip.Border:SetTexturePixelCoordinates(unpack(kBorderCoords))
-    newBlip.Border:SetIsStencil(true)
+    if self.fullHUD then
     
-    newBlip.BorderMask = GUIManager:CreateGraphicItem()
-    newBlip.BorderMask:SetTexture(neutralTexture)
-    newBlip.BorderMask:SetAnchor(GUIItem.Middle, GUIItem.Center)
-    newBlip.BorderMask:SetBlendTechnique(GUIItem.Add)
-    newBlip.BorderMask:SetTexturePixelCoordinates(unpack(kBorderMaskPixelCoords))
-    newBlip.BorderMask:SetSize(Vector(kBorderMaskCircleRadius * 2, kBorderMaskCircleRadius * 2, 0))
-    newBlip.BorderMask:SetPosition(Vector(-kBorderMaskCircleRadius, -kBorderMaskCircleRadius, 0))
-    newBlip.BorderMask:SetStencilFunc(GUIItem.NotEqual)
-    newBlip.Border:AddChild(newBlip.BorderMask)
+        newBlip.Border = GUIManager:CreateGraphicItem()
+        newBlip.Border:SetAnchor(GUIItem.Left, GUIItem.Top)
+        newBlip.Border:SetSize(GUIUnitStatus.kStatusBgSize)
+        newBlip.Border:SetTexture(neutralTexture)
+        newBlip.Border:SetTexturePixelCoordinates(unpack(kBorderCoords))
+        newBlip.Border:SetIsStencil(true)
+        
+        newBlip.BorderMask = GUIManager:CreateGraphicItem()
+        newBlip.BorderMask:SetTexture(neutralTexture)
+        newBlip.BorderMask:SetAnchor(GUIItem.Middle, GUIItem.Center)
+        newBlip.BorderMask:SetBlendTechnique(GUIItem.Add)
+        newBlip.BorderMask:SetTexturePixelCoordinates(unpack(kBorderMaskPixelCoords))
+        newBlip.BorderMask:SetSize(Vector(kBorderMaskCircleRadius * 2, kBorderMaskCircleRadius * 2, 0))
+        newBlip.BorderMask:SetPosition(Vector(-kBorderMaskCircleRadius, -kBorderMaskCircleRadius, 0))
+        newBlip.BorderMask:SetStencilFunc(GUIItem.NotEqual)
+        newBlip.Border:AddChild(newBlip.BorderMask)
+    
+    end
     
     // Create badge icon items
     newBlip.Badges = {}
@@ -325,13 +338,19 @@ local function CreateBlipItem(self)
 
     end
     
-    newBlip.statusBg:AddChild(newBlip.smokeyBackground)
+    if newBlip.smokeyBackground then
+        newBlip.statusBg:AddChild(newBlip.smokeyBackground)
+    end
+    
     newBlip.statusBg:AddChild(newBlip.HealthBarBg)
     newBlip.statusBg:AddChild(newBlip.ArmorBarBg)
     newBlip.statusBg:AddChild(newBlip.NameText)
     newBlip.statusBg:AddChild(newBlip.HintText)
     
-    newBlip.statusBg:AddChild(newBlip.Border)
+    if self.fullHUD then
+        newBlip.statusBg:AddChild(newBlip.Border)
+    end
+    
     newBlip.statusBg:SetColor(Color(0,0,0,0))
     
     newBlip.GraphicsItem:AddChild(newBlip.ProgressingIcon)
@@ -407,7 +426,13 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         
         updateBlip.OverLayGraphic:SetTexturePixelCoordinates(GetUnitStatusTextureCoordinates(blipData.Status))
         
-        updateBlip.statusBg:SetTexture(kStatusBgTexture[teamType])
+        local statusTexture = kStatusBgTexture[teamType]
+        
+        if not self.fullHUD then
+            statusTexture = kTransparentTexture
+        end
+        
+        updateBlip.statusBg:SetTexture(statusTexture)
         updateBlip.statusBg:SetPosition(blipData.HealthBarPosition - GUIUnitStatus.kStatusBgSize * .5 )
 
         if blipData.HealthFraction == 0 or PlayerUI_IsACommander() then
@@ -449,16 +474,25 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         // use the entities team color here, so you can make a difference between enemy or friend
         updateBlip.statusBg:SetColor(Color(1,1,1,alpha))
         updateBlip.NameText:SetText(blipData.Name)
+        updateBlip.NameText:SetIsVisible(self.fullHUD or blipData.IsPlayer)
         updateBlip.ActionText:SetText(blipData.Action)
         
         local hintVisible = showHints and blipData.Hint ~= nil and string.len(blipData.Hint) > 0
         
         if hintVisible then
             updateBlip.statusBg:SetSize(GUIUnitStatus.kStatusBgSize)
-            updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgSize)
+            
+            if updateBlip.Border then            
+                updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgSize)
+            end
+            
         else    
             updateBlip.statusBg:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
-            updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
+            
+            if updateBlip.Border then            
+                updateBlip.Border:SetSize(GUIUnitStatus.kStatusBgNoHintSize)
+            end
+            
         end    
         
         // Only show hint text with hints enabled
@@ -488,9 +522,17 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         updateBlip.ArmorBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.ArmorFraction)) 
         
         updateBlip.ProgressingIcon:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
-        updateBlip.BorderMask:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
-        updateBlip.BorderMask:SetIsVisible(teamType == kMarineTeamType and blipData.IsCrossHairTarget)
-        updateBlip.smokeyBackground:SetIsVisible(teamType == kAlienTeamType and blipData.HealthFraction ~= 0)
+        
+        if updateBlip.BorderMask then
+        
+            updateBlip.BorderMask:SetRotation(Vector(0, 0, -2 * math.pi * baseResearchRot))
+            updateBlip.BorderMask:SetIsVisible(teamType == kMarineTeamType and blipData.IsCrossHairTarget)
+            
+        end
+        
+        if updateBlip.smokeyBackground then
+            updateBlip.smokeyBackground:SetIsVisible(blipData.HealthFraction ~= 0)
+        end
 
         assert( #updateBlip.Badges >= #blipData.BadgeTextures )
         for i = 1, #updateBlip.Badges do
@@ -529,6 +571,14 @@ function GUIUnitStatus:Update(deltaTime)
     PROFILE("GUIUnitStatus:Update")
     
     GUIAnimatedScript.Update(self, deltaTime)
+    
+    local fullHUD = Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full
+    if self.fullHUD ~= fullHUD then
+        
+        self.fullHUD = fullHUD
+        DestroyActiveBlips(self)
+        
+    end
     
     UpdateUnitStatusList(self, PlayerUI_GetUnitStatusInfo(), deltaTime)
     

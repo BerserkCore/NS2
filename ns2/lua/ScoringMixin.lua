@@ -37,7 +37,7 @@ function ScoringMixin:GetScore()
     return self.score
 end
 
-function ScoringMixin:AddScore(points, res)
+function ScoringMixin:AddScore(points, res, wasKill)
 
     // Should only be called on the Server.
     if Server then
@@ -46,7 +46,7 @@ function ScoringMixin:AddScore(points, res)
         if points ~= nil and points ~= 0 then
         
             local displayRes = ConditionalValue(type(res) == "number", res, 0)
-            Server.SendNetworkMessage(Server.GetOwner(self), "ScoreUpdate", { points = points, res = displayRes }, true)
+            Server.SendNetworkMessage(Server.GetOwner(self), "ScoreUpdate", { points = points, res = displayRes, wasKill = wasKill == true }, true)
             self.score = Clamp(self.score + points, 0, self:GetMixinConstants().kMaxScore or 100)
             self:SetScoreboardChanged(true)
             

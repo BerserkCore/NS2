@@ -69,6 +69,9 @@ Alien.kEnergyRecuperationRate = 10.0
 Alien.kCustomBlipDuration = 10
 Alien.kEnergyAdrenalineRecuperationRate = 13
 
+PrecacheAsset("materials/infestation/infestation.dds")
+PrecacheAsset("materials/infestation/infestation_normal.dds")
+
 local kDefaultAttackSpeed = 1
 
 local networkVars = 

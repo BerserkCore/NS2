@@ -205,3 +205,23 @@ Event.Hook("Console_music", OnConsoleMusic)
 Event.Hook("Console_debugcommander", OnCommandDebugCommander)
 
 Client.HookNetworkMessage("SelectAndGoto", OnCommandSelectAndGoto)
+
+local function OnConsoleSelectHallucinations()
+
+    local player = Client.GetLocalPlayer()
+    if player and player:isa("AlienCommander") then
+    
+        DeselectAllUnits(player:GetTeamNumber())
+        for _, hallucination in ipairs(GetEntitiesForTeam("Hallucination", player:GetTeamNumber())) do
+        
+            if hallucination:GetIsAlive() then
+                hallucination:SetSelected(player:GetTeamNumber(), true, true, true)
+            end
+        
+        end
+    
+    end
+
+end
+
+Event.Hook("Console_selecthallucinations", OnConsoleSelectHallucinations)

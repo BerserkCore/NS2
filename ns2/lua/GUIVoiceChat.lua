@@ -155,8 +155,18 @@ function GUIVoiceChat:Update(deltaTime)
 end
 
 function GUIVoiceChat:SendKeyEvent(key, down, amount)
+local player = Client.GetLocalPlayer()
+    if GetIsBinding(key, "VoiceChat") and not player:isa("Commander") then
+    
+        if down and not ChatUI_EnteringChatMessage() then
+            Client.VoiceRecordStart()
+        else
+            Client.VoiceRecordStop()
+        end
+        
+    end
 
-    if GetIsBinding(key, "VoiceChat") then
+    if GetIsBinding(key, "VoiceChatCom") and player:isa("Commander") then
     
         if down and not ChatUI_EnteringChatMessage() then
             Client.VoiceRecordStart()

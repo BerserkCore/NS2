@@ -510,3 +510,21 @@ function GUIRequestMenu:OnLocalPlayerChanged(newPlayer)
     self:Initialize()
     
 end
+
+local function OnCommandChuckle()
+local player = Client.GetLocalPlayer()
+    if player:isa("Alien") and player:GetTeamNumber() ~= kTeamReadyRoom then
+        SendRequest(self, 21)
+    end           
+end
+    
+Event.Hook("Console_chuckle", OnCommandChuckle)
+
+local function OnCommandRequestWeld()
+local player = Client.GetLocalPlayer()
+    if player:isa("Marine") and player:GetTeamNumber() ~= kTeamReadyRoom then
+        SendRequest(self, 5)
+    end        
+end
+    
+Event.Hook("Console_requestweld", OnCommandRequestWeld)

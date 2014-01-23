@@ -68,6 +68,20 @@ if Client then
         local visible = HasMixin(self, "ParasiteAble") and self:GetIsParasited()
         local player = Client.GetLocalPlayer()
         
+        if player:isa("Spectator") and player:GetOutlinePlayers() and self:isa("Alien") and not self.hiveSightVisible then
+
+            local model = self:GetRenderModel()
+            if model ~= nil then
+            
+                HiveVision_AddModel( model )
+                   
+                self.hiveSightVisible = true    
+                self.timeHiveVisionChanged = Shared.GetTime()
+                
+            end
+        
+        end
+        
         // check the distance here as well. seems that the render mask is not correct for newly created models or models which get destroyed in the same frame
         local playerCanSeeHiveVision = player ~= nil and (player:GetOrigin() - self:GetOrigin()):GetLength() <= GetMaxDistanceFor(player) and (player:isa("Alien") or player:isa("AlienCommander") or player:isa("AlienSpectator"))
 

@@ -123,37 +123,44 @@ function GUIInventory:Update(deltaTime, parameters)
 
     PROFILE("GUIInventory:Update")
     
-    local activeWeaponTechId, inventoryTechIds = unpack(parameters)
+    local fullMode = Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full
+    self.background:SetIsVisible(fullMode)
     
-    if #self.inventoryIcons > #inventoryTechIds then
-    
-        self.inventoryIcons[#self.inventoryIcons].Graphic:Destroy()
-        table.remove(self.inventoryIcons, #self.inventoryIcons)
+    if fullMode then
         
-    end
-    
-    local resetAnimations = false
-    if activeWeaponTechId ~= self.lastActiveWeaponTechId and gTechIdPosition and gTechIdPosition[activeWeaponTechId] then
+        local activeWeaponTechId, inventoryTechIds = unpack(parameters)
+        
+        if #self.inventoryIcons > #inventoryTechIds then
+        
+            self.inventoryIcons[#self.inventoryIcons].Graphic:Destroy()
+            table.remove(self.inventoryIcons, #self.inventoryIcons)
+            
+        end
+        
+        local resetAnimations = false
+        if activeWeaponTechId ~= self.lastActiveWeaponTechId and gTechIdPosition and gTechIdPosition[activeWeaponTechId] then
 
-        self.lastActiveWeaponTechId = activeWeaponTechId
-        resetAnimations = true
+            self.lastActiveWeaponTechId = activeWeaponTechId
+            resetAnimations = true
+            
+        end
         
-    end
+        if self.forceAnimationReset then
+            resetAnimations = true
+        end
+        
+        local numItems = #inventoryTechIds
+        self.background:SetPosition(Vector(
+            self.scale * -0.5 * (numItems*GUIInventory.kItemSize.x + (numItems-1)*GUIInventory.kItemPadding),
+            GUIInventory.kBackgroundYOffset,
+            0))
+        
+        local alienStyle = PlayerUI_GetTeamType() == kAlienTeamType
+        
+        for index, inventoryItem in ipairs(inventoryTechIds) do
+            LocalAdjustSlot(self, index, inventoryItem.HUDSlot, inventoryItem.TechId, inventoryItem.TechId == activeWeaponTechId, resetAnimations, alienStyle)
+        end
     
-    if self.forceAnimationReset then
-        resetAnimations = true
-    end
-    
-    local numItems = #inventoryTechIds
-    self.background:SetPosition(Vector(
-        self.scale * -0.5 * (numItems*GUIInventory.kItemSize.x + (numItems-1)*GUIInventory.kItemPadding),
-        GUIInventory.kBackgroundYOffset,
-        0))
-    
-    local alienStyle = PlayerUI_GetTeamType() == kAlienTeamType
-    
-    for index, inventoryItem in ipairs(inventoryTechIds) do
-        LocalAdjustSlot(self, index, inventoryItem.HUDSlot, inventoryItem.TechId, inventoryItem.TechId == activeWeaponTechId, resetAnimations, alienStyle)
     end
     
 end

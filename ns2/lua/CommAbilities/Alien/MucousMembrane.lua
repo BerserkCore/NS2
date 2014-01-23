@@ -61,9 +61,10 @@ if Server then
             self.totalHeal = 0
         end
         */
+        
         for _, unit in ipairs(GetEntitiesWithMixinForTeamWithinRange("Live", self:GetTeamNumber(), self:GetOrigin(), MucousMembrane.kRadius)) do
 
-            local addArmor = Clamp(unit:GetMaxArmor() * MucousMembrane.kThinkTime * 0.25, 1, 8)
+            local addArmor = Clamp(unit:GetMaxArmor() * MucousMembrane.kThinkTime * 0.25, 1, 5)
             //local oldArmor = unit:GetArmor()
             unit:SetArmor(unit:GetArmor() + addArmor)
             //self.totalHeal = self.totalHeal + math.max(0, unit:GetArmor() - oldArmor)

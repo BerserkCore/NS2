@@ -65,7 +65,13 @@ end
 
 // Return true if we want the UI to take key input for chat
 function ChatUI_EnteringChatMessage()
-    return enteringChatMessage
+
+    if MainMenu_GetIsOpened() then
+        return false
+    else 
+        return enteringChatMessage
+    end
+    
 end
 
 function ChatUI_GetStartedChatTime()

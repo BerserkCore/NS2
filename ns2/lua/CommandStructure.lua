@@ -129,17 +129,16 @@ if Client then
             self.lastTimeOccupied = now
         end
         
-        local displayHelpArrows = true
-        if player then
+        local displayHelpArrows = Client.GetOptionInteger("hudmode", kHUDMode.Full) == kHUDMode.Full
+        if player and displayHelpArrows then
         
             // Display the help arrows (get into Comm structure) when the
             // team does not have a commander and the Comm structure is built
             // and some time has passed.
-            displayHelpArrows = true
             displayHelpArrows = displayHelpArrows and player:GetTeamNumber() == self:GetTeamNumber()
             displayHelpArrows = displayHelpArrows and self:GetIsBuilt() and self:GetIsAlive()
             displayHelpArrows = displayHelpArrows and not ScoreboardUI_GetTeamHasCommander(self:GetTeamNumber())
-            displayHelpArrows = displayHelpArrows and not self:GetIsOccupied() and (now - self.lastTimeOccupied) >= 12
+            displayHelpArrows = displayHelpArrows and not self:GetIsOccupied() and (now - self.lastTimeOccupied) >= 8
             
         end
         

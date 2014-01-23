@@ -22,6 +22,9 @@ local kFadeTrailGlow = {
     PrecacheAsset("cinematics/alien/fade/trail_glow_2.cinematic"),
 }
 
+function Fade:GetHealthbarOffset()
+    return 0.9
+end
 function Fade:UpdateClientEffects(deltaTime, isLocal)
 
     Alien.UpdateClientEffects(self, deltaTime, isLocal)

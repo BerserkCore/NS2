@@ -41,6 +41,12 @@ function ControllerMixin:CreateController(physicsGroup)
     // Make the controller kinematic so physically simulated objects will
     // interact/collide with it.
     self.controller:SetPhysicsType(CollisionObject.Kinematic)
+
+    // create outter controller here, so only other players will see it
+    self.controllerOutter = Shared.CreateCollisionObject(self)
+    self.controllerOutter:SetGroup(physicsGroup)
+    self.controllerOutter:SetTriggeringEnabled( false )
+    self.controllerOutter:SetPhysicsType(CollisionObject.Kinematic)
     
     self:UpdateControllerFromEntity()
 
@@ -55,20 +61,10 @@ function ControllerMixin:DestroyController()
         
     end
     
-end
-
-function ControllerMixin:SetControllerVerticalOffset(offset)
-
-    assert(type(offset) == "number")
+    if self.controllerOutter then 
     
-    if offset ~= self.controllerVerticalOffset then
-    
-        local move = Vector(0, offset - self.controllerVerticalOffset, 0)
-        local trace = self.controller:Trace(move, CollisionRep.Move, CollisionRep.Move, self:GetMovePhysicsMask())
-        
-        if trace.fraction == 1 then
-            self.controllerVerticalOffset = offset
-        end
+        Shared.DestroyCollisionObject(self.controllerOutter)
+        self.controllerOutter = nil
         
     end
     
@@ -106,13 +102,19 @@ function ControllerMixin:UpdateControllerFromEntity(allowTrigger)
                 // slide down as we walk up stairs or over other lips. The curved
                 // edges of the cylinder allows players to slide off when we hit them,
                 self.controller:SetupCapsule( controllerRadius, capsuleHeight, self.controller:GetCoords(), allowTrigger )
-                // self.controller:SetupCylinder( controllerRadius, controllerHeight, self.controller:GetCoords(), allowTrigger )
+                //self.controller:SetupCylinder( controllerRadius, controllerHeight, self.controller:GetCoords(), allowTrigger )
+            end
+
+            if self.controllerOutter then                
+                //self.controllerOutter:SetupBox(Vector(self.controllerRadius * 1.3, self.controllerHeight * 0.5, self.controllerRadius * 1.3), self.controller:GetCoords(), allowTrigger)
+                self.controllerOutter:SetupCylinder( controllerRadius * 1.5, controllerHeight, self.controller:GetCoords(), allowTrigger )
             end                
             
             // Remove all collision reps except movement from the controller.
             for value,name in pairs(CollisionRep) do
                 if value ~= CollisionRep.Move and type(name) == "string" then
                     self.controller:RemoveCollisionRep(value)
+                    self.controllerOutter:RemoveCollisionRep(value)
                 end
             end
             
@@ -127,6 +129,10 @@ function ControllerMixin:UpdateControllerFromEntity(allowTrigger)
         origin.y = origin.y + self.controllerHeight * 0.5 + kSkinOffset + self.controllerVerticalOffset
         
         self.controller:SetPosition(origin, allowTrigger)
+        
+        if self.controllerOutter then  
+            self.controllerOutter:SetPosition(origin, allowTrigger)
+        end    
         
     end
     
@@ -166,8 +172,14 @@ function ControllerMixin:GetIsColliding()
     PROFILE("ControllerMixin:GetIsColliding")
 
     if self.controller then
+    
+        self.controllerOutter:SetCollisionEnabled(false)
         self:UpdateControllerFromEntity()
-        return self.controller:Test(CollisionRep.Move, CollisionRep.Move, self:GetMovePhysicsMask())
+        local result = self.controller:Test(CollisionRep.Move, CollisionRep.Move, self:GetMovePhysicsMask())
+        self.controllerOutter:SetCollisionEnabled(true)
+        
+        return result
+        
     end
     
     return false
@@ -198,8 +210,11 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, sl
     local averageSurfaceNormal = nil
     local oldVelocity = velocity ~= nil and Vector(velocity) or nil
     local prevXZSpeed = velocity ~= nil and velocity:GetLengthXZ()
+    local hitVelocity = nil
 
     if self.controller then
+        
+        self.controllerOutter:SetCollisionEnabled(false)        
     
         self:UpdateControllerFromEntity()
         
@@ -251,6 +266,10 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, sl
 
                 end
                 
+                if trace.entity and trace.entity.GetVelocity and trace.entity:GetVelocity() then
+                    hitVelocity = trace.entity:GetVelocity()
+                end
+                
                 completedMove = false
                 
             else
@@ -265,11 +284,24 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, sl
             self:UpdateOriginFromController()
         end
         
+        self.controllerOutter:SetCollisionEnabled(true)
+        
     end
     
     // Do the hit callbacks.
     if hitEntities and isMove then
-    
+        
+        /*
+        if hitVelocity and oldVelocity then
+        
+            hitVelocity.y = 0
+            local addSpeed = Clamp(oldVelocity:DotProduct(hitVelocity), 0, prevXZSpeed)
+            if addSpeed > 0 then            
+                velocity:Add(addSpeed * GetNormalizedVector(oldVelocity))
+            end
+        
+        end
+        */
         for index, entity in ipairs(hitEntities) do
         
             entity:OnCapsuleTraceHit(self)

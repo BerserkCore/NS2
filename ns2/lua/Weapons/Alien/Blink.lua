@@ -104,6 +104,7 @@ function Blink:ConsumeVortex(player)
             
             player:TriggerEffects("vortexed_end")
             player:SetOrigin(gate:GetOrigin())
+            player:SetEnergy(player:GetEnergy() + kVortexEnergyCost)
             
             local newVelocity = player:GetVelocity()
             newVelocity.x = 0

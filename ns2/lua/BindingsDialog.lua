@@ -48,7 +48,22 @@ local defaults = {
     { "PingLocation", "MouseButton2" },
     { "Buy", "B" },
     { "VoteYes", "F1" },
-    { "VoteNo", "F2" }
+    { "VoteNo", "F2" },
+    { "Grid1", "Q" },
+    { "Grid2", "W" },
+    { "Grid3", "E" },
+    { "Grid4", "A" },
+    { "Grid5", "S" },
+    { "Grid6", "D" },
+    { "Grid7", "F" },
+    { "Grid8", "Z" },
+    { "Grid9", "X" },
+    { "Grid10", "C" },
+    { "Grid11", "V" },
+	{ "ShowMapCom", "C" },
+    { "VoiceChatCom", "LeftAlt" },
+    { "TextChatCom", "Return" },
+    { "TeamChatCom", "Y" }
 }
 
 // Order, names, description of keys in menu
@@ -91,6 +106,24 @@ local globalControlBindings = {
     "PingLocation", "input", "ping location", "MouseButton2",
     "VoteYes", "input", "Vote Yes", "F1",
     "VoteNo", "input", "Vote No", "F2",
+}
+
+local globalComControlBindings = {
+    "Grid1", "input", "Grid Spot 1 (Default Q)", "U",
+    "Grid2", "input", "Grid Spot 2 (Default W)", "W",
+    "Grid3", "input", "Grid Spot 3 (Default E)", "E",
+    "Grid4", "input", "Grid Spot 4 (Default A)", "A",
+    "Grid5", "input", "Grid Spot 5 (Default S)", "S",
+    "Grid6", "input", "Grid Spot 6 (Default D)", "D",
+    "Grid7", "input", "Grid Spot 7 (Default F)", "F",
+    "Grid8", "input", "Grid Spot 8 (Default Z)", "Z",
+    "Grid9", "input", "Grid Spot 9 (Default X)", "X",
+    "Grid10", "input", "Grid Spot 10 (Default C)", "C",
+    "Grid11", "input", "Grid Spot 11 (Default V)", "V",
+    "ShowMapCom", "input", "Show Map", "C",
+	"VoiceChatCom", "input", "Use microphone", "LeftAlt",
+    "TextChatCom", "input", "Public chat", "Y",
+    "TeamChatCom", "input", "Team chat", "Return",
 }
 
 local specialKeys = {
@@ -156,6 +189,9 @@ function BindingsUI_GetBindingsData()
     return globalControlBindings   
 end
 
+function BindingsUI_GetComBindingsData()
+    return globalComControlBindings   
+end
 function BindingsUI_GetBindingsTable()
 
     local bindingsTable = { }
@@ -173,6 +209,22 @@ function BindingsUI_GetBindingsTable()
     
 end
 
+function BindingsUI_GetComBindingsTable()
+
+    local bindingsTable = { }
+    local bindingsList = BindingsUI_GetComBindingsData()
+    
+    for i = 1, #bindingsList, 4 do
+    
+        if bindingsList[i + 1] ~= "title" then
+            table.insert(bindingsTable, { name = bindingsList[i], detail = bindingsList[i + 2], current = BindingsUI_GetInputValue(bindingsList[i]) })
+        end
+        
+    end
+    
+    return bindingsTable
+    
+end
 /**
  * Returns list of control ids and text to display for each.
  */

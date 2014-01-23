@@ -2205,7 +2205,7 @@ function BuildClassToGrid()
     ClassToGrid["Observatory"] = { 6, 5 }
     ClassToGrid["RoboticsFactory"] = { 7, 5 }
     ClassToGrid["ArmsLab"] = { 8, 5 }
-    ClassToGrid["PrototypeLab"] = { 4, 4 }
+    ClassToGrid["PrototypeLab"] = { 4, 5 }
 
     ClassToGrid["HiveBuilding"] = { 1, 6 }
     ClassToGrid["Hive"] = { 2, 6 }

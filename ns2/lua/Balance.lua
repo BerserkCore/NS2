@@ -234,6 +234,8 @@ kHeavyRifleClipSize = 75
 kRifleMeleeDamage = 10
 kRifleMeleeDamageType = kDamageType.Normal
 
+// 10 bullets per second
+kPistolRateOfFire = 0.1
 kPistolDamage = 25
 kPistolDamageType = kDamageType.Light
 kPistolClipSize = 10
@@ -261,6 +263,7 @@ kGrenadeLauncherGrenadeDamageRadius = 4.8
 kGrenadeLifetime = 2.0
 kGrenadeUpgradedLifetime = 1.5
 
+kShotgunFireRate = 0.88
 kShotgunDamage = 10
 kShotgunDamageType = kDamageType.Normal
 kShotgunClipSize = 6
@@ -407,7 +410,7 @@ kSporesDustCloudLifetime = 8
 
 kSwipeDamage = 37.5
 kSwipeDamageType = kDamageType.Puncture
-kSwipeEnergyCost = 8
+kSwipeEnergyCost = 7
 
 kStabDamage = 160
 kStabDamageType = kDamageType.Normal
@@ -424,7 +427,7 @@ kGoreDamage = 100
 kGoreDamageType = kDamageType.Structural
 kGoreEnergyCost = 12
 
-kBoneShieldEnergyPerSecond = 15
+kBoneShieldEnergyPerSecond = 13
 kStartBoneShieldCost = 10
 
 kStompEnergyCost = 30
@@ -639,9 +642,9 @@ kCystCooldown = 0.0
 kDrifterInitialEnergy = 50
 kDrifterMaxEnergy = 200
 
-kEnzymeCloudCost = 1
+kEnzymeCloudCost = 2
 kHallucinationCloudCost = 1
-kMucousMembraneCost = 1
+kMucousMembraneCost = 2
 kStormCost = 1
 
 kHallucinationCloudCooldown = 2

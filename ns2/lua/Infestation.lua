@@ -11,6 +11,8 @@
 Shared.PrecacheSurfaceShader("materials/infestation/infestation_decal.surface_shader")
 Shared.PrecacheSurfaceShader("materials/infestation/infestation_shell.surface_shader")
 Shared.PrecacheSurfaceShader("materials/infestation/Infestation.surface_shader")
+PrecacheAsset("models/alien/infestation/infestation_shell.model")
+PrecacheAsset("models/alien/infestation/infestation_blob.model")
 
 Script.Load("lua/InfestationCache.lua")
 

@@ -500,23 +500,12 @@ function GroundMoveMixin:UpdatePosition(input, velocity, deltaTime)
         end
         
         if not stepAllowed then
-        
-            if hitObstacle then
-
-                if self.onGround then
-                    velocity:Scale(0.38)    
-                else
-                    velocity:Scale(0.5)  
-                end
-    
-                velocity.y = oldVelocity.y
-                
-            end
             
-            local slowDownFraction = self.GetCollisionSlowdownFraction and self:GetCollisionSlowdownFraction() or 1
+            local slowDownFraction = self.GetCollisionSlowdownFraction and self:GetCollisionSlowdownFraction() or 1 
+            
             local deflectMove = self.GetDeflectMove and self:GetDeflectMove() or false
             
-            self:PerformMovement(velocity * deltaTime, 3, velocity, true, slowDownFraction, deflectMove)
+            self:PerformMovement(velocity * deltaTime, 3, velocity, true, slowDownFraction * 0.5, deflectMove)
             
         else        
             didStep, stepAmount = DoStepMove(self, input, velocity, deltaTime)            

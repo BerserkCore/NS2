@@ -25,6 +25,8 @@ local kEnzymeCloudUpdateTime = 0.16
 EnzymeCloud.kOnPlayerDuration = 2.3
 EnzymeCloud.kRadius = 6.5
 
+local kUnitSpeedBoostDuration = 1
+
 local networkVars = { }
 
 function EnzymeCloud:OnInitialized()
@@ -67,6 +69,10 @@ if Server then
         // search for aliens in range and buff their speed by 25%  
         for _, alien in ipairs(GetEntitiesForTeamWithinRange("Alien", self:GetTeamNumber(), self:GetOrigin(), EnzymeCloud.kRadius)) do
             alien:TriggerEnzyme(EnzymeCloud.kOnPlayerDuration)
+        end
+        
+        for _, unit in ipairs(GetEntitiesWithMixinForTeamWithinRange("Storm", self:GetTeamNumber(), self:GetOrigin(), EnzymeCloud.kRadius)) do
+            unit:SetSpeedBoostDuration(kUnitSpeedBoostDuration)
         end
 
     end

@@ -53,7 +53,8 @@ local kMuzzleCinematics = {
 
 local networkVars =
 {
-    soundType = "integer (1 to 9)"
+    soundType = "integer (1 to 9)",
+    shooting = "boolean"
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -264,6 +265,8 @@ function Rifle:OnTag(tagName)
     
     if tagName == "hit" then
     
+        self.shooting = false
+    
         local player = self:GetParent()
         if player then
             self:PerformMeleeAttack(player)
@@ -383,6 +386,10 @@ if Client then
     
     function Rifle:GetPrimaryEffectRate()
         return 0.08
+    end
+    
+    function Rifle:GetTriggerPrimaryEffects()
+        return not self:GetIsReloading() and self.shooting
     end
     
     function Rifle:GetBarrelPoint()

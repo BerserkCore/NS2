@@ -892,9 +892,9 @@ function BaseModelMixin:GetAttachPointIndex(attachPointName)
     if model ~= nil then
         return model:GetAttachPointIndex(attachPointName)
     end
-
-    Print("%s:GetAttachPointIndex(%s): model is nil", self:GetClassName(), attachPointName)
-    
+	
+		Print("%s:GetAttachPointIndex(%s): model is nil", self:GetClassName(), attachPointName)
+	
     return -1
 
 end

@@ -29,6 +29,7 @@ GUINotifications.kTooltipTextColor = Color(1, 1, 1, 1)
 // Score popup constants.
 GUINotifications.kScoreDisplayFontName = "fonts/AgencyFB_medium.fnt"
 GUINotifications.kScoreDisplayTextColor = Color(0.75, 0.75, 0.1, 1)
+GUINotifications.kScoreDisplayKillTextColor = Color(0.1, 1, 0.1, 1)
 GUINotifications.kScoreDisplayFontHeight = 80
 GUINotifications.kScoreDisplayMinFontHeight = 50
 GUINotifications.kScoreDisplayYOffset = -96
@@ -67,6 +68,12 @@ function GUINotifications:Initialize()
     self:InitializeTooltip()
     
     self:InitializeScoreDisplay()
+    
+    if PlayerUI_GetTeamType() == kAlienTeamType then
+        self:EnableAlienStyle()
+    else
+        self:EnableMarineStyle()
+    end
 
 end
 
@@ -240,7 +247,7 @@ local function UpdateScoreDisplay(self, deltaTime)
         
     end
     
-    local newScore, resAwarded = ScoreDisplayUI_GetNewScore()
+    local newScore, resAwarded, wasKill = ScoreDisplayUI_GetNewScore()
     if newScore > 0 then
     
         // Restart the animation sequence.
@@ -256,7 +263,10 @@ local function UpdateScoreDisplay(self, deltaTime)
         
         self.scoreDisplay:SetText(string.format("+%s%s", tostring(newScore), resAwardedString))
         self.scoreDisplay:SetScale(Vector(0.5, 0.5, 0.5))
-        self.scoreDisplay:SetColor(GUINotifications.kScoreDisplayTextColor)
+        
+        local color = 
+        
+        self.scoreDisplay:SetColor(wasKill and GUINotifications.kScoreDisplayKillTextColor or GUINotifications.kScoreDisplayTextColor)
         self.scoreDisplay:SetIsVisible(true)
         
     end
@@ -278,7 +288,7 @@ function GUINotifications:Update(deltaTime)
         self.locationText:SetText(PlayerUI_GetLocationName())
         
     end
-    
+    /*
     if PlayerUI_IsOnMarineTeam() then
         self:EnableMarineStyle()
     elseif PlayerUI_IsOnAlienTeam() then
@@ -286,6 +296,7 @@ function GUINotifications:Update(deltaTime)
     else
         self:EnableGeneralStyle()
     end
+    */
     
     self:UpdateTooltip(deltaTime)
     

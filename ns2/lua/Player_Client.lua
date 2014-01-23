@@ -511,7 +511,8 @@ function PlayerUI_GetUnitStatusInfo()
                         TeamType = kNeutralTeamType,
                         ForceName = unit:isa("Player") and not GetAreEnemies(player, unit),
                         BadgeTextures = badgeTextures,
-                        HasWelder = hasWelder
+                        HasWelder = hasWelder,
+                        IsPlayer = unit:isa("Player")
                     
                     }
                     
@@ -1766,24 +1767,28 @@ function Player:SendKeyEvent(key, down)
             self.timeOfLastHealRequest = Shared.GetTime()
         end
         
-        if GetIsBinding(key, "ShowMap") then
+        if GetIsBinding(key, "ShowMap") and not self:isa("Commander") then
             self:OnShowMap(down)
         end
-        
+        if GetIsBinding(key, "ShowMapCom") and self:isa("Commander") then
+            self:OnShowMap(down)
+        end
         if down then
         
             if GetIsBinding(key, "ReadyRoom") then
                 Shared.ConsoleCommand("rr")
-            elseif GetIsBinding(key, "TextChat") then
-            
+            elseif GetIsBinding(key, "TextChat") and not self:isa("Commander") then
                 ChatUI_EnterChatMessage(false)
                 return true
-                
-            elseif GetIsBinding(key, "TeamChat") then
-            
-                ChatUI_EnterChatMessage(true)
+            elseif GetIsBinding(key, "TextChatCom") and self:isa("Commander") then		
+                ChatUI_EnterChatMessage(false)
+                return true   				
+            elseif GetIsBinding(key, "TeamChat") and not self:isa("Commander") then		
+                ChatUI_EnterChatMessage(true) 
                 return true
-                
+            elseif GetIsBinding(key, "TeamChatCom") and self:isa("Commander") then			
+                ChatUI_EnterChatMessage(true)
+                return true   
             end
             
         end

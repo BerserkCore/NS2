@@ -87,7 +87,8 @@ local networkVars =
     stooping = "boolean",
     stoopIntensity = "compensated interpolated float",
     charging = "private boolean",
-    rumbleSoundId = "entityid"
+    rumbleSoundId = "entityid",
+    timeOfLastPhase = "private time",
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -638,10 +639,10 @@ local function GetHitsBoneShield(self, doer, hitPoint)
 
     if table.contains(kBlockDoers, doer:GetClassName()) then
     
-        local coords = self:GetCoords()
-        local zPosition = coords.zAxis:DotProduct(GetNormalizedVector(hitPoint - coords.origin))
+        local viewDirection = GetNormalizedVectorXZ(self:GetViewCoords().zAxis)
+        local zPosition = viewDirection:DotProduct(GetNormalizedVector(hitPoint - self:GetOrigin()))
 
-        return zPosition > 0.25
+        return zPosition > -0.1
     
     end
     

@@ -1596,7 +1596,7 @@ function Player:DropToFloor()
 end
 
 function Player:GetCanStepOver(entity)
-    return not entity:isa("Player") or entity:GetTeamNumber() == self:GetTeamNumber()
+    return not entity:isa("Player")
 end
 
 function Player:GetCrouchShrinkAmount()

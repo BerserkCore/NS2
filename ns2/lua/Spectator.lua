@@ -152,6 +152,7 @@ function Spectator:OnCreate()
         self.mapButtonPressed = false
         self.mapMode = kSpectatorMapMode.Small
         self.showInsight = true
+        self.showPlayerOutline = false
         
     end
     
@@ -269,10 +270,20 @@ function Spectator:OnProcessMove(input)
         if not self:GetIsRespawning() then
             UpdateSpectatorMode(self, input)
         end
-        
+
     elseif Client then
     
         self:UpdateCrossHairTarget()
+
+        if self:GetTeamType() == kNeutralTeamType then
+        
+            local toggleOutlinePressed = bit.band(input.commands, Move.ToggleFlashlight) ~= 0
+            if not self.toggleOutlineLastFrame and toggleOutlinePressed then            
+                self.showPlayerOutline = not self.showPlayerOutline                
+            end
+            self.toggleOutlineLastFrame = toggleOutlinePressed
+
+        end
         
         // Toggle the insight GUI.
         if self:GetTeamNumber() == kSpectatorIndex then
@@ -432,6 +443,10 @@ end
 
 function Spectator:AdjustGravityForce(input, gravity)
     return 0
+end
+
+function Spectator:GetOutlinePlayers()
+    return self:GetTeamType() == kNeutralTeamType and self.showPlayerOutline
 end
 
 /**

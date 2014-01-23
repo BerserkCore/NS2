@@ -19,7 +19,7 @@ local function GetOptimalMoveDirection( from, to )
         return (pathPoints[1] - from):GetUnit()
     else
         // sensible fallback
-        DebugPrint("Could not find path from %s to %s", ToString(from), ToString(to))
+        // DebugPrint("Could not find path from %s to %s", ToString(from), ToString(to))
         return (to-from):GetUnit()
     end    
 
@@ -77,7 +77,7 @@ function BotMotion:OnGenerateMove(player)
 
     local moveTargetPos = self:ComputeLongTermTarget(player)
 
-    if moveTargetPos ~= nil then
+    if moveTargetPos ~= nil and not player:isa("Embryo") then
 
         local distToTarget = currentPos:GetDistance(moveTargetPos)
     
