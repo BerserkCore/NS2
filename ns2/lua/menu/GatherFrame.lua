@@ -121,8 +121,12 @@ function GatherFrame:Initialize()
         end,
         
         OnMouseOut = function (self)
-            self.webView:OnMouseUp(0)
-            self.webView:OnMouseUp(1)
+
+			if self.webView then
+				self.webView:OnMouseUp(0)
+				self.webView:OnMouseUp(1)
+			end
+
         end,
         
         OnMouseWheel = function (self, up)     

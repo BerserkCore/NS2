@@ -336,15 +336,9 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
 	local attackerOrigin = attacker:GetOrigin()
 	local targetOrigin = target:GetOrigin()
 	local attackerTeamType = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType)
-	local attackerPads = attacker.client.variantData.shoulderPadIndex
-	local targetPads = -1
-	
-	if target:isa("Player") then
-		targetPads = target.client.variantData.shoulderPadIndex
-	else
-		targetPads = -1
-	end
-	
+	local attackerPads = attacker.client and attacker.client.variantData.shoulderPadIndex or -1
+	local targetPads = target.client and target.client.variantData.shoulderPadIndex or -1
+
 	if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
         local jsonData, jsonError = json.encode(
         {
@@ -416,7 +410,6 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
 			targetZ = string.format("%.2f", targetOrigin.z),
 			targetAttrs = GetUpgradeAttribsString(target),
 			targetLifeTime = string.format("%.2f", ((target.GetCreationTime and Shared.GetTime() - target:GetCreationTime()) or 0)),
-			patchIndex = attacker.client.variantData.shoulderPadIndex,
 			attackerShoulderPad = attackerPads,
 			targetShoulderPad = targetPads,
 			mapName = Shared.GetMapName()

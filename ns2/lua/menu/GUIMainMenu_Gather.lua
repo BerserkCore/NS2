@@ -22,7 +22,7 @@ end
 function GUIMainMenu:CreateGatherWindow()
 
     self.gatherWindow = self:CreateWindow()
-    self:SetupWindow(self.gatherWindow, "GATHER")
+    self:SetupWindow(self.gatherWindow, "ORGANIZED PLAY")
     self.gatherWindow:AddCSSClass("gather_window")
     self.gatherWindow:ResetSlideBar()    // so it doesn't show up mis-drawn
     self.gatherWindow:GetContentBox():SetCSSClass("gather_content")

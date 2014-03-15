@@ -215,7 +215,7 @@ end
 function GUIMainMenu:CreatePlayWindow()
 
     self.playWindow = self:CreateWindow()
-    self:SetupWindow(self.playWindow, "PLAY")
+    self:SetupWindow(self.playWindow, "SERVER BROWSER")
     self.playWindow:AddCSSClass("play_window")
     self.playWindow:ResetSlideBar()    // so it doesn't show up mis-drawn
     self.playWindow:GetContentBox():SetCSSClass("serverbrowse_content")
