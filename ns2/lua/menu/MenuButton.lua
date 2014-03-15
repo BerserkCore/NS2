@@ -39,6 +39,15 @@ function MenuButton:Initialize()
     
     self:EnableHighlighting()
     
+	local eventCallbacks = {
+      
+	OnClick = function (self)
+		MainMenu_OnButtonClicked()
+	end, 
+    }
+    
+    self:AddEventCallbacks(eventCallbacks)
+	
 end
 
 function MenuButton:SetTextColor(color, time, animateFunc, animName, callBack)

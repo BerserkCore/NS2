@@ -1,8 +1,8 @@
 // Commands
 Move.PrimaryAttack          = bit.lshift(1, 0)
 Move.SecondaryAttack        = bit.lshift(1, 1)
-Move.NextWeapon             = bit.lshift(1, 2)
-Move.PrevWeapon             = bit.lshift(1, 3)
+Move.SelectNextWeapon       = bit.lshift(1, 2)
+Move.SelectPrevWeapon       = bit.lshift(1, 3)
 Move.Reload                 = bit.lshift(1, 4)
 Move.Use                    = bit.lshift(1, 5)
 Move.Jump                   = bit.lshift(1, 6)

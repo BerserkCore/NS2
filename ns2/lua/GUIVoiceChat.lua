@@ -27,6 +27,7 @@ GUIVoiceChat.kCommanderFontColor = Color(1, 1, 0, 1)
 GUIVoiceChat.kMarineFontColor = Color(147/255, 206/255, 1, 1)
 GUIVoiceChat.kAlienFontColor = Color(207/255, 139/255, 41/255, 1)
 
+local loggedIn = false
 
 function GUIVoiceChat:Initialize()
     self.chatBars = { }
@@ -151,29 +152,37 @@ function GUIVoiceChat:Update(deltaTime)
         end
 
     end
-
+	
+	local player = Client.GetLocalPlayer()
+	if loggedIn ~= player:isa("Commander") and ChatUI_GetIsClientSpeaking(1) then
+		loggedIn = player:isa("Commander")
+		Client.VoiceRecordStop()
+	end
+	
 end
 
 function GUIVoiceChat:SendKeyEvent(key, down, amount)
-local player = Client.GetLocalPlayer()
-    if GetIsBinding(key, "VoiceChat") and not player:isa("Commander") then
-    
-        if down and not ChatUI_EnteringChatMessage() then
-            Client.VoiceRecordStart()
-        else
-            Client.VoiceRecordStop()
-        end
-        
-    end
 
-    if GetIsBinding(key, "VoiceChatCom") and player:isa("Commander") then
-    
-        if down and not ChatUI_EnteringChatMessage() then
+	local player = Client.GetLocalPlayer()
+	
+    if GetIsBinding(key, "VoiceChat") then
+		
+        if down and not ChatUI_EnteringChatMessage() and not player:isa("Commander") then
             Client.VoiceRecordStart()
-        else
+        elseif not player:isa("Commander") then
             Client.VoiceRecordStop()
         end
-        
-    end
+       
+	end
+	
+    if GetIsBinding(key, "VoiceChatCom") then
+
+        if down and not ChatUI_EnteringChatMessage() and player:isa("Commander") then
+            Client.VoiceRecordStart()
+        elseif player:isa("Commander") then
+            Client.VoiceRecordStop()
+        end
+
+	end
     
 end

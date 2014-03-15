@@ -181,8 +181,14 @@ function Fade:OnDestroy()
     
 end
 
-function Fade:GetPlayerControllersGroup()
-    return PhysicsGroup.BigPlayerControllersGroup
+function Fade:GetControllerPhysicsGroup()
+
+    if self.isHallucination then
+        return PhysicsGroup.SmallStructuresGroup
+    end
+
+    return PhysicsGroup.BigPlayerControllersGroup  
+  
 end
 
 function Fade:GetInfestationBonus()

@@ -6,6 +6,7 @@
         <input name="numColumns" type="float">4</input>			
 		<input name="atlas" type="texture" address="wrap"/>
 		<input name="opacityMap" type="texture" address="wrap"/>
+		<input name="emissiveMap" type="texture" address="wrap"/>
 
         <!-- should be specified via game -->
         <!-- Row major index. 0 is the top-left rect -->
@@ -28,10 +29,12 @@
                 float col = patchIndex - row*numColumns;
                 uv.x = (col+uv.x) / numColumns;
                 uv.y = (row+uv.y) / numRows;
-                float3 albedo = tex2D(atlas, uv);
-                material.albedo	= albedo.rgb;
+                material.albedo	= tex2D(atlas, uv).rgb;
+
                 material.opacity = tex2D(opacityMap, uv).r;
-                //material.opacity = 1;
+
+                material.emissive = tex2D(emissiveMap, uv).rgb;
+
             }
             else
             {

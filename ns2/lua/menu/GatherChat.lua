@@ -8,12 +8,13 @@
 
 Script.Load("lua/menu/MenuElement.lua")
 Script.Load("lua/menu/WindowUtility.lua")
+Script.Load("lua/MainMenu.lua")
 
-local kChatInputHeight = 40
+local kChatInputHeight = 38
 local kSliderWidth = 32
 local kLineHeight = 38
 
-local kMaxSymbols = 35
+local kMaxSymbols = 55
 local kTransparent = Color(0,0,0,0)
 
 class 'GatherChat' (MenuElement)
@@ -26,13 +27,12 @@ function GatherChat:Initialize()
     self.chatInput:SetAnchor(GUIItem.Left, GUIItem.Bottom)
     self.chatInput:SetHeight(kChatInputHeight)
     self.chatInput:SetTopOffset(-kChatInputHeight)
+	self.chatInput:SetBottomOffset(2)
+	self.chatInput:SetLeftOffset(2)
     
     local eventCallbacks =
-    {
-        OnEscape = function (self)        
-            self:SetValue("")            
-        end,
-        
+    {        
+    
         OnHide = function (self)
             self:SetValue("")            
         end,
@@ -40,7 +40,9 @@ function GatherChat:Initialize()
         OnEnter = function (self)
         
             local message = self:GetValue()
-            Sabot.SendChatMessage(message)
+            if message and string.len(message) > 0 then
+                Sabot.SendChatMessage(message)
+            end
         
             self:SetValue("")  
           
@@ -62,13 +64,14 @@ function GatherChat:Initialize()
     self.chatContentBox = CreateMenuElement(self, "ContentBox", false)
     self.chatContentBox:SetOpacity(0)
     self.chatContentBox:SetBorderWidth(0)
+	self.chatContentBox:SetLeftOffset(10)
 
     self.slideBar:Register(self.chatContentBox, SLIDE_VERTICAL)
     
     self.chatEntries = {}
     
     self.fontName = "fonts/AgencyFB_small.fnt"
-    self.fontColor = Color(1,1,1,1)
+    self.fontColor = Color(0.54,0.71,0.76,1)
     
 end
 
@@ -119,8 +122,10 @@ function GatherChat:SetChatData(chatData)
             entry:SetFontName(self.fontName)
             entry:SetBackgroundColor(kTransparent)
             entry:SetTextColor(self.fontColor)
-            table.insert(self.chatEntries, entry)                    
-       
+            table.insert(self.chatEntries, entry) 
+			
+		MainMenu_OnGatherChatRecieved()
+
         end
      
     end
@@ -128,7 +133,7 @@ function GatherChat:SetChatData(chatData)
     // update data and positions
     for i = 1, numCurrentEntries do
      
-        local data = string.gsub(chatData[i], 0, kMaxSymbols)
+        local data = chatData[i]
         local entry = self.chatEntries[i]
         
         entry:SetTopOffset( (i-1) * kLineHeight )
@@ -151,7 +156,7 @@ function GatherChat:SetBackgroundSize(sizeVector, absolute, time, animateFunc, a
     MenuElement.SetBackgroundSize(self, sizeVector, absolute, time, animateFunc, animName, callBack)
     
     self.chatInput:SetWidth(sizeVector.x - 2 * kSliderWidth)
-    self.chatContentBox:SetBackgroundSize(Vector(sizeVector.x - 2 * kSliderWidth, sizeVector.y - kChatInputHeight, 0))
+    self.chatContentBox:SetBackgroundSize(Vector(sizeVector.x - 2 * kSliderWidth, sizeVector.y - kChatInputHeight - 4, 0))
     self.slideBar:SetBackgroundSize(Vector(kSliderWidth, sizeVector.y, 0))
 
 end

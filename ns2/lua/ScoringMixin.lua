@@ -12,10 +12,11 @@
 ScoringMixin = CreateMixin(ScoringMixin)
 ScoringMixin.type = "Scoring"
 
-ScoringMixin.expectedCallbacks =
-{
-    SetScoreboardChanged = "Called to notify the entity that the score has changed and should be updated on the client's scoreboard."
-}
+local gSessionKills = {}
+
+function GetSessionKills(clientIndex)
+    return gSessionKills[clientIndex] or 0
+end
 
 ScoringMixin.networkVars =
 {
@@ -48,8 +49,7 @@ function ScoringMixin:AddScore(points, res, wasKill)
             local displayRes = ConditionalValue(type(res) == "number", res, 0)
             Server.SendNetworkMessage(Server.GetOwner(self), "ScoreUpdate", { points = points, res = displayRes, wasKill = wasKill == true }, true)
             self.score = Clamp(self.score + points, 0, self:GetMixinConstants().kMaxScore or 100)
-            self:SetScoreboardChanged(true)
-            
+
             if not self.scoreGainedCurrentLife then
                 self.scoreGainedCurrentLife = 0
             end
@@ -173,8 +173,14 @@ function ScoringMixin:AddKill()
     end    
 
     self.kills = Clamp(self.kills + 1, 0, kMaxKills)
-    self:SetScoreboardChanged(true)
     
+    if self.clientIndex and self.clientIndex > 0 then
+        if not gSessionKills[self.clientIndex] then
+            gSessionKills[self.clientIndex] = 0
+        end
+        gSessionKills[self.clientIndex] = gSessionKills[self.clientIndex] + 1
+    end
+
 end
 
 function ScoringMixin:AddAssistKill()
@@ -184,8 +190,7 @@ function ScoringMixin:AddAssistKill()
     end    
 
     self.assistkills = Clamp(self.assistkills + 1, 0, kMaxKills)
-    self:SetScoreboardChanged(true)
-    
+
 end
 
 function ScoringMixin:GetKills()
@@ -207,8 +212,7 @@ function ScoringMixin:AddDeaths()
     end
 
     self.deaths = Clamp(self.deaths + 1, 0, kMaxDeaths)
-    self:SetScoreboardChanged(true)
-    
+
 end
 
 function ScoringMixin:ResetScores()
@@ -217,8 +221,7 @@ function ScoringMixin:ResetScores()
     self.kills = 0
     self.assistkills = 0
     self.deaths = 0    
-    self:SetScoreboardChanged(true)
-    
+
     self.commanderTime = 0
     self.playTime = 0
     self.marineTime = 0

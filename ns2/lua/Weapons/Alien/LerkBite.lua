@@ -140,7 +140,7 @@ function LerkBite:OnTag(tagName)
             if didHit and target then
             
                 if Server then
-                    if target:isa("Marine") and target:GetCanTakeDamage() then
+                    if not player.isHallucination and target:isa("Marine") and target:GetCanTakeDamage() then
                         target:SetPoisoned(player)
                     end
                 elseif Client then

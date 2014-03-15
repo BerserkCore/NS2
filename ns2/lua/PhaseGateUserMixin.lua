@@ -32,7 +32,11 @@ local function SharedUpdate(self)
                     Client.SetYaw(viewAngles.yaw)
                     Client.SetPitch(viewAngles.pitch)     
                 end
-                
+                /*
+                if HasMixin(self, "Controller") then
+                    self:SetIgnorePlayerCollisions(1.5)
+                end
+                */
                 break
                 
             end

@@ -553,31 +553,35 @@ end
 
 function Hive:OnTakeDamage(damage, attacker, doer, point)
 
-    local time = Shared.GetTime()
-    if self:GetIsAlive() and self.lastHiveFlinchEffectTime == nil or (time > (self.lastHiveFlinchEffectTime + 1)) then
+    if damage > 0 then
 
-        // Play freaky sound for team mates
-        local team = self:GetTeam()
-        team:PlayPrivateTeamSound(Hive.kWoundAlienSound, self:GetModelOrigin())
-        
-        // ...and a different sound for enemies
-        local enemyTeamNumber = GetEnemyTeamNumber(team:GetTeamNumber())
-        local enemyTeam = GetGamerules():GetTeam(enemyTeamNumber)
-        if enemyTeam ~= nil then
-            enemyTeam:PlayPrivateTeamSound(Hive.kWoundSound, self:GetModelOrigin())
+        local time = Shared.GetTime()
+        if self:GetIsAlive() and self.lastHiveFlinchEffectTime == nil or (time > (self.lastHiveFlinchEffectTime + 1)) then
+
+            // Play freaky sound for team mates
+            local team = self:GetTeam()
+            team:PlayPrivateTeamSound(Hive.kWoundAlienSound, self:GetModelOrigin())
+            
+            // ...and a different sound for enemies
+            local enemyTeamNumber = GetEnemyTeamNumber(team:GetTeamNumber())
+            local enemyTeam = GetGamerules():GetTeam(enemyTeamNumber)
+            if enemyTeam ~= nil then
+                enemyTeam:PlayPrivateTeamSound(Hive.kWoundSound, self:GetModelOrigin())
+            end
+            
+            // Trigger alert for Commander
+            team:TriggerAlert(kTechId.AlienAlertHiveUnderAttack, self)
+            
+            self.lastHiveFlinchEffectTime = time
+            
         end
         
-        // Trigger alert for Commander
-        team:TriggerAlert(kTechId.AlienAlertHiveUnderAttack, self)
-        
-        self.lastHiveFlinchEffectTime = time
-        
-    end
+        // Update objective markers because OnSighted isn't always called
+        local attached = self:GetAttached()
+        if attached then
+            attached.showObjective = true
+        end
     
-    // Update objective markers because OnSighted isn't always called
-    local attached = self:GetAttached()
-    if attached then
-        attached.showObjective = true
     end
     
 end

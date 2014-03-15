@@ -348,7 +348,7 @@ function Exo:GetHasDualGuns()
     return self.hasDualGuns
 end
 
-function Exo:GetPlayerControllersGroup()
+function Exo:GetControllerPhysicsGroup()
     return PhysicsGroup.BigPlayerControllersGroup
 end
 
@@ -1017,7 +1017,7 @@ function Exo:HandleButtons(input)
 
         input.commands = bit.band(input.commands, bit.bnot(bit.bor(Move.Use, Move.Buy, Move.Jump,
                                                                    Move.PrimaryAttack, Move.SecondaryAttack,
-                                                                   Move.NextWeapon, Move.PrevWeapon, Move.Reload,
+                                                                   Move.SelectNextWeapon, Move.SelectPrevWeapon, Move.Reload,
                                                                    Move.Taunt, Move.Weapon1, Move.Weapon2,
                                                                    Move.Weapon3, Move.Weapon4, Move.Weapon5, Move.Crouch, Move.Drop, Move.MovementModifier)))
                                                                    

@@ -160,7 +160,7 @@ end
 
 function ClipWeapon:GetAmmoFraction()
 
-    local maxAmmo = self:GetMaxAmmo()
+    local maxAmmo = self:GetMaxAmmo() + self:GetClipSize()
     if maxAmmo > 0 then
         return Clamp((self.clip + self.ammo) / maxAmmo, 0, 1)
     end

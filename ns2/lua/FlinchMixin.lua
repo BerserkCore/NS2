@@ -104,6 +104,10 @@ if Server then
 
     function FlinchMixin:OnTakeDamage(damage, attacker, doer, point, direction)
     
+        if damage == 0 and GetAreFriends(attacker, self) then
+            return
+        end    
+    
         // Once entity has taken this much damage in a second, it is flinching at it's maximum amount
         local maxFlinchDamage = self:GetMaxHealth() * 0.2
         
@@ -112,7 +116,7 @@ if Server then
         
         // Make sure new flinch intensity is big enough to be visible, but don't add too much from a bunch of small hits
         // Flamethrower make Harvester go wild
-        
+
         local damageType = kDamageType.Flame
         if doer then
         

@@ -13,7 +13,6 @@ Script.Load("lua/PreLoadMod.lua")
 
 Script.Load("lua/ClientResources.lua")
 Script.Load("lua/Shared.lua")
-Script.Load("lua/PrecacheList.lua")
 Script.Load("lua/Effect.lua")
 Script.Load("lua/AmbientSound.lua")
 Script.Load("lua/GhostModelUI.lua")
@@ -42,6 +41,7 @@ Script.Load("lua/VotingKickPlayer.lua")
 Script.Load("lua/VotingChangeMap.lua")
 Script.Load("lua/VotingResetGame.lua")
 Script.Load("lua/VotingRandomizeRR.lua")
+Script.Load("lua/VotingForceEvenTeams.lua")
 Script.Load("lua/Badges_Client.lua")
 Script.Load("lua/Mantis.lua")
 
@@ -77,6 +77,9 @@ Client.timeLimitedDecals = { }
 
 Client.timeOfLastPowerPoints = nil
 
+local startLoadingTime = Shared.GetSystemTimeReal()
+local currentLoadingTime = Shared.GetSystemTimeReal()
+
 Client.serverHidden = false
 function Client.GetServerIsHidden()
     return Client.serverHidden
@@ -85,6 +88,30 @@ end
 Client.localClientIndex = nil
 function Client.GetLocalClientIndex()
     return Client.localClientIndex
+end
+
+local gOutlinePlayers = true
+function Client.GetOutlinePlayers()
+    return gOutlinePlayers
+end
+
+function Client.ToggleOutlinePlayers()
+     gOutlinePlayers = not gOutlinePlayers
+end
+
+local toggleOutlineLastFrame = false
+function Client.OnProcessGameInput(input)
+
+    if Client.GetLocalClientTeamNumber() == kSpectatorIndex then
+
+        local toggleOutlinePressed = bit.band(input.commands, Move.ToggleFlashlight) ~= 0
+        if not toggleOutlineLastFrame and toggleOutlinePressed then
+            Client.ToggleOutlinePlayers()          
+        end
+        toggleOutlineLastFrame = toggleOutlinePressed
+    
+    end
+    
 end
 
 /**
@@ -329,7 +356,9 @@ function OnMapLoadEntity(className, groupName, values)
         cinematic:SetRepeatStyle(repeatStyle)
         
         cinematic.commanderInvisible = values.commanderInvisible
-        
+		cinematic.className = className
+		cinematic.coords = coords
+		
         table.insert(Client.cinematics, cinematic)
         
     elseif className == "ambient_sound" then
@@ -554,7 +583,7 @@ function OnUpdateClient(deltaTime)
     
     local player = Client.GetLocalPlayer()
     if player ~= nil then
-    
+
         UpdateAmbientSounds(deltaTime)
         
         UpdateDSPEffects()
@@ -584,8 +613,10 @@ function OnUpdateClient(deltaTime)
         local gorgeVariant = Client.GetOptionInteger("gorgeVariant", kDefaultGorgeVariant)
         local lerkVariant = Client.GetOptionInteger("lerkVariant", kDefaultLerkVariant)
         local isMale = Client.GetOptionString("sexType", "Male") == "Male"
+        local shoulderPadIndex = Client.GetOptionInteger("shoulderPad", 1) // 1 means no shoulder pad selected
+        
         Client.SendNetworkMessage("ConnectMessage",
-                BuildConnectMessage(isMale, marineVariant, skulkVariant, gorgeVariant, lerkVariant),
+                BuildConnectMessage(isMale, marineVariant, skulkVariant, gorgeVariant, lerkVariant, shoulderPadIndex),
                 true)
         optionsSent = true
         
@@ -771,7 +802,7 @@ local function OnMapPostLoad()
     CreateDSPs()
     Scoreboard_Clear()
     CheckRules()
-    
+
 end
 
 /**
@@ -886,7 +917,7 @@ end
 /**
  * Called once per frame to setup the camera for rendering the scene.
  */
-
+ 
 local function OnUpdateRender()
 
     Infestation_UpdateForPlayer()
@@ -941,7 +972,7 @@ local function OnUpdateRender()
         gRenderCamera:SetCullingMode(cullingMode)
         Client.SetRenderCamera(gRenderCamera)
         
-        local outlinePlayers = player:isa("Spectator") and player:GetOutlinePlayers()
+        local outlinePlayers = Client.GetOutlinePlayers() and Client.GetLocalClientTeamNumber() == kSpectatorIndex
 
         HiveVision_SetEnabled( GetIsAlienUnit(player) or outlinePlayers )
         HiveVision_SyncCamera( gRenderCamera, player:isa("Commander") or outlinePlayers )
@@ -954,7 +985,7 @@ local function OnUpdateRender()
         else
             DisableAtmosphericDensity()
         end
-        
+
     else
     
         Client.SetRenderCamera(nil)
@@ -1127,17 +1158,21 @@ end
 
 local function OnLoadComplete()
     
+	Client.fullyLoaded = true
+	
     Render_SyncRenderOptions()
     Input_SyncInputOptions()
     OptionsDialogUI_SyncSoundVolumes()
-    
+
     HiveVision_Initialize()
     EquipmentOutline_Initialize()
     
     // Set default player name to one set in Steam, or one we've used and saved previously
     local playerName = Client.GetOptionString(kNicknameOptionsKey, Client.GetUserName())
     Client.SendNetworkMessage("SetName", { name = playerName }, true)
-
+	
+	Lights_UpdateLightMode()
+	
     SendAddBotCommands()
     
     //----------------------------------------
@@ -1163,6 +1198,16 @@ local function OnLoadComplete()
         Shared.ConsoleCommand("fastevolve")
         Shared.ConsoleCommand("allfree")
         Shared.ConsoleCommand("sandbox")
+    end
+    
+    PreLoadGUIScripts()
+    
+	currentLoadingTime = Shared.GetSystemTimeReal() - startLoadingTime
+	Print("Loading took " .. ToString(currentLoadingTime) .. " seconds")
+
+    if #Client.lowLightList == 0 and Client.GetOptionInteger("graphics/lightQuality", 2) == 1 then
+        Shared.Message("Map doesn't support low lights option, defaulting to regular lights.")
+        Shared.ConsoleCommand("output " .. "Map doesn't support low lights option, defaulting to regular lights.")
     end
     
 end

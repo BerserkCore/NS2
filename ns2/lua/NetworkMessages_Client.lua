@@ -86,7 +86,7 @@ function OnCommandScores(scoreTable)
     
     Scoreboard_SetPlayerData(scoreTable.clientId, scoreTable.entityId, scoreTable.playerName, scoreTable.teamNumber, scoreTable.score,
                              scoreTable.kills, scoreTable.deaths, math.floor(scoreTable.resources), scoreTable.isCommander, scoreTable.isRookie,
-                             status, scoreTable.isSpectator, scoreTable.assists)
+                             status, scoreTable.isSpectator, scoreTable.assists, scoreTable.clientIndex)
     
 end
 
@@ -248,7 +248,6 @@ Client.HookNetworkMessage("HitEffect", OnCommandHitEffect)
 Client.HookNetworkMessage("Damage", OnCommandDamage)
 Client.HookNetworkMessage("AbilityResult", OnCommandAbilityResult)
 Client.HookNetworkMessage("JoinError", OnCommandJoinError)
-Client.HookNetworkMessage("Scores", OnCommandScores)
 
 Client.HookNetworkMessage("ClearTechTree", OnCommandClearTechTree)
 Client.HookNetworkMessage("TechNodeBase", OnCommandTechNodeBase)

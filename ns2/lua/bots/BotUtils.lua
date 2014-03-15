@@ -246,6 +246,13 @@ function GetBotCanSeeTarget(attacker, target)
 
 end
 
+function IsAimingAt(attacker, target)
+
+    local toTarget = GetNormalizedVector(target:GetEngagementPoint() - attacker:GetEyePos())
+    return toTarget:DotProduct(attacker:GetViewCoords().zAxis) > 0.99
+
+end
+
 //----------------------------------------
 //  
 //----------------------------------------

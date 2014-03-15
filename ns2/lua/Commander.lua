@@ -187,7 +187,7 @@ function Commander:HandleButtons(input)
     if Client and not Shared.GetIsRunningPrediction() then
         self:HandleCommanderHotkeys(input)
     end
-    
+	
 end
 
 function Commander:UpdateCrouch()

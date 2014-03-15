@@ -470,15 +470,27 @@ function MenuElement:SetIsVisible(isVisible)
             self.isVisible = isVisible
 
             for index, child in ipairs(self.children) do
+            
                 if child:GetInitialVisible() then
                     child:SetIsVisible(isVisible)
                 end
+                
+                child:OnParentVisibilityChanged(isVisible)
+                
             end  
           
         end
     
     end
     
+end
+
+function MenuElement:OnParentVisibilityChanged(isVisible)
+
+    for index, child in ipairs(self.children) do
+        child:OnParentVisibilityChanged(isVisible)
+    end
+
 end
 
 function MenuElement:SetIsScaling(isScaling)

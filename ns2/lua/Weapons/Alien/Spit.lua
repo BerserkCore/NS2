@@ -58,7 +58,7 @@ end
 function Spit:ProcessHit(targetHit, surface, normal, hitPoint)
 
     if Server then
-    
+
         if self:GetOwner() ~= targetHit then
             self:DoDamage(kSpitDamage, targetHit, hitPoint, normal, "none", false, false)
         end

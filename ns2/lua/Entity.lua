@@ -127,6 +127,14 @@ function GetEntitiesForTeam(className, teamNumber)
     
 end
 
+function GetEntities(className)
+
+    assert(type(className) == "string")
+
+    return EntityListToTable(Shared.GetEntitiesWithClassname(className), teamFilterFunction)
+    
+end
+
 function GetEntitiesForTeamWithinRange(className, teamNumber, origin, range)
 
     assert(type(className) == "string")

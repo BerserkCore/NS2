@@ -60,6 +60,9 @@ local kPlayerVoiceChatIconSize = 20
 local kPlayerBadgeIconSize = 20
 local kPlayerBadgeRightPadding = 4
 
+local kSkillBarSize = Vector(48, 15, 0)
+local kSkillBarPadding = 4
+
 // Color constants.
 GUIScoreboard.kBlueColor = ColorIntToColor(kMarineTeamColor)
 GUIScoreboard.kBlueHighlightColor = Color(0.30, 0.69, 1, 1)
@@ -486,6 +489,8 @@ local function SetPlayerItemBadges( item, badgeTextures )
 
     assert( #badgeTextures <= #item.BadgeItems )
 
+    local offset = 0
+
     for i = 1, #item.BadgeItems do
 
         if badgeTextures[i] ~= nil then
@@ -499,12 +504,10 @@ local function SetPlayerItemBadges( item, badgeTextures )
 
     // now adjust the position of the player name
     local numBadgesShown = math.min( #badgeTextures, #item.BadgeItems )
-    item.Name:SetPosition( Vector(
-                // DONT FORGET ANYTHINGZ
-                kPlayerItemLeftMargin + kPlayerNumberWidth + kPlayerVoiceChatIconSize
-                + numBadgesShown*(kPlayerBadgeIconSize + kPlayerBadgeRightPadding),
-                0,
-                0 ))
+    
+    offset = numBadgesShown*(kPlayerBadgeIconSize + kPlayerBadgeRightPadding)
+                
+    return offset            
 
 end
 
@@ -519,7 +522,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
     local localPlayerHighlightColor = updateTeam["HighlightColor"]
     local playerList = updateTeam["PlayerList"]
     local teamScores = updateTeam["GetScores"]()
-    
+
     // Determines if the local player can see secret information
     // for this team.
     local isVisibleTeam = false
@@ -565,17 +568,19 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         local kills = playerRecord.Kills
         local assists = playerRecord.Assists
         local deaths = playerRecord.Deaths
-        local isCommander = playerRecord.IsCommander
+        local isCommander = playerRecord.IsCommander and isVisibleTeam == true
         local isRookie = playerRecord.IsRookie
         local resourcesStr = ConditionalValue(isVisibleTeam, tostring(math.floor(playerRecord.Resources * 10) / 10), "-")
         local ping = playerRecord.Ping
         local pingStr = tostring(ping)
         local currentPosition = Vector(player["Background"]:GetPosition())
-        local playerStatus = playerRecord.Status
+        local playerStatus = isVisibleTeam and playerRecord.Status or "-"
         local isSpectator = playerRecord.IsSpectator
-        local isDead = playerRecord.Status == deadString
+        local isDead = isVisibleTeam and playerRecord.Status == deadString
+        local isSteamFriend = playerRecord.IsSteamFriend
+        local playerSkill = playerRecord.Skill
         
-        if playerRecord.IsCommander then
+        if isCommander then
             score = "*"
         end
         
@@ -618,7 +623,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         player["Resources"]:SetText(resourcesStr)
         player["Ping"]:SetText(pingStr)
         
-        if playerRecord.IsCommander then
+        if isCommander then
         
             player["Score"]:SetColor(GUIScoreboard.kCommanderFontColor)
             player["Kills"]:SetColor(GUIScoreboard.kCommanderFontColor)
@@ -634,7 +639,12 @@ function GUIScoreboard:UpdateTeam(updateTeam)
             player["Name"]:SetColor(kDeadColor)
             player["Status"]:SetColor(kDeadColor)
             
-        elseif playerRecord.IsRookie and isVisibleTeam then
+        elseif isSteamFriend then
+    
+            player["Name"]:SetColor(kSteamFriendColor)
+            player["Status"]:SetColor(kSteamFriendColor)
+            
+        elseif playerRecord.IsRookie then
         
             player["Name"]:SetColor(kNewPlayerColorFloat)
             player["Status"]:SetColor(GUIScoreboard.kWhiteColor)
@@ -651,7 +661,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
             player["Name"]:SetColor(GUIScoreboard.kWhiteColor)
 
         end  
-        
+
         if ping < GUIScoreboard.kLowPingThreshold then
             player["Ping"]:SetColor(GUIScoreboard.kLowPingColor)
         elseif ping < GUIScoreboard.kMedPingThreshold then
@@ -664,8 +674,35 @@ function GUIScoreboard:UpdateTeam(updateTeam)
         currentY = currentY + GUIScoreboard.kPlayerItemHeight + GUIScoreboard.kPlayerSpacing
         currentPlayerIndex = currentPlayerIndex + 1
 
+        
+        local offset = kPlayerItemLeftMargin + kPlayerNumberWidth + kPlayerVoiceChatIconSize
+        
+        if player["SkillBar"] then
+        
+            local skillFraction = playerSkill / kMaxPlayerSkill
+        
+            player["SkillBar"]:SetSize(Vector(kSkillBarSize.x * skillFraction, kSkillBarSize.y, 0))
+            player["SkillBar"]:SetPosition(Vector(kPlayerItemLeftMargin + kPlayerNumberWidth + kPlayerVoiceChatIconSize, -kSkillBarSize.y * 0.5, 0))
+            offset = offset + kSkillBarSize.x + kSkillBarPadding     
+
+            local skillColor = Color(0,0,0,0)
+            if skillFraction >= 0.5 then
+                skillColor = LerpColor(kYellow, kRed, (skillFraction - 0.5) * 2)
+            elseif skillFraction < 0.5 then
+                skillColor = LerpColor(kGreen, kYellow, skillFraction * 2)
+            end    
+
+            player["SkillBar"]:SetColor(skillColor)  
+            
+        end
+        
         // update badges info
-        SetPlayerItemBadges( player, Badges_GetBadgeTextures(clientIndex, "scoreboard") )
+        offset = offset + SetPlayerItemBadges( player, Badges_GetBadgeTextures(clientIndex, "scoreboard") )
+        
+        player["Name"]:SetPosition( Vector(
+            offset,
+            0,
+            0 ))
         
     end
 
@@ -731,7 +768,20 @@ function GUIScoreboard:CreatePlayerItem()
     playerItemChildX = playerItemChildX + kPlayerVoiceChatIconSize
     playerVoiceIcon:SetTexture("ui/speaker.dds")
     playerItem:AddChild(playerVoiceIcon)
-
+    
+    local playerSkillBar
+    /*
+    if GetGameInfoEntity():GetIsGatherReady() then
+    
+        playerSkillBar = GUIManager:CreateGraphicItem()
+        playerSkillBar:SetAnchor(GUIItem.Left, GUIItem.Center)
+        playerItem:AddChild(playerSkillBar)
+        
+        playerItemChildX = playerItemChildX + kSkillBarSize.x + kSkillBarPadding
+    
+    end
+    */
+    
     //----------------------------------------
     //  Badge icons
     //----------------------------------------
@@ -851,7 +901,7 @@ function GUIScoreboard:CreatePlayerItem()
     return { Background = playerItem, Number = playerNumber, Name = playerNameItem,
         Voice = playerVoiceIcon, Status = statusItem, Score = scoreItem, Kills = killsItem,
         Assists = assistsItem, Deaths = deathsItem, Resources = resItem, Ping = pingItem,
-        BadgeItems = badgeItems,
+        BadgeItems = badgeItems, SkillBar = playerSkillBar
     }
     
 end

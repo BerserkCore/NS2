@@ -61,9 +61,11 @@ function PredictedProjectileShooterMixin:CreatePredictedProjectile(className, st
     
         projectile = CreateEntity(_G[className].kMapName, startPoint, self:GetTeamNumber())
         projectile.projectileId = self.nextProjectileId
-        projectile:SetProjectileController(projectileController)
+        
         projectileEntId = projectile:GetId()
         projectile:SetOwner(self)
+        
+        projectile:SetProjectileController(projectileController, self.isHallucination == true)
         
     end
     
@@ -353,9 +355,7 @@ function ProjectileController:Move(offset, velocity)
         VectorCopy(direction, velocity)
 
         velocity:Scale(math.max(0, speed - impactForce * (0.75 + math.max(0, normal.y) * 0.25) ))
-        
-        //DebugPrint("grenade speed %s, impact force %s", ToString(oldSpeed), ToString(impactForce))
-    
+
     end
 
     return impact, hitEntity, normal, endPoint
@@ -562,10 +562,12 @@ if Server then
         if self.projectileController then
         
             if self.selfUpdate then
-                self.projectileController:Update(deltaTime)
+                self.projectileController:Update(deltaTime, self)
             end
         
-            self:SetOrigin(self.projectileController:GetOrigin())
+            if self.projectileController then        
+                self:SetOrigin(self.projectileController:GetOrigin())
+            end
             
         end
         

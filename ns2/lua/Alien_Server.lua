@@ -246,6 +246,10 @@ function Alien:OnKill(attacker, doer, point, direction)
     self.twoHives = false
     self.threeHives = false
     
+    if self.isHallucination then
+        self:TriggerEffects("death_hallucination")
+    end
+    
 end
 
 function Alien:CopyPlayerDataFrom(player)

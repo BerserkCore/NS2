@@ -10,6 +10,22 @@
 Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
+function UpdateHallucinationLifeTime(self)
+    
+    if self.isHallucination or self:isa("Hallucination") then
+    
+        if self.creationTime + kHallucinationLifeTime < Shared.GetTime() then
+            
+            self:TriggerEffects("death_hallucination")
+            // don't do any ragdolls or death messages in this case, timing out of a hallucination is nothing the enemy team has to know
+            DestroyEntity(self)
+            
+        end
+    
+    end
+    
+end
+
 function DestroyEntitiesWithinRange(className, origin, range, filterFunc)
 
     for index, entity in ipairs(GetEntitiesWithinRange(className, origin, range)) do

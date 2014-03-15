@@ -179,7 +179,9 @@ function OnCommandSetMouseSensitivity(sensitivity)
 end
 
 // Save this setting if we set it via a console command
-function OnCommandSetName(nickname)
+function OnCommandSetName(...)
+
+    local nickname = StringConcatArgs(...)
 
     if type(nickname) ~= "string" then
         return

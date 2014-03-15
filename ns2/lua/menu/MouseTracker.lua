@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2014, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\menu\MouseTracker.lua
 //
-//    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
@@ -123,14 +123,18 @@ function MouseTracker_SendKeyEvent(key, down, amount, inputBlocked)
 
     if not Shared.GetIsRunningPrediction() and #gCursorStack > 0 then
     
-        if key == InputKey.MouseZ and not inputBlocked then
+        if (key == InputKey.MouseWheelUp or key == InputKey.MouseWheelDown) and not inputBlocked then
         
             // Notify about mouse wheel movement.
+            local up = key == InputKey.MouseWheelUp
+            
+            local stop = false
+            
             for index, listener in ipairs(gMouseWheelMovementListeners) do
-                listener:OnMouseWheel(amount > 0)
+                stop = stop or listener:OnMouseWheel(up)
             end
             
-            return true
+            return stop
             
         elseif key == InputKey.MouseX or key == InputKey.MouseY then
         

@@ -224,9 +224,7 @@ function Whip:OnInitialized()
         InitMixin(self, SleeperMixin)
         InitMixin(self, ControllerMixin)
         InitMixin(self, SupplyUserMixin)
-        
-        self:CreateController(PhysicsGroup.WhipGroup)
-        
+
         // This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
@@ -242,6 +240,18 @@ function Whip:OnInitialized()
     InitMixin(self, IdleMixin)
     
 end
+
+function Whip:GetHasController()
+    return self:GetIsAlive()
+end
+
+function Whip:GetHasOutterController()
+    return false
+end
+
+function Whip:GetControllerPhysicsGroup()
+    return PhysicsGroup.WhipGroup
+end    
 
 function Whip:GetBioMassLevel()
     return kWhipBiomass

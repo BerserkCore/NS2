@@ -400,17 +400,16 @@ function Skulk:OnJump()
 
     self.wallWalking = false
 
-    local jumpEffectName = "jump"
-    
+    local material = self:GetMaterialBelowPlayer()    
     local velocityLength = self:GetVelocity():GetLengthXZ()
     
     if velocityLength > 11 then
-        jumpEffectName = "jump_best"            
+        self:TriggerEffects("jump_best", {surface = material})          
     elseif velocityLength > 8.5 then
-        jumpEffectName = "jump_good"
+        self:TriggerEffects("jump_good", {surface = material})       
     end
 
-    self:TriggerEffects(jumpEffectName, {surface = self:GetMaterialBelowPlayer()})
+    self:TriggerEffects("jump", {surface = material})
     
 end
 

@@ -31,6 +31,10 @@ end
 
 function PointGiverMixin:GetPointValue()
 
+    if self.isHallucination then
+        return 0
+    end    
+
     local numUpgrades = HasMixin(self, "Upgradable") and #self:GetUpgrades() or 0
     local points = LookupTechData(self:GetTechId(), kTechDataPointValue, 0) + numUpgrades * kPointsPerUpgrade
     
@@ -139,6 +143,10 @@ if Server then
     end
 
     function PointGiverMixin:PreOnKill(attacker, doer, point, direction)
+    
+        if self.isHallucination then
+            return
+        end    
     
         local totalDamageDone = self:GetMaxHealth() + self:GetMaxArmor() * 2        
         local points = self:GetPointValue()

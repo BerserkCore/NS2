@@ -26,6 +26,7 @@ Script.Load("lua/AlienActionFinderMixin.lua")
 Script.Load("lua/DetectableMixin.lua")
 Script.Load("lua/RagdollMixin.lua")
 Script.Load("lua/StormCloudMixin.lua")
+Script.Load("lua/PlayerHallucinationMixin.lua")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/decals/alien_blood.surface_shader")
 
@@ -105,7 +106,12 @@ local networkVars =
     
     hatched = "private boolean",
     
-    darkVisionSpectatorOn = "private boolean"
+    darkVisionSpectatorOn = "private boolean",
+    
+    isHallucination = "boolean",
+    hallucinatedClientIndex = "integer",
+    
+    creationTime = "time"
 
 }
 
@@ -218,8 +224,16 @@ function Alien:OnInitialized()
         self:AddHelpWidget("GUIAlienVisionHelp", 2)
         
     end
+    
+    if self.isHallucination then    
+        InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kPlayerMoveOrderCompleteDistance })
+    end
 
 end
+
+function Alien:GetHasOutterController()
+    return not self.isHallucination and Player.GetHasOutterController(self)
+end    
 
 function Alien:SetHatched()
     self.hatched = true
@@ -454,6 +468,24 @@ end
 function Alien:SetDarkVision(state)
     self.darkVisionOn = state
     self.darkVisionSpectatorOn = state
+end
+
+function Alien:GetControllerPhysicsGroup()
+
+    if self.isHallucination then
+        return PhysicsGroup.SmallStructuresGroup
+    end
+
+    return Player.GetControllerPhysicsGroup(self)
+
+end
+
+function Alien:GetHallucinatedClientIndex()
+    return self.hallucinatedClientIndex
+end
+
+function Alien:SetHallucinatedClientIndex(clientIndex)
+    self.hallucinatedClientIndex = clientIndex
 end
 
 function Alien:HandleButtons(input)

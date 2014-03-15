@@ -102,7 +102,7 @@ function Scoreboard_OnClientDisconnect(clientIndex)
     
 end
 
-function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists )
+function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists, steamId, playerSkill )
 
     // Lookup record for player and update it
     for i = 1, table.maxn(playerData) do
@@ -124,6 +124,7 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
             playerRecord.Resources = resources
             playerRecord.Status = status
             playerRecord.IsSpectator = isSpectator
+            playerRecord.Skill = playerSkill
             
             Scoreboard_Sort()
             
@@ -135,7 +136,9 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
         
     // Otherwise insert a new record
     local playerRecord = {}
+
     playerRecord.ClientIndex = clientIndex
+    playerRecord.IsSteamFriend = Client.GetIsSteamFriend(steamId)
     playerRecord.EntityId = entityId
     playerRecord.Name = playerName
     playerRecord.EntityTeamNumber = teamNumber
@@ -149,6 +152,7 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
     playerRecord.Ping = 0
     playerRecord.Status = status
     playerRecord.IsSpectator = isSpectator
+    playerRecord.Skill = playerSkill
     
     table.insert(playerData, playerRecord )
     
@@ -266,10 +270,15 @@ function GetScoreData(teamNumberTable)
     local scoreData = { }
     local commanders = { }
     
+    local localTeamNumber = Client.GetLocalClientTeamNumber()   
+
     for index, playerRecord in ipairs(playerData) do
         if table.find(teamNumberTable, playerRecord.EntityTeamNumber) then
         
-            if not playerRecord.IsCommander then
+            local isVisibleTeam = localTeamNumber == kSpectatorIndex or playerRecord.EntityTeamNumber == localTeamNumber
+            local isCommander = playerRecord.IsCommander and isVisibleTeam
+        
+            if not isCommander then
                 table.insert(scoreData, playerRecord)
             else
                 table.insert(commanders, playerRecord)
@@ -491,3 +500,56 @@ function ScoreboardUI_GetNumberOfAliensByType(alienType)
     return numberOfAliens
 
 end
+
+local function UpdatePlayerRecords()
+
+    PROFILE("ScoreboardUI:UpdatePlayerRecords")
+
+    for _, playerInfo in ientitylist(Shared.GetEntitiesWithClassname("PlayerInfoEntity")) do
+    
+        local status = kPlayerStatus[playerInfo.status]
+        if playerInfo.status == kPlayerStatus.Hidden then
+            status = "-"
+        elseif playerInfo.status == kPlayerStatus.Dead then
+            status = Locale.ResolveString("STATUS_DEAD")
+        elseif playerInfo.status == kPlayerStatus.Evolving then
+            status = Locale.ResolveString("STATUS_EVOLVING")
+        elseif playerInfo.status == kPlayerStatus.Embryo then
+            status = Locale.ResolveString("STATUS_EMBRYO")
+        elseif playerInfo.status == kPlayerStatus.Commander then
+            status = Locale.ResolveString("STATUS_COMMANDER")
+        elseif playerInfo.status == kPlayerStatus.Exo then
+            status = Locale.ResolveString("STATUS_EXO")
+        elseif playerInfo.status == kPlayerStatus.GrenadeLauncher then
+            status = Locale.ResolveString("STATUS_GRENADE_LAUNCHER")
+        elseif playerInfo.status == kPlayerStatus.Rifle then
+            status = Locale.ResolveString("STATUS_RIFLE")
+        elseif playerInfo.status == kPlayerStatus.Shotgun then
+            status = Locale.ResolveString("STATUS_SHOTGUN")
+        elseif playerInfo.status == kPlayerStatus.Flamethrower then
+            status = Locale.ResolveString("STATUS_FLAMETHROWER")
+        elseif playerInfo.status == kPlayerStatus.Void then
+            status = Locale.ResolveString("STATUS_VOID")
+        elseif playerInfo.status == kPlayerStatus.Spectator then
+            status = Locale.ResolveString("STATUS_SPECTATOR")
+        elseif playerInfo.status == kPlayerStatus.Skulk then
+            status = Locale.ResolveString("STATUS_SKULK")
+        elseif playerInfo.status == kPlayerStatus.Gorge then
+            status = Locale.ResolveString("STATUS_GORGE")
+        elseif playerInfo.status == kPlayerStatus.Fade then
+            status = Locale.ResolveString("STATUS_FADE")
+        elseif playerInfo.status == kPlayerStatus.Lerk then
+            status = Locale.ResolveString("STATUS_LERK")
+        elseif playerInfo.status == kPlayerStatus.Onos then
+            status = Locale.ResolveString("STATUS_ONOS")
+        end
+        
+        Scoreboard_SetPlayerData(playerInfo.clientId, playerInfo.playerId, playerInfo.playerName, playerInfo.teamNumber, playerInfo.score,
+                                 playerInfo.kills, playerInfo.deaths, math.floor(playerInfo.resources), playerInfo.isCommander, playerInfo.isRookie,
+                                 status, playerInfo.isSpectator, playerInfo.assists, playerInfo.steamId, playerInfo.playerSkill)
+    
+    end
+
+end
+
+Event.Hook("UpdateClient", UpdatePlayerRecords)

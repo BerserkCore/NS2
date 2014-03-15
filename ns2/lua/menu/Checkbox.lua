@@ -32,6 +32,11 @@ function Checkbox:Initialize()
     local eventCallbacks = {
       
         OnClick = function (self)
+			if self:GetValue() == true then
+				MainMenu_OnCheckboxOn()
+			else
+				MainMenu_OnCheckboxOff()
+			end
             self:SetChecked()
         end,
         

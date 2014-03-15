@@ -18,9 +18,7 @@ function TeamMessageMixin:__initmixin()
 
     // Only for use on the Client.
     assert(Client)
-    
-    self.teamMessageGUI = GetGUIManager():CreateGUIScript(self:GetMixinConstants().kGUIScriptName)
-    
+
 end
 
 function TeamMessageMixin:OnDestroy()
@@ -35,6 +33,10 @@ function TeamMessageMixin:OnDestroy()
 end
 
 function TeamMessageMixin:SetTeamMessage(message)
+
+    if not self.teamMessageGUI then
+        self.teamMessageGUI = GetGUIManager():CreateGUIScript(self:GetMixinConstants().kGUIScriptName)
+    end
 
     if self.teamMessageGUI then
         self.teamMessageGUI:SetTeamMessage(message)

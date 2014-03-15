@@ -10,6 +10,9 @@ Script.Load("lua/Event.lua")
 
 local kTextureName = "*credits_webpage_render"
 local kURL = "http://unknownworlds.com/ns2/ingamecredits/"
+local fadeColor = Color(1,1,1,0)
+local lastUpdatedtime = 0
+local playAnimation = ""
 
 class 'GUICredits' (GUIScript)
 
@@ -26,17 +29,21 @@ function GUICredits:Initialize()
     self.webContainer:SetAnchor(GUIItem.Middle, GUIItem.Center)
     self.webContainer:SetPosition(Vector(-width/2, -height/2, 0))
     self.webContainer:SetTexture(kTextureName)
-    self.webContainer:SetIsVisible(false)
+    self.webContainer:SetIsVisible(true)
     
     self.closeEvent = Event()
     self.closeEvent:Initialize()
 
     self.buttonDown = { [InputKey.MouseButton0] = false, [InputKey.MouseButton1] = false, [InputKey.MouseButton2] = false }
-    
+
 end
 
 function GUICredits:SendKeyEvent(key, down, amount)
 
+    if not self.isVisible or not MainMenu_GetIsOpened() then
+        return
+    end
+    
     local isScrollingKey = false
     
     if type(self.buttonDown[key]) == "boolean" then
@@ -67,12 +74,19 @@ function GUICredits:SendKeyEvent(key, down, amount)
 
     elseif key == InputKey.Escape then
 
-        GetGUIManager():DestroyGUIScript(self)
+        playAnimation = "hide"
+        //GetGUIManager():DestroyGUIScript(self)
         self.closeEvent:Trigger()
-
+		SetKeyEventBlocker(nil)
         return true
             
-    end
+    elseif key == InputKey.MouseWheelUp then
+        self.webView:OnMouseWheel(30, 0)
+		MainMenu_OnSlide()
+    elseif key == InputKey.MouseWheelDown then
+        self.webView:OnMouseWheel(-30, 0)
+		MainMenu_OnSlide()
+	end
     
     return false
 end
@@ -84,13 +98,27 @@ function GUICredits:Uninitialize()
     
     Client.DestroyWebView(self.webView)
     self.webView = nil
-    
+    GetGUIManager():DestroyGUIScript(self)
+
 end
 
 function GUICredits:Update()
 
+    if fadeColor.a < 1 then
+		self:SetIsVisible(false)
+	elseif fadeColor.a > 0 then
+		self:SetIsVisible(true)
+	end
+	
+    self:PlayFadeAnimation()
+    
+	if not self.isVisible or not MainMenu_GetIsOpened() then
+        return
+    end
+	
     // don't show until the URL is loaded
     if not self.webContainer:GetIsVisible() then
+			self.webView:OnMouseWheel(5000, 0)
         if self.webView:GetUrlLoaded() then
             self.webContainer:SetIsVisible(true)
         end
@@ -101,5 +129,48 @@ function GUICredits:Update()
     if containsPoint or self.buttonDown[InputKey.MouseButton0] or self.buttonDown[InputKey.MouseButton1] or self.buttonDown[InputKey.MouseButton2] then
         self.webView:OnMouseMove(withinX, withinY)
     end
+	
+    if GUIItemContainsPoint( self.webContainer, mouseX, mouseY ) then
+        SetKeyEventBlocker(self)
+    else
+		SetKeyEventBlocker(nil)
+	end
+	
+end
 
+function GUICredits:ShowAnimation()
+
+	if fadeColor.a <= 1 and Shared.GetTime() - lastUpdatedtime > 0.005 then
+		fadeColor.a = fadeColor.a + 0.075
+		self.webContainer:SetColor(fadeColor)
+		lastUpdatedtime = Shared.GetTime()
+	end
+
+end
+
+function GUICredits:HideAnimation()
+
+	if fadeColor.a >= 0 and Shared.GetTime() - lastUpdatedtime > 0.005 then
+		fadeColor.a = fadeColor.a - 0.075
+		self.webContainer:SetColor(fadeColor)
+		lastUpdatedtime = Shared.GetTime()
+	end
+   
+end
+function GUICredits:PlayFadeAnimation()
+
+	if playAnimation == "show" then
+		self:ShowAnimation()
+	elseif playAnimation == "hide" then
+		self:HideAnimation()
+	end
+   
+end
+
+function GUICredits:SetPlayAnimation(animType)
+    playAnimation = animType
+end
+
+function GUICredits:SetIsVisible(visible)
+    self.isVisible = visible
 end

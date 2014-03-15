@@ -1,4 +1,4 @@
-// ======= Copyright (c) 2003-2012, Unknown Worlds Entertainment, Inc. All rights reserved. ======
+// ======= Copyright (c) 2003-2014, Unknown Worlds Entertainment, Inc. All rights reserved. ======
 //
 // lua\menu\ServerTabs.lua
 //
@@ -24,14 +24,20 @@ local kDefaultButtons = {
         filters = { [1] = FilterServerMode("ns2"), [8] = FilterFavoriteOnly(false), [11] = FilterHistoryOnly(false) },
     },
     
-    {
-        name = "FAVORITES",
-        filters = { [1] = FilterServerMode(""), [8] = FilterFavoriteOnly(true), [11] = FilterHistoryOnly(false) },
-    },
-  
+}
+
+local kSuffixButtons = {
+
     {
         name = "HISTORY",
+        suffix = true,
         filters = { [1] = FilterServerMode(""), [8] = FilterFavoriteOnly(false), [11] = FilterHistoryOnly(true) },
+    },
+
+    {
+        name = "FAVORITES",
+        suffix = true,
+        filters = { [1] = FilterServerMode(""), [8] = FilterFavoriteOnly(true), [11] = FilterHistoryOnly(false) },
     },
 
 }
@@ -40,8 +46,12 @@ local function UpdateTabHighlight(self)
 
     local pointX, pointY = Client.GetCursorPosScreen()
     local highlighted = false
+    
+    local allTabs = {}
+    table.copy(self.tabs, allTabs, true)
+    table.copy(self.suffixTabs, allTabs, true)
 
-    for _, tab in ipairs(self.tabs) do
+    for _, tab in ipairs(allTabs) do
     
         if not highlighted and GUIItemContainsPoint(tab.guiItem, pointX, pointY) then
         
@@ -69,6 +79,20 @@ local function UpdateTabHighlight(self)
 
 end
 
+local function GetFiltersByTabName(name, definitions)
+
+    for _, tabDef in ipairs(definitions) do
+    
+        if tabDef.name == name then
+            return tabDef.filters
+        end
+    
+    end
+    
+    return {}
+
+end
+
 function ServerTabs:Initialize()
 
     self:DisableBorders()
@@ -86,6 +110,8 @@ function ServerTabs:Initialize()
         
         OnClick = function(self)
         
+            local success = false
+        
             for index, tab in ipairs(self.tabs) do
                 
                 local pointX, pointY = Client.GetCursorPosScreen()
@@ -96,11 +122,37 @@ function ServerTabs:Initialize()
                     self:UpdateTabSelector()
                     MainMenu_OnMouseClick()
                     
+                    success = true
+                    
                     break
                 
                 end
                 
-            end          
+            end
+
+            if not success then
+
+                for index, tab in ipairs(self.suffixTabs) do
+                    
+                    local pointX, pointY = Client.GetCursorPosScreen()
+                    if GUIItemContainsPoint(tab.guiItem, pointX, pointY) then
+                    
+                        local filters = GetFiltersByTabName(tab:GetText(), kSuffixButtons)
+                    
+                        self:EnableFilter(filters)
+                        self.selectedTab = tab.guiItem:GetText()
+                        self:UpdateTabSelector()
+                        MainMenu_OnMouseClick()
+                        
+                        success = true
+                        
+                        break
+                    
+                    end
+                    
+                end
+
+            end        
         
         end,
 
@@ -109,6 +161,7 @@ function ServerTabs:Initialize()
     self:AddEventCallbacks(eventCallbacks)
     
     self.tabs = {}
+    self.suffixTabs = {}
     
     self.tabSelector = CreateGraphicItem(self)
     self.tabSelector:SetColor(Color(0.49, 0.9, 0.98, 0.2))
@@ -247,7 +300,11 @@ function ServerTabs:UpdateTabSelector()
             tabParent:RemoveChild(self.tabSelector.guiItem)
         end
         
-        for _, tab in ipairs(self.tabs) do
+        local allTabs = {}
+        table.copy(self.tabs, allTabs, true)
+        table.copy(self.suffixTabs, allTabs, true)
+        
+        for _, tab in ipairs(allTabs) do
         
             local tabText = tab:GetText()
             if tabText == self.selectedTab then
@@ -272,15 +329,55 @@ function ServerTabs:Render()
     local pointX, pointY = Client.GetCursorPosScreen()
     
     UpdateTabNum(self)
+    
+    local suffixTabSpace = 0
+    
+    for index, tabDef in ipairs(kSuffixButtons) do
+        
+        local tab = self.suffixTabs[index]
+        
+        if not tab then
+        
+            self.suffixTabs[index] = CreateTextItem(self, true)
+            self.suffixTabs[index]:SetAnchor(GUIItem.Right, GUIItem.Top)
+            tab = self.suffixTabs[index]
+            
+        end
+        
+        tab:SetText(tabDef.name)
+
+        local width = tab:GetTextWidth(tabDef.name)
+        suffixTabSpace = 25 + suffixTabSpace + width
+        tab:SetPosition(Vector(-suffixTabSpace, 4, 0 ))
+        
+        local useHighLightColor = text == self.selectedTab or GUIItemContainsPoint(tab.guiItem, pointX, pointY)
+        
+        if useHighLightColor then
+        
+            if self.highLightColor then
+                tab:SetColor(self.highLightColor)
+            end
+            
+        else
+        
+            if self.textColor then
+                tab:SetColor(self.textColor)
+            end
+        
+        end
+        
+        if self.fontName then
+            tab:SetFontName(self.fontName)
+        end
+    
+    end
+    
+    maxWidth = maxWidth - suffixTabSpace
 
     for index, tabDefinition in ipairs(self.layout) do
 
         local tab = self.tabs[index]
         local additionalOffset = 0
-        
-        if index > #kDefaultButtons then
-            additionalOffset = 80
-        end
 
         local text = tabDefinition.name
         tab:SetText(text)

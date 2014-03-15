@@ -9,7 +9,6 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/TeamSpectator.lua")
-Script.Load("lua/ScoringMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -21,15 +20,11 @@ MarineSpectator.kMapName = "marinespectator"
 
 local networkVars ={ }
 
-AddMixinNetworkVars(ScoringMixin, networkVars)
-
 function MarineSpectator:OnCreate()
 
     TeamSpectator.OnCreate(self)
     self:SetTeamNumber(1)
-    
-    InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
-    
+
     if Client then
         InitMixin(self, TeamMessageMixin, { kGUIScriptName = "GUIMarineTeamMessage" })
     end

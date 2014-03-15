@@ -52,8 +52,10 @@ local _keyBinding =
     PingLocation = InputKey.MouseButton2,
     VoteYes = InputKey.VoteYes,
     VoteNo = InputKey.VoteNo,
-    NextWeapon = InputKey.MouseZ,
+    SelectNextWeapon = InputKey.MouseWheelUp,
+    SelectPrevWeapon = InputKey.MouseWheelDown,
     QuickSwitch = InputKey.V,
+	LastUpgrades = InputKey.None,
     ScrollForward = InputKey.Up,
     ScrollBackward = InputKey.Down,
     ScrollLeft = InputKey.Left,
@@ -242,13 +244,21 @@ local function OnSendKeyEvent(key, down, amount, repeated)
             end
             
         end
+
+        // need to handle mousewheel actions in another way, those use only key up events        
+        if key == InputKey.MouseWheelDown or key == InputKey.MouseWheelUp then
+        
+            _keyState[key] = true
+            _keyPressed[key] = 1
         
         // Filter out the OS key repeat for our general movement (but we'll use it for GUI).
-        if not repeated then
+        elseif not repeated then
+        
             _keyState[key] = down
             if down and not moveInputBlocked then
                 _keyPressed[key] = amount
             end
+    
         end    
     
     end
@@ -363,12 +373,12 @@ local function GenerateMove()
         end
 
         // FPS action relevant to spectator
-        if _keyPressed[ _keyBinding.NextWeapon ] ~= nil then
-            if _keyPressed[ _keyBinding.NextWeapon ] > 0 then
-                move.commands = bit.bor(move.commands, Move.NextWeapon)
-            else
-                move.commands = bit.bor(move.commands, Move.PrevWeapon)
-            end
+        if _keyPressed[ _keyBinding.SelectNextWeapon ] then
+            move.commands = bit.bor(move.commands, Move.SelectNextWeapon)
+        end
+
+        if _keyPressed[ _keyBinding.SelectPrevWeapon ] then    
+            move.commands = bit.bor(move.commands, Move.SelectPrevWeapon)
         end    
         
         if _keyPressed[ _keyBinding.Weapon1 ] then
@@ -508,6 +518,8 @@ local function GenerateMove()
         end
         
         _keyPressed = { }
+        _keyState[InputKey.MouseWheelDown] = false
+        _keyState[InputKey.MouseWheelUp] = false
         
     end
     
@@ -551,6 +563,10 @@ local function OnProcessGameInput()
     
     _lastProcessedCommands = _bufferedCommands
     _bufferedMove          = Vector(0, 0, 0)
+    
+    if Client then
+        Client.OnProcessGameInput(move)
+    end
     
     return move
 

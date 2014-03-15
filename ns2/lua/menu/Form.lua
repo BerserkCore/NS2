@@ -16,10 +16,11 @@ Script.Load("lua/menu/Slider.lua")
 Script.Load("lua/menu/SlideBar.lua")
 Script.Load("lua/menu/FormButton.lua")
 Script.Load("lua/menu/ProgressBar.lua")
+Script.Load("lua/menu/MultiCheckbox.lua")
 
 class 'Form' (MenuElement)
 
-Form.kElementType = enum({'Checkbox', 'DropDown', 'TextInput', 'SlideSelect', 'Slider', 'SlideBar', 'FormButton', 'ProgressBar' })
+Form.kElementType = enum({'Checkbox', 'DropDown', 'TextInput', 'SlideSelect', 'Slider', 'SlideBar', 'FormButton', 'ProgressBar', 'MultiCheckbox' })
 
 local kDefaultSize = Vector(400, 400, 0)
 
@@ -76,7 +77,7 @@ function Form:GetFormData()
     
         formData[formElement:GetFormElementName()] = formElement:GetValue()
         
-        if formElement:isa("DropDown") then
+        if formElement:isa("DropDown") or formElement:isa("MultiCheckbox") then
             formData[formElement:GetFormElementName() .. "_index"] = formElement:GetActiveOptionIndex()
         end
     

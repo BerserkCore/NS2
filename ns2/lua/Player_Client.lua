@@ -423,7 +423,7 @@ function PlayerUI_GetUnitStatusInfo()
                 local normViewVec = player:GetViewAngles():GetCoords().zAxis
                
                 local dotProduct = normToEntityVec:DotProduct(normViewVec)
-                
+
                 if dotProduct > 0 then
 
                     local statusFraction = unit:GetUnitStatusFraction(player)
@@ -495,6 +495,11 @@ function PlayerUI_GetUnitStatusInfo()
                         hasWelder = unit:GetHasWelder(player)
                     end
                     
+                    local abilityFraction = 0
+                    if player:isa("Commander") then        
+                        abilityFraction = unit:GetAbilityFraction()
+                    end
+                    
                     local unitState = {
                         
                         Position = origin,
@@ -512,7 +517,9 @@ function PlayerUI_GetUnitStatusInfo()
                         ForceName = unit:isa("Player") and not GetAreEnemies(player, unit),
                         BadgeTextures = badgeTextures,
                         HasWelder = hasWelder,
-                        IsPlayer = unit:isa("Player")
+                        IsPlayer = unit:isa("Player"),
+                        IsSteamFriend = unit:isa("Player") and unit:GetIsSteamFriend() or false,
+                        AbilityFraction = abilityFraction
                     
                     }
                     
@@ -1547,7 +1554,14 @@ function Player:GetName(forEntity)
     // There are cases where the player name will be nil such as right before
     // this Player is destroyed on the Client (due to the scoreboard removal message
     // being received on the Client before the entity removed message). Play it safe.
-    return Scoreboard_GetPlayerData(self:GetClientIndex(), "Name") or "No Name"
+    
+    local clientIndex = self:GetClientIndex()
+    
+    if self.isHallucination then
+        clientIndex = self:GetHallucinatedClientIndex()
+    end
+    
+    return Scoreboard_GetPlayerData(clientIndex, "Name") or "No Name"
     
 end
 
@@ -1761,7 +1775,7 @@ function Player:SendKeyEvent(key, down)
         
     end
     
-    if not ChatUI_EnteringChatMessage() then
+    if not ChatUI_EnteringChatMessage() and not MainMenu_GetIsOpened() then
     
         if GetIsBinding(key, "RequestHealth") then
             self.timeOfLastHealRequest = Shared.GetTime()
@@ -1773,6 +1787,11 @@ function Player:SendKeyEvent(key, down)
         if GetIsBinding(key, "ShowMapCom") and self:isa("Commander") then
             self:OnShowMap(down)
         end
+
+        if GetIsBinding(key, "LastUpgrades") then
+			Shared.ConsoleCommand("evolvelastupgrades")	
+		end
+		
         if down then
         
             if GetIsBinding(key, "ReadyRoom") then
@@ -2972,17 +2991,35 @@ function PlayerUI_GetNanoArmorResearched()
 end
 
 // Draw the current location on the HUD ("Marine Start", "Processing", etc.)
+
 function PlayerUI_GetLocationName()
 
     local locationName = ""
-    
+
     local player = Client.GetLocalPlayer()
+
+    playerLocation = GetLocationForPoint(player:GetOrigin())
+
     if player ~= nil and player:GetIsPlaying() then
-        locationName = player:GetLocationName()
+
+        if playerLocation ~= nil then
+
+            locationName = playerLocation.name
+
+        elseif playerLocation == nil and locationName ~= nil then
+
+            locationName = player:GetLocationName()
+
+        elseif locationName == nil then
+
+            locationName = ""
+
+        end
+
     end
-    
+
     return locationName
-    
+
 end
 
 function PlayerUI_GetOrigin()
@@ -3305,6 +3342,10 @@ end
  */
 local kMinimapBlipTeamAlien = kMinimapBlipTeam.Alien
 local kMinimapBlipTeamMarine = kMinimapBlipTeam.Marine
+local kMinimapBlipTeamFriendAlien = kMinimapBlipTeam.FriendAlien
+local kMinimapBlipTeamFriendMarine = kMinimapBlipTeam.FriendMarine
+local kMinimapBlipTeamInactiveAlien = kMinimapBlipTeam.InactiveAlien
+local kMinimapBlipTeamInactiveMarine = kMinimapBlipTeam.InactiveMarine
 local kMinimapBlipTeamFriendly = kMinimapBlipTeam.Friendly
 local kMinimapBlipTeamEnemy = kMinimapBlipTeam.Enemy
 local kMinimapBlipTeamNeutral = kMinimapBlipTeam.Neutral
@@ -3330,22 +3371,55 @@ function PlayerUI_GetStaticMapBlips()
         local GetMapBlipRotation = MapBlip.GetRotation
         local GetMapBlipType = MapBlip.GetType
         local GetMapBlipIsInCombat = MapBlip.GetIsInCombat
+        local GetIsSteamFriend = Client.GetIsSteamFriend
+        local ClientIndexToSteamId = GetSteamIdForClientIndex
+        local GetIsMapBlipActive = MapBlip.GetIsActive
         
         for index = 0, mapBlipList:GetSize() - 1 do
         
             local blip = GetEntityAtIndex(mapBlipList, index)
             if blip ~= nil and blip.ownerEntityId ~= playerId then
-            
+      
                 local blipTeam = kMinimapBlipTeamNeutral
                 local blipTeamNumber = GetMapBlipTeamNumber(blip)
+                local isSteamFriend = false
                 
-                if blipTeamNumber == kMarineTeamType then
-                    blipTeam = kMinimapBlipTeamMarine
-                elseif blipTeamNumber== kAlienTeamType then
-                    blipTeam = kMinimapBlipTeamAlien
+                if blip.clientIndex and blip.clientIndex > 0 and blipTeamNumber ~= GetEnemyTeamNumber(playerTeam) then
+
+                    local steamId = ClientIndexToSteamId(blip.clientIndex)
+                    if steamId then
+                        isSteamFriend = GetIsSteamFriend(steamId)
+                    end
+                    
                 end
                 
-                local i = numBlips * 8
+                if not GetIsMapBlipActive(blip) then
+
+                    if blipTeamNumber == kMarineTeamType then
+                        blipTeam = kMinimapBlipTeamInactiveMarine
+                    elseif blipTeamNumber== kAlienTeamType then
+                        blipTeam = kMinimapBlipTeamInactiveAlien
+                    end
+
+                elseif isSteamFriend then
+                
+                    if blipTeamNumber == kMarineTeamType then
+                        blipTeam = kMinimapBlipTeamFriendMarine
+                    elseif blipTeamNumber== kAlienTeamType then
+                        blipTeam = kMinimapBlipTeamFriendAlien
+                    end
+                
+                else
+
+                    if blipTeamNumber == kMarineTeamType then
+                        blipTeam = kMinimapBlipTeamMarine
+                    elseif blipTeamNumber== kAlienTeamType then
+                        blipTeam = kMinimapBlipTeamAlien
+                    end
+                    
+                end  
+                
+                local i = numBlips * 10
                 local blipOrig = GetMapBlipOrigin(blip)
                 blipsData[i + 1] = blipOrig.x
                 blipsData[i + 2] = blipOrig.z
@@ -3355,6 +3429,8 @@ function PlayerUI_GetStaticMapBlips()
                 blipsData[i + 6] = GetMapBlipType(blip)
                 blipsData[i + 7] = blipTeam
                 blipsData[i + 8] = GetMapBlipIsInCombat(blip)
+                blipsData[i + 9] = isSteamFriend
+                blipsData[i + 10] = blip.isHallucination == true
                 
                 numBlips = numBlips + 1
                 
@@ -3366,7 +3442,7 @@ function PlayerUI_GetStaticMapBlips()
         
             local blipOrigin = blip:GetOrigin()
             
-            local i = numBlips * 8
+            local i = numBlips * 10
             
             blipsData[i + 1] = blipOrigin.x
             blipsData[i + 2] = blipOrigin.z
@@ -3376,6 +3452,8 @@ function PlayerUI_GetStaticMapBlips()
             blipsData[i + 6] = kMinimapBlipType.SensorBlip
             blipsData[i + 7] = kMinimapBlipTeamEnemy
             blipsData[i + 8] = false
+            blipsData[i + 9] = false
+            blipsData[i + 10] = false
             
             numBlips = numBlips + 1
             
@@ -3395,7 +3473,7 @@ function PlayerUI_GetStaticMapBlips()
                 blipType = kMinimapBlipType.AttackOrder
             end
             
-            local i = numBlips * 8
+            local i = numBlips * 10
             
             blipsData[i + 1] = blipOrigin.x
             blipsData[i + 2] = blipOrigin.z
@@ -3405,6 +3483,8 @@ function PlayerUI_GetStaticMapBlips()
             blipsData[i + 6] = blipType
             blipsData[i + 7] = kMinimapBlipTeamFriendly
             blipsData[i + 8] = false
+            blipsData[i + 9] = false
+            blipsData[i + 10] = false
             
             numBlips = numBlips + 1
             
@@ -3416,7 +3496,7 @@ function PlayerUI_GetStaticMapBlips()
             
             if spawnPosition then
             
-                local i = numBlips * 8
+                local i = numBlips * 10
             
                 blipsData[i + 1] = spawnPosition.x
                 blipsData[i + 2] = spawnPosition.z
@@ -3426,6 +3506,8 @@ function PlayerUI_GetStaticMapBlips()
                 blipsData[i + 6] = kMinimapBlipType.MoveOrder
                 blipsData[i + 7] = kMinimapBlipTeamFriendly
                 blipsData[i + 8] = false
+                blipsData[i + 9] = false
+                blipsData[i + 10] = false
                 
                 numBlips = numBlips + 1
             
@@ -3441,7 +3523,7 @@ function PlayerUI_GetStaticMapBlips()
                 local gate = vortexAbility:GetEtherealGate()
                 if gate then
                 
-                    local i = numBlips * 8
+                    local i = numBlips * 10
                 
                     local blipOrig = gate:GetOrigin()
                 
@@ -3453,6 +3535,8 @@ function PlayerUI_GetStaticMapBlips()
                     blipsData[i + 6] = kMinimapBlipType.EtherealGate
                     blipsData[i + 7] = kMinimapBlipTeam.Friendly
                     blipsData[i + 8] = false
+                    blipsData[i + 9] = false
+                    blipsData[i + 10] = false
                     
                     numBlips = numBlips + 1
                     
@@ -3465,7 +3549,7 @@ function PlayerUI_GetStaticMapBlips()
         local highlightPos = GetHighlightPosition()
         if highlightPos then
 
-                local i = numBlips * 8
+                local i = numBlips * 10
 
                 blipsData[i + 1] = highlightPos.x
                 blipsData[i + 2] = highlightPos.z
@@ -3475,13 +3559,15 @@ function PlayerUI_GetStaticMapBlips()
                 blipsData[i + 6] = kMinimapBlipType.HighlightWorld
                 blipsData[i + 7] = kMinimapBlipTeam.Friendly
                 blipsData[i + 8] = false
+                blipsData[i + 9] = false
+                blipsData[i + 10] = false
                 
                 numBlips = numBlips + 1
             
         end
         
     end
-    
+
     return blipsData
     
 end
@@ -3812,6 +3898,10 @@ function Player:OnUpdatePlayer(deltaTime)
     self:UpdateRookieMode()
     
     self:UpdateCommunicationStatus()
+    
+    if self.isHallucination then
+        self:DestroyController()
+    end    
     
 end
 

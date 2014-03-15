@@ -76,7 +76,7 @@ kGridHotkeys =
     
         for index, hotkey in ipairs(kGridHotkeys) do
         
-            if (input.hotkey == hotkey) and self.menuTechButtonsAllowed and self.menuTechButtonsAllowed[index] and self.menuTechButtonsAffordable and self.menuTechButtonsAffordable[index] then
+            if (input.hotkey == hotkey) and self.menuTechButtonsAllowed and self.menuTechButtonsAllowed[index] and self.menuTechButtonsAffordable and self.menuTechButtonsAffordable[index] and not MainMenu_GetIsOpened() then
             
                 // Check if the last hotkey was released.
                 if hotkey ~= nil and self.lastHotkeyIndex ~= index then

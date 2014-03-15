@@ -36,6 +36,7 @@ gBadgesData =
     MakeBadgeInfo("squad5_blue"),
     MakeBadgeInfo("squad5_silver"),
     MakeBadgeInfo("squad5_gold"),
+    MakeBadgeInfo("commander"),
 
     MakeBadgeInfo2("reinforced1", "game_tier1_blue"),
     MakeBadgeInfo2("reinforced2", "game_tier2_silver"),

@@ -15,6 +15,10 @@ Script.Load("lua/bots/Bot.lua")
 Script.Load("lua/bots/BotMotion.lua")
 Script.Load("lua/bots/MarineBrain.lua")
 Script.Load("lua/bots/SkulkBrain.lua")
+Script.Load("lua/bots/GorgeBrain.lua")
+Script.Load("lua/bots/LerkBrain.lua")
+Script.Load("lua/bots/FadeBrain.lua")
+Script.Load("lua/bots/OnosBrain.lua")
 
 local kBotPersonalSettings = {
     { name = "Flayra", isMale = true },

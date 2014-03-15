@@ -20,12 +20,13 @@ class 'SlideButton' (MenuElement)
 
 local function UpdatePosition(self)
 
-    if self.verticalAlign == GUIItem.Bottom or self.horizontalAlign == GUIItem.Right then
+	// This is causing the buttons to be offset incorrectly
+    /*if self.verticalAlign == GUIItem.Bottom or self.horizontalAlign == GUIItem.Right then
         
         self:SetBottomOffset(0)
         self:SetRightOffset(0)
     
-    end
+    end*/
 
 end
 

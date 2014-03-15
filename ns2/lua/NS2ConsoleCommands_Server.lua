@@ -41,6 +41,10 @@ local function JoinTeamTwo(player)
     return JoinTeam(player, kTeam2Index)
 end
 
+local function JoinTeamRandom(player)
+	return JoinRandomTeam(player)
+end
+
 local function ReadyRoom(player)
 
     if not player:isa("ReadyRoomPlayer") then
@@ -67,6 +71,13 @@ local function OnCommandJoinTeamTwo(client)
 
     local player = client:GetControllingPlayer()
     JoinTeamTwo(player)
+    
+end
+
+local function OnCommandJoinTeamRandom(client)
+
+    local player = client:GetControllingPlayer()
+    JoinTeamRandom(player)
     
 end
 
@@ -1409,6 +1420,7 @@ Event.Hook("Console_changegcsettingserver", OnCommandChangeGCSettingServer)
 // NS2 game mode console commands
 Event.Hook("Console_jointeamone", OnCommandJoinTeamOne)
 Event.Hook("Console_jointeamtwo", OnCommandJoinTeamTwo)
+Event.Hook("Console_jointeamthree", OnCommandJoinTeamRandom)
 Event.Hook("Console_readyroom", OnCommandReadyRoom)
 Event.Hook("Console_spectate", OnCommandSpectate)
 Event.Hook("Console_film", OnCommandFilm)
@@ -1416,6 +1428,7 @@ Event.Hook("Console_film", OnCommandFilm)
 // Shortcuts because we type them so much
 Event.Hook("Console_j1", OnCommandJoinTeamOne)
 Event.Hook("Console_j2", OnCommandJoinTeamTwo)
+Event.Hook("Console_j3", OnCommandJoinTeamRandom)
 Event.Hook("Console_rr", OnCommandReadyRoom)
 
 Event.Hook("Console_endgame", OnCommandEndGame)

@@ -137,6 +137,10 @@ local function CheckEntityExplodesMine(self, entity)
         return false
     end
     
+    if entity:isa("Hallucination") or entity.isHallucination then
+        return false
+    end    
+    
     if not HasMixin(entity, "Team") or GetEnemyTeamNumber(self:GetTeamNumber()) ~= entity:GetTeamNumber() then
         return false
     end

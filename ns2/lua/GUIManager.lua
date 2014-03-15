@@ -29,8 +29,10 @@ kGUILayerCountDown = 16
 kGUILayerTestEvents = 17
 kGUILayerMainMenuNews = 19
 kGUILayerMainMenu = 20
-kGUILayerTrainingMenuTipVideos = 21 // used when videos are played from the training menu tab
+kGUILayerTrainingMenuTipVideos = 50 // used when videos are played from the training menu tab
 kGUILayerMainMenuDialogs = 30
+kGUILayerOptionsTooltips = 49
+
 // The Web layer must be much higher than the MainMenu layer
 // because the MainMenu layer inserts items above
 // kGUILayerMainMenu procedurally.
@@ -71,12 +73,20 @@ end
 
 local function SharedCreate(scriptName)
 
-    Script.Load("lua/" .. scriptName .. ".lua")
-    
+    local scriptPath = scriptName
+
     local result = StringSplit(scriptName, "/")    
     scriptName = result[table.count(result)]
     
     local creationFunction = _G[scriptName]
+    
+    if not creationFunction then
+    
+        Script.Load("lua/" .. scriptPath .. ".lua")
+        creationFunction = _G[scriptName]
+        
+    end
+    
     if creationFunction == nil then
     
         Shared.Message("Error: Failed to load GUI script named " .. scriptName)
@@ -341,8 +351,43 @@ end
 
 // check required because of material scripts
 if Event then
-Event.Hook("UpdateClient",              OnUpdateGUIManager)
-Event.Hook("ResolutionChanged", OnResolutionChanged)
-end
 
-gGUIManager = gGUIManager or CreateManager()
+    Event.Hook("UpdateClient", OnUpdateGUIManager)
+    Event.Hook("ResolutionChanged", OnResolutionChanged)
+
+    gGUIManager = gGUIManager or CreateManager()
+
+    local function OnCommandDumbGUIScripts(enabled)
+        
+        local guiManager = GetGUIManager()
+        
+        local scriptsCount = {}
+        for s = #guiManager.scripts, 1, -1 do
+            
+            local script = guiManager.scripts[s]
+            local count = scriptsCount[script._scriptName]
+            
+            scriptsCount[script._scriptName] = count ~= nil and count + 1 or 1
+            
+        end
+        
+        for s = #guiManager.scriptsSingle, 1, -1 do
+            
+            local script = guiManager.scriptsSingle[s]
+            local count = scriptsCount[script._scriptName]
+            
+            scriptsCount[script._scriptName] = count ~= nil and count + 1 or 1
+            
+        end
+        
+        Print("script dump ----------------------")
+        for name, count in pairs(scriptsCount) do
+            Print("%s: %d", name, count)
+        end
+        Print("s------------------------------------")
+        
+        
+    end
+    Event.Hook("Console_dumpguiscripts", OnCommandDumbGUIScripts)
+
+end

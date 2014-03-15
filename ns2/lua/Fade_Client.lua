@@ -87,7 +87,7 @@ function Fade:OnUpdateRender()
     
     PROFILE("Fade:OnUpdateRender")
 
-    Player.OnUpdateRender(self)
+    Alien.OnUpdateRender(self)
 
     local model = self:GetRenderModel()
     if model and self.blinkDissolve then

@@ -124,7 +124,9 @@ function CamouflageMixin:OnJump()
 end
 
 function CamouflageMixin:OnTakeDamage(damage, attacker, doer, point)
-    self:TriggerUncamouflage()
+    if damage > 0 then
+        self:TriggerUncamouflage()
+    end
 end
 
 function CamouflageMixin:OnCapsuleTraceHit(entity)

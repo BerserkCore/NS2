@@ -10,7 +10,6 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/TeamSpectator.lua")
-Script.Load("lua/ScoringMixin.lua")
 
 if Client then
     Script.Load("lua/TeamMessageMixin.lua")
@@ -26,8 +25,6 @@ local networkVars =
     queuePosition = "private integer (-1 to 100)",
     autoSpawnTime = "private float"
 }
-
-AddMixinNetworkVars(ScoringMixin, networkVars)
 
 local function UpdateQueuePosition(self)
 
@@ -69,9 +66,7 @@ end
 function AlienSpectator:OnCreate()
 
     TeamSpectator.OnCreate(self)
-    
-    InitMixin(self, ScoringMixin, { kMaxScore = kMaxScore })
-    
+
     if Client then
         InitMixin(self, TeamMessageMixin, { kGUIScriptName = "GUIAlienTeamMessage" })
     end

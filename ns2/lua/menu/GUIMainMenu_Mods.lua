@@ -133,10 +133,11 @@ function GUIMainMenu:CreateModsWindow()
     self.modsTable:SetRowCreateCallback(OnRowCreate)
     self.modsTable:SetColumnClassNames(columnClassNames)
     
+    self.displayedMods = { }
+    self.modsTable:ClearChildren()
+        
     self.modsWindow:AddEventCallbacks({ 
         OnShow = function() 
-            self.displayedMods = { }
-            self.modsTable:ClearChildren()
             self.selectMod:SetIsVisible(false)
         end 
     })

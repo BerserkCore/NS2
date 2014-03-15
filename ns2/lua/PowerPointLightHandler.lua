@@ -103,7 +103,39 @@ function PowerPointLightHandler:Init(powerPoint)
     
 end
 
+function PowerPointLightHandler:Reset()
+
+    self.lightTable = { }
+    self.probeTable = { }
+    
+    // all lights for this powerPoint, and filter away those that
+    // shouldn't be affected by the power changes
+    for _, light in ipairs(GetLightsForLocation(self.powerPoint:GetLocationName())) do
+    
+        if not light.ignorePowergrid then
+            self.lightTable[light] = true
+        end
+        
+    end
+    
+    for _, probe in ipairs(GetReflectionProbesForLocation(self.powerPoint:GetLocationName())) do
+        self.probeTable[probe] = true
+    end
+    
+    self.workerTable = {
+        [kLightMode.Normal] = NormalLightWorker():Init(self, "normal"),
+        [kLightMode.NoPower] = NoPowerLightWorker():Init(self, "nopower"),
+        [kLightMode.LowPower] = LowPowerLightWorker():Init(self, "lowpower"),
+        [kLightMode.Damaged] = DamagedLightWorker():Init(self, "damaged"),
+    }
+    
+    self:Run(self.lastMode)
+
+end
+
 function PowerPointLightHandler:Run(mode)
+
+    self.lastMode = mode
 
     local worker = self.workerTable[mode]
     local timeOfChange = self.powerPoint:GetTimeOfLightModeChange()

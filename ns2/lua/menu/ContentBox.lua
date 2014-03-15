@@ -96,6 +96,8 @@ function ContentBox:OnSlide(slideFraction, align)
         
     end
 
+	MainMenu_OnSlide()
+
 end
 
 function ContentBox:AddChild(child)

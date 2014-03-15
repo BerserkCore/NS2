@@ -274,7 +274,7 @@ function GUIMainMenu:CreatePlayWindow()
         tabButton:SetBackgroundPosition( Vector(tabWidth * (i - 1), 0, 0) )
         
     end
-
+	
     CreateJoinServerPage(self)
     CreatePlayNowPage(self)
     CreateHostGamePage(self)

@@ -661,3 +661,37 @@ function Alien:OnTakeDamageClient(damage, doer, position)
     end
     
 end
+
+function Alien:OnUpdateRender()
+
+    Player.OnUpdateRender(self)
+
+    if self.isHallucination then
+    
+        local model = self:GetRenderModel()
+        local player = Client.GetLocalPlayer() 
+        
+        if model then
+        
+            if not GetAreEnemies(self, player) then
+
+                if not self.hallucinationMaterial then
+                
+                    self.hallucinationMaterial = AddMaterial(model, "cinematics/vfx_materials/hallucination.material")
+                    self:SetOpacity(0, "hallucination")
+                    
+                end
+            
+            elseif self.hallucinationMaterial then
+                
+                self:SetOpacity(1, "hallucination")
+                RemoveMaterial(model, self.hallucinationMaterial)
+                self.hallucinationMaterial = nil
+                
+            end
+        
+        end
+    
+    end
+
+end

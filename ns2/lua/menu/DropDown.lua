@@ -4,7 +4,7 @@
 //
 //    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
 //
-// ========= For more inDropDownation, visit us at http://www.unknownworlds.com =====================
+// ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/menu/FormElement.lua")
 Script.Load("lua/menu/DropDownList.lua")

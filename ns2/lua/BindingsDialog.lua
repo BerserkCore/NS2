@@ -49,6 +49,9 @@ local defaults = {
     { "Buy", "B" },
     { "VoteYes", "F1" },
     { "VoteNo", "F2" },
+    { "SelectNextWeapon", "MouseWheelUp" },
+    { "SelectPrevWeapon", "MouseWheelDown" },
+	{ "LastUpgrades", "" },
     { "Grid1", "Q" },
     { "Grid2", "W" },
     { "Grid3", "E" },
@@ -76,7 +79,7 @@ local globalControlBindings = {
     "Jump", "input", "Jump", "Space",
     "MovementModifier", "input", "Movement special", "LeftShift",
     "Crouch", "input", "Crouch", "LeftControl",
-    "Scoreboard", "input", "Scoreboard", "Tab",
+	"ShowMap", "input", "Show Map", "C",
     "Action", "title", "Action", "",
     "PrimaryAttack", "input", "Primary attack", "MouseButton0",
     "SecondaryAttack", "input", "Secondary attack", "MouseButton1",
@@ -84,10 +87,14 @@ local globalControlBindings = {
     "Use", "input", "Use", "E",
     "Drop", "input", "Drop weapon / Eject", "G",
     "Buy", "input", "Buy/evolve menu", "B",
-    "ShowMap", "input", "Show Map", "C",
+	"LastUpgrades", "input", "Evolve Last Upgrades", "",
+	"ShowTechMap", "input", "Show Tech Tree", "J",
+    "Scoreboard", "input", "Scoreboard", "Tab",
     "VoiceChat", "input", "Use microphone", "LeftAlt",
     "TextChat", "input", "Public chat", "Y",
     "TeamChat", "input", "Team chat", "Return",
+    "SelectNextWeapon", "input", "Next Weapon", "MouseWheelUp",
+    "SelectPrevWeapon", "input", "Previous Weapon", "MouseWheelDown",
     "Weapon1", "input", "Weapon #1", "1",
     "Weapon2", "input", "Weapon #2", "2",
     "Weapon3", "input", "Weapon #3", "3",
@@ -97,11 +104,10 @@ local globalControlBindings = {
     "ToggleConsole", "input", "Toggle Console", "Grave",
     "ToggleFlashlight", "input", "Flashlight", "F",
     "ReadyRoom", "input", "Go to Ready Room", "F4",
-    "RequestMenu", "input", "Voice overs", "X",
+    "RequestMenu", "input", "Voiceover menu", "X",
     "RequestHealth", "input", "Request healing / medpack", "Q",
     "RequestAmmo", "input", "Request Ammo / Enzyme", "Z",
     "RequestOrder", "input", "Request order", "H",
-    "ShowTechMap", "input", "Show Tech Tree", "J",
     "Taunt", "input", "taunt", "T",
     "PingLocation", "input", "ping location", "MouseButton2",
     "VoteYes", "input", "Vote Yes", "F1",
@@ -152,7 +158,7 @@ function BindingsUI_GetInputValue(controlId)
 
     local value = Client.GetOptionString( "input/" .. controlId, "" )
 
-    local rc = nil
+    local rc = ""
     
     if(value ~= "") then
         rc = value

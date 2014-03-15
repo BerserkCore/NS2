@@ -17,38 +17,76 @@ local kSkinOffset = 0.1
 ControllerMixin.expectedCallbacks =
 {
     GetControllerSize = "Should return a height and radius",
-    GetMovePhysicsMask = "Should return a mask for the physics groups to collide with"
+    GetMovePhysicsMask = "Should return a mask for the physics groups to collide with",
+    GetControllerPhysicsGroup = "Should return physics grouop for controller.",
+}
+
+ControllerMixin.optionalCallbacks =
+{
+    GetHasController = "Creates/destroys controller when returned true/false.",
+    GetHasOutterController = "Creates/destroys outter controller when returned true/false."
+}
+
+ControllerMixin.networkVars =
+{
+    timeUntilPlayerCollisionsIgnored = "private time"
 }
 
 function ControllerMixin:__initmixin()
+
     self.controller = nil
+    self.timeUntilPlayerCollisionsIgnored = 0
+    
 end
 
 function ControllerMixin:OnDestroy()
     self:DestroyController()
+    self:DestroyOutterController()
 end
 
-function ControllerMixin:CreateController(physicsGroup)
+function ControllerMixin:CreateController()
 
-    assert(self.controller == nil)
+    local physicsGroup = self:GetControllerPhysicsGroup()    
     
     self.controller = Shared.CreateCollisionObject(self)
     self.controller:SetGroup(physicsGroup)
     self.controller:SetTriggeringEnabled( true )
-    
-    self.controllerVerticalOffset = 0
 
     // Make the controller kinematic so physically simulated objects will
     // interact/collide with it.
     self.controller:SetPhysicsType(CollisionObject.Kinematic)
 
-    // create outter controller here, so only other players will see it
+
+end
+
+function ControllerMixin:CreateOutterController()
+
+    local physicsGroup = self:GetControllerPhysicsGroup()  
+    
     self.controllerOutter = Shared.CreateCollisionObject(self)
     self.controllerOutter:SetGroup(physicsGroup)
     self.controllerOutter:SetTriggeringEnabled( false )
-    self.controllerOutter:SetPhysicsType(CollisionObject.Kinematic)
+    self.controllerOutter:SetPhysicsType(CollisionObject.Kinematic) 
     
-    self:UpdateControllerFromEntity()
+end
+
+local function SetNearbyPlayerControllers(self, enabled)
+
+    for _, player in ipairs(GetEntitiesWithinRange("Player", self:GetOrigin(), 4)) do
+    
+        if player ~= self then
+        
+            if player.controllerOutter then
+                player.controllerOutter:SetCollisionEnabled(enabled)
+            end
+            
+            if player.controller then
+                player.controller:SetCollisionEnabled(enabled)
+            end
+        
+        end
+    
+    end
 
 end
 
@@ -61,8 +99,12 @@ function ControllerMixin:DestroyController()
         
     end
     
+end
+
+function ControllerMixin:DestroyOutterController()
+
     if self.controllerOutter then 
-    
+
         Shared.DestroyCollisionObject(self.controllerOutter)
         self.controllerOutter = nil
         
@@ -113,8 +155,13 @@ function ControllerMixin:UpdateControllerFromEntity(allowTrigger)
             // Remove all collision reps except movement from the controller.
             for value,name in pairs(CollisionRep) do
                 if value ~= CollisionRep.Move and type(name) == "string" then
+                
                     self.controller:RemoveCollisionRep(value)
-                    self.controllerOutter:RemoveCollisionRep(value)
+                    
+                    if self.controllerOutter then
+                        self.controllerOutter:RemoveCollisionRep(value)
+                    end
+                    
                 end
             end
             
@@ -126,7 +173,7 @@ function ControllerMixin:UpdateControllerFromEntity(allowTrigger)
         // The origin of the controller is at its center and the origin of the
         // player is at their feet, so offset it.
         VectorCopy(self:GetOrigin(), origin)
-        origin.y = origin.y + self.controllerHeight * 0.5 + kSkinOffset + self.controllerVerticalOffset
+        origin.y = origin.y + self.controllerHeight * 0.5 + kSkinOffset
         
         self.controller:SetPosition(origin, allowTrigger)
         
@@ -148,16 +195,35 @@ function ControllerMixin:UpdateOriginFromController()
     // The origin of the controller is at its center and the origin of the
     // player is at their feet, so offset it.
     local origin = Vector(self.controller:GetPosition())
-    origin.y = origin.y - self.controllerHeight * 0.5 - kSkinOffset - self.controllerVerticalOffset
+    origin.y = origin.y - self.controllerHeight * 0.5 - kSkinOffset
     
     self:SetOrigin(origin)
     
 end
 
+function ControllerMixin:SetIgnorePlayerCollisions(time)
+    self.timeUntilPlayerCollisionsIgnored = time + Shared.GetTime()
+end
+
+function ControllerMixin:GetPlayerCollisionsIgnored()
+    return self.timeUntilPlayerCollisionsIgnored ~= 0 and self.timeUntilPlayerCollisionsIgnored >= Shared.GetTime()
+end
+
 function ControllerMixin:OnUpdatePhysics()
-    
-    if HasMixin(self, "Live") and not self:GetIsAlive() then
+
+    local hasController = not self.GetHasController or self:GetHasController()
+    local hasOutterController = not self.GetHasOutterController or self:GetHasOutterController()
+
+    if not self.controller and hasController then
+        self:CreateController()
+    elseif self.controller and not hasController then
         self:DestroyController()
+    end    
+    
+    if not self.controllerOutter and hasOutterController then
+        self:CreateOutterController()
+    elseif self.controllerOutter and not hasOutterController then
+        self:DestroyOutterController()
     end
 
     self:UpdateControllerFromEntity()
@@ -173,10 +239,17 @@ function ControllerMixin:GetIsColliding()
 
     if self.controller then
     
-        self.controllerOutter:SetCollisionEnabled(false)
+        if self.controllerOutter then
+            self.controllerOutter:SetCollisionEnabled(false)
+        end
+        
         self:UpdateControllerFromEntity()
+        
         local result = self.controller:Test(CollisionRep.Move, CollisionRep.Move, self:GetMovePhysicsMask())
-        self.controllerOutter:SetCollisionEnabled(true)
+        
+        if self.controllerOutter then
+            self.controllerOutter:SetCollisionEnabled(true)
+        end
         
         return result
         
@@ -211,11 +284,19 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, sl
     local oldVelocity = velocity ~= nil and Vector(velocity) or nil
     local prevXZSpeed = velocity ~= nil and velocity:GetLengthXZ()
     local hitVelocity = nil
+    
+    local ignorePlayerCollisions = self:GetPlayerCollisionsIgnored()
 
     if self.controller then
         
-        self.controllerOutter:SetCollisionEnabled(false)        
-    
+        if self.controllerOutter then
+            self.controllerOutter:SetCollisionEnabled(false)        
+        end
+        
+        if ignorePlayerCollisions then
+            SetNearbyPlayerControllers(self, false)        
+        end
+ 
         self:UpdateControllerFromEntity()
         
         local tracesPerformed = 0
@@ -284,7 +365,13 @@ function ControllerMixin:PerformMovement(offset, maxTraces, velocity, isMove, sl
             self:UpdateOriginFromController()
         end
         
-        self.controllerOutter:SetCollisionEnabled(true)
+        if self.controllerOutter then
+            self.controllerOutter:SetCollisionEnabled(true)
+        end
+        
+        if ignorePlayerCollisions then
+            SetNearbyPlayerControllers(self, true)        
+        end
         
     end
     

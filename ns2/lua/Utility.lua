@@ -12,6 +12,19 @@ gNetworkRandomLogData = nil
 gRandomDebugEnabled = false
 
 kUpVector = Vector(0, 1, 0)
+
+local gGUIConvertItem = nil
+
+function ConvertWideStringToString(wideString)
+
+    if not gGUIConvertItem then
+        gGUIConvertItem = GUI.CreateItem()
+    end
+
+    gGUIConvertItem:SetWideText(wideString)
+    return gGUIConvertItem:GetText()
+
+end
   
 function EntityFilterOne(entity)
     return function (test) return test == entity end
@@ -230,6 +243,29 @@ function Pluralize(number, baseText)
             return string.format("%d %ss", number, baseText)
         end
     end
+end
+
+function WrapText( str, limit, indent, indent1 )
+
+   limit = limit or 72
+   indent = indent or ""
+   indent1 = indent1 or indent
+
+	local here = 1 - #indent1
+	local returnText  = indent1..str:gsub( "(%s+)()(%S+)()",
+		function( sp, st, word, fi )
+			if fi-here > limit then
+				here = st - #indent
+				return "\n"..indent..word
+			end
+		end )
+		if here == 1 then
+			local firstHalf = string.sub(returnText, 0, limit)
+			local secondHalf = string.sub(returnText, limit + 1, kMaxChatLength)
+			local finalMessage = indent .. firstHalf .. "\n" .. secondHalf
+			returnText = finalMessage
+		end
+	return returnText
 end
 
 // Returns nil if it doesn't hit

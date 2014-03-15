@@ -204,16 +204,13 @@ function TeamBrain:Update(dt)
         local memTooOld = (Shared.GetTime() - mem.lastSeenTime) > 5.0
 
         for playerId,_ in ipairs(self.assignments:GetItems(mem.entId)) do
-
-            local player = Shared.GetEntity(playerId)
-            local playerPos = player:GetOrigin()
-            local didInvestigate = mem.lastSeenPos:GetDistance(playerPos) < 4.0
-
-            if didInvestigate and memTooOld then
-                table.insert(removedIds, memEntId)
-                break
-            end
-
+			local player = Shared.GetEntity(playerId)
+			local playerPos = player:GetOrigin()
+			local didInvestigate = mem.lastSeenPos:GetDistance(playerPos) < 4.0
+			if didInvestigate and memTooOld then
+				table.insert(removedIds, memEntId)
+				break
+			end
         end
 
     end

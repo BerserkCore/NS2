@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2014, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\menu\TextInput.lua
 //
-//    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
@@ -70,8 +70,16 @@ function TextInput:Initialize()
         end,
         
         OnEscape = function (self)
-            self:SetValue("")
-            return true
+        
+            local currentValue = self:GetValue()
+            if currentValue and string.len(currentValue) > 0 then
+                self:SetValue("")
+                return true
+            else
+                GetWindowManager():SetElementInactive()
+                return true
+            end 
+            
         end,
     
     }
@@ -110,6 +118,14 @@ function TextInput:GetTagName()
     return "textinput"
 end
 
+function TextInput:SetXAlignment(value)
+	self.text:SetTextAlignmentX(value)
+end
+
+function TextInput:SetYAlignment(value)
+	self.text:SetTextAlignmentY(value)
+end
+
 function TextInput:SetFontName(fontName)
     self.text:SetFontName(fontName)
 end
@@ -122,6 +138,10 @@ function TextInput:SetTextColor(color)
     self.text:SetColor(color)
 end
 
+function TextInput:SetFieldColor(color)
+    self:SetBackgroundColor(color)
+end
+
 local function IsANumber(self, character)
 
     local oldValue = self.text:GetText()
@@ -130,7 +150,8 @@ local function IsANumber(self, character)
     self.text:SetText(oldValue)
 
     return characterString == "0" or characterString == "1" or characterString == "2" or characterString == "3" or characterString == "4" or 
-           characterString == "5" or characterString == "6" or characterString == "7" or characterString == "8" or characterString == "9"
+           characterString == "5" or characterString == "6" or characterString == "7" or characterString == "8" or characterString == "9" or
+		   characterString == "."
 
 end
 

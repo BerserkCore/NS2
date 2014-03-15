@@ -54,7 +54,8 @@ function SetCommanderMarqueeeSelectorUp(mouseX, mouseY)
 	selectorCursorDown = false
 	
 	local player = Client.GetLocalPlayer()    
-    player:MarqueeSelectEntities(selectorStartX, selectorStartY, mouseX, mouseY, player.shiftDown)
-    
+	if not MainMenu_GetIsOpened() then
+		player:MarqueeSelectEntities(selectorStartX, selectorStartY, mouseX, mouseY, player.shiftDown)
+    end
 end
 

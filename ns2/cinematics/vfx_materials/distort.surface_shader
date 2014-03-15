@@ -1,0 +1,56 @@
+<shader>
+
+	<inputs>
+		<input name="distortAmount" type="float">0.0</input>
+		<input name="normalMap"   type="texture" address="wrap">materials/dev/dev_normal.dds</input>
+	</inputs>	
+
+	<params>
+		<param name="vsPosition">true</param>
+		<param name="vsNormal">true</param>
+		<param name="vsTangent">true</param>
+		<param name="vsBinormal">true</param>
+		<param name="twoSided">false</param>
+	</params>
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}		
+		void MaterialShader(in Material_Input input, inout Material material)
+		{	
+	
+			float3 tsNormal = DecodeNormal( tex2D(normalMap, input.texCoord ) );
+
+			float3 vsNormal = tsNormal.x * input.vsTangent +
+							  tsNormal.y * input.vsBinormal +	
+							  tsNormal.z * input.vsNormal;
+									
+			vsNormal = normalize(vsNormal);		
+			
+			// animate the amount of distortion by 50%
+			float anim = (1 + cos(time * 5)) * 0.5;	
+			// standing still = distortAmount 1, max cloak speed = distortAmount 0.7
+			// standing still -> min distortion 0.001
+			// moving at max cloak speed -> distortion 0.01
+			float intensity = 1 - distortAmount;
+			
+			
+			// go up to 90% and scale down again to hive the distort effect
+			if (intensity > 0.95) {
+				intensity = 1 - ((intensity - 0.95) / 0.05);
+			}
+			
+			float distortionScalar = intensity * intensity * 0.15;
+			
+			material.ssDistortion = vsNormal.xy * float2(1, -1) * distortionScalar * (0.8 + anim);
+
+		}
+	]]>
+	</code>
+
+</shader>

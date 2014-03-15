@@ -87,6 +87,7 @@ local function UpdateAutoOpen(self, timePassed)
             
             local entity = entities[index]
             local opensForEntity, openDistance = entity:GetCanDoorInteract(self)
+			
             if opensForEntity then
             
                 local distSquared = self:GetDistanceSquared(entity)

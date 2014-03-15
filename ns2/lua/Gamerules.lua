@@ -191,6 +191,9 @@ function Gamerules:OnClientConnect(client)
     
     Server.SendNetworkMessage(client, "ServerHidden", { hidden = Server.GetServerHidden() }, true)
     
+    local playerInfo = CreateEntity(PlayerInfoEntity.kMapName)
+    player:SetPlayerInfo(playerInfo)
+    
     return player
     
 end
@@ -200,8 +203,22 @@ end
  * and player entity. Player could be nil if it has been deleted.
  */
 function Gamerules:OnClientDisconnect(client)
+
+    local clientIndex = client:GetId()
+
     // Tell all other clients that the player has disconnected
-    Server.SendCommand( nil, string.format("clientdisconnect %d", client:GetId()) )
+    //Server.SendCommand( nil, string.format("clientdisconnect %d", clientIndex) )
+    
+    for _, playerInfo in ipairs( EntityListToTable(Shared.GetEntitiesWithClassname("PlayerInfoEntity")) ) do
+    
+        if playerInfo.clientIndex == clientIndex then
+        
+            DestroyEntity(playerInfo)
+            break
+            
+        end    
+    end
+    
 end
 
 /**

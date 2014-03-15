@@ -27,8 +27,8 @@ GUIUnitStatus.kBlackTexture = "ui/black_dot.dds"
 local kStatusBgTexture = { [kMarineTeamType] = "ui/unitstatus_marine.dds", [kAlienTeamType] = "ui/unitstatus_alien.dds", [kNeutralTeamType] = "ui/unitstatus_neutral.dds" }
 local kStatusFontColor = { [kMarineTeamType] = Color(kMarineTeamColorFloat), [kAlienTeamType] = Color(kAlienTeamColorFloat), [kNeutralTeamType] = Color(1,1,1,1) }
 
-GUIUnitStatus.kStatusBgSize = GUIScale( Vector(168, 70, 0) )
-GUIUnitStatus.kStatusBgNoHintSize = GUIScale( Vector(168, 56, 0) )
+GUIUnitStatus.kStatusBgSize = GUIScale( Vector(168, 80, 0) )
+GUIUnitStatus.kStatusBgNoHintSize = GUIScale( Vector(168, 66, 0) )
 
 GUIUnitStatus.kStatusBgOffset= GUIScale( Vector(0, -16, 0) )
 GUIUnitStatus.kStatusBackgroundPixelCoords = { 256, 896 , 256 + 178, 896 + 53}
@@ -244,7 +244,7 @@ local function CreateBlipItem(self)
     newBlip.HealthBarBg = GetGUIManager():CreateGraphicItem()
     newBlip.HealthBarBg:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
     newBlip.HealthBarBg:SetSize(Vector(kHealthBarWidth, kHealthBarHeight, 0))
-    newBlip.HealthBarBg:SetPosition(Vector(-kHealthBarWidth / 2, -kHealthBarHeight - kArmorBarHeight - 4, 0))
+    newBlip.HealthBarBg:SetPosition(Vector(-kHealthBarWidth / 2, -kHealthBarHeight - kArmorBarHeight - 10, 0))
     newBlip.HealthBarBg:SetTexture(neutralTexture)
     newBlip.HealthBarBg:SetColor(Color(0,0,0,0))
     newBlip.HealthBarBg:SetInheritsParentAlpha(true)
@@ -262,7 +262,7 @@ local function CreateBlipItem(self)
     newBlip.ArmorBarBg = GetGUIManager():CreateGraphicItem()
     newBlip.ArmorBarBg:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
     newBlip.ArmorBarBg:SetSize(Vector(kArmorBarWidth, kArmorBarHeight, 0))
-    newBlip.ArmorBarBg:SetPosition(Vector(-kArmorBarWidth / 2, -kArmorBarHeight - 4, 0))
+    newBlip.ArmorBarBg:SetPosition(Vector(-kArmorBarWidth / 2, -kArmorBarHeight - 10, 0))
     newBlip.ArmorBarBg:SetTexture(neutralTexture)
     newBlip.ArmorBarBg:SetColor(Color(0,0,0,0))
     newBlip.ArmorBarBg:SetInheritsParentAlpha(true)
@@ -372,6 +372,30 @@ local function AddWelderIcon(blipItem)
     blipItem.welderIcon:SetAnchor(GUIItem.Right, GUIItem.Center)    
     
     blipItem.statusBg:AddChild(blipItem.welderIcon)
+
+end
+
+function AddAbilityBar(blipItem)
+
+    blipItem.AbilityBarBg = GetGUIManager():CreateGraphicItem()
+    blipItem.AbilityBarBg:SetAnchor(GUIItem.Middle, GUIItem.Bottom)
+    blipItem.AbilityBarBg:SetSize(Vector(kArmorBarWidth, kArmorBarHeight * 2, 0))
+    blipItem.AbilityBarBg:SetPosition(Vector(-kArmorBarWidth / 2, -kArmorBarHeight * 2, 0))
+    blipItem.AbilityBarBg:SetTexture("ui/unitstatus_neutral.dds")
+    blipItem.AbilityBarBg:SetColor(Color(0,0,0,0))
+    blipItem.AbilityBarBg:SetInheritsParentAlpha(true)
+    blipItem.AbilityBarBg:SetTexturePixelCoordinates(unpack(GUIUnitStatus.kUnitStatusBarTexCoords))
+    
+    blipItem.AbilityBar = GUIManager:CreateGraphicItem()
+    blipItem.AbilityBar:SetColor(Color(0.65, 0.65, 0.65, 1))
+    blipItem.AbilityBar:SetSize(Vector(kArmorBarWidth, kArmorBarHeight *2, 0))
+    blipItem.AbilityBar:SetTexture("ui/unitstatus_neutral.dds")
+    blipItem.AbilityBar:SetTexturePixelCoordinates(unpack(GUIUnitStatus.kUnitStatusBarTexCoords))
+    blipItem.AbilityBar:SetBlendTechnique(GUIItem.Add)
+    blipItem.AbilityBar:SetInheritsParentAlpha(true)
+    blipItem.AbilityBarBg:AddChild(blipItem.AbilityBar)
+
+    blipItem.statusBg:AddChild(blipItem.AbilityBarBg)
 
 end
 
@@ -504,6 +528,8 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         
         if isEnemy then
             textColor = GUIUnitStatus.kEnemyColor
+        elseif blipData.IsSteamFriend then
+            textColor = Color(kSteamFriendColor)
         end
         
         if not blipData.ForceName then
@@ -561,7 +587,29 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
             updateBlip.welderIcon = nil
             
         end
-         
+        
+        if blipData.AbilityFraction > 0 and not updateBlip.AbilityBarBg then
+        
+            AddAbilityBar(updateBlip)
+        
+        elseif blipData.AbilityFraction == 0 and updateBlip.AbilityBarBg then
+            
+            GUI.DestroyItem(updateBlip.AbilityBarBg)
+            updateBlip.AbilityBarBg = nil
+            updateBlip.AbilityBar = nil
+            
+        end
+        
+        if updateBlip.AbilityBarBg then
+
+            local bgColor = Color(0,0,0,alpha)
+            updateBlip.AbilityBarBg:SetColor(bgColor)
+            
+            updateBlip.AbilityBar:SetSize(Vector(kArmorBarWidth * blipData.AbilityFraction, kArmorBarHeight * 2, 0))
+            updateBlip.AbilityBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.AbilityFraction)) 
+                
+        end
+
     end
 
 end

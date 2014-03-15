@@ -1632,7 +1632,11 @@ local precacheList = {
 "ui/badges/wrench_20.dds"
 }
 
-for index, assetName in ipairs(precacheList) do
-    PrecacheAsset(assetName)
+function PrecacheFileList() 
+	if Client then
+		for index, assetName in ipairs(precacheList) do
+		PrecacheAsset(assetName)
+		end 
+	end
 end
     

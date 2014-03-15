@@ -74,8 +74,8 @@ local function RenderGatherList(self)
         //gatherEntry:UpdateVisibility(minY, maxY, renderPosition * kGatherEntryHeight)      
         
     end
-    
-    self:SetHeight(math.floor(#self.tableData / iconsPerRow) * kGatherEntryHeight)
+
+    self:SetHeight((1 + math.floor(#self.tableData / iconsPerRow)) * kGatherEntryHeight)
     self:SetWidth(gatherListWidth)
 
 end

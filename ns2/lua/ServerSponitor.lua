@@ -7,6 +7,7 @@
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 local kSponitor2Url = "http://sponitor2.herokuapp.com/api/send/"
+local kHiveUrl = "http://hive.naturalselection2.com/api/"
 
 local gDebugAlwaysPost = false
 
@@ -68,6 +69,21 @@ local function SendSponitorRequest(url, requestType, data, callback)
     -- We don't want to track any bot data.
     if not GetServerContainsBots() then
     
+        if callback then
+            Shared.SendHTTPRequest(url, requestType, data, callback)
+        else
+            Shared.SendHTTPRequest(url, requestType, data)
+        end
+        
+    end
+    
+end
+
+local function SendHiveRequest(url, requestType, data, callback)
+
+    -- Don't send any data when this server has bots connected.
+    -- We don't want to track any bot data.
+    if not GetServerContainsBots() then
         if callback then
             Shared.SendHTTPRequest(url, requestType, data, callback)
         else
@@ -311,18 +327,25 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
         return
     end
     
-    if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
-    
-        local targetWeapon = "None"
+	local targetWeapon = "None"
         
-        if target.GetActiveWeapon and target:GetActiveWeapon() then
-            targetWeapon = target:GetActiveWeapon():GetClassName()
-        end
+	if target.GetActiveWeapon and target:GetActiveWeapon() then
+		targetWeapon = target:GetActiveWeapon():GetClassName()
+	end
         
-        local attackerOrigin = attacker:GetOrigin()
-        local targetOrigin = target:GetOrigin()
-        local attackerTeamType = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType)
-        
+	local attackerOrigin = attacker:GetOrigin()
+	local targetOrigin = target:GetOrigin()
+	local attackerTeamType = ((HasMixin(attacker, "Team") and attacker:GetTeamType()) or kNeutralTeamType)
+	local attackerPads = attacker.client.variantData.shoulderPadIndex
+	local targetPads = -1
+	
+	if target:isa("Player") then
+		targetPads = target.client.variantData.shoulderPadIndex
+	else
+		targetPads = -1
+	end
+	
+	if (self.matchId and self.reportDetails) or gDebugAlwaysPost then
         local jsonData, jsonError = json.encode(
         {
             matchId = self.matchId,
@@ -342,10 +365,14 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
             targetZ = string.format("%.2f", targetOrigin.z),
             targetAttrs = GetUpgradeAttribsString(target),
             targetLifeTime = string.format("%.2f", ((target.GetCreationTime and Shared.GetTime() - target:GetCreationTime()) or 0)),
+			attackerShoulderPad = attackerPads,
+			targetShoulderPad = targetPads,
+			mapName = Shared.GetMapName()
         })
         
         if jsonData then
             SendSponitorRequest(kSponitor2Url .. "kill", "POST", { data = jsonData })
+			SendHiveRequest(kHiveUrl .. "post/promoKill", "POST", { data = jsonData })
         else
         
             // the encoder returned nil, so there was an error. Post it to Spon2.
@@ -357,6 +384,57 @@ function ServerSponitor:OnEntityKilled(target, attacker, weapon)
                 text = jsonError,
             })
             SendSponitorRequest(kSponitor2Url .. "error", "POST", { data = jsonData })
+            
+        end
+        
+        if attacker:isa("Player") and target:isa("Player") then
+        
+            local tstats = self.teamStats[attackerTeamType]
+
+            if tstats then
+                tstats.pvpKills = tstats.pvpKills + 1
+            end
+
+        end
+		
+	else
+		local jsonData, jsonError = json.encode(
+		{
+			time = Shared.GetGMTString(false),
+			attackerClass = attacker:GetClassName(),
+			attackerTeam = attackerTeamType,
+			attackerWeapon = weapon:GetClassName(),
+			attackerX = string.format("%.2f", attackerOrigin.x),
+			attackerY = string.format("%.2f", attackerOrigin.y),
+			attackerZ = string.format("%.2f", attackerOrigin.z),
+			attackerAttrs = GetUpgradeAttribsString(attacker),
+			targetClass = target:GetClassName(),
+			targetTeam = target:GetTeamType(),
+			targetWeapon = targetWeapon,
+			targetX = string.format("%.2f", targetOrigin.x),
+			targetY = string.format("%.2f", targetOrigin.y),
+			targetZ = string.format("%.2f", targetOrigin.z),
+			targetAttrs = GetUpgradeAttribsString(target),
+			targetLifeTime = string.format("%.2f", ((target.GetCreationTime and Shared.GetTime() - target:GetCreationTime()) or 0)),
+			patchIndex = attacker.client.variantData.shoulderPadIndex,
+			attackerShoulderPad = attackerPads,
+			targetShoulderPad = targetPads,
+			mapName = Shared.GetMapName()
+		})
+
+		if jsonData then
+			SendHiveRequest(kHiveUrl .. "post/promoKill", "POST", { data = jsonData })
+        else
+        
+            // the encoder returned nil, so there was an error. Post it to Spon2.
+            jsonData = json.encode(
+            {
+                launchId = -1,
+                time = Shared.GetGMTString(false),
+                type = "server killpost",
+                text = jsonError,
+            })
+            SendHiveRequest(kHiveUrl .. "post/promoKill" .. "error", "POST", { data = jsonData })
             
         end
         

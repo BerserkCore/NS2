@@ -135,7 +135,7 @@ local function HealEntity(self, player, targetEntity)
         health = health * 0.5
     end
     
-    local amountHealed = targetEntity:AddHealth(health)
+    local amountHealed = targetEntity:AddHealth(health, true, false, true, player)
     
     // Do not count amount self healed.
     if targetEntity ~= player then

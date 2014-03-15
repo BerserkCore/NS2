@@ -81,7 +81,8 @@ function Ticker:Initialize()
         local function OpenTweet()
         
             local id = self.tweets[self.currentTextIndex]["id_str"]
-            SetMenuWebView("https://twitter.com/NS2/status/" .. id, Vector(Client.GetScreenWidth() * 0.8, Client.GetScreenHeight() * 0.8, 0))
+			Client.ShowWebpage(("https://twitter.com/NS2/status/" .. id))
+            //SetMenuWebView("https://twitter.com/NS2/status/" .. id, Vector(Client.GetScreenWidth() * 0.8, Client.GetScreenHeight() * 0.8, 0))
             
         end
         
@@ -93,6 +94,10 @@ function Ticker:Initialize()
                 self:SetBackgroundColor(Color(0.2, 0.2, 0.2, 1))
             end,
             
+			OnMouseIn = function(self, buttonPressed)
+				MainMenu_OnMouseIn()
+            end,
+			
             OnMouseOut = function(self, buttonPressed)
             
                 if self.originalBackgroundColor then

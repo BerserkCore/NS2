@@ -22,6 +22,8 @@ local kAnimatedArrowSize = Vector(64, 32, 0)
 local kAnimatedArrowPosition = Vector(-68, 4, 0)
 local kAnimatedArrowPixelCoords = {0, 0, 64, 32}
 
+local kSpectatorOffset = 100
+
 local function AnimateArrow(script, arrow)
 
     arrow:SetTexturePixelCoordinates(unpack(kAnimatedArrowPixelCoords))
@@ -36,7 +38,6 @@ function GUIGatherOverlay:Initialize()
     self.background = self:CreateAnimatedGraphicItem()
     self.background:SetColor(Color(0,0,0,0.5))
     self.background:SetSize(kBackgroundSize)
-    self.background:SetPosition(Vector(-kBackgroundSize.x * 0.5, 0, 0))
     self.background:SetAnchor(GUIItem.Middle, GUIItem.Top)
     
     self.chatMessage = self:CreateAnimatedTextItem()
@@ -70,8 +71,6 @@ function GUIGatherOverlay:Initialize()
     self.background:AddChild(self.statusMessage)
     self.background:AddChild(self.animatedArrow)
     
-    
-
 end 
 
 function GUIGatherOverlay:Uninitialize()
@@ -89,12 +88,15 @@ function GUIGatherOverlay:Update(deltaTime)
 
     if Sabot.GetIsInGather() then
     
-        self.background:SetIsVisible(true)
+		if MainMenu_IsInGame() and not MainMenu_GetIsOpened() then
+			self.background:SetIsVisible(true)
+		end
     
         GUIAnimatedScript.Update(self, deltaTime)
 
-        local status = Sabot.GetGatherStatusMessage()
+        local status = Sabot.GetGatherStatusMessage() or ""
         local chatMessage = Sabot.GetLastChatMessage()
+        local gatherInfo = Sabot.GetGatherInfo(Sabot.GetGatherId())
         
         if self.lastChatMessage ~= chatMessage then
         
@@ -105,9 +107,29 @@ function GUIGatherOverlay:Update(deltaTime)
         
         self.textColor.a = 1 - math.max(0, Shared.GetTime() - self.timeChatMessage - 6)
         self.chatMessage:SetColor(self.textColor)
-        self.chatMessage:SetText(self.lastChatMessage)
+        self.chatMessage:SetText(self.lastChatMessage or "")
         
-        self.statusMessage:SetText(status)        
+        if gatherInfo then
+            
+            if gatherInfo.playerNumber and gatherInfo.playerSlots then
+                status = string.format("%d/%d  %s", gatherInfo.playerNumber, gatherInfo.playerSlots, status)
+            end
+        
+        end
+        
+        self.statusMessage:SetText(status)  
+		
+		if MainMenu_IsInGame() then
+		
+			if PlayerUI_GetIsSpecating() or not Client.GetIsControllingPlayer() then
+				self.background:SetPosition(Vector(-kBackgroundSize.x * 0.5, kSpectatorOffset, 0))
+			else
+				self.background:SetPosition(Vector(-kBackgroundSize.x * 0.5, 0, 0))
+			end
+			
+		else
+			self.background:SetPosition(Vector(-kBackgroundSize.x * 0.5, 0, 0))
+		end
     
     else
         self.background:SetIsVisible(false)

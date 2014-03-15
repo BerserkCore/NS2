@@ -16,7 +16,8 @@ local networkVars =
 {
     state = "enum kGameState",
     startTime = "time",
-    averagePlayerSkill = "integer"
+    averagePlayerSkill = "integer",
+    isGatherReady = "boolean"
 }
 
 function GameInfo:OnCreate()
@@ -50,6 +51,14 @@ end
 
 function GameInfo:GetAveragePlayerSkill()
     return self.averagePlayerSkill
+end
+
+function GameInfo:SetIsGatherReady(isGatherReady)
+    self.isGatherReady = isGatherReady
+end
+
+function GameInfo:GetIsGatherReady()
+    return self.isGatherReady
 end
 
 if Server then

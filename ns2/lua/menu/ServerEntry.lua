@@ -177,7 +177,11 @@ function ServerEntry:Initialize()
     
     self.playerSkill = CreateGraphicItem(self, true)
     
-    self:SetFontName("fonts/AgencyFB_small.fnt")
+	if Client.GetScreenWidth() <= 1024 then
+        self:SetFontName("fonts/AgencyFB_tiny.fnt")
+    else
+        self:SetFontName("fonts/AgencyFB_small.fnt")
+    end
     
     self:SetTextColor(kWhite)
     self:SetHeight(kServerEntryHeight)

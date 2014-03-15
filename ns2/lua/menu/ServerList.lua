@@ -188,7 +188,6 @@ end
 function FilterFull(active)
     return function(entry) return not active or entry.numPlayers < entry.maxPlayers end
 end
-
 function FilterModded(active)
     return function(entry) return not active or entry.modded == false end
 end

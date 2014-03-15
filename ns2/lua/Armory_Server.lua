@@ -64,6 +64,12 @@ function Armory:GetShouldResupplyPlayer(player)
         return false
     end    
     
+	local stunned = HasMixin(player, "Stun") and player:GetIsStunned()
+	
+	if stunned then
+        return false
+    end
+	
     local inNeed = false
     
     // Don't resupply when already full

@@ -407,6 +407,7 @@ function GUIAlienBuyMenu:_InitializeCurrentAlienDisplay()
     self.currentAlienDisplay.TitleShadow:SetTextAlignmentY(GUIItem.Align_Min)
     self.currentAlienDisplay.TitleShadow:SetText(string.upper(GUIAlienBuyMenu.kAlienTypes[AlienBuy_GetCurrentAlien()].Name))
     self.currentAlienDisplay.TitleShadow:SetColor(Color(0, 0, 0, 1))
+	self.currentAlienDisplay.TitleShadow:SetLayer(kGUILayerPlayerHUDForeground3)
     self.background:AddChild(self.currentAlienDisplay.TitleShadow)
     
     self.currentAlienDisplay.Title = GUIManager:CreateTextItem()
@@ -417,6 +418,7 @@ function GUIAlienBuyMenu:_InitializeCurrentAlienDisplay()
     self.currentAlienDisplay.Title:SetTextAlignmentY(GUIItem.Align_Min)
     self.currentAlienDisplay.Title:SetText(string.upper(GUIAlienBuyMenu.kAlienTypes[AlienBuy_GetCurrentAlien()].Name))
     self.currentAlienDisplay.Title:SetColor(ColorIntToColor(kAlienTeamColor))
+	self.currentAlienDisplay.Title:SetLayer(kGUILayerPlayerHUDForeground3)
     self.currentAlienDisplay.TitleShadow:AddChild(self.currentAlienDisplay.Title)
 
 end

@@ -455,7 +455,7 @@ function PlayingTeam:TriggerAlert(techId, entity, force)
                 
                 local ignoreDistance = LookupTechData(techId, kTechDataAlertIgnoreDistance, false)
                 
-                self:PlayPrivateTeamSound(soundName, location, commandersOnly, ignoreSourcePlayer, ignoreDistance)
+                self:PlayPrivateTeamSound(soundName, location, commandersOnly, ignoreSourcePlayer, ignoreDistance, entity)
                 
                 if not ignoreInterval then
                 
@@ -787,9 +787,12 @@ function PlayingTeam:Update(timePassed)
 
         self:UpdateMinResTick()
 
-        if #gServerBots > 0 then
+        if #gServerBots > 0 or #GetEntitiesWithMixinForTeam("PlayerHallucination", self:GetTeamNumber()) > 0 then
             self:GetTeamBrain():Update(timePassed)
+        elseif self.brain then        
+            self.brain = nil        
         end
+
 
     else
 

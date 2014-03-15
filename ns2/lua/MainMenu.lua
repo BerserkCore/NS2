@@ -30,6 +30,7 @@ mapnames, maps = GetInstalledMapList()
 
 local loadLuaMenu = true
 local gMainMenu = nil
+local gForceJoin = false
 
 function MainMenu_GetIsOpened()
 
@@ -62,7 +63,7 @@ function LeaveMenu()
         gMainMenu:SetIsVisible(false)
     end
     
-    MenuManager.SetMenuCinematic(nil)
+    //MenuManager.SetMenuCinematic(nil)
     MenuMenu_PlayMusic(nil)
     
 end
@@ -136,10 +137,26 @@ end
 
 function MainMenu_GetSelectedIsFull()
     
-    if gSelectedServerNum then
-        return Client.GetServerNumPlayers(gSelectedServerNum) == Client.GetServerMaxPlayers(gSelectedServerNum)
+    if gSelectedServerNum and gSelectedServerData then
+        local numReservedSlots = GetNumServerReservedSlots(gSelectedServerData.serverId)
+        return Client.GetServerNumPlayers(gSelectedServerNum) >= Client.GetServerMaxPlayers(gSelectedServerNum) - numReservedSlots
     end
+	
+end
+
+function MainMenu_GetSelectedIsFullWithNoRS()
     
+    if gSelectedServerNum then
+        return Client.GetServerNumPlayers(gSelectedServerNum) >= Client.GetServerMaxPlayers(gSelectedServerNum)
+    end
+	
+end
+
+function MainMenu_ForceJoin(forceJoin)
+	if forceJoin ~= nil then
+		gForceJoin = forceJoin
+	end
+	return gForceJoin
 end
 
 function MainMenu_GetSelectedServerName()
@@ -271,12 +288,14 @@ end
  */
 local function OnCommandMap(mapFileName)
 
-    MainMenu_HostGame(mapFileName)
-    
-    if Client then
-        Client.SetOptionString("lastServerMapName", mapFileName)
+	if mapFileName ~= nil then
+		MainMenu_HostGame(mapFileName)
+		
+		if Client then
+			Client.SetOptionString("lastServerMapName", mapFileName)
+		end
     end
-    
+
 end
 
 /**
@@ -300,14 +319,22 @@ end
 local kMouseInSound = "sound/NS2.fev/common/hovar"
 local kMouseOutSound = "sound/NS2.fev/common/tooltip"
 local kClickSound = "sound/NS2.fev/common/button_click"
-local kCheckboxOnSound = "sound/NS2.fev/common/checkbox_on"
-local kCheckboxOffSound = "sound/NS2.fev/common/checkbox_off"
-local kCheckboxOffSound = "sound/NS2.fev/common/checkbox_off"
-local kConnectSound = "sound/NS2.fev/common/checkbox_off"
+local kCheckboxOnSound = "sound/NS2.fev/common/checkbox_off"
+local kCheckboxOffSound = "sound/NS2.fev/common/checkbox_on"
+local kConnectSound = "sound/NS2.fev/common/connect"
 local kOpenMenuSound = "sound/NS2.fev/common/menu_confirm"
 local kCloseMenuSound = "sound/NS2.fev/common/menu_confirm"
 local kLoopingMenuSound = "sound/NS2.fev/common/menu_loop"
 local kWindowOpenSound = "sound/NS2.fev/common/open"
+local kDropdownSound = "sound/NS2.fev/common/button_enter"
+local kArrowSound = "sound/NS2.fev/common/arrow"
+local kButtonSound = "sound/NS2.fev/common/tooltip_off"
+local kButtonClickSound = "sound/NS2.fev/common/button_click"
+local kTooltip = "sound/NS2.fev/common/tooltip_on"
+local kPlayButtonSound = "sound/NS2.fev/marine/commander/give_order"
+local kSlideSound = "sound/NS2.fev/marine/commander/hover_ui"
+local kTrainigLinkSound = "sound/NS2.fev/common/tooltip"
+local kLoadingSound = "sound/NS2.fev/common/loading"
 
 Client.PrecacheLocalSound(kMouseInSound)
 Client.PrecacheLocalSound(kMouseOutSound)
@@ -319,6 +346,15 @@ Client.PrecacheLocalSound(kOpenMenuSound)
 Client.PrecacheLocalSound(kCloseMenuSound)
 Client.PrecacheLocalSound(kLoopingMenuSound)
 Client.PrecacheLocalSound(kWindowOpenSound)
+Client.PrecacheLocalSound(kDropdownSound)
+Client.PrecacheLocalSound(kArrowSound)
+Client.PrecacheLocalSound(kButtonSound)
+Client.PrecacheLocalSound(kButtonClickSound)
+Client.PrecacheLocalSound(kTooltip)
+Client.PrecacheLocalSound(kPlayButtonSound)
+Client.PrecacheLocalSound(kSlideSound)
+Client.PrecacheLocalSound(kTrainigLinkSound)
+Client.PrecacheLocalSound(kLoadingSound)
 
 function MainMenu_OnMouseIn()
     StartSoundEffect(kMouseInSound)
@@ -326,6 +362,12 @@ end
 
 function MainMenu_OnMouseOut()
     //StartSoundEffect(kMouseOutSound)
+end
+
+function MainMenu_OnMouseOver()
+	if MainMenu_GetIsOpened() then
+		StartSoundEffect(kMouseOutSound)
+	end
 end
 
 function MainMenu_OnMouseClick()
@@ -354,6 +396,48 @@ end
 
 function MainMenu_OnCloseMenu()
     Shared.StopSound(nil, kLoopingMenuSound)
+end
+
+function MainMenu_OnDropdownClicked()
+    StartSoundEffect(kDropdownSound)
+end
+
+function MainMenu_OnGatherChatRecieved()
+    StartSoundEffect(kArrowSound)
+end
+
+function MainMenu_OnButtonEnter()
+    StartSoundEffect(kButtonSound, 0.25)
+end
+
+function MainMenu_OnButtonClicked()
+    StartSoundEffect(kButtonClickSound, 0.5)
+end
+
+function MainMenu_OnTooltip()
+    StartSoundEffect(kTooltip, 0.5)
+end
+
+function MainMenu_OnPlayButtonClicked()
+    StartSoundEffect(kPlayButtonSound)
+end
+
+function MainMenu_OnSlide()
+	if MainMenu_GetIsOpened() then
+		StartSoundEffect(kSlideSound)
+	end
+end
+
+function MainMenu_OnTrainingLinkedClicked()
+	if MainMenu_GetIsOpened() then
+		StartSoundEffect(kTrainigLinkSound)
+	end
+end
+
+function MainMenu_OnLoadingSound()
+	if MainMenu_GetIsOpened() then
+		StartSoundEffect(kLoadingSound)
+	end
 end
 
 function MainMenu_LoadNewsURL(url)

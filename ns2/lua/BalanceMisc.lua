@@ -43,7 +43,7 @@ kEnzymeAttackSpeed = 1.25
 kElectrifiedAttackSpeed = 0.8
 kElectrifiedDuration = 5
 
-kHallucinationHealthFraction = 0.33
+kHallucinationHealthFraction = 0.20
 kHallucinationArmorFraction = 0
 kHallucinationMaxHealth = 700
 

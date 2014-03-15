@@ -30,8 +30,8 @@ local kLineColors =
     [kAlienTeamType] = Color(1, 0.4, 0, 0.5),
 }
 
-local kGrey = Color(0.2, 0.2, 0.2, 1)
-local kAllowedColor = Color(0.5, 0.5, 0.5, 1)
+local kGrey = Color(0.18, 0.18, 0.18, 1)
+local kAllowedColor = Color(0.6, 0.6, 0.6, 1)
 
 local kTechMapIconColors =
 {

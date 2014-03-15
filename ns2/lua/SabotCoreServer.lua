@@ -10,26 +10,55 @@ Script.Load("lua/Utility.lua")
 Script.Load("lua/Sabot.lua")
  
 local gLastUpdate = 0
+local gIsGatherReady = false
+local gPassword = nil
+
+local kPollTimeOut = 60
+local kPollFrequency = 0.1
+
+function Server.GetIsGatherReady()
+    return gIsGatherReady
+end    
 
 local function UpdateGatherServer()
 
-    if Server.GetConfigSetting("gather_server") then
+    if gLastUpdate + 5 < Shared.GetTime() then  
     
-        if gLastUpdate + 5 < Shared.GetTime() then  
-          
-            Sabot.RequestServerConfig()
+        gIsGatherReady = false
+    
+        local tags = { }
+        Server.GetTags(tags)
+        for t = 1, #tags do
+        
+            if string.find(tags[t], "gather_server") then
             
-            local settings = Sabot.GetServerSettings()            
-            Server.SetPassword(settings.password or "")
-            
-            if Shared.GetMapName() ~= settings.mapName then
-                MapCycle_ChangeMap(settings.mapName)
+                gIsGatherReady = true
+                break
+                
             end
             
-            gLastUpdate = Shared.GetTime()   
-            
         end
+        
+        if gIsGatherReady then
+      
+            Sabot.RequestServerConfig()
+            
+            local settings = Sabot.GetServerSettings()  
+            
+            if gPassword ~= settings.password and settings.password ~= "" then
+                Server.SetPassword(settings.password or "")
+                Print("sabot changed password to %s, old one was %s", ToString(settings.password), ToString(gPassword))
+            end
+            
+            if Shared.GetMapName() ~= settings.mapName and settings.mapName ~= "" and settings.mapName ~= nil then
+                MapCycle_ChangeMap(settings.mapName)
+                Print("sabot changing map to %s, old one was %s", ToString(settings.mapName), ToString(Shared.GetMapName()))
+            end
 
+        end
+        
+        gLastUpdate = Shared.GetTime() 
+        
     end
 
 end

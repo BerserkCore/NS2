@@ -68,7 +68,7 @@ if Client then
         local visible = HasMixin(self, "ParasiteAble") and self:GetIsParasited()
         local player = Client.GetLocalPlayer()
         
-        if player:isa("Spectator") and player:GetOutlinePlayers() and self:isa("Alien") and not self.hiveSightVisible then
+        if Client.GetLocalClientTeamNumber() == kSpectatorIndex and self:isa("Alien") and Client.GetOutlinePlayers() and not self.hiveSightVisible then
 
             local model = self:GetRenderModel()
             if model ~= nil then

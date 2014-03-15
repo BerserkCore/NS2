@@ -164,8 +164,14 @@ function Onos:OnInitialized()
 
 end
 
-function Onos:GetPlayerControllersGroup()
+function Onos:GetControllerPhysicsGroup()
+
+    if self.isHallucination then
+        return PhysicsGroup.SmallStructuresGroup
+    end
+
     return PhysicsGroup.BigPlayerControllersGroup
+    
 end
 
 function Onos:GetAcceleration()

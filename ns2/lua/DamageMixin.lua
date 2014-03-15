@@ -68,13 +68,13 @@ function DamageMixin:DoDamage(damage, target, point, direction, surface, altMode
             damage, armorUsed, healthUsed = GetDamageByType(target, attacker, doer, damage, damageType, point)
 
             // check once the damage
-            if damage > 0 then
+            if not direction then
+                direction = Vector(0, 0, 1)
+            end
             
-                if not direction then
-                    direction = Vector(0, 0, 1)
-                end
-                
-                killedFromDamage, damageDone = target:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType)
+            killedFromDamage, damageDone = target:TakeDamage(damage, attacker, doer, point, direction, armorUsed, healthUsed, damageType)
+            
+            if damage > 0 then    
                                 
                 // Many types of damage events are server-only, such as grenades.
                 // Send the player a message so they get feedback about what damage they've done.

@@ -21,6 +21,8 @@ local kWaypointColor = Color(1, 1, 1, 1)
 local kEtherealGateColor = Color(0.8, 0.6, 1, 1)
 local kOverviewColor = Color(1, 1, 1, 0.85)
 
+local kHallucinationColor = Color(0.8, 0.6, 1, 1)
+
 // colors are defined in the dds
 local kTeamColors = { }
 kTeamColors[kMinimapBlipTeam.Friendly] = Color(1, 1, 1, 1)
@@ -28,9 +30,15 @@ kTeamColors[kMinimapBlipTeam.Enemy] = Color(1, 0, 0, 1)
 kTeamColors[kMinimapBlipTeam.Neutral] = Color(1, 1, 1, 1)
 kTeamColors[kMinimapBlipTeam.Alien] = Color(1, 138/255, 0, 1)
 kTeamColors[kMinimapBlipTeam.Marine] = Color(0, 216/255, 1, 1)
+// steam friend colors
+kTeamColors[kMinimapBlipTeam.FriendAlien] = Color(1, 189/255, 111/255, 1)
+kTeamColors[kMinimapBlipTeam.FriendMarine] = Color(164/255, 241/255, 1, 1)
+
+kTeamColors[kMinimapBlipTeam.InactiveAlien] = Color(85/255, 46/255, 0, 1, 1)
+kTeamColors[kMinimapBlipTeam.InactiveMarine] = Color(0, 72/255, 85/255, 1)
 
 local kPowerNodeColor = Color(1, 1, 0.7, 1)
-local kDestroyedPowerNodeColor = Color(1, 0, 0, 1)
+local kDestroyedPowerNodeColor = Color(0.5, 0.5, 0.35, 1)
 
 local kDrifterColor = Color(1, 1, 0, 1)
 local kMACColor = Color(0, 1, 0.2, 1)
@@ -46,6 +54,8 @@ kInfestationColor[kMinimapBlipTeam.Enemy] = Color(1, 0.67, 0.06, .25)
 kInfestationColor[kMinimapBlipTeam.Neutral] = Color(0.2, 0.7, 0.2, .25)
 kInfestationColor[kMinimapBlipTeam.Alien] = Color(0.2, 0.7, 0.2, .25)
 kInfestationColor[kMinimapBlipTeam.Marine] = Color(0.2, 0.7, 0.2, .25)
+kInfestationColor[kMinimapBlipTeam.InactiveAlien] = Color(0.2 /3, 0.7/3, 0.2/3, .25)
+kInfestationColor[kMinimapBlipTeam.InactiveMarine] = Color(0.2/3, 0.7/3, 0.2/3, .25)
 
 local kInfestationDyingColor = { }
 kInfestationDyingColor[kMinimapBlipTeam.Friendly] = Color(1, 0.2, 0, .25)
@@ -53,6 +63,8 @@ kInfestationDyingColor[kMinimapBlipTeam.Enemy] = Color(1, 0.2, 0, .25)
 kInfestationDyingColor[kMinimapBlipTeam.Neutral] =Color(1, 0.2, 0, .25)
 kInfestationDyingColor[kMinimapBlipTeam.Alien] = Color(1, 0.2, 0, .25)
 kInfestationDyingColor[kMinimapBlipTeam.Marine] = Color(1, 0.2, 0, .25)
+kInfestationDyingColor[kMinimapBlipTeam.InactiveAlien] = Color(1/3, 0.2/3, 0, .25)
+kInfestationDyingColor[kMinimapBlipTeam.InactiveMarine] = Color(1/3, 0.2/3, 0, .25)
 
 local kShrinkingArrowInitSize = Vector(kBlipSize * 10, kBlipSize * 10, 0)
 
@@ -482,7 +494,7 @@ local function UpdateStaticBlips(self, deltaTime)
     PROFILE("GUIMinimap:UpdateStaticBlips")
     
     local staticBlips = PlayerUI_GetStaticMapBlips()
-    local blipItemCount = 8
+    local blipItemCount = 10
     local numBlips = table.count(staticBlips) / blipItemCount
     
     local staticBlipItems = self.staticBlips
@@ -558,12 +570,14 @@ local function UpdateStaticBlips(self, deltaTime)
     local GUIItemSetRotation = GUIItem.SetRotation
     local GUIItemSetColor = GUIItem.SetColor
     for i = 1, numBlips do
-    
+
         local xPos, yPos = PlotToMap(self, staticBlips[currentIndex], staticBlips[currentIndex + 1])
         local rotation = staticBlips[currentIndex + 2]
         local blipType = staticBlips[currentIndex + 5]
         local blipTeam = staticBlips[currentIndex + 6]
         local underAttack = staticBlips[currentIndex + 7]
+        local isSteamFriend = staticBlips[currentIndex + 8]
+        local isHallucination = staticBlips[currentIndex + 9]
         
         local blip = staticBlipItems[i]
         local blipInfo = blipInfoTable[blipType]
@@ -580,10 +594,11 @@ local function UpdateStaticBlips(self, deltaTime)
         GUIItemSetRotation(blip, blipRotation)
         local blipColor = blipColorTable[blipTeam][blipInfo[2]]
         
-        if underAttack then
+        if blipTeam == playerTeam or spectating then
         
-            // Copy color, dont modify constant.
-            if spectating or blipTeam == playerTeam then
+            if isHallucination then
+                blipColor = kHallucinationColor
+            elseif underAttack then
                 blipColor = PulseRed()
             end
             

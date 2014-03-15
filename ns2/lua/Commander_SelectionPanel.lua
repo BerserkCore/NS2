@@ -167,6 +167,12 @@ function CommanderUI_GetSelectedBargraphs(entity)
             table.insert(t, entity:GetResearchProgress())
             table.insert(t, entity:GetResearchingId())
             
+        elseif entity.isHallucination or entity:isa("Hallucination") then
+
+            table.insert(t, Locale.ResolveString("COMM_SEL_LIFETIME"))
+            table.insert(t, GetHallucinationLifeTimeFraction(entity))
+            table.insert(t, entity:GetTechId())      
+            
         end
         
     end

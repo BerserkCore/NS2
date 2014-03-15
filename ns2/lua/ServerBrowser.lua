@@ -8,6 +8,7 @@
 //=============================================================================
 
 Script.Load("lua/Utility.lua")
+Script.Load("lua/menu/GUIMainMenu.lua")
 
 local kFavoritesFileName = "FavoriteServers.json"
 local kHistoryFileName = "HistoryServers.json"
@@ -53,11 +54,13 @@ function BuildServerEntry(serverIndex)
     serverEntry.map = GetTrimmedMapName(Client.GetServerMapName(serverIndex))
     serverEntry.numPlayers = Client.GetServerNumPlayers(serverIndex)
     serverEntry.maxPlayers = Client.GetServerMaxPlayers(serverIndex)
+	serverEntry.numRS = GetNumServerReservedSlots(serverIndex)
     serverEntry.ping = Client.GetServerPing(serverIndex)
     serverEntry.address = Client.GetServerAddress(serverIndex)
     serverEntry.requiresPassword = Client.GetServerRequiresPassword(serverIndex)
     serverEntry.playerSkill = GetServerPlayerSkill(serverIndex)
     serverEntry.rookieFriendly = Client.GetServerHasTag(serverIndex, "rookie")
+	serverEntry.gatherServer = Client.GetServerHasTag(serverIndex, "gather_server")
     serverEntry.friendsOnServer = false
     serverEntry.lanServer = false
     serverEntry.tickrate = Client.GetServerTickRate(serverIndex)

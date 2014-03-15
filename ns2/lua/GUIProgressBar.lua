@@ -55,7 +55,7 @@ local kProgressBarMarineMask = PrecacheAsset("ui/progress_bar_marine_mask.dds")
 local kUnitStatusNeutral = PrecacheAsset("ui/unitstatus_neutral.dds")
 
 local kBackgroundPixelCoords = { 0, 0, 230, 50 }
-local kForegroundPixelCoords = { 0, 50, 230, 100 }
+local kForegroundPixelCoords = { 0, 54, 230, 100 }
 
 kFadeOutDelay = 0
 

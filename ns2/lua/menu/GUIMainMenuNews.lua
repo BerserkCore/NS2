@@ -9,6 +9,10 @@
 local widthFraction = 0.4
 local newsAspect = 1.2/1
 local kTextureName = "*mainmenu_news"
+local fadeColor = Color(1,1,1,0)
+local lastUpdatedtime = 0
+local playAnimation = ""
+
 -- Non local so modders can easily change the URL.
 kMainMenuNewsURL = "http://unknownworlds.com/ns2/ingamenews/"
 
@@ -30,17 +34,22 @@ function GUIMainMenuNews:Initialize()
     self.webContainer = GUIManager:CreateGraphicItem()
     self.webContainer:SetTexture(kTextureName)
     self.webContainer:SetLayer(layer)
+	self.webContainer:SetColor(fadeColor)
 
     self.reinforceButton = GUIManager:CreateGraphicItem()
     self.reinforceButton:SetLayer(layer)
+	self.reinforceButton:SetColor(fadeColor)
 
     self.storeButton = GUIManager:CreateGraphicItem()
     self.storeButton:SetLayer(layer)
+	self.storeButton:SetColor(fadeColor)
+	self.logo:SetColor(fadeColor)
 
     self.buttonDown = { [InputKey.MouseButton0] = false, [InputKey.MouseButton1] = false, [InputKey.MouseButton2] = false }
 
     self.isVisible = true
-    
+	playAnimation = "show"
+
 end
 
 function GUIMainMenuNews:Uninitialize()
@@ -105,12 +114,15 @@ function GUIMainMenuNews:SendKeyEvent(key, down, amount)
         if GUIItemContainsPoint( self.logo, mouseX, mouseY ) then
             Client.ShowWebpage("http://forums.unknownworlds.com/")
         end
-    elseif key == InputKey.MouseZ then
-    
-        -- This isn't working currently as the input is blocked by the main menu code in
-        -- MouseTracker_SendKeyEvent(). But it is a nice thought.
-        self.webView:OnMouseWheel((amount > 0) and 30 or -30, 0)
         
+    -- This isn't working currently as the input is blocked by the main menu code in
+    -- MouseTracker_SendKeyEvent(). But it is a nice thought.  
+    elseif key == InputKey.MouseWheelUp then
+        self.webView:OnMouseWheel(30, 0)
+		MainMenu_OnSlide()
+    elseif key == InputKey.MouseWheelDown then
+        self.webView:OnMouseWheel(-30, 0)
+		MainMenu_OnSlide()
     end
     
     return false
@@ -118,7 +130,15 @@ function GUIMainMenuNews:SendKeyEvent(key, down, amount)
 end
 
 function GUIMainMenuNews:Update(deltaTime)
-
+	
+	if fadeColor.a <= 0 then
+		self:SetIsVisible(false)
+	elseif fadeColor.a > 0 then
+		self:SetIsVisible(true)
+	end
+	
+	self:PlayFadeAnimation()
+	
     if not self.isVisible then
         return
     end
@@ -129,6 +149,12 @@ function GUIMainMenuNews:Update(deltaTime)
         self.webView:OnMouseMove(withinX, withinY)
     end
 
+    if GUIItemContainsPoint( self.webContainer, mouseX, mouseY ) then
+        SetKeyEventBlocker(self)
+    else
+		SetKeyEventBlocker(nil)
+	end
+	
     if GUIItemContainsPoint( self.reinforceButton, mouseX, mouseY ) then
         self.reinforceButton:SetTexture("ui/leftbox_mouseover.dds")
     else
@@ -177,8 +203,9 @@ function GUIMainMenuNews:Update(deltaTime)
     self.webContainer:SetSize(Vector(width, newsHt, 0))
     self.webContainer:SetAnchor(GUIItem.Right, GUIItem.Top)
     self.webContainer:SetPosition(Vector(-width-rightMargin, y, 0))
+	
     y = y + newsHt
-    
+	
 end
 
 function GUIMainMenuNews:SetIsVisible(visible)
@@ -187,6 +214,45 @@ function GUIMainMenuNews:SetIsVisible(visible)
     self.reinforceButton:SetIsVisible(visible)
     self.storeButton:SetIsVisible(visible)
     self.isVisible = visible
+end
+
+function GUIMainMenuNews:ShowAnimation()
+
+	if fadeColor.a <= 1 and Shared.GetTime() - lastUpdatedtime > 0.005 then
+		fadeColor.a = fadeColor.a + 0.075
+		self.webContainer:SetColor(fadeColor)
+		self.logo:SetColor(fadeColor)
+		self.reinforceButton:SetColor(fadeColor)
+		self.storeButton:SetColor(fadeColor)
+		lastUpdatedtime = Shared.GetTime()
+	end
+
+end
+
+function GUIMainMenuNews:HideAnimation()
+
+	if fadeColor.a >= 0 and Shared.GetTime() - lastUpdatedtime > 0.005 then
+		fadeColor.a = fadeColor.a - 0.075
+		self.webContainer:SetColor(fadeColor)
+		self.logo:SetColor(fadeColor)
+		self.reinforceButton:SetColor(fadeColor)
+		self.storeButton:SetColor(fadeColor)
+		lastUpdatedtime = Shared.GetTime()
+	end
+   
+end
+function GUIMainMenuNews:PlayFadeAnimation()
+
+	if playAnimation == "show" then
+		self:ShowAnimation()
+	elseif playAnimation == "hide" then
+		self:HideAnimation()
+	end
+   
+end
+
+function GUIMainMenuNews:SetPlayAnimation(animType)
+    playAnimation = animType
 end
 
 function GUIMainMenuNews:LoadURL(url)

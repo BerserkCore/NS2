@@ -106,6 +106,10 @@ function ProgressBar:GetValue()
     return self.value
 end
 
+function ProgressBar:SetColor(value)
+    self.bar:SetBackgroundColor( value )
+end
+
 function ProgressBar:SetBackgroundColor(color, time, animateFunc, animName, callBack)
 
     if self.backgroundArea then

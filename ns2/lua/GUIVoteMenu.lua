@@ -221,8 +221,13 @@ function GUIVoteMenu:Update(deltaTime)
             
         end
         
-        local yes, no = GetVoteResults()
-        self.yesCount:SetText(ToString(yes))
+        local yes, no, required = GetVoteResults()
+        local yesString = ToString(yes)
+        if required > 0 then
+            yesString = yesString .. "/" .. required
+        end
+        
+        self.yesCount:SetText(yesString)
         self.noCount:SetText(ToString(no))
         
         local lastVoteResults = GetLastVoteResults()

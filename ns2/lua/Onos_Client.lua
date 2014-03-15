@@ -116,3 +116,24 @@ end
 function Onos:GetHeadAttachpointName()
     return "Onos_Head"
 end
+
+function Onos:RecalculateShakeLightList()
+    
+    self.shakingLightList = {}
+    
+    local locationName = Shared.GetString(self.locationId)
+    if locationName then
+    
+        // Get new lights
+        self.shakingLightList = GetLightsForLocation(locationName)
+        
+        for lightIndex, renderLight in ipairs(self.shakingLightList) do
+            
+            // Add field if needed
+            renderLight.lightShakeTime = 0
+            
+        end
+    
+    end
+    
+end

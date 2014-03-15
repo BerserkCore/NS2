@@ -44,6 +44,7 @@ function FormElement:Initialize()
     
     self:SetBackgroundColor(kDefaultBgColor)
     
+    self.normalBorderColor = kDefaultBorderColor
     self:SetBorderColor(kDefaultBorderColor)
     self:SetBorderHighlightColor(kDefaultHighlightColor)
     self:SetBorderWidth(1)

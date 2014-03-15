@@ -466,15 +466,7 @@ function AlienCommander:SetCurrentTech(techId)
         
     elseif techId == kTechId.SelectHallucinations then
 
-        DeselectAllUnits(self:GetTeamNumber())
-        for _, hallucination in ipairs(GetEntitiesForTeam("Hallucination", self:GetTeamNumber())) do
-        
-            if hallucination:GetIsAlive() then
-                hallucination:SetSelected(self:GetTeamNumber(), true, true, true)
-            end
-        
-        end
-        
+        SelectAllHallucinations(self)        
         return
         
     elseif techId == kTechId.SelectShift then

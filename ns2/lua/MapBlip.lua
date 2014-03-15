@@ -22,6 +22,8 @@ local networkVars =
     mapBlipTeam = "integer (" .. ToString(kTeamInvalid) .. " to " .. ToString(kSpectatorIndex) .. ")",
     isInCombat = "boolean",
     ownerEntityId = "entityid",
+    isHallucination = "boolean",
+    active = "boolean"
 }
 
 function MapBlip:OnCreate()
@@ -49,18 +51,12 @@ function MapBlip:UpdateRelevancy()
     self:SetRelevancyDistance(Math.infinity)
     
     local mask = 0
-    
-    if self.mapBlipType == kMinimapBlipType.Infestation or self.mapBlipType == kMinimapBlipType.InfestationDying then
+
+    if self.mapBlipTeam == kTeam1Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
+        mask = bit.bor(mask, kRelevantToTeam1)
+    end
+    if self.mapBlipTeam == kTeam2Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
         mask = bit.bor(mask, kRelevantToTeam2)
-    else    
-    
-        if self.mapBlipTeam == kTeam1Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
-            mask = bit.bor(mask, kRelevantToTeam1)
-        end
-        if self.mapBlipTeam == kTeam2Index or self.mapBlipTeam == kTeamInvalid or self:GetIsSighted() then
-            mask = bit.bor(mask, kRelevantToTeam2)
-        end
-    
     end
     
     self:SetExcludeRelevancyMask( mask )
@@ -99,6 +95,10 @@ function MapBlip:GetRotation()
 
     return self:GetAngles().yaw
 
+end
+
+function MapBlip:GetIsActive()
+    return self.active
 end
 
 function MapBlip:GetIsSighted()
@@ -162,6 +162,14 @@ function MapBlip:Update()
                 self.isInCombat = isInCombat    
                 
             end 
+            
+            if owner:isa("Player") then
+                self.clientIndex = owner:GetClientIndex()
+            end 
+
+            self.isHallucination = owner.isHallucination == true or owner:isa("Hallucination")
+            
+            self.active = GetIsUnitActive(owner)
 
         end
         
@@ -185,3 +193,14 @@ function MapBlip:GetIsValid()
 end
 
 Shared.LinkClassToMap("MapBlip", MapBlip.kMapName, networkVars)
+
+class 'PlayerMapBlip' (MapBlip)
+
+PlayerMapBlip.kMapName = "PlayerMapBlip"
+
+local networkVars =
+{
+    clientIndex = "integer (-1 to 4000)",
+}
+
+Shared.LinkClassToMap("PlayerMapBlip", PlayerMapBlip.kMapName, networkVars)

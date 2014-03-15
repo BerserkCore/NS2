@@ -316,6 +316,7 @@ if Client then
     function Rifle:OnClientPrimaryAttackStart()
     
         Shared.PlaySound(self, kLoopingSounds[self.soundType])
+        self.clientSoundTypePlaying = self.soundType
         
         local player = self:GetParent()
         
@@ -380,6 +381,19 @@ if Client then
         
         if self.shellsCinematic then
             self.shellsCinematic:SetIsActive(false)
+        end
+        
+    end
+    
+    function Rifle:UpdateAttackEffects(deltaTime)
+
+        if self.clientSoundTypePlaying and self.clientSoundTypePlaying ~= self.soundType then
+
+            Shared.StopSound(self, kLoopingSounds[self.clientSoundTypePlaying])
+            
+            Shared.PlaySound(self, kLoopingSounds[self.soundType])
+            self.clientSoundTypePlaying = self.soundType
+            
         end
         
     end

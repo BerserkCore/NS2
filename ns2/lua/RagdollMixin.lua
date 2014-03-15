@@ -133,6 +133,26 @@ function RagdollMixin:OnProcessMove(input)
     SharedUpdate(self, input.time)
 end
 
+function RagdollMixin:OnUpdatePhysics()
+    
+    if HasMixin(self, "Model") and ( self:GetIsRagdoll() or ( HasMixin(self, "Live") and not self:GetIsAlive() ) ) then
+    
+        local collisionModel = self:GetCollisionModel()
+        if collisionModel and not self.removedCollisionReps then
+        
+            for value,name in pairs(CollisionRep) do
+                if type(name) == "string" then                
+                    collisionModel:RemoveCollisionRep(value)
+                end
+            end
+            self.removedCollisionReps = true
+
+        end    
+        
+    end
+    
+end
+
 local function SetRagdoll(self, deathTime)
 
     if Server then

@@ -10,7 +10,6 @@
 
 Script.Load("lua/ScriptActor.lua")
 
-Script.Load("lua/EnergyMixin.lua")
 Script.Load("lua/Mixins/ModelMixin.lua")
 Script.Load("lua/DoorMixin.lua")
 Script.Load("lua/LiveMixin.lua")
@@ -24,6 +23,7 @@ Script.Load("lua/PathingMixin.lua")
 Script.Load("lua/SleeperMixin.lua")
 Script.Load("lua/RepositioningMixin.lua")
 Script.Load("lua/SoftTargetMixin.lua")
+Script.Load("lua/MapBlipMixin.lua")
 
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/hallucination.surface_shader")
 
@@ -34,8 +34,6 @@ Hallucination.kMapName = "hallucination"
 Hallucination.kSpotRange = 15
 Hallucination.kTurnSpeed  = 4 * math.pi
 Hallucination.kDefaultMaxSpeed = 1
-Hallucination.kDefaultInitialEnergy = 50
-Hallucination.kDefaultMaxEnergy = 200
 
 local networkVars =
 {
@@ -43,9 +41,9 @@ local networkVars =
     moving = "boolean",
     attacking = "boolean",
     hallucinationIsVisible = "boolean",
+    creationTime = "time"
 }
 
-AddMixinNetworkVars(EnergyMixin, networkVars)
 AddMixinNetworkVars(BaseModelMixin, networkVars)
 AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
@@ -204,10 +202,6 @@ local function SetAssignedAttributes(self, hallucinationTechId)
     local health = math.min(LookupTechData(self.assignedTechId, kTechDataMaxHealth, kSkulkHealth) * kHallucinationHealthFraction, kHallucinationMaxHealth)
     local armor = LookupTechData(self.assignedTechId, kTechDataMaxArmor, kSkulkArmor) * kHallucinationArmorFraction
     
-    // using the energy values defined for the Hallucination instead from the real unit
-    self.energy = LookupTechData(hallucinationTechId, kTechDataInitialEnergy, Hallucination.kDefaultInitialEnergy)
-    self.maxEnergy = LookupTechData(hallucinationTechId, kTechDataMaxEnergy, Hallucination.kDefaultMaxEnergy)
-
     self.maxSpeed = GetMaxMovementSpeed(self.assignedTechId)    
     self:SetModel(model, GetAnimationGraph(self.assignedTechId))
     self:SetMaxHealth(health)
@@ -230,7 +224,6 @@ function Hallucination:OnCreate()
     
     ScriptActor.OnCreate(self)
     
-    InitMixin(self, EnergyMixin)
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ModelMixin)
     InitMixin(self, DoorMixin)
@@ -280,14 +273,6 @@ function Hallucination:OnInitialized()
     
 end
 
-function Hallucination:GetCanUpdateEnergy()
-    return true
-end
-
-function Hallucination:OverrideGetEnergyUpdateRate()
-    return -kEnergyUpdateRate
-end
-
 function Hallucination:OnDestroy()
 
     ScriptActor.OnDestroy(self)
@@ -310,10 +295,19 @@ function Hallucination:GetIsFlying()
     return self.assignedTechId == kTechId.Drifter
 end
 
+function Hallucination:GetAssignedTechId()
+    return self.assignedTechId
+end    
+
 function Hallucination:SetEmulation(hallucinationTechId)
 
     self.assignedTechId = GetTechIdToEmulate(hallucinationTechId)
     SetAssignedAttributes(self, hallucinationTechId)
+    
+        
+    if not HasMixin(self, "MapBlip") then
+        InitMixin(self, MapBlipMixin)
+    end
 
 end
 
@@ -365,6 +359,7 @@ function Hallucination:OnUpdate(deltaTime)
     
     if Server then
         self:UpdateServer(deltaTime)
+        UpdateHallucinationLifeTime(self)
     elseif Client then
         self:UpdateClient(deltaTime)
     end    
@@ -452,10 +447,6 @@ if Server then
         end
             
         self:UpdateOrders(deltaTime)
-        
-        if self:GetEnergy() <= 0 then
-            self:Kill()
-        end
     
     end
     
@@ -467,11 +458,11 @@ if Server then
         DestroyEntity(self)
         
     end
-    
+
     function Hallucination:OnScan()
         self:Kill()
     end
-    
+
     function Hallucination:GetHoverHeight()
     
         if self.assignedTechId == kTechId.Lerk or self.assignedTechId == kTechId.Drifter then
@@ -563,6 +554,7 @@ if Server then
                 return
             end
             
+            /* deprecated
             local createdHallucination = CreateEntity(Hallucination.kMapName, position, self:GetTeamNumber())
             if createdHallucination then
             
@@ -580,12 +572,12 @@ if Server then
                 
                 end
                 
-            else
+            else*/
             
                 self:ClearOrders(true, true)
                 return
                 
-            end
+            // end
             
         else
             self:UpdateMoveOrder(deltaTime)

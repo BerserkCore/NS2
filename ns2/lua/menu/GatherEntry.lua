@@ -10,19 +10,22 @@ Script.Load("lua/menu/MenuElement.lua")
 Script.Load("lua/menu/WindowUtility.lua")
 
 kGatherEntryHeight = 256
-kGatherEntryWidth = 196
+kGatherEntryWidth = 225
 
 local kYellow = Color(1, 1, 0)
 local kGreen = Color(0, 1, 0)
 local kRed = Color(1, 0 ,0)
 
-local kGatherTexture = "ui/menu/sabot/ns2icon.dds"
+local kDefaultGatherTexture = "ui/menu/mapicons/ns2icon.dds"
+local kHighlightTexture = "ui/menu/mapicons/highlight.dds"
 
 local kTopOffset = 32
 
 local kPrivateIconSize = Vector(26, 26, 0)
 local kPrivateIconPos = Vector(32, 74 + kTopOffset, 0)
 local kPrivateIconTexture = "ui/lock.dds"
+
+local kCountryNameOffset = Vector(54, 54 + kTopOffset, 0)
 
 local kPlayerSkillSize = Vector(64, 20, 0)
 local kPlayerSkillOffset = Vector(64, 110 + kTopOffset, 0)
@@ -52,13 +55,18 @@ function GatherEntry:Initialize()
     {
         OnMouseIn = function(self, buttonPressed)
             MainMenu_OnMouseIn()
+            self.iconHighlight:SetIsVisible(true)
+        end,
+        
+        OnMouseOut = function(self, buttonPressed)
+            self.iconHighlight:SetIsVisible(false)
         end,
         
         OnMouseOver = function(self)        
             // TODO         
         end,
         
-        OnMouseDown = function(self, key, doubleClick)
+        OnClick = function(self)
             self.scriptHandle:ProcessJoinGather(self.gatherId)            
         end
     }
@@ -68,10 +76,17 @@ function GatherEntry:Initialize()
     self.gatherId = -1
     
     self.icon = CreateGraphicItem(self, true)
-    self.icon:SetTexture(kGatherTexture)
+    self.icon:SetTexture(kDefaultGatherTexture)
     self.icon:SetSize(kGatherIconSize)
     self.icon:SetPosition(kGatherIconOffset)
     self.icon:SetAnchor(GUIItem.Middle, GUIItem.Top)
+    
+    self.iconHighlight = CreateGraphicItem(self, true)
+    self.iconHighlight:SetTexture(kHighlightTexture)
+    self.iconHighlight:SetSize(kGatherIconSize)
+    self.iconHighlight:SetPosition(kGatherIconOffset)
+    self.iconHighlight:SetAnchor(GUIItem.Middle, GUIItem.Top)
+    self.iconHighlight:SetIsVisible(false)
     
     self.gatherName = CreateTextItem(self, true)
     self.gatherName:SetPosition(kGatherNameOffset)
@@ -92,6 +107,13 @@ function GatherEntry:Initialize()
     self.playerCount:SetTextAlignmentY(GUIItem.Align_Center)
     self.playerCount:SetAnchor(GUIItem.Middle, GUIItem.Top)
     self.playerCount:SetScale(GUIScale(Vector(1,1,1)) * kFontScale)
+    
+    self.countryName = CreateTextItem(self, true)
+    self.countryName:SetPosition(kCountryNameOffset)
+    self.countryName:SetTextAlignmentX(GUIItem.Align_Max)
+    self.countryName:SetTextAlignmentY(GUIItem.Align_Center)
+    self.countryName:SetAnchor(GUIItem.Left, GUIItem.Top)
+    self.countryName:SetScale(GUIScale(Vector(1,1,1)) * kFontScale)
 
     self.private = CreateGraphicItem(self, true)
     self.private:SetSize(kPrivateIconSize)
@@ -115,6 +137,7 @@ function GatherEntry:SetFontName(fontName)
     self.gatherName:SetFontName(fontName)
     self.mapName:SetFontName(fontName)
     self.playerCount:SetFontName(fontName)
+    self.countryName:SetFontName(fontName)
 
 end
 
@@ -123,7 +146,21 @@ function GatherEntry:SetTextColor(color)
     self.gatherName:SetColor(color)
     self.mapName:SetColor(color)
     self.playerCount:SetColor(color)
+    self.countryName:SetColor(color)
     
+end
+
+local function GetMapTexture(mapName)
+
+    local searchResult = {}
+    Shared.GetMatchingFileNames( string.format("ui/menu/mapicons/%s.dds", mapName ), false, searchResult )
+
+    if #searchResult > 0 then
+        return searchResult[1]
+    end
+
+    return kDefaultGatherTexture
+
 end
 
 function GatherEntry:SetGatherData(gatherData)
@@ -131,6 +168,8 @@ function GatherEntry:SetGatherData(gatherData)
     PROFILE("GatherEntry:SetGatherData")
 
     if self.gatherData ~= gatherData then
+    
+        self.icon:SetTexture(GetMapTexture(gatherData.map))    
     
         gatherData.playerNumber = gatherData.playerNumber or 0
         gatherData.requiresPassword = gatherData.requiresPassword == true or false
@@ -165,6 +204,10 @@ function GatherEntry:SetGatherData(gatherData)
             self.gatherData[name] = value
         end
         
+        local countryName = gatherData.country or ""
+        countryName = string.gsub(countryName, 1, 3)
+        self.countryName:SetText(countryName)
+
     end
     
 end

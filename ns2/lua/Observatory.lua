@@ -48,7 +48,6 @@ Observatory.kModelName = PrecacheAsset("models/marine/observatory/observatory.mo
 Observatory.kCommanderScanSound = PrecacheAsset("sound/NS2.fev/marine/commander/scan_com")
 
 local kDistressBeaconSoundMarine = PrecacheAsset("sound/NS2.fev/marine/common/distress_beacon_marine")
-local kDistressBeaconSoundAlien = PrecacheAsset("sound/NS2.fev/marine/common/distress_beacon_alien")
 
 local kObservatoryTechButtons = { kTechId.Scan, kTechId.DistressBeacon, kTechId.Detector, kTechId.None,
                                    kTechId.PhaseTech, kTechId.None, kTechId.None, kTechId.None }
@@ -89,15 +88,11 @@ function Observatory:OnCreate()
     
     if Server then
     
-        self.distressBeaconSoundMarine = Server.CreateEntity(SoundEffect.kMapName)
-        self.distressBeaconSoundMarine:SetAsset(kDistressBeaconSoundMarine)
-        self.distressBeaconSoundMarine:SetRelevancyDistance(Math.infinity)
-        self.distressBeaconSoundMarine:SetExcludeRelevancyMask(kRelevantToTeam1)
-
-        self.distressBeaconSoundAlien = Server.CreateEntity(SoundEffect.kMapName)
-        self.distressBeaconSoundAlien:SetAsset(kDistressBeaconSoundAlien)
-        self.distressBeaconSoundAlien:SetRelevancyDistance(Math.infinity)
-        self.distressBeaconSoundAlien:SetExcludeRelevancyMask(kRelevantToTeam2)
+        self.distressBeaconSound = Server.CreateEntity(SoundEffect.kMapName)
+        self.distressBeaconSound:SetAsset(kDistressBeaconSoundMarine)
+        self.distressBeaconSound:SetRelevancyDistance(Math.infinity)
+        
+        self:AddTimedCallback(Observatory.RevealCysts, 0.4)
         
     end
     
@@ -171,11 +166,9 @@ function Observatory:OnDestroy()
     
     if Server then
     
-        DestroyEntity(self.distressBeaconSoundMarine)
-        self.distressBeaconSoundMarine = nil
-        
-        DestroyEntity(self.distressBeaconSoundAlien)
-        self.distressBeaconSoundAlien = nil
+        DestroyEntity(self.distressBeaconSound)
+        self.distressBeaconSound = nil
+
         
     end
     
@@ -245,16 +238,14 @@ function Observatory:TriggerDistressBeacon()
     
     if not self:GetIsBeaconing() then
 
-        self.distressBeaconSoundMarine:Start()
-        self.distressBeaconSoundAlien:Start()
-        
+        self.distressBeaconSound:Start()
+
         local origin = self:GetDistressOrigin()
         
         if origin then
         
-            self.distressBeaconSoundMarine:SetOrigin(origin)
-            self.distressBeaconSoundAlien:SetOrigin(origin)
-            
+            self.distressBeaconSound:SetOrigin(origin)
+
             // Beam all faraway players back in a few seconds!
             self.distressBeaconTime = Shared.GetTime() + Observatory.kDistressBeaconTime
             
@@ -282,8 +273,7 @@ end
 function Observatory:CancelDistressBeacon()
 
     self.distressBeaconTime = nil
-    self.distressBeaconSoundMarine:Stop()
-    self.distressBeaconSoundAlien:Stop()
+    self.distressBeaconSound:Stop()
 
 end
 
@@ -351,8 +341,7 @@ end
 
 function Observatory:PerformDistressBeacon()
 
-    self.distressBeaconSoundMarine:Stop()
-    self.distressBeaconSoundAlien:Stop()
+    self.distressBeaconSound:Stop()
     
     local anyPlayerWasBeaconed = false
     local successfullPositions = {}
@@ -425,6 +414,16 @@ function Observatory:SetPowerOff()
     if self:GetIsBeaconing() then    
         self:CancelDistressBeacon()        
     end
+
+end
+
+function Observatory:RevealCysts()
+
+    for _, cyst in ipairs(GetEntitiesForTeamWithinRange("Cyst", GetEnemyTeamNumber(self:GetTeamNumber()), self:GetOrigin(), Observatory.kDetectionRange)) do
+        cyst:SetIsSighted(true)
+    end
+
+    return self:GetIsAlive()
 
 end
 

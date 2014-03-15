@@ -75,11 +75,11 @@ end
 local function UpdateHeight(self, input)
 
     local velocity = 0
-    if bit.band(input.commands, Move.NextWeapon) ~= 0 then
+    if bit.band(input.commands, Move.SelectNextWeapon) ~= 0 then
         velocity = -kZoomVelocity
     end
     
-    if bit.band(input.commands, Move.PrevWeapon) ~= 0 then
+    if bit.band(input.commands, Move.SelectPrevWeapon) ~= 0 then
         velocity = kZoomVelocity
     end
     

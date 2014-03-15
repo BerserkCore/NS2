@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2014, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\GUIAnimatedScript.lua
 //
-// Created by: Andreas Urwalek (a_urwa@sbox.tugraz.at)
+// Created by: Andreas Urwalek (andi@unkownworlds.com)
 //
 // Manages creation/destruction and update of animated gui items. There are no looping or oscilating
 // animation types pre defined, but those can be easily realised through callbacks which gives way more
@@ -21,6 +21,7 @@
 //
 // ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+Script.Load("lua/Globals.lua")
 Script.Load("lua/GUIScript.lua")
 Script.Load("lua/GUIAnimationUtility.lua")
 Script.Load("lua/GUIAnimatedItem.lua")

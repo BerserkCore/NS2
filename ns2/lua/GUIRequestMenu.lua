@@ -409,7 +409,7 @@ function GUIRequestMenu:SendKeyEvent(key, down)
         
     end
     
-    if down then
+    if down or key == InputKey.MouseWheelDown or key == InputKey.MouseWheelUp then
     
         local bindedVoiceId = GetBindedVoiceId(self.playerClass, key)
         if bindedVoiceId then
@@ -522,7 +522,7 @@ Event.Hook("Console_chuckle", OnCommandChuckle)
 
 local function OnCommandRequestWeld()
 local player = Client.GetLocalPlayer()
-    if player:isa("Marine") and player:GetTeamNumber() ~= kTeamReadyRoom then
+    if player:isa("Marine") or player:isa("Exo") and player:GetTeamNumber() ~= kTeamReadyRoom then
         SendRequest(self, 5)
     end        
 end

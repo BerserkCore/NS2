@@ -14,7 +14,7 @@ local kStartVoteAfterFailureLimit = 3 * 60
 
 Shared.RegisterNetworkMessage("SendVote", { voteId = "integer", choice = "boolean" })
 kVoteState = enum( { 'InProgress', 'Passed', 'Failed' } )
-Shared.RegisterNetworkMessage("VoteResults", { voteId = "integer", yesVotes = "integer (0 to 255)", noVotes = "integer (0 to 255)", state = "enum kVoteState" })
+Shared.RegisterNetworkMessage("VoteResults", { voteId = "integer", yesVotes = "integer (0 to 255)", noVotes = "integer (0 to 255)", requiredVotes = "integer (0 to 255)", state = "enum kVoteState" })
 Shared.RegisterNetworkMessage("VoteComplete", { voteId = "integer" })
 kVoteCannotStartReason = enum( { 'VoteAllowedToStart', 'VoteInProgress', 'Waiting', 'Spam', 'DisabledByAdmin' } )
 Shared.RegisterNetworkMessage("VoteCannotStart", { reason = "enum kVoteCannotStartReason" })
@@ -172,12 +172,16 @@ if Server then
             if Shared.GetTime() - lastTimeVoteResultsSent > 1 then
             
                 local yes, no = CountVotes(activeVoteResults)
+                local required = math.floor(Server.GetNumPlayers() / 2) + 1
+                
                 local voteState = kVoteState.InProgress
+                
                 local votingDone = Shared.GetTime() - activeVoteStartedAtTime >= kVoteExpireTime
                 if votingDone then
                     voteState = GetVotePassed(yes, no) and kVoteState.Passed or kVoteState.Failed
                 end
-                Server.SendNetworkMessage("VoteResults", { voteId = activeVoteId, yesVotes = yes, noVotes = no, state = voteState }, true)
+                
+                Server.SendNetworkMessage("VoteResults", { voteId = activeVoteId, yesVotes = yes, noVotes = no, state = voteState, requiredVotes = required }, true)
                 lastTimeVoteResultsSent = Shared.GetTime()
                 
             end
@@ -218,6 +222,7 @@ if Client then
     local currentVoteExpireTime = 0
     local yesVotes = 0
     local noVotes = 0
+    local requiredVotes = 0
     local lastVoteResults = nil
     
     function RegisterVoteType(voteName, voteData)
@@ -282,6 +287,7 @@ if Client then
             currentVoteExpireTime = data.expireTime
             yesVotes = 0
             noVotes = 0
+            requiredVotes = 0
             currentVoteQuery = queryTextGenerator(data)
             lastVoteResults = nil
             local message = StringReformat(Locale.ResolveString("VOTE_PLAYER_STARTED_VOTE"), { name = Scoreboard_GetPlayerName(data.client_index) })
@@ -299,6 +305,7 @@ if Client then
             -- Use the higher value as we predict the vote for the local player.
             yesVotes = math.max(yesVotes, message.yesVotes)
             noVotes = math.max(noVotes, message.noVotes)
+            requiredVotes = math.max(requiredVotes, message.requiredVotes)
             
             if message.state == kVoteState.Passed then
                 lastVoteResults = true
@@ -312,7 +319,7 @@ if Client then
     Client.HookNetworkMessage("VoteResults", OnVoteResults)
     
     function GetVoteResults()
-        return yesVotes, noVotes
+        return yesVotes, noVotes, requiredVotes
     end
     
     local function OnVoteComplete(message)
@@ -324,6 +331,7 @@ if Client then
             currentVoteExpireTime = 0
             yesVotes = 0
             noVotes = 0
+            requiredVotes = 0
             lastVoteResults = nil
             
         end

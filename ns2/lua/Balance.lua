@@ -643,11 +643,16 @@ kDrifterInitialEnergy = 50
 kDrifterMaxEnergy = 200
 
 kEnzymeCloudCost = 2
-kHallucinationCloudCost = 1
+kHallucinationCloudCost = 2
 kMucousMembraneCost = 2
-kStormCost = 1
+kStormCost = 2
 
-kHallucinationCloudCooldown = 2
+kHallucinationLifeTime = 30
+
+// only allow x% of affected players to create a hallucination
+kPlayerHallucinationNumFraction = 0.5
+// cooldown per entity
+kHallucinationCloudCooldown = 3
 kDrifterAbilityCooldown = 0
 
 kNutrientMistCost = 1

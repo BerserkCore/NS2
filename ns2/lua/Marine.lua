@@ -559,7 +559,7 @@ function Marine:GetMaxBackwardSpeedScalar()
     return Marine.kWalkBackwardSpeedScalar
 end
 
-function Marine:GetPlayerControllersGroup()
+function Marine:GetControllerPhysicsGroup()
     return PhysicsGroup.BigPlayerControllersGroup
 end
 

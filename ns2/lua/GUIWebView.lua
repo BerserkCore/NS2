@@ -176,8 +176,10 @@ function GUIWebView:SendKeyEvent(key, down, amount)
             
         end
         
-    elseif key == InputKey.MouseZ then
-        self.webView:OnMouseWheel((amount > 0) and 30 or -30, 0)
+    elseif key == InputKey.MouseWheelUp then
+        self.webView:OnMouseWheel(30, 0)
+    elseif key == InputKey.MouseWheelDown then
+        self.webView:OnMouseWheel(-30, 0)
     elseif key == InputKey.Escape then
     
         Destroy(self)

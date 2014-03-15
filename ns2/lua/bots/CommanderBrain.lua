@@ -144,9 +144,9 @@ end
 //----------------------------------------
 function CommanderBrain:ExecuteTechId( commander, techId, position, hostEntity )
 
-    DebugPrint("Combrain executing %s at %s on %s", EnumToString(kTechId, techId),
-            ToString(position),
-            hostEntity == nil and "<no target>" or hostEntity:GetClassName())
+    //DebugPrint("Combrain executing %s at %s on %s", EnumToString(kTechId, techId),
+            //ToString(position),
+            //hostEntity == nil and "<no target>" or hostEntity:GetClassName())
 
     local techNode = commander:GetTechTree():GetTechNode( techId )
 

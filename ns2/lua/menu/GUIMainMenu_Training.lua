@@ -62,6 +62,7 @@ function GUIMainMenu:ShowVideoLinksForCategory(cat)
     self.videoLinks[1]:SetText("[BACK]")
     self.videoLinks[1].OnClick = function()
         self:ShowVideoCategoryLinks()
+		MainMenu_OnButtonClicked()
     end
 
     // setup links
@@ -77,6 +78,7 @@ function GUIMainMenu:ShowVideoLinksForCategory(cat)
         link:SetText(vid.title)
         link.OnClick = function()
             GUITipVideo.singleton:TriggerVideo(vid, 8, kGUILayerTrainingMenuTipVideos)
+			MainMenu_OnTrainingLinkedClicked()
         end
 
     end
@@ -93,6 +95,7 @@ function GUIMainMenu:ShowVideoCategoryLinks()
         link:SetText(cat)
         link.OnClick = function()
             self:ShowVideoLinksForCategory(cat)
+			MainMenu_OnButtonClicked()
         end
 
     end
@@ -410,6 +413,10 @@ end
 
 function GUIMainMenu:CreateTrainingWindow()
 
+    if GUITipVideo.singleton == nil then
+        self.videoPlayer = GetGUIManager():CreateGUIScript("GUITipVideo")
+    end
+
     self.trainingWindow = self:CreateWindow()
     self.trainingWindow:DisableCloseButton()
     self:SetupWindow(self.trainingWindow, "TRAINING")
@@ -418,7 +425,7 @@ function GUIMainMenu:CreateTrainingWindow()
     local back = CreateMenuElement(self.trainingWindow, "MenuButton")
     back:SetCSSClass("back")
     back:SetText("BACK")
-    back:AddEventCallbacks( { OnClick = function() self.trainingWindow:SetIsVisible(false) end } )
+    back:AddEventCallbacks( { OnClick = function() self.trainingWindow:SetIsVisible(false) GUITipVideo.singleton:Hide() end } )
     
     local tabs = 
     {

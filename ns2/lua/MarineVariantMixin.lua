@@ -54,7 +54,7 @@ MarineVariantMixin.kMarineAnimationGraph = PrecacheAsset("models/marine/male/mal
 
 MarineVariantMixin.networkVars =
 {
-    shoulderPadIndex = "integer (0 to 4)",
+    shoulderPadIndex = string.format("integer (0 to %d)",  #kShoulderPad2ProductId),
     isMale = "boolean",
     variant = "enum kMarineVariant",
 }
@@ -120,15 +120,13 @@ if Server then
         else
             Print("ERROR: Client tried to request marine variant they do not have yet")
         end
-        
-        // Set the highest level shoulder pad.
+
         self.shoulderPadIndex = 0
-        for padId = 1, #kShoulderPad2ProductId do
         
-            if GetHasShoulderPad(padId, client) then
-                self.shoulderPadIndex = padId
-            end
-            
+        local selectedIndex = client.variantData.shoulderPadIndex
+        
+        if GetHasShoulderPad(selectedIndex, client) then
+            self.shoulderPadIndex = selectedIndex
         end
         
         if changed then
@@ -150,13 +148,15 @@ if Client then
 
         // update player patch
         if self:GetRenderModel() ~= nil then
-            self:GetRenderModel():SetMaterialParameter("patchIndex", self.shoulderPadIndex-1)
+        
+            self:GetRenderModel():SetMaterialParameter("patchIndex", self.shoulderPadIndex-2)
 
             // TEMP
             //self:GetRenderModel():SetMaterialParameter("patchIndex", self:GetClientIndex()%3 - 1 )
 
             // TEMP
-            //self:GetRenderModel():SetMaterialParameter("patchIndex", 1 )
+            //self:GetRenderModel():SetMaterialParameter("patchIndex", 6)
+            
         end
     
     end

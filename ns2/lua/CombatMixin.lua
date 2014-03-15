@@ -177,7 +177,7 @@ if Server then
 
         local notifiyTarget = not doer or not doer.GetNotifiyTarget or doer:GetNotifiyTarget(self)
 
-        if damage > 0 and notifiyTarget then
+        if notifiyTarget and GetAreEnemies(doer, self) then
         
             local team = self:GetTeam()
             if team and team.TriggerAlert and not preventAlert then
@@ -192,7 +192,7 @@ if Server then
             self.lastTakenDamageTime = Shared.GetTime()
             self.timeLastHealthChange = Shared.GetTime()
             self.lastTakenDamageAmount = Clamp(damage, 0, 8191)
-            
+
             if point ~= nil then
             
                 self.lastTakenDamageOrigin = doer and doer:GetOrigin() or self:GetOrigin()

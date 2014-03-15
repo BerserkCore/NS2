@@ -42,7 +42,7 @@ if Client then
         local model = self:GetRenderModel()
         if model ~= nil then 
         
-            local outlineModel = player:isa("Spectator") and player:GetOutlinePlayers() and self:isa("Player")
+            local outlineModel = Client.GetLocalClientTeamNumber() == kSpectatorIndex and self:isa("Player") and Client.GetOutlinePlayers()
         
             if  outlineModel and not self.marineOutlineVisible then
                 

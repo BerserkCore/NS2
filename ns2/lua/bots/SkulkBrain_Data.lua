@@ -6,8 +6,8 @@ local kUpgrades = {
     kTechId.Carapace,
     kTechId.Regeneration,
     
-    kTechId.Silence,
-    kTechId.Camouflage,
+    kTechId.Phantom,
+    kTechId.Aura,
     
     kTechId.Celerity,
     kTechId.Adrenaline,

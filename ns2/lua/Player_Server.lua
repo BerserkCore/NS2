@@ -18,8 +18,19 @@ function Player:OnClientConnect(client)
     
 end
 
+function Player:GetSteamId()
+    return self.client:GetUserId()
+end
+
 function Player:GetClient()
     return self.client
+end
+
+function Player:SetPlayerInfo(playerInfo)
+
+    self.playerInfo = playerInfo
+    self.playerInfo:SetScorePlayer(self)
+    
 end
 
 function Player:Reset()
@@ -74,9 +85,7 @@ function Player:SetName(name)
     if newName ~= self.name then
     
         self.name = newName
-        
-        self:SetScoreboardChanged(true)
-        
+
     end
     
 end
@@ -175,7 +184,7 @@ function Player:OnKill(killer, doer, point, direction)
     end
 
     // Save death to server log
-    if killer == self then        
+    if killer == self or killer == nil then      
         PrintToLog("%s committed suicide", self:GetName())
     elseif killerName ~= nil then
         PrintToLog("%s was killed by %s", self:GetName(), killerName)
@@ -261,8 +270,7 @@ end
 function Player:OnTeamChange()
 
     self:UpdateIncludeRelevancyMask()
-    self:SetScoreboardChanged(true)
-    
+
 end
 
 function Player:UpdateIncludeRelevancyMask()
@@ -287,10 +295,6 @@ function Player:SetResources(amount)
     self.resources = Clamp(amount, 0, kMaxPersonalResources)
     
     local newVisibleResources = math.floor(self.resources)
-    
-    if oldVisibleResources ~= newVisibleResources then
-        self:SetScoreboardChanged(true)
-    end
     
 end
 
@@ -528,15 +532,15 @@ function Player:Replace(mapName, newTeamNumber, preserveWeapons, atOrigin, extra
     
     // Notify others of the change     
     self:SendEntityChanged(player:GetId())
-    
-    // Update scoreboard because of new entity and potentially new team
-    player:SetScoreboardChanged(true)
-    
+
     // This player is no longer controlled by a client.
     self.client = nil
     
     // Remove any spectators currently spectating this player.
     self:RemoveSpectators(player)
+    
+    player:SetPlayerInfo(self.playerInfo)
+    self.playerInfo = nil
     
     // Only destroy the old player if it is not a ragdoll.
     // Ragdolls will eventually destroy themselve.
@@ -724,7 +728,7 @@ function Player:TriggerAlert(techId, entity)
 
     assert(entity ~= nil)
     
-    if self:GetIsInterestedInAlert(techId) then
+    if self:GetIsInterestedInAlert(techId) and (not entity:isa("Player") or GetGamerules():GetCanPlayerHearPlayer(self, entity)) then
     
         local entityId = entity:GetId()
         local time = Shared.GetTime()
@@ -756,10 +760,7 @@ function Player:SetRookieMode(rookieMode)
      if self.isRookie ~= rookieMode then
     
         self.isRookie = rookieMode
-        
-        // rookie status sent along with scores
-        self:SetScoreboardChanged(true)
-        
+
     end
     
 end

@@ -120,7 +120,7 @@ function GUITipVideo:Initialize()
     
     // Compute size/pos
     local webAspect = webViewWidth / webViewHeight
-    local wt = Client.GetScreenWidth() * 0.3
+    local wt = Client.GetScreenWidth() * 0.4
     local videoWt = wt - 2*kVideoPad
     local videoHt = videoWt / webAspect
     local ht = videoHt + kTipTextHeight + 2*kVideoPad
@@ -493,7 +493,7 @@ function GUITipVideo:SendKeyEvent(key, down)
 
     if self.state == "playing" then
 
-        if key == InputKey.Num0 and down then
+        if key == InputKey.Num0 and down or key == InputKey.Escape then
             self:Hide()
             StartSoundEffect(kStopSound)
             return true

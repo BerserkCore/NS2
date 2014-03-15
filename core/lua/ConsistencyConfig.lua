@@ -9,7 +9,10 @@
 Script.Load("lua/ConfigFileUtility.lua")
 
 local consistencyConfigFileName = "ConsistencyConfig.json"
-
+local finishedChecking = false
+local finishedIgnoring = false
+local finishedRestricting = false
+local startTime = Shared.GetSystemTime()
 // Write out the default file if it doesn't exist.
 local defaultConfig = { check = { "game_setup.xml", "*.lua", "*.hlsl", "*.shader", "*.screenfx", "*.surface_shader", "*.fxh", "*.render_setup", "*.shader_template", "*.level",
                                   "*.dds", "*.jpg", "*.png", "*.cinematic", "*.material", "*.model", "*.animation_graph", "*.polygons", "*.fev", "*.fsb" },
@@ -30,6 +33,7 @@ if consistencyConfig then
             local numHashed = Server.AddFileHashes(check[c])
             Shared.Message("Hashed " .. numHashed .. " " .. check[c] .. " files for consistency")
         end
+		finishedChecking = true
     end
 
     if type(consistencyConfig.ignore) == "table" then
@@ -38,6 +42,7 @@ if consistencyConfig then
             local numHashed = Server.RemoveFileHashes(ignore[c])
             Shared.Message("Skipped " .. numHashed .. " " .. ignore[c] .. " files for consistency")
         end
+		finishedIgnoring = true
     end
     
     if type(consistencyConfig.restrict) == "table" then
@@ -46,7 +51,12 @@ if consistencyConfig then
             local numHashed = Server.AddRestrictedFileHashes(check[c])
             Shared.Message("Hashed " .. numHashed .. " " .. check[c] .. " files for consistency")
         end
+		finishedRestricting = true
     end
     
+	if finishedChecking == true and finishedIgnoring == true and finishedRestricting == true then
+		local endTime = Shared.GetSystemTime()
+		Print("Consistency checking took " .. ToString(endTime - startTime) .. " seconds")
+	end
     
 end

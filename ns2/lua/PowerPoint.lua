@@ -504,6 +504,10 @@ if Server then
         
     end
     
+    function PowerPoint:GetDestroyMapBlipOnKill()
+        return false
+    end
+    
     function PowerPoint:OnConstructionComplete()
 
         self:StopDamagedSound()
@@ -588,7 +592,7 @@ if Server then
     
     function PowerPoint:OnTakeDamage(damage, attacker, doer, direction, damageType, preventAlert)
 
-        if self:GetIsPowering() then
+        if self:GetIsPowering() and damage > 0 then
         
             self:PlaySound(kTakeDamageSound)
             

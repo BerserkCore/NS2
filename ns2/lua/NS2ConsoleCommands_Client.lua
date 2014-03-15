@@ -190,6 +190,27 @@ local function OnCommandDrawDecal(material, scale)
 
 end
 
+local function OnConsoleMapInfo()
+	if Client.originalLights ~= nil then
+		Shared.Message(ToString(#Client.lowLightList + #Client.originalLights) .. " lights")
+	end
+	if Client.reflectionProbeList ~= nil then
+		Shared.Message(ToString(#Client.reflectionProbeList) ..  " reflection probes")
+	end
+	if Client.propList ~= nil then
+		Shared.Message(ToString(#Client.propList) ..  " props")
+	end
+	if Client.ambientSoundList ~= nil then
+		Shared.Message(ToString(#Client.ambientSoundList) ..  " ambient sounds")
+	end
+	if Client.decalList ~= nil then
+		Shared.Message(ToString(#Client.decalList) ..  " decals")
+	end
+	if Client.cinematics ~= nil then
+		Shared.Message(ToString(#Client.cinematics) ..  " cinematics")
+	end
+end
+
 Event.Hook("Console_drawdecal", OnCommandDrawDecal)
 
 Event.Hook("Console_tracereticle", OnCommandTraceReticle)
@@ -201,6 +222,7 @@ Event.Hook("Console_cents", OnCommandClientEntities)
 Event.Hook("Console_r_healthrings", OnCommandHealthRings)
 Event.Hook("Console_reset_help", OnCommandResetHelp)
 Event.Hook("Console_music", OnConsoleMusic)
+Event.Hook("Console_mapinfo", OnConsoleMapInfo)
 
 Event.Hook("Console_debugcommander", OnCommandDebugCommander)
 
@@ -209,17 +231,8 @@ Client.HookNetworkMessage("SelectAndGoto", OnCommandSelectAndGoto)
 local function OnConsoleSelectHallucinations()
 
     local player = Client.GetLocalPlayer()
-    if player and player:isa("AlienCommander") then
-    
-        DeselectAllUnits(player:GetTeamNumber())
-        for _, hallucination in ipairs(GetEntitiesForTeam("Hallucination", player:GetTeamNumber())) do
-        
-            if hallucination:GetIsAlive() then
-                hallucination:SetSelected(player:GetTeamNumber(), true, true, true)
-            end
-        
-        end
-    
+    if player and player:isa("AlienCommander") then    
+        SelectAllHallucinations(player)    
     end
 
 end

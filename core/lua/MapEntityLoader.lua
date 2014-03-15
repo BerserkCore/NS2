@@ -47,94 +47,119 @@ function LoadEntityFromValues(entity, values, initOnly)
 end
 
 local function LoadLight(className, groupName, values)
-            
-    local renderLight = Client.CreateRenderLight()
-    local coords = values.angles:GetCoords(values.origin)
-    
-    if values.specular == nil then
-        values.specular = true
-    end        
-    
-    if className == "light_spot" then
-    
-        renderLight:SetType(RenderLight.Type_Spot)
-        renderLight:SetOuterCone(values.outerAngle)
-        renderLight:SetInnerCone(values.innerAngle)
-        renderLight:SetCastsShadows(values.casts_shadows)
-        renderLight:SetSpecular(values.specular)
-        
-        if values.gobo_texture ~= nil then
-            renderLight:SetGoboTexture(values.gobo_texture)
-        end
-        
-        if values.shadow_fade_rate ~= nil then
-            renderLight:SetShadowFadeRate(values.shadow_fade_rate)
-        end
-    
-    elseif className == "light_point" then
-    
-        renderLight:SetType(RenderLight.Type_Point)
-        renderLight:SetCastsShadows(values.casts_shadows)
-        renderLight:SetSpecular(values.specular)
+		
+	if Client.lightList == nil then
+		Client.lightList = { }
+	end
+	
+	if Client.lowLightList == nil then
+		Client.lowLightList = { }
+	end
+	
+	if Client.originalLights == nil then
+		Client.originalLights = { }
+	end
 
-        if values.shadow_fade_rate ~= nil then
-            renderLight:SetShadowFadeRate(values.shadow_fade_rate)
-        end
-        
-    elseif className == "light_ambient" then
-        
-        renderLight:SetType(RenderLight.Type_AmbientVolume)
-        
-        renderLight:SetDirectionalColor(RenderLight.Direction_Right,    values.color_dir_right)
-        renderLight:SetDirectionalColor(RenderLight.Direction_Left,     values.color_dir_left)
-        renderLight:SetDirectionalColor(RenderLight.Direction_Up,       values.color_dir_up)
-        renderLight:SetDirectionalColor(RenderLight.Direction_Down,     values.color_dir_down)
-        renderLight:SetDirectionalColor(RenderLight.Direction_Forward,  values.color_dir_forward)
-        renderLight:SetDirectionalColor(RenderLight.Direction_Backward, values.color_dir_backward)
-        
-    end
+	if Client.fullyLoaded == nil then //Game hasnt loaded yet, so build light data tables.
+	
+		if groupName == "Low Lights" then
+			table.insert(Client.lowLightList, {className = className, groupName = groupName, values = values})
+		else
+			table.insert(Client.originalLights, {className = className, groupName = groupName, values = values})
+		end
+		
+	else
+	
+		local renderLight = Client.CreateRenderLight()
+		local coords = values.angles:GetCoords(values.origin)
+		
+		if values.specular == nil then
+			values.specular = true
+		end        
+		
+		if className == "light_spot" then
+		
+			renderLight:SetType(RenderLight.Type_Spot)
+			renderLight:SetOuterCone(values.outerAngle)
+			renderLight:SetInnerCone(values.innerAngle)
+			renderLight:SetCastsShadows(values.casts_shadows)
+			renderLight:SetSpecular(values.specular)
+			
+			if values.gobo_texture ~= nil then
+				renderLight:SetGoboTexture(values.gobo_texture)
+			end
+			
+			if values.shadow_fade_rate ~= nil then
+				renderLight:SetShadowFadeRate(values.shadow_fade_rate)
+			end
+		
+		elseif className == "light_point" then
+		
+			renderLight:SetType(RenderLight.Type_Point)
+			renderLight:SetCastsShadows(values.casts_shadows)
+			renderLight:SetSpecular(values.specular)
 
-    renderLight:SetCoords(coords)
-    renderLight:SetRadius(values.distance)
-    renderLight:SetIntensity(values.intensity)
-    renderLight:SetColor(values.color)
-    renderLight:SetGroup(groupName)
-    renderLight.ignorePowergrid = values.ignorePowergrid
-    
-    local atmosphericDensity = tonumber(values.atmospheric_density)
-    
-    // Backwards compatibility
-    if values.atmospheric then
-        atmosphericDensity = 1.0
-    end
-    
-    if atmosphericDensity ~= nil then
-        renderLight:SetAtmosphericDensity( atmosphericDensity )
-    end
-    
-    // Save original values so we can alter and restore lights
-    renderLight.originalIntensity = values.intensity
-    renderLight.originalColor = values.color
-    renderLight.originalCoords = Coords(coords)
-    renderLight.originalAtmosphericDensity = atmosphericDensity
-    
-    if (className == "light_ambient") then
-    
-        renderLight.originalRight = values.color_dir_right
-        renderLight.originalLeft = values.color_dir_left
-        renderLight.originalUp = values.color_dir_up
-        renderLight.originalDown = values.color_dir_down
-        renderLight.originalForward = values.color_dir_forward
-        renderLight.originalBackward = values.color_dir_backward
-        
-    end
-    
-    if Client.lightList == nil then
-        Client.lightList = { }
-    end
-    table.insert(Client.lightList, renderLight)
-    
-    return true
+			if values.shadow_fade_rate ~= nil then
+				renderLight:SetShadowFadeRate(values.shadow_fade_rate)
+			end
+			
+		elseif className == "light_ambient" then
+			
+			renderLight:SetType(RenderLight.Type_AmbientVolume)
+			
+			renderLight:SetDirectionalColor(RenderLight.Direction_Right,    values.color_dir_right)
+			renderLight:SetDirectionalColor(RenderLight.Direction_Left,     values.color_dir_left)
+			renderLight:SetDirectionalColor(RenderLight.Direction_Up,       values.color_dir_up)
+			renderLight:SetDirectionalColor(RenderLight.Direction_Down,     values.color_dir_down)
+			renderLight:SetDirectionalColor(RenderLight.Direction_Forward,  values.color_dir_forward)
+			renderLight:SetDirectionalColor(RenderLight.Direction_Backward, values.color_dir_backward)
+			
+		end
+
+		renderLight:SetCoords(coords)
+		renderLight:SetRadius(values.distance)
+		renderLight:SetIntensity(values.intensity)
+		renderLight:SetColor(values.color)
+		renderLight:SetGroup(groupName)
+		renderLight.ignorePowergrid = values.ignorePowergrid
+		
+		local atmosphericDensity = tonumber(values.atmospheric_density)
+		
+		// Backwards compatibility
+		if values.atmospheric then
+			atmosphericDensity = 1.0
+		end
+		
+		if atmosphericDensity ~= nil then
+			renderLight:SetAtmosphericDensity( atmosphericDensity )
+		end
+		
+		// Save original values so we can alter and restore lights
+		renderLight.originalIntensity = values.intensity
+		renderLight.originalColor = values.color
+		renderLight.originalCoords = Coords(coords)
+		renderLight.originalAtmosphericDensity = atmosphericDensity
+		
+		if (className == "light_ambient") then
+		
+			renderLight.originalRight = values.color_dir_right
+			renderLight.originalLeft = values.color_dir_left
+			renderLight.originalUp = values.color_dir_up
+			renderLight.originalDown = values.color_dir_down
+			renderLight.originalForward = values.color_dir_forward
+			renderLight.originalBackward = values.color_dir_backward
+			
+		end
+		
+		renderLight.className = className
+		renderLight.groupName = groupName
+		renderLight.values = values
+		
+		table.insert(Client.lightList, renderLight)
+
+		return true
+	
+	end
         
 end
 
@@ -259,7 +284,7 @@ local function LoadSoundEffect(className, groupName, values)
         if values.startsOnMessage and string.len(values.startsOnMessage) > 0 then
             soundEffect:RegisterSignalListener(function() soundEffect:Start() end, values.startsOnMessage)
         end
-        
+
         return true
         
     end
@@ -284,6 +309,10 @@ local function LoadReflectionProbe(className, groupName, values)
     if Client.reflectionProbeList == nil then
         Client.reflectionProbeList = { }
     end
+	renderReflectionProbe.className = className
+	renderReflectionProbe.groupName = groupName
+	renderReflectionProbe.values = values
+
     table.insert(Client.reflectionProbeList, renderReflectionProbe)
     
     if values.__editorData ~= nil then

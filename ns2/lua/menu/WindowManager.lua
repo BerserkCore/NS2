@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2014, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\menu\WindowManager.lua
 //
-//    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 //    Holds all window instances, tracks mouse states, controls clicking/events and sorts
 //    hud layers.
@@ -30,7 +30,7 @@ function WindowManager:OnMouseMove(pressed)
 
     if not pressed then
         element, window = self:GetRelevantElement(MouseTracker_GetCursorPos())
-    end   
+    end
     
     // handle mouse out:
     if self.lastRelevantElement and self.lastRelevantElement ~= element and self.lastRelevantElement.OnMouseOut then
@@ -38,8 +38,8 @@ function WindowManager:OnMouseMove(pressed)
     end
     
     // handle mouse in:
-    if self.lastRelevantElement and self.lastRelevantElement ~= element and self.lastRelevantElement.OnMouseIn then
-        self.lastRelevantElement:OnMouseIn(MouseTracker_GetIsLeftButtonPressed())
+    if element and self.lastRelevantElement ~= element and element.OnMouseIn then
+        element:OnMouseIn(MouseTracker_GetIsLeftButtonPressed())
     end
     
     // handle mouse over:
@@ -56,9 +56,20 @@ end
 
 function WindowManager:OnMouseWheel(up)
 
-    if self.lastActiveWindow and self.lastActiveWindow.OnMouseWheel then
+    local stop = false
+
+    if self.lastActiveElement and self.lastActiveElement:GetIsVisible() and self.lastActiveElement.OnMouseWheel then
+        self.lastActiveElement:OnMouseWheel(up)
+        stop = true
+    end    
+    
+
+    if self.lastActiveWindow and self.lastActiveWindow:GetIsVisible() and self.lastActiveWindow.OnMouseWheel then
         self.lastActiveWindow:OnMouseWheel(up)
+        stop = true
     end
+    
+    return stop
     
 end
 
@@ -113,6 +124,20 @@ function WindowManager:HandleFocusBlur(window, element)
 
 end
 
+function WindowManager:SetElementInactive()
+
+    if self.lastActiveElement then
+    
+        if self.lastActiveElement and self.lastActiveElement.OnBlur then
+            self.lastActiveElement:OnBlur()
+        end
+        
+        self.lastActiveElement = nil
+    
+    end
+
+end
+
 function WindowManager:OnMouseUp(key)
     
     local element, window, windowLayer = self:GetRelevantElement(MouseTracker_GetCursorPos())
@@ -146,6 +171,16 @@ function WindowManager:Initialize()
     // used for OnFocus, OnBlur
     self.lastActiveWindow = nil
     self.lastActiveElement = nil
+
+end
+
+function WindowManager:ClearActiveElement(element)
+
+    self.lastActiveElement = nil
+    
+    if element and element.OnBlur then
+        element:OnBlur()
+    end
 
 end
 
@@ -223,7 +258,7 @@ end
 
 // Return true if the event should be stopped here.
 function WindowManager:SendKeyEvent(key, down, amount)
-
+    
     if not Shared.GetIsRunningPrediction() then
         
         local activeWindow = self:GetActiveWindow()
@@ -234,18 +269,22 @@ function WindowManager:SendKeyEvent(key, down, amount)
         end
         
         if self.lastActiveElement then
-            stop = HandleKeyEventCallbacks(key, down, self.lastActiveElement)            
-            if not stop and self.lastActiveElement.OnSendKey then
+        
+            stop = HandleKeyEventCallbacks(key, down, self.lastActiveElement)
+            // check again for self.lastActiveElement ~= nil, could have already changed in one of the callbacks     
+            if not stop and self.lastActiveElement and self.lastActiveElement.OnSendKey then
                 stop = self.lastActiveElement:OnSendKey(key, down, amount)
             end
             
         end
         
         if not stop then
+        
             stop = HandleKeyEventCallbacks(key, down, activeWindow)
             if not stop and activeWindow.OnSendKey then
                 stop = activeWindow:OnSendKey(key, down, amount)
             end
+            
         end
         
         activeWindow = self:GetActiveWindow()

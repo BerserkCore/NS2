@@ -16,7 +16,7 @@ local kShowOnTeam = { }
 kShowOnTeam["all"] = { GUIFeedback = true, GUIScoreboard = true, GUIDeathMessages = true, GUIChat = true,
                        GUIVoiceChat = true, GUIMinimapFrame = true, GUIMapAnnotations = true,
                        GUICommunicationStatusIcons = true, GUIUnitStatus = true, GUIDeathScreen = true,
-                       GUITipVideo = true, GUIVoteMenu = true, GUIStartVoteMenu = true, /*GUIGatherOverlay = true*/ }
+                       GUITipVideo = true, GUIVoteMenu = true, GUIStartVoteMenu = true, GUIGatherOverlay = true }
 
 kShowOnTeam[kTeamReadyRoom] = { GUIReadyRoomOrders = true } // , GUIPlayerRanking = true }
 kShowOnTeam[kTeam1Index] = { }
@@ -250,3 +250,39 @@ local function PrintUIScripts()
     
 end
 Event.Hook("Console_print_client_ui", PrintUIScripts)
+
+function PreLoadGUIScripts()
+
+    for team, uiScripts in pairs(kShowOnTeam) do
+    
+        for name, enabled in pairs(uiScripts) do
+            
+            if enabled then
+                Script.Load("lua/" .. name .. ".lua")
+            end
+            
+        end 
+
+    end   
+
+    for name, enabled in pairs(kBothAlienAndMarine) do
+        
+        if enabled then
+            Script.Load("lua/" .. name .. ".lua")
+        end
+        
+    end
+    
+    for class, uiScripts in pairs(kShowAsClass) do
+
+        for name, enabled in pairs(uiScripts) do
+            
+            if enabled then
+                Script.Load("lua/" .. name .. ".lua")
+            end
+            
+        end
+    
+    end
+
+end

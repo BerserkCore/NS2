@@ -1,8 +1,8 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+// ======= Copyright (c) 2003-2014, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 //
 // lua\menu\Window.lua
 //
-//    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
+//    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 //
 //    Holds GUIItems for a window.
 //
@@ -83,7 +83,7 @@ function Window:Initialize()
         
         OnMouseWheel = function(self, up)
         
-            if self.slideBar then
+            if self.slideBar and self.slideBar:GetIsVisible() then
             
                 if up then
                     self.slideBar:ScrollMin()

@@ -345,44 +345,37 @@ function LiveMixin:TakeDamage(damage, attacker, doer, point, direction, armorUse
     local killedFromDamage = false
     local oldHealth = self:GetHealth()
     local oldArmor = self:GetArmor()
+
+    self.armor = math.max(0, self:GetArmor() - armorUsed)
+    self.health = math.max(0, self:GetHealth() - healthUsed)
     
-    if damage > 0 then
+    if self.OnTakeDamage then
+        self:OnTakeDamage(damage, attacker, doer, point, direction, damageType, preventAlert)
+    end
     
-        local oldArmor = self.armor
-        local oldHealth = self.health
+    // Remember time we were last hurt to track combat
+    SetLastDamage(self, Shared.GetTime(), attacker)
     
-        self.armor = math.max(0, self:GetArmor() - armorUsed)
-        self.health = math.max(0, self:GetHealth() - healthUsed)
+    // set time out for synchronize to preventing sudden flipping of numbers, health display / crosshair text
+    // don't do this when running prediction (otherwise client predicts* every frame the damage which results in x times (num frames) more damage applied
+    if Client and not GetSyncHealth(self) then
+    
+        self.timeLastClientUpdated = Shared.GetTime()
+        self.healthClient = self.health
+        self.armorClient = self.armor
         
-        if self.OnTakeDamage and (oldArmor ~= self.armor or oldHealth ~= self.health) then
-            self:OnTakeDamage(damage, attacker, doer, point, direction, damageType, preventAlert)
-        end
+    end
+    
+    if Server then
+    
+        local killedFromHealth = oldHealth > 0 and self:GetHealth() == 0 and not self.healthIgnored
+        local killedFromArmor = oldArmor > 0 and self:GetArmor() == 0 and self.healthIgnored
+        if killedFromHealth or killedFromArmor then
         
-        // Remember time we were last hurt to track combat
-        SetLastDamage(self, Shared.GetTime(), attacker)
-        
-        // set time out for synchronize to preventing sudden flipping of numbers, health display / crosshair text
-        // don't do this when running prediction (otherwise client predicts* every frame the damage which results in x times (num frames) more damage applied
-        if Client and not GetSyncHealth(self) then
-        
-            self.timeLastClientUpdated = Shared.GetTime()
-            self.healthClient = self.health
-            self.armorClient = self.armor
+            if not self.AttemptToKill or self:AttemptToKill(damage, attacker, doer, point) then
             
-        end
-        
-        if Server then
-        
-            local killedFromHealth = oldHealth > 0 and self:GetHealth() == 0 and not self.healthIgnored
-            local killedFromArmor = oldArmor > 0 and self:GetArmor() == 0 and self.healthIgnored
-            if killedFromHealth or killedFromArmor then
-            
-                if not self.AttemptToKill or self:AttemptToKill(damage, attacker, doer, point) then
-                
-                    self:Kill(attacker, doer, point, direction)
-                    killedFromDamage = true
-                    
-                end
+                self:Kill(attacker, doer, point, direction)
+                killedFromDamage = true
                 
             end
             
@@ -441,7 +434,7 @@ function LiveMixin:GetCanBeHealed()
 end
 
 // Return the amount of health we added 
-function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
+function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect, healer)
 
     // TakeDamage should be used for negative values.
     assert(health >= 0)
@@ -459,6 +452,10 @@ function LiveMixin:AddHealth(health, playSound, noArmor, hideEffect)
         
         health = healTable.health
         
+    end
+    
+    if healer and healer.ModifyHealingDone then
+        health = healer:ModifyHealingDone(health)
     end
 
     if self:AmountDamaged() > 0 then

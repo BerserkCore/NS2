@@ -16,15 +16,20 @@ local kInputOffset = Vector(0, -10, 0)
 local kBackgroundColor = Color(0.4, 0.4, 0.4, 0.0)
 // This is the buffer x space between a player name and their chat message.
 local kChatTextBuffer = 5
-local kTimeStartFade = 6
-local kTimeEndFade = 7
-
+local kTimeStartFade = Client.GetOptionInteger("chat-time", 6)
+local kTimeEndFade = Client.GetOptionInteger("chat-time", 6) + 1
 local kFontName = { marine = "fonts/AgencyFB_small.fnt", alien = "fonts/AgencyFB_small.fnt" }
 
 local function UpdateSizeOfUI(self, screenWidth, screenHeight)
 
     self.inputItem:SetPosition((kOffset * GUIScale(1)) + (kInputOffset * GUIScale(1)))
     
+	if Client.GetScreenWidth() < 1024 then
+		kFontName = { marine = "fonts/AgencyFB_tiny.fnt", alien = "fonts/AgencyFB_tiny.fnt" }
+	else
+		kFontName = { marine = "fonts/AgencyFB_small.fnt", alien = "fonts/AgencyFB_small.fnt" }
+	end
+	
 end
 
 function GUIChat:Initialize()
@@ -265,10 +270,23 @@ function GUIChat:AddMessage(playerColor, playerName, messageColor, messageText)
     insertMessage["Message"]:SetTextAlignmentX(GUIItem.Align_Max)
     insertMessage["Message"]:SetTextAlignmentY(GUIItem.Align_Center)
     insertMessage["Message"]:SetColor(messageColor)
-    insertMessage["Message"]:SetText(messageText)
-    
+
+	local width = Client.GetScreenWidth()
+	local cutoff = 40
+	if width <= 1024 then
+		cutoff = 45
+	elseif width > 1024 and width <= 1280 then
+		cutoff = 50
+	elseif width > 1280 and width <= 1600 then
+		cutoff = 55
+	elseif width > 1600 and width <= 1920 then
+		cutoff = 60
+	end
+	local wrappedText = WrapText( messageText, cutoff, nil, "" )
+	insertMessage["Message"]:SetText(wrappedText)
+	
     local playerTextWidth = insertMessage["Player"]:GetTextWidth(playerName)
-    local messageTextWidth = insertMessage["Message"]:GetTextWidth(messageText)
+    local messageTextWidth = insertMessage["Message"]:GetTextWidth(wrappedText)
     local textWidth = playerTextWidth + messageTextWidth
     
     if insertMessage["Background"] == nil then
@@ -288,3 +306,20 @@ function GUIChat:AddMessage(playerColor, playerName, messageColor, messageText)
     table.insert(self.messages, insertMessage)
     
 end
+
+local function OnCommandChatTime(time)
+
+	if Client.GetOptionInteger("chat-time", -1) == -1 then
+		Client.SetOptionInteger("chat-time", kTimeStartFade)
+	elseif tonumber(time) >= 3 then
+		Shared.Message("Chat messages will now show for " .. time .. " seconds. The default is 6 seconds.")
+		Client.SetOptionInteger("chat-time", tonumber(time))
+		kTimeStartFade = tonumber(time)
+		kTimeEndFade = kTimeStartFade + 1
+	elseif tonumber(time) < 3 then
+		Shared.Message("Chat messages must show for at least 3 seconds. The default is 6 seconds.")
+	end
+	
+end
+
+Event.Hook("Console_chattime", OnCommandChatTime)

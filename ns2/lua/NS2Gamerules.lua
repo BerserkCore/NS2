@@ -269,10 +269,7 @@ if Server then
                         entity.sendTechTreeBase = true           
                         
                     end
-                   
-                    // Send scoreboard changes to everyone    
-                    entity:SetScoreboardChanged(true)
-                
+
                 end
                 
             end
@@ -410,7 +407,7 @@ if Server then
             // at the start of the next game, including the NS2Gamerules. This is how a map transition would have to work anyway.
             // Do not destroy any entity that has a parent. The entity will be destroyed when the parent is destroyed or
             // when the owner manually destroyes the entity.
-            local shieldTypes = { "GameInfo", "MapBlip", "NS2Gamerules" }
+            local shieldTypes = { "GameInfo", "MapBlip", "NS2Gamerules", "PlayerInfoEntity" }
             local allowDestruction = true
             for i = 1, #shieldTypes do
                 allowDestruction = allowDestruction and not entity:isa(shieldTypes[i])
@@ -536,7 +533,6 @@ if Server then
         // Send scoreboard update, ignoring other scoreboard updates (clearscores resets everything)
         for index, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
             Server.SendCommand(player, "onresetgame")
-            //player:SetScoreboardChanged(false)
         end
         
         self.team1:OnResetComplete()
@@ -573,79 +569,6 @@ if Server then
             self.initialHiveTechId = techId
         end
         
-    end
-    
-    function NS2Gamerules:UpdateScores()
-
-        if (self.timeToSendScores == nil or Shared.GetTime() > self.timeToSendScores) then
-        
-            local allPlayers = Shared.GetEntitiesWithClassname("Player")
-
-            // If any player scoreboard info has changed, send those updates to everyone
-            for index, fromPlayer in ientitylist(allPlayers) do
-            
-                // Send full update if any part of it changed
-                if(fromPlayer:GetScoreboardChanged()) then
-                
-                    // If any value has changed then we also want to update the internal score
-                    // so we can update steams player info.
-                    local client = Server.GetOwner(fromPlayer)
-                    if client ~= nil then
-                    
-                        local playerScore = 0
-                        if HasMixin(fromPlayer, "Scoring") then
-                            playerScore = fromPlayer:GetScore()
-                        end
-                        Server.UpdatePlayerInfo(client, fromPlayer:GetName(), playerScore)
-                        
-                        if(fromPlayer:GetName() ~= "") then
-                        
-                            // Now send scoreboard info to everyone, including fromPlayer     
-                            for index, sendToPlayer in ientitylist(allPlayers) do
-                                // Build the message per player as some info is not synced for players
-                                // on the other team.
-                                local scoresMessage = BuildScoresMessage(fromPlayer, sendToPlayer)
-                                Server.SendNetworkMessage(sendToPlayer, "Scores", scoresMessage, true)
-                            end
-                            
-                            fromPlayer:SetScoreboardChanged(false)
-                            
-                        else
-                            Print("Player name empty, can't send scoreboard update.")
-                        end
-
-                    end
-                    
-                end
-                
-            end
-            
-            // When players connect to server, they send up a request for scores (as they 
-            // may not have finished connecting when the scores where previously sent)    
-            for index, requestingPlayer in ientitylist(allPlayers) do
-
-                // Check for empty name string because player isn't connected yet
-                if(requestingPlayer:GetRequestsScores() and requestingPlayer:GetName() ~= "") then
-                
-                    // Send player all scores
-                    for index, fromPlayer in ientitylist(allPlayers) do
-                    
-                        local scoresMessage = BuildScoresMessage(fromPlayer, requestingPlayer)
-                        Server.SendNetworkMessage(requestingPlayer, "Scores", scoresMessage, true)
-   
-                    end
-                    
-                    requestingPlayer:SetRequestsScores(false)
-                    
-                end
-                
-            end
-                
-            // Time to send next score
-            self.timeToSendScores = Shared.GetTime() + kScoreboardUpdateInterval
-            
-        end
-
     end
 
     // Batch together string with pings of every player to update scoreboard. This is a separate
@@ -814,11 +737,15 @@ if Server then
     
     function NS2Gamerules:UpdateMapCycle()
     
-        if self.timeToCycleMap ~= nil and Shared.GetTime() >= self.timeToCycleMap then
+        if not Server.GetIsGatherReady() then
+    
+            if self.timeToCycleMap ~= nil and Shared.GetTime() >= self.timeToCycleMap then
 
-            MapCycle_CycleMap()               
-            self.timeToCycleMap = nil
-            
+                MapCycle_CycleMap()               
+                self.timeToCycleMap = nil
+                
+            end
+        
         end
         
     end
@@ -1019,8 +946,6 @@ if Server then
                 self.team2:Update(timePassed)
                 self.spectatorTeam:Update(timePassed)
                 
-                // Send scores every so often
-                self:UpdateScores()
                 self:UpdatePings()
                 self:UpdateHealth()
                 self:UpdateTechPoints()
@@ -1032,6 +957,7 @@ if Server then
             end
 
             self.sponitor:Update(timePassed)
+            self.gameInfo:SetIsGatherReady(Server.GetIsGatherReady())
             
         end
         

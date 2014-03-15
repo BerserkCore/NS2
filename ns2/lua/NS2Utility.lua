@@ -11,6 +11,39 @@
 Script.Load("lua/Table.lua")
 Script.Load("lua/Utility.lua")
 
+function GetHallucinationLifeTimeFraction(self)
+
+    local fraction = 1
+
+    if self.isHallucination or self:isa("Hallucination") then    
+        fraction = 1 -  Clamp((Shared.GetTime() - self.creationTime) / kHallucinationLifeTime, 0, 1)    
+    end
+    
+    return fraction
+
+end
+
+function SelectAllHallucinations(player)
+
+    DeselectAllUnits(player:GetTeamNumber())
+    for _, hallucination in ipairs(GetEntitiesForTeam("Hallucination", player:GetTeamNumber())) do
+    
+        if hallucination:GetIsAlive() then
+            hallucination:SetSelected(player:GetTeamNumber(), true, true, true)
+        end
+    
+    end
+    
+    for _, hallucination in ipairs(GetEntitiesForTeam("Alien", player:GetTeamNumber())) do
+    
+        if hallucination:GetIsAlive() and hallucination.isHallucination then
+            hallucination:SetSelected(player:GetTeamNumber(), true, true, true)
+        end
+    
+    end
+
+end
+
 function GetDirectedExtentsForDiameter(direction, diameter)
     
     // normalize and scale the vector, then extract the extents from it
@@ -1302,7 +1335,7 @@ function GetLightsForLocation(locationName)
     end
 
     local lightList = {}
-   
+    
     local locations = GetLocationEntitiesNamed(locationName)
    
     if table.count(locations) > 0 then
@@ -1312,7 +1345,7 @@ function GetLightsForLocation(locationName)
             for index, renderLight in ipairs(Client.lightList) do
 
                 if renderLight then
-               
+                
                     local lightOrigin = renderLight:GetCoords().origin
                    
                     if location:GetIsPointInside(lightOrigin) then
@@ -1329,7 +1362,7 @@ function GetLightsForLocation(locationName)
        
     end
 
-    // Log("Total lights %s, lights in %s = %s", #Client.lightList, locationName, #lightList)
+    //Log("Total lights %s, lights in %s = %s", #Client.lightList, locationName, #lightList)
     lightLocationCache[locationName] = lightList
   
     return lightList
@@ -1387,21 +1420,135 @@ function GetReflectionProbesForLocation(locationName)
    
 end
 
-if Client then
+function ClearLights()
 
-    function ResetLights()
+	if Client.lightList ~= nil then
+        for index, light in ipairs(Client.lightList) do
+            Client.DestroyRenderLight(light)
+        end
+        Client.lightList = { }
+    end
+
+end
+
+local function SetLight(renderLight, intensity, color)
+
+    if intensity then
+        renderLight:SetIntensity(intensity)
+    end
     
-        for index, renderLight in ipairs(Client.lightList) do
+    if color then
+    
+        renderLight:SetColor(color)
         
-            renderLight:SetColor(renderLight.originalColor)
-            renderLight:SetIntensity(renderLight.originalIntensity)
+        if renderLight:GetType() == RenderLight.Type_AmbientVolume then
+        
+            renderLight:SetDirectionalColor(RenderLight.Direction_Right,    color)
+            renderLight:SetDirectionalColor(RenderLight.Direction_Left,     color)
+            renderLight:SetDirectionalColor(RenderLight.Direction_Up,       color)
+            renderLight:SetDirectionalColor(RenderLight.Direction_Down,     color)
+            renderLight:SetDirectionalColor(RenderLight.Direction_Forward,  color)
+            renderLight:SetDirectionalColor(RenderLight.Direction_Backward, color)
             
-        end                    
+        end
         
     end
     
 end
 
+local kMinCommanderLightIntensityScalar = 0.3
+
+local function UpdateRedLightsforPowerPointWorker(self)
+
+	for renderLight,_ in pairs(self.activeLights) do
+
+		//Max redness already.
+		local angleRad = 1 * math.pi / 2
+		// and scalar goes 0->1
+		local scalar = math.sin(angleRad)
+		
+		local showCommanderLight = false
+
+		local player = Client.GetLocalPlayer()
+		if player and player:isa("Commander") then
+			showCommanderLight = true
+		end
+		
+		if showCommanderLight then
+			scalar = math.max(kMinCommanderLightIntensityScalar, scalar)
+		end
+		
+		intensity = scalar * renderLight.originalIntensity
+
+		intensity = intensity * self:CheckFlicker(renderLight,PowerPoint.kAuxFlickerChance, scalar)
+		
+		if showCommanderLight then
+			color = PowerPoint.kDisabledCommanderColor
+		else
+			color = PowerPoint.kDisabledColor
+		end
+		
+		SetLight(renderLight, intensity, color)
+
+	end
+	
+end
+
+local gLowLights
+function Lights_UpdateLightMode()
+
+	//Dont attempt to load lowlights for main menu 'map'
+	if Client.fullyLoaded then
+
+		local LoadData
+		local useLowLights = Client.GetOptionInteger("graphics/lightQuality", 2) == 1
+		
+		if useLowLights and #Client.lowLightList > 0 then
+			LoadData = Client.lowLightList
+		else
+			LoadData = Client.originalLights
+		end
+
+		if LoadData and useLowLights ~= gLowLights then
+
+			ClearLights()
+			gLowLights = useLowLights
+
+			for i, object in ipairs(LoadData) do
+				LoadMapEntity(object.className, object.groupName, object.values)
+			end
+
+			lightLocationCache = { }
+
+			local powerPoints = Shared.GetEntitiesWithClassname("PowerPoint")
+			for index, powerPoint in ientitylist(powerPoints) do
+			
+			    if powerPoint.lightHandler then			
+				    powerPoint.lightHandler:Reset()
+				end
+				
+			end
+
+		end
+
+	end
+
+end
+
+if Client then
+
+    function ResetLights()
+
+        for index, renderLight in ipairs(Client.lightList) do
+        
+            renderLight:SetColor(renderLight.originalColor)
+            renderLight:SetIntensity(renderLight.originalIntensity)
+
+        end                    
+        
+    end
+    
+end
 
 local kUpVector = Vector(0, 1, 0)
 

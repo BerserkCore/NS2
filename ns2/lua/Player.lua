@@ -204,7 +204,7 @@ local networkVars =
     fullPrecisionOrigin = "private vector", 
     
     // Controlling client index. -1 for not being controlled by a live player (ragdoll, fake player)
-    clientIndex = "integer",
+    clientIndex = "integer (-1 to 4000)",
     
     viewModelId = "private entityid",
     
@@ -367,13 +367,7 @@ function Player:OnCreate()
     self.isRookie = false
     
     self.moveButtonPressed = false
-    
-    // Create the controller for doing collision detection.
-    // Just use default values for the capsule size for now. Player will update to correct
-    // values when they are known.
-    local controllerGroup = self:GetPlayerControllersGroup()
-    self:CreateController(controllerGroup)
-    
+
     // Make the player kinematic so that bullets and other things collide with it.
     self:SetPhysicsGroup(PhysicsGroup.PlayerGroup)
     
@@ -421,7 +415,6 @@ function Player:OnInitialized()
         
     end
 
-    self:SetScoreboardChanged(true)
     self:SetViewOffsetHeight(self:GetMaxViewOffsetHeight())
     self:UpdateControllerFromEntity()
     
@@ -446,6 +439,20 @@ function Player:OnInitialized()
     
     self.communicationStatus = kPlayerCommunicationStatus.None
     
+end
+
+function Player:GetIsSteamFriend()
+
+    if self.isSteamFriend == nil and self.clientIndex > 0 then
+    
+        local steamId = GetSteamIdForClientIndex(self.clientIndex)
+        if steamId then
+            self.isSteamFriend = Client.GetIsSteamFriend(steamId)
+        end
+    
+    end
+
+    return self.isSteamFriend
 end
 
 /**
@@ -485,6 +492,14 @@ function Player:OnDestroy()
         
     elseif Server then
         self:RemoveSpectators(nil)
+        
+        if self.playerInfo then
+        
+            DestroyEntity(self.playerInfo)
+            self.playerInfo = nil
+            
+        end
+        
     end
     
 end
@@ -971,10 +986,6 @@ function Player:AddResources(amount)
         resReward = math.min(amount, kMaxPersonalResources - self:GetResources())
         local oldRes = self.resources
         self:SetResources(self:GetResources() + resReward)
-        
-        if oldRes ~= self.resources then
-            self:SetScoreboardChanged(true)
-        end
     
     end
     
@@ -1381,6 +1392,26 @@ function Player:OnProcessIntermediate(input)
     
 end
 
+function Player:GetHasController()
+
+    if (Client or Predict) and self.isHallucination then
+        return false
+    end    
+
+    return HasMixin(self, "Live") and self:GetIsAlive()
+    
+end
+
+function Player:GetHasOutterController()
+
+    if (Client or Predict) and self.isHallucination then
+        return false
+    end
+
+    return HasMixin(self, "Live") and self:GetIsAlive()
+    
+end
+
 // You can't modify a compensated field for another (relevant) entity during OnProcessMove(). The
 // "local" player doesn't undergo lag compensation it's only all of the other players and entities.
 // For example, if health was compensated, you can't modify it when a player was shot -
@@ -1422,14 +1453,9 @@ function Player:OnProcessMove(input)
     UpdateAnimationInputs(self, input)
     
     if self:GetIsAlive() then
-    
-        ASSERT(self.controller ~= nil)
-        
-        // Force an update to whether or not we're on the ground in case something
-        // has moved out from underneath us.
-        self.onGroundNeedsUpdate = true      
+
         local runningPrediction = Shared.GetIsRunningPrediction()
-        
+
         if self.PreUpdateMove then
             self:PreUpdateMove(input, runningPrediction)
         end
@@ -1571,7 +1597,7 @@ function Player:GetControllerSize()
     return GetTraceCapsuleFromExtents(self:GetExtents())
 end
 
-function Player:GetPlayerControllersGroup()
+function Player:GetControllerPhysicsGroup()
     return PhysicsGroup.PlayerControllersGroup
 end
 
@@ -1613,7 +1639,6 @@ function Player:SetOrigin(origin)
     Entity.SetOrigin(self, origin)
     
     self:UpdateControllerFromEntity()
-    self.onGroundNeedsUpdate = true
     
 end
 
@@ -1907,7 +1932,7 @@ function Player:HandleButtons(input)
         // The following inputs are disabled when the player cannot control themself.
         input.commands = bit.band(input.commands, bit.bnot(bit.bor(Move.Use, Move.Buy, Move.Jump,
                                                                    Move.PrimaryAttack, Move.SecondaryAttack,
-                                                                   Move.NextWeapon, Move.PrevWeapon, Move.Reload,
+                                                                   Move.SelectNextWeapon, Move.SelectPrevWeapon, Move.Reload,
                                                                    Move.Taunt, Move.Weapon1, Move.Weapon2,
                                                                    Move.Weapon3, Move.Weapon4, Move.Weapon5, Move.Crouch, Move.Drop, Move.MovementModifier)))
                                                                    
@@ -1957,11 +1982,11 @@ function Player:HandleButtons(input)
     // Weapon switch
     if not self:GetIsCommander() and not self:GetIsUsing() then
     
-        if bit.band(input.commands, Move.NextWeapon) ~= 0 then
+        if bit.band(input.commands, Move.SelectNextWeapon) ~= 0 then
             self:SelectNextWeapon()
         end
         
-        if bit.band(input.commands, Move.PrevWeapon) ~= 0 then
+        if bit.band(input.commands, Move.SelectPrevWeapon) ~= 0 then
             self:SelectPrevWeapon()
         end
     
@@ -2073,11 +2098,6 @@ function Player:GetScoreboardChanged()
     return self.scoreboardChanged
 end
 
-// Set to true when score, name, kills, team, etc. changes so it's propagated to players
-function Player:SetScoreboardChanged(state)
-    self.scoreboardChanged = state
-end
-
 function Player:SpaceClearForEntity(position, printResults)
 
     local capsuleHeight, capsuleRadius = self:GetTraceCapsule()
@@ -2170,7 +2190,11 @@ end
 
 // Overwrite how players interact with doors
 function Player:OnOverrideDoorInteraction(inEntity)
-    return true, 6
+    if self:GetVelocityLength() > 8 then
+        return true, 10
+    else
+        return true, 6
+    end
 end
 
 function Player:SetIsUsing (isUsing)
