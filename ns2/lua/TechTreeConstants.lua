@@ -117,6 +117,8 @@ kTechId = createTechIdEnum({
     // those are available at the hive
     'ResearchBioMassOne', 'ResearchBioMassTwo', 'ResearchBioMassThree', 'ResearchBioMassFour',
 
+    'DrifterEgg', 'Drifter', 
+
     // Alien lifeforms 
     'Skulk', 'Gorge', 'Lerk', 'Fade', 'Onos', "AlienCommander", "AllAliens", "Hallucination", "DestroyHallucination",
     
@@ -128,7 +130,7 @@ kTechId = createTechIdEnum({
     'LifeFormMenu', 'SkulkMenu', 'GorgeMenu', 'LerkMenu', 'FadeMenu', 'OnosMenu',
 
     // Alien structures 
-    'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'DrifterEgg', 'Drifter', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'GorgeTunnel',
+    'Hive', 'HiveHeal', 'CragHive', 'ShadeHive', 'ShiftHive','Harvester', 'Egg', 'Embryo', 'Hydra', 'Cyst', 'Clog', 'GorgeTunnel',
     'GorgeEgg', 'LerkEgg', 'FadeEgg', 'OnosEgg',
     
     // Infestation upgrades

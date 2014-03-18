@@ -17,7 +17,7 @@ HallucinationCloud.kMapName = "hallucinationcloud"
 HallucinationCloud.kSplashEffect = PrecacheAsset("cinematics/alien/hallucinationcloud.cinematic")
 HallucinationCloud.kType = CommanderAbility.kType.Instant
 
-HallucinationCloud.kRadius = 6
+HallucinationCloud.kRadius = 8
 
 local gTechIdToHallucinateTechId = nil
 function GetHallucinationTechId(techId)
@@ -67,6 +67,19 @@ function HallucinationCloud:GetType()
     return HallucinationCloud.kType
 end
 
+local function AllowedToHallucinate(entity)
+
+    local allowed = true
+    if entity.timeLastHallucinated and entity.timeLastHallucinated + kHallucinationCloudCooldown > Shared.GetTime() then
+        allowed = false
+    else
+        entity.timeLastHallucinated = Shared.GetTime()
+    end    
+    
+    return allowed
+
+end
+
 if Server then
 
     function HallucinationCloud:Perform()
@@ -77,37 +90,94 @@ if Server then
             hallucination:Kill()
         end
         
-        local friendlyUnits = GetEntitiesForTeamWithinRange("Alien", self:GetTeamNumber(), self:GetOrigin(), HallucinationCloud.kRadius)
-        table.copy(GetEntitiesForTeamWithinRange("Drifter", self:GetTeamNumber(), self:GetOrigin(), HallucinationCloud.kRadius), friendlyUnits, true)
+        for _, playerHallucination in ipairs(GetEntitiesForTeam("Alien", self:GetTeamNumber())) do
         
-        local madeDrifter = false
+            if playerHallucination.isHallucination then
+                playerHallucination:TriggerEffects("death_hallucination")
+                DestroyEntity(playerHallucination)
+            end
         
-        // search for alien in range, cloak them and create a hallucination
-        for _, alien in ipairs(friendlyUnits) do
+        end
         
-            if alien:GetIsAlive() and (not alien:isa("Drifter") or not madeDrifter) then
-            
-                local angles = alien:GetAngles()
+        local drifter = GetEntitiesForTeamWithinRange("Drifter", self:GetTeamNumber(), self:GetOrigin(), HallucinationCloud.kRadius)[1]
+        if drifter then
+        
+            if AllowedToHallucinate(drifter) then
+        
+                local angles = drifter:GetAngles()
                 angles.pitch = 0
                 angles.roll = 0
-                local origin = GetGroundAt(self, alien:GetOrigin() + Vector(0, .1, 0), PhysicsMask.Movement, EntityFilterOne(alien))
+                local origin = GetGroundAt(self, drifter:GetOrigin() + Vector(0, .1, 0), PhysicsMask.Movement, EntityFilterOne(drifter))
                 
                 local hallucination = CreateEntity(Hallucination.kMapName, origin, self:GetTeamNumber())
-                hallucination:SetEmulation(GetHallucinationTechId(alien:GetTechId()))
-                hallucination:SetOwner(alien)
+                hallucination:SetEmulation(GetHallucinationTechId(kTechId.Drifter))
                 hallucination:SetAngles(angles)
                 
-                local randomDestinations = GetRandomPointsWithinRadius(alien:GetOrigin(), 4, 10, 10, 1, 1, nil, nil)
+                local randomDestinations = GetRandomPointsWithinRadius(drifter:GetOrigin(), 4, 10, 10, 1, 1, nil, nil)
                 if randomDestinations[1] then            
                     hallucination:GiveOrder(kTechId.Move, nil, randomDestinations[1], nil, true, true)            
-                end
-                
-                if alien:isa("Drifter") then
-                    madeDrifter = true
                 end
             
             end
             
+        end
+        
+        // search for alien in range, cloak them and create a hallucination
+        local hallucinatePlayers = {}
+        local numHallucinatePlayers = 0
+        for _, alien in ipairs(GetEntitiesForTeamWithinRange("Alien", self:GetTeamNumber(), self:GetOrigin(), HallucinationCloud.kRadius)) do
+        
+            if alien:GetIsAlive() and not alien:isa("Embryo") and not HasMixin(alien, "PlayerHallucination") then
+            
+                table.insert(hallucinatePlayers, alien)
+                numHallucinatePlayers = numHallucinatePlayers + 1
+            
+            end
+            
+        end
+        
+        // sort by techId, so the higher life forms are prefered
+        local function SortByTechId(alienOne, alienTwo)
+            return alienOne:GetTechId() > alienTwo:GetTechId()
+        end
+        
+        table.sort(hallucinatePlayers, SortByTechId)
+        
+        // limit max num of hallucinations to 1/3 of team size
+        local teamSize = self:GetTeam():GetNumPlayers()
+        local maxAllowedHallucinations = math.max(1, math.floor(teamSize * kPlayerHallucinationNumFraction))
+        local hallucinationsCreated = 0
+
+        for index, alien in ipairs(hallucinatePlayers) do
+        
+            if AllowedToHallucinate(alien) then
+
+                local newAlienExtents = LookupTechData(alien:GetTechId(), kTechDataMaxExtents)
+                local capsuleHeight, capsuleRadius = GetTraceCapsuleFromExtents(newAlienExtents) 
+                
+                local spawnPoint = GetRandomSpawnForCapsule(newAlienExtents.y, capsuleRadius, alien:GetModelOrigin(), 0.5, 5)
+                
+                if spawnPoint then
+
+                    local hallucinatedPlayer = CreateEntity(alien:GetMapName(), spawnPoint, self:GetTeamNumber())
+                    hallucinatedPlayer.isHallucination = true
+                    InitMixin(hallucinatedPlayer, PlayerHallucinationMixin)                
+                    InitMixin(hallucinatedPlayer, SoftTargetMixin)                
+                    InitMixin(hallucinatedPlayer, OrdersMixin, { kMoveOrderCompleteDistance = kPlayerMoveOrderCompleteDistance }) 
+
+                    hallucinatedPlayer:SetName(alien:GetName())
+                    hallucinatedPlayer:SetHallucinatedClientIndex(alien:GetClientIndex())
+                
+                    hallucinationsCreated = hallucinationsCreated + 1
+                
+                end 
+            
+            end
+            
+            if hallucinationsCreated >= maxAllowedHallucinations then
+                break
+            end    
+        
         end
         
         for _, resourcePoint in ipairs(GetEntitiesWithinRange("ResourcePoint", self:GetOrigin(), HallucinationCloud.kRadius)) do

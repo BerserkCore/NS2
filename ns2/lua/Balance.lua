@@ -650,7 +650,7 @@ kStormCost = 2
 kHallucinationLifeTime = 30
 
 // only allow x% of affected players to create a hallucination
-kPlayerHallucinationNumFraction = 0.5
+kPlayerHallucinationNumFraction = 0.34
 // cooldown per entity
 kHallucinationCloudCooldown = 3
 kDrifterAbilityCooldown = 0

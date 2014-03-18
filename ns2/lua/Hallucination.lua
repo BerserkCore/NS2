@@ -458,11 +458,11 @@ if Server then
         DestroyEntity(self)
         
     end
-
+    /*
     function Hallucination:OnScan()
         self:Kill()
     end
-
+    */
     function Hallucination:GetHoverHeight()
     
         if self.assignedTechId == kTechId.Lerk or self.assignedTechId == kTechId.Drifter then
