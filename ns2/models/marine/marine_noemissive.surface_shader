@@ -7,6 +7,7 @@
 		<input name="blendMap" type="texture" address="wrap">materials/effects/mesh_effects/skulk_view_blood.dds</input>
 		<input name="overlayMap" type="texture" address="wrap">materials/effects/mesh_effects/nanoshield_circuit.dds</input>
 		<input name="hiddenAmount" type="float">0.0</input>
+		<input name="highlight" type="float">1.0</input>
 	</inputs>
 	
 	<params>
@@ -36,6 +37,7 @@
 			//float dissolveAmount = frac(time);
 
 			float f             = 1 - hiddenAmount;
+			float highlightId   = highlight;
 			
 			float param         = tex2D(blendMap, input.texCoord * 2.5).a; // speading parameter
 			float textureSpeed  = 2;
@@ -67,7 +69,7 @@
 				material.emissive   = 0;
 			}
 			
-			material.id = 1; // To make it show up on alien vision
+			material.id = 1*highlightId; // To make it show up on alien vision
 			
 		}
 	]]>

@@ -16,13 +16,14 @@ Shared.RegisterNetworkMessage("SendVote", { voteId = "integer", choice = "boolea
 kVoteState = enum( { 'InProgress', 'Passed', 'Failed' } )
 Shared.RegisterNetworkMessage("VoteResults", { voteId = "integer", yesVotes = "integer (0 to 255)", noVotes = "integer (0 to 255)", requiredVotes = "integer (0 to 255)", state = "enum kVoteState" })
 Shared.RegisterNetworkMessage("VoteComplete", { voteId = "integer" })
-kVoteCannotStartReason = enum( { 'VoteAllowedToStart', 'VoteInProgress', 'Waiting', 'Spam', 'DisabledByAdmin' } )
+kVoteCannotStartReason = enum( { 'VoteAllowedToStart', 'VoteInProgress', 'Waiting', 'Spam', 'DisabledByAdmin', 'GameInProgress' } )
 Shared.RegisterNetworkMessage("VoteCannotStart", { reason = "enum kVoteCannotStartReason" })
 
 local kVoteCannotStartReasonStrings = { }
 kVoteCannotStartReasonStrings[kVoteCannotStartReason.VoteInProgress] = "VOTE_IN_PROGRESS"
 kVoteCannotStartReasonStrings[kVoteCannotStartReason.Waiting] = "VOTE_WAITING"
 kVoteCannotStartReasonStrings[kVoteCannotStartReason.Spam] = "VOTE_SPAM"
+kVoteCannotStartReasonStrings[kVoteCannotStartReason.GameInProgress] = "VOTE_GAME_IN_PROGRESS"
 kVoteCannotStartReasonStrings[kVoteCannotStartReason.DisabledByAdmin] = "VOTE_DISABLED_BY_ADMIN"
 
 if Server then
@@ -39,9 +40,9 @@ if Server then
     local startVoteHistory = { }
     
     local function GetStartVoteAllowed(voteName, client)
-    
+
         -- Check that there is no current vote.
-        if activeVoteName then
+        if activeVoteName then	
             return kVoteCannotStartReason.VoteInProgress
         end
         
@@ -63,18 +64,24 @@ if Server then
             end
             
         end
-        
+		
         local votingSettings = Server.GetConfigSetting("voting")
         if votingSettings and votingSettings[string.lower(voteName)] == false then
             return kVoteCannotStartReason.DisabledByAdmin
         end
         
+		if voteName == "VotingForceEvenTeams" then
+			if GetGamerules():GetGameStarted() == true then
+				return kVoteCannotStartReason.GameInProgress
+			end
+		end
+		
         return kVoteCannotStartReason.VoteAllowedToStart
         
     end
     
     local function StartVote(voteName, client, data)
-    
+		
         local voteCanStart = GetStartVoteAllowed(voteName, client)
         if voteCanStart == kVoteCannotStartReason.VoteAllowedToStart then
         

@@ -169,7 +169,7 @@ function GUIInsight_PlayerHealthbars:UpdatePlayers(deltaTime)
             -- name
             local nameItem = playerGUI.Name
             nameItem:SetText(player:GetName())
-            nameItem:SetColor(textColor)
+            nameItem:SetColor(ConditionalValue(isParasited, kParasiteColor, textColor))
             
             -- health bar
             local healthBar = playerGUI.HealthBar

@@ -15,6 +15,7 @@ Script.Load("lua/GUIGrenadeDisplay.lua")
 weaponClip     = 0
 weaponAmmo     = 0
 weaponAuxClip  = 0
+weaponVariant  = 1
 
 bulletDisplay  = nil
 grenadeDisplay = nil
@@ -28,6 +29,7 @@ function Update(deltaTime)
 
     bulletDisplay:SetClip(weaponClip)
     bulletDisplay:SetAmmo(weaponAmmo)
+	bulletDisplay:SetWeaponVariant(weaponVariant)
     bulletDisplay:Update(deltaTime)
     
     grenadeDisplay:SetNumGrenades(weaponAuxClip)

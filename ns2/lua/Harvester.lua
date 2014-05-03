@@ -136,6 +136,27 @@ if Client then
 
 end
 
+if Server then
+
+	function Harvester:OnTakeDamage(damage, attacker, doer, point)
+	
+		if damage > 0 then
+			local time = Shared.GetTime()
+			if self:GetIsAlive() and self.lastFlinchEffectTime == nil or (time > (self.lastFlinchEffectTime + 1)) then
+			
+				local team = self:GetTeam()
+				// Trigger alert for Commander
+				team:TriggerAlert(kTechId.AlienAlertHarvesterUnderAttack, self)
+				self.lastFlinchEffectTime = time
+				
+			end
+			
+		end
+		
+	end
+
+end
+
 function Harvester:GetHealthbarOffset()
     return 2.2
 end 

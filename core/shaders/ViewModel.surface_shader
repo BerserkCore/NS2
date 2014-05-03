@@ -4,6 +4,7 @@
 		<input name="albedoMap" type="texture" address="wrap" />
 		<input name="normalMap" type="texture" address="wrap" />
 		<input name="specularMap" type="texture" address="wrap" />
+		<input name="highlight" type="float">0</input>
 	</inputs>
 	
 	<code>
@@ -17,6 +18,8 @@
 		void MaterialShader(in Material_Input input, inout Material material)
 		{
 		
+			float highlightId   = highlight;
+			
 			float4 specularGloss = tex2D(specularMap, input.texCoord);
 		
 			material.albedo 	= tex2D(albedoMap, input.texCoord).rgb;
@@ -24,7 +27,7 @@
 			material.specular	= specularGloss.rgb;
 			material.gloss		= specularGloss.a;
 			
-			material.id = 1;
+			material.id = 1*highlightId;    // for alien vision
 			
 		}
 	]]>		

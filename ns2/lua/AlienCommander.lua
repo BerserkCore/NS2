@@ -34,6 +34,7 @@ AlienCommander.kManufactureCompleteSoundName = PrecacheAsset("sound/NS2.fev/alie
 // TODO: replace with "objective completed" voiceover once it's available
 AlienCommander.kObjectiveCompletedSoundName = PrecacheAsset("sound/NS2.fev/alien/skulk/taunt")
 AlienCommander.kStructureUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/structure_under_attack")
+AlienCommander.kHarvesterUnderAttackSound = PrecacheAsset("sound/NS2.fev/alien/voiceovers/harvester_under_attack")
 AlienCommander.kSoldierNeedsMistSoundName = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_healing")
 AlienCommander.kSoldierNeedsEnzymeSoundName = PrecacheAsset("sound/NS2.fev/alien/voiceovers/need_healing")
 AlienCommander.kSoldierNeedsHarvesterSoundName = PrecacheAsset("sound/NS2.fev/alien/voiceovers/more")

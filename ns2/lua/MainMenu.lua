@@ -335,6 +335,7 @@ local kPlayButtonSound = "sound/NS2.fev/marine/commander/give_order"
 local kSlideSound = "sound/NS2.fev/marine/commander/hover_ui"
 local kTrainigLinkSound = "sound/NS2.fev/common/tooltip"
 local kLoadingSound = "sound/NS2.fev/common/loading"
+local kCustomizeHoverSound = "sound/NS2.fev/alien/fade/vortex_start_2D"
 
 Client.PrecacheLocalSound(kMouseInSound)
 Client.PrecacheLocalSound(kMouseOutSound)
@@ -355,6 +356,7 @@ Client.PrecacheLocalSound(kPlayButtonSound)
 Client.PrecacheLocalSound(kSlideSound)
 Client.PrecacheLocalSound(kTrainigLinkSound)
 Client.PrecacheLocalSound(kLoadingSound)
+Client.PrecacheLocalSound(kCustomizeHoverSound)
 
 function MainMenu_OnMouseIn()
     StartSoundEffect(kMouseInSound)
@@ -402,7 +404,7 @@ function MainMenu_OnDropdownClicked()
     StartSoundEffect(kDropdownSound)
 end
 
-function MainMenu_OnGatherChatRecieved()
+function MainMenu_OnHover()
     StartSoundEffect(kArrowSound)
 end
 
@@ -439,13 +441,15 @@ function MainMenu_OnLoadingSound()
 		StartSoundEffect(kLoadingSound)
 	end
 end
+	
+function MainMenu_OnCustomizationHover()
+    StartSoundEffect(kCustomizeHoverSound)    
+end
 
 function MainMenu_LoadNewsURL(url)
-
     if gMainMenu.newsScript then
         gMainMenu.newsScript:LoadURL(url)
     end
-    
 end
 
 local function OnClientDisconnected()

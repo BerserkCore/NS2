@@ -242,7 +242,9 @@ function GUIManager:Update(deltaTime)
     
     // Backwards iteration in case Update() causes a script to be removed.
     for s = #self.scripts, 1, -1 do
-        self.scripts[s]:Update(deltaTime)
+		if self.scripts[s] then
+			self.scripts[s]:Update(deltaTime)
+		end
     end
     
     for s = #self.scriptsSingle, 1, -1 do

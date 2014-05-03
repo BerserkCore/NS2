@@ -164,7 +164,7 @@ function CommandStation:GetIsPlayerInside(player)
     
 end
 
-local kCommandStationState = enum( { "Normal", "Locked", "Welcome" } )
+local kCommandStationState = enum( { "Normal", "Locked", "Welcome", "Unbuilt" } )
 function CommandStation:OnUpdateRender()
 
     PROFILE("CommandStation:OnUpdateRender")
@@ -176,7 +176,9 @@ function CommandStation:OnUpdateRender()
     
         local state = kCommandStationState.Normal
         
-        if self:GetIsOccupied() then
+		if self:GetIsGhostStructure() then
+            state = kCommandStationState.Unbuilt
+		elseif self:GetIsOccupied() then
             state = kCommandStationState.Welcome
         elseif GetTeamHasCommander(self:GetTeamNumber()) then
             state = kCommandStationState.Locked

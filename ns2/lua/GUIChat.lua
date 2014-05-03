@@ -272,16 +272,8 @@ function GUIChat:AddMessage(playerColor, playerName, messageColor, messageText)
     insertMessage["Message"]:SetColor(messageColor)
 
 	local width = Client.GetScreenWidth()
-	local cutoff = 40
-	if width <= 1024 then
-		cutoff = 45
-	elseif width > 1024 and width <= 1280 then
-		cutoff = 50
-	elseif width > 1280 and width <= 1600 then
-		cutoff = 55
-	elseif width > 1600 and width <= 1920 then
-		cutoff = 60
-	end
+	local cutoff = Client.GetScreenWidth() / 24 or 80
+
 	local wrappedText = WrapText( messageText, cutoff, nil, "" )
 	insertMessage["Message"]:SetText(wrappedText)
 	

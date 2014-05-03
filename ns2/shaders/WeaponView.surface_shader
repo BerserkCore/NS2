@@ -1,0 +1,45 @@
+<shader>
+	
+	<inputs>
+		<input name="albedoMap" type="texture" address="wrap" />
+		<input name="normalMap" type="texture" address="wrap" />
+		<input name="specularMap" type="texture" address="wrap" />
+		<input name="highlight" type="float">1.0</input>
+		
+		<!-- should be specified via game -->
+        <!-- Row major index. 0 is the top-left rect -->
+        <input name="textureIndex" type="float">0</input>	
+		<!-- should be specified via material file -->
+        <input name="numRows" type="float">2</input>			
+        <input name="numColumns" type="float">1</input>			
+	</inputs>
+	
+	<code>
+	<![CDATA[
+		float3 DecodeNormal(const float4 texNormal)
+		{
+			float4 n = texNormal * 2 - 1;
+			//return float3(n.a, n.g, sqrt(1 - dot(n.ag, n.ag)) );
+			return n.xyz;
+		}
+		void MaterialShader(in Material_Input input, inout Material material)
+		{
+			float highlightId   = highlight;
+			float2 uv = input.texCoord;
+            float row = floor(textureIndex / numColumns);
+			float col = textureIndex - row*numColumns;
+			uv.x = (col+uv.x) / numColumns;
+			uv.y = (row+uv.y) / numRows;
+			float4 specularGloss = tex2D(specularMap, uv);
+			
+			material.albedo 	= tex2D(albedoMap, uv).rgb;
+			material.tsNormal 	= DecodeNormal( tex2D(normalMap, uv) );
+			material.specular	= specularGloss.rgb;
+			material.gloss		= specularGloss.a;
+			
+			material.id = 1*highlightId;    // for alien vision
+		}
+	]]>		
+	</code>
+
+</shader>

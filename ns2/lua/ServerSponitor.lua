@@ -120,6 +120,7 @@ end
 //  
 //----------------------------------------
 local function ResetTeamStats(stats, team)
+
     stats.pvpKills = 0
     stats.team = team
     stats.minNumPlayers = team:GetNumPlayers()

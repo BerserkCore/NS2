@@ -152,12 +152,22 @@ local function OnConsoleTeams(param1, param2)
     HandleTeamsMessage({"teams", param1, param2})
 end
 
-local function OnConsoleTeam1(param1)
-    HandleTeamsMessage({"team1", param1, nil})
+local function OnConsoleTeam1(...)
+    local teams = StringConcatArgs(...)
+
+    if type(teams) ~= "string" then
+        return
+    end
+    HandleTeamsMessage({"team1", teams, nil})
 end
 
-local function OnConsoleTeam2(param1)
-    HandleTeamsMessage({"team2", param1, nil})
+local function OnConsoleTeam2(...)
+    local teams = StringConcatArgs(...)
+
+    if type(teams) ~= "string" then
+        return
+    end
+    HandleTeamsMessage({"team2", teams, nil})
 end
 
 local function OnConsoleScores(param1, param2)

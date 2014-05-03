@@ -10,26 +10,39 @@ Script.Load("lua/Utility.lua")
 
 class 'AnimatedModel'
 
-function CreateAnimatedModel(modelName)
+local animatedModel = nil
 
-    local animatedModel = AnimatedModel()
-    
-    animatedModel:OnInitialized(modelName)
-    
+function CreateAnimatedModel(modelName, renderScene)
+
+	local modelPath = PrecacheAsset(modelName)
+	if animatedModel ~= nil then
+		animatedModel:OnInitialized(modelPath, renderScene)
+	elseif animatedModel == nil then
+		animatedModel = AnimatedModel()
+		animatedModel:OnInitialized(modelPath, renderScene)
+	end
+	
     return animatedModel
             
 end
 
-function AnimatedModel:OnInitialized(modelName)
+function AnimatedModel:OnInitialized(modelName, renderScene)
 
-    self.renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)
+	if renderScene ~= nil then
+		self.renderModel = Client.CreateRenderModel(renderScene)
+	else
+		self.renderModel = Client.CreateRenderModel(RenderScene.Zone_ViewModel)
+	end
     
     self.modelIndex = Shared.GetModelIndex(modelName)
     
     self.modelName = modelName
     
-    self.renderModel:SetModel( self.modelIndex )
-    
+	if MainMenu_IsInGame() then
+		self.renderModel:SetModel( self.modelIndex )
+	else
+		self.renderModel:SetModel( self.modelName )
+    end
     self.animationName = nil
     
     self.animationTime = 0
@@ -127,12 +140,14 @@ function AnimatedModel:SetAnimationParameter(scalar)
 end
 
 // Must be called manually 
-function AnimatedModel:OnUpdate(deltaTime)
+function AnimatedModel:Update(deltaTime)
 
+	PROFILE("AnimatedModel:Update")
+	
     if not Shared.GetIsRunningPrediction() then
     
         // ...in random dramatic attack pose
-        if self.animationName ~= nil then
+        if self.animationName ~= nil and MainMenu_IsInGame() then
         
             local model = Shared.GetModel(self.modelIndex)
             if model ~= nil then
@@ -167,8 +182,9 @@ function AnimatedModel:OnUpdate(deltaTime)
                 
                 model:AccumulateSequence(animationIndex, animationTime, self.poseParams, poses)
                 model:GetBoneCoords(poses, boneCoords)
-                self.renderModel:SetBoneCoords(boneCoords)
-                
+				if self.renderModel ~= nil then
+					self.renderModel:SetBoneCoords(boneCoords)
+				end
             else
                 Print("AnimatedModel:OnUpdate(): Couldn't find model for model index %s (%s)", ToString(self.modelIndex), ToString(self.modelName))
             end
@@ -186,7 +202,7 @@ function AnimatedModel:SetCastsShadows(showShadows)
 end
 
 // Must be called manually 
-function AnimatedModel:OnDestroy()
+function AnimatedModel:Destroy()
 
     if self.renderModel ~= nil then
     

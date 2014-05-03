@@ -1748,7 +1748,7 @@ function Player:GetIsIdle()
 end
 
 function Player:GetPlayIdleSound()
-    return self:GetIsAlive() and (self:GetVelocityLength() / self:GetMaxSpeed()) > 0.65
+    return self:GetIsAlive() and (self:GetVelocityLength() / self:GetMaxSpeed(true)) > 0.65
 end
 
 local function CheckSpaceAboveForJump(self)
@@ -2060,7 +2060,7 @@ function Player:GetViewModelEntity()
     if not Client or self:GetIsLocalPlayer() then  
     
         result = Shared.GetEntity(self.viewModelId)
-        ASSERT(not result or result:isa("ViewModel"), "%s: viewmodel is a %s!", self, result);
+        ASSERT(not result or result:isa("ViewModel"), "%s: viewmodel is a %s!", self, result)
         
     end
     

@@ -119,6 +119,8 @@ function PlayerBot:UpdateNameAndGender()
             isMale = settings.isMale,
             marineVariant = kDefaultMarineVariant,
             skulkVariant = kDefaultSkulkVariant,
+			rifleVariant = kDefaultRifleVariant,
+			exoVariant = kDefaultExoVariant
         }
         self.client:GetControllingPlayer():OnClientUpdated(self.client)
         

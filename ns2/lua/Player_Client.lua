@@ -519,7 +519,8 @@ function PlayerUI_GetUnitStatusInfo()
                         HasWelder = hasWelder,
                         IsPlayer = unit:isa("Player"),
                         IsSteamFriend = unit:isa("Player") and unit:GetIsSteamFriend() or false,
-                        AbilityFraction = abilityFraction
+                        AbilityFraction = abilityFraction,
+						IsParasited = HasMixin(unit, "ParasiteAble") and unit:GetIsParasited()
                     
                     }
                     
@@ -1787,10 +1788,6 @@ function Player:SendKeyEvent(key, down)
         if GetIsBinding(key, "ShowMapCom") and self:isa("Commander") then
             self:OnShowMap(down)
         end
-
-        if GetIsBinding(key, "LastUpgrades") then
-			Shared.ConsoleCommand("evolvelastupgrades")	
-		end
 		
         if down then
         
@@ -1807,7 +1804,12 @@ function Player:SendKeyEvent(key, down)
                 return true
             elseif GetIsBinding(key, "TeamChatCom") and self:isa("Commander") then			
                 ChatUI_EnterChatMessage(true)
-                return true   
+                return true 
+			elseif GetIsBinding(key, "LastUpgrades") then
+				Shared.ConsoleCommand("evolvelastupgrades")	
+			elseif GetIsBinding(key, "ToggleMinimapNames") then
+				local newValue = not Client.GetOptionBoolean("minimapNames", true)
+				Client.SetOptionBoolean("minimapNames", newValue)
             end
             
         end
@@ -3371,6 +3373,7 @@ function PlayerUI_GetStaticMapBlips()
         local GetMapBlipRotation = MapBlip.GetRotation
         local GetMapBlipType = MapBlip.GetType
         local GetMapBlipIsInCombat = MapBlip.GetIsInCombat
+		local GetMapBlipIsParasited = MapBlip.GetIsParasited
         local GetIsSteamFriend = Client.GetIsSteamFriend
         local ClientIndexToSteamId = GetSteamIdForClientIndex
         local GetIsMapBlipActive = MapBlip.GetIsActive
@@ -3383,6 +3386,7 @@ function PlayerUI_GetStaticMapBlips()
                 local blipTeam = kMinimapBlipTeamNeutral
                 local blipTeamNumber = GetMapBlipTeamNumber(blip)
                 local isSteamFriend = false
+				local clientIndex = 0
                 
                 if blip.clientIndex and blip.clientIndex > 0 and blipTeamNumber ~= GetEnemyTeamNumber(playerTeam) then
 
@@ -3391,6 +3395,8 @@ function PlayerUI_GetStaticMapBlips()
                         isSteamFriend = GetIsSteamFriend(steamId)
                     end
                     
+					clientIndex = blip.clientIndex
+
                 end
                 
                 if not GetIsMapBlipActive(blip) then
@@ -3424,8 +3430,8 @@ function PlayerUI_GetStaticMapBlips()
                 blipsData[i + 1] = blipOrig.x
                 blipsData[i + 2] = blipOrig.z
                 blipsData[i + 3] = GetMapBlipRotation(blip)
-                blipsData[i + 4] = 0
-                blipsData[i + 5] = 0
+                blipsData[i + 4] = clientIndex
+                blipsData[i + 5] = GetMapBlipIsParasited(blip)
                 blipsData[i + 6] = GetMapBlipType(blip)
                 blipsData[i + 7] = blipTeam
                 blipsData[i + 8] = GetMapBlipIsInCombat(blip)

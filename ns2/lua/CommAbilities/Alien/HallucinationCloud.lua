@@ -151,7 +151,7 @@ if Server then
         for index, alien in ipairs(hallucinatePlayers) do
         
             if AllowedToHallucinate(alien) then
-
+			
                 local newAlienExtents = LookupTechData(alien:GetTechId(), kTechDataMaxExtents)
                 local capsuleHeight, capsuleRadius = GetTraceCapsuleFromExtents(newAlienExtents) 
                 
@@ -160,6 +160,9 @@ if Server then
                 if spawnPoint then
 
                     local hallucinatedPlayer = CreateEntity(alien:GetMapName(), spawnPoint, self:GetTeamNumber())
+					if alien:isa("Skulk") or alien:isa("Gorge") or alien:isa("Lerk") then
+						hallucinatedPlayer:SetVariant(alien:GetVariant())
+					end
                     hallucinatedPlayer.isHallucination = true
                     InitMixin(hallucinatedPlayer, PlayerHallucinationMixin)                
                     InitMixin(hallucinatedPlayer, SoftTargetMixin)                

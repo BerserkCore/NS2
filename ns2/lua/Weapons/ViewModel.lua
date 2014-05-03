@@ -104,7 +104,7 @@ if Client then
 
             local camera = self:GetModelCamera(0)
             
-            if self:GetParent() == Client.GetLocalPlayer() then
+            if self:GetParent() == Client.GetLocalPlayer() and not MainMenu_GetIsOpened() then
                 Client.SetZoneFov( RenderScene.Zone_ViewModel, GetScreenAdjustedFov(camera:GetFov(), standardAspect) )
             end
 

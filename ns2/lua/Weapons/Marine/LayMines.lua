@@ -326,6 +326,10 @@ function LayMines:GetPositionForStructure(player)
             isPositionValid = false
         end
     
+		if trace.surface == "nocling" then       
+            isPositionValid = false
+        end
+		
         // Don't allow placing above or below us and don't draw either
         local structureFacing = player:GetViewAngles():GetCoords().zAxis
     

@@ -25,8 +25,6 @@ end
 
 local function ReloadOptions(self)
 
-
-
 end
 
 function DropDownList:Initialize()
@@ -67,7 +65,6 @@ function DropDownList:_Reload()
         font:SetCSSClass("dropdownentry")
         
         totalheight = totalheight + height
-    
     
     end
     

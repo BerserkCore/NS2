@@ -311,4 +311,13 @@ if Client then
     
 end
 
+local function OnCommandFilmSmoothing(amount)
+    if Client then
+        Print(string.format("Mouse smoothing is now at %s, default is 1", ToString(amount)))
+        Client.SetMouseSensitivityScalar(Clamp(amount, 0, 1))
+    end
+end
+
+Event.Hook("Console_filmsmoothing", OnCommandFilmSmoothing)
+
 Shared.LinkClassToMap("FilmSpectator", FilmSpectator.kMapName, networkVars)

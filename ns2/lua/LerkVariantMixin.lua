@@ -33,6 +33,11 @@ function LerkVariantMixin:GetVariant()
     return self.variant
 end
 
+function LerkVariantMixin:SetVariant(variant)
+    self.variant = variant
+	self:SetModel(self:GetVariantModel(), kLerkAnimationGraph)
+end
+
 function LerkVariantMixin:GetVariantModel()
     return LerkVariantMixin.kModelNames[self.variant]
 end
@@ -50,8 +55,12 @@ if Server then
         end
         
         local changed = data.lerkVariant ~= self.variant
-        
-        if GetHasVariant(kLerkVariantData, data.lerkVariant, client) then
+
+		if self.GetIgnoreVariantModels and self:GetIgnoreVariantModels() then
+			return
+		end
+		
+        if GetHasVariant(kLerkVariantData, data.lerkVariant, client) or client:GetIsVirtual() then
         
             -- cleared, pass info to clients
             self.variant = data.lerkVariant

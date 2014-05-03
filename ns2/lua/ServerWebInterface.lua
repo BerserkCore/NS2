@@ -19,6 +19,9 @@ local perfDataBuffer = CreateRingBuffer(kMaxPerfDatas)
 // The last time performance data was sampled.
 local lastPerfDataTime = 0
 
+// Stores cached workshop mod results for 60 seconds.
+local getmodsCache = { }
+
 Shared.SetWebRoot("web")
 
 /**
@@ -173,11 +176,36 @@ local function OnWebRequest(actions)
         if type(page) == "string" then
             url = url .. "&p=" .. page
         end
-        local result = Shared.GetHTTPRequest(url)
-        return "application/json", result
+		
+		local timeRequested = Shared.GetTime()
+        
+        if getmodsCache[url] then
+            local startedLoading = getmodsCache[url].startedLoading
+            if startedLoading then
+                // Request times out after 30 seconds
+                if timeRequested - startedLoading < 30 then
+                    return "application/json", '{"loading": true}'
+                end
+            else
+                // Cache workshop mods for 60 seconds
+                if timeRequested - getmodsCache[url].cached_at < 60 then
+                    return "application/json", getmodsCache[url].result
+                else
+                    getmodsCache[url] = nil
+                end
+            end
+        end
+ 
+        getmodsCache[url] = { startedLoading = timeRequested }
+        
+        Shared.SendHTTPRequest(url, "GET", function(result)
+            getmodsCache[url] = { cached_at = Shared.GetTime(), result = result }
+        end)
+ 
+        return "application/json", '{"loading": true}'
         
     end
-    
+	
     if actions.command then
         Shared.ConsoleCommand(actions.rcon)
     end

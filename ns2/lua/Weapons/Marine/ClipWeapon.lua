@@ -603,7 +603,7 @@ function ClipWeapon:OnUpdateAnimationInput(modelMixin)
     end
     
     modelMixin:SetAnimationInput("activity", activity)
-    modelMixin:SetAnimationInput("flinch_gore", interrupted and not self:GetIsReloading())
+    modelMixin:SetAnimationInput("flinch_gore", interrupted and not stunned and not self:GetIsReloading())
     modelMixin:SetAnimationInput("empty", (self.ammo + self.clip) == 0)
 
 end

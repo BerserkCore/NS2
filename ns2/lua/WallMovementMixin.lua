@@ -47,7 +47,7 @@ end
  * Returns goalNormal if fraction >= 1
  */
 function WallMovementMixin:SmoothWallNormal(currentNormal, goalNormal, fraction)
-    local result = goalNormal;
+    local result = goalNormal
     
     if fraction < 1 then
         local diff = goalNormal:DotProduct(currentNormal)
@@ -114,7 +114,9 @@ function WallMovementMixin:ValidWallTrace(trace)
 
     if trace.fraction > 0 and trace.fraction < 1 then
         local entity = trace.entity
-        return not entity or (not entity.GetIsWallWalkingAllowed or entity:GetIsWallWalkingAllowed(self))
+        local entityClingable = entity and (entity.GetIsWallWalkingAllowed and entity:GetIsWallWalkingAllowed(self))
+        local surfaceClingable = trace.surface ~= "nocling"
+        return entityClingable or surfaceClingable
     end
     return false 
     

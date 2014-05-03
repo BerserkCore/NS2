@@ -47,7 +47,7 @@ end
 function GUIExoEject:Update(deltaTime)
 
     local player = Client.GetLocalPlayer()
-    local showEject = player ~= nil and Client.GetIsControllingPlayer() and player:GetCanEject()
+    local showEject = player ~= nil and Client.GetIsControllingPlayer() and player:GetCanEject() and not MainMenu_GetIsOpened()
     
     self.button:SetIsVisible(showEject)
 

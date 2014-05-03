@@ -33,6 +33,11 @@ function GorgeVariantMixin:GetVariant()
     return self.variant
 end
 
+function GorgeVariantMixin:SetVariant(variant)
+    self.variant = variant
+	self:SetModel(self:GetVariantModel(), kGorgeAnimationGraph)
+end
+
 function GorgeVariantMixin:GetVariantModel()
     return GorgeVariantMixin.kModelNames[ self.variant ]
 end
@@ -50,8 +55,12 @@ if Server then
         end
         
         local changed = data.gorgeVariant ~= self.variant
-        
-        if GetHasVariant(kGorgeVariantData, data.gorgeVariant, client) then
+		
+		if self.GetIgnoreVariantModels and self:GetIgnoreVariantModels() then
+			return
+		end
+		
+        if GetHasVariant(kGorgeVariantData, data.gorgeVariant, client) or client:GetIsVirtual() then
         
             -- Cleared, pass info to clients
             self.variant = data.gorgeVariant

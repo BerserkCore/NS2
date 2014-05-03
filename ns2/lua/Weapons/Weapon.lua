@@ -114,6 +114,9 @@ end
 function Weapon:OnUpdateWeapon(player)
 end
 
+function Weapon:UpdateWeaponSkins(client)
+end
+
 function Weapon:GetViewModelName()
     return ""
 end
@@ -256,8 +259,6 @@ local function SharedUpdate(self)
     // Handle dropping on the client
     if Client then
         self:UpdateDropped()
-
-
     end
     
 end
@@ -296,7 +297,10 @@ function Weapon:OnUpdateRender()
         ammoDisplayUI:SetGlobal("weaponClip", parent:GetWeaponClip())
         ammoDisplayUI:SetGlobal("weaponAmmo", parent:GetWeaponAmmo())
         ammoDisplayUI:SetGlobal("weaponAuxClip", parent:GetAuxWeaponClip())
-        
+		if settings.variant then
+			ammoDisplayUI:SetGlobal("weaponVariant", settings.variant)
+		end
+		
     elseif self.ammoDisplayUI then
     
         Client.DestroyGUIView(self.ammoDisplayUI)

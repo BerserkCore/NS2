@@ -33,6 +33,11 @@ function SkulkVariantMixin:GetVariant()
     return self.variant
 end
 
+function SkulkVariantMixin:SetVariant(variant)
+    self.variant = variant
+	self:SetModel(self:GetVariantModel(), kSkulkAnimationGraph)
+end
+
 function SkulkVariantMixin:GetVariantModel()
     return SkulkVariantMixin.kModelNames[ self.variant ]
 end
@@ -51,7 +56,11 @@ if Server then
 
         local changed = data.skulkVariant ~= self.variant
 
-        if GetHasVariant( kSkulkVariantData, data.skulkVariant, client ) then
+		if self.GetIgnoreVariantModels and self:GetIgnoreVariantModels() then
+			return
+		end
+		
+        if GetHasVariant( kSkulkVariantData, data.skulkVariant, client ) or client:GetIsVirtual() then
 
             // cleared, pass info to clients
             self.variant = data.skulkVariant

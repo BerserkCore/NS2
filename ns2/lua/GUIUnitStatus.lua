@@ -528,6 +528,8 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
         
         if isEnemy then
             textColor = GUIUnitStatus.kEnemyColor
+		elseif blipData.IsParasited and blipData.IsFriend then
+			textColor = Color(kCommanderColorFloat)
         elseif blipData.IsSteamFriend then
             textColor = Color(kSteamFriendColor)
         end

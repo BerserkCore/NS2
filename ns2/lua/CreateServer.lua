@@ -119,7 +119,7 @@ function CreateServerUI_SetValues(serverName, mapIdx, gameModIdx, playerLimit, p
     Client.SetOptionString( kMapNameKey, maps[mapIdx].fileName )
     Client.SetOptionString( kGameModKey, mods[gameModIdx] )
     Client.SetOptionInteger(kPlayerLimitKey, playerLimit)
-    Client.SetOptionString( kServerPasswordKey, password );
+    Client.SetOptionString( kServerPasswordKey, password )
     
 end
 

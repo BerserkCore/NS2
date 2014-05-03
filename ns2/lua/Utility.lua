@@ -245,6 +245,10 @@ function Pluralize(number, baseText)
     end
 end
 
+function firstToUpper(str)
+    return (str:gsub("^%l", string.upper))
+end
+
 function WrapText( str, limit, indent, indent1 )
 
    limit = limit or 72

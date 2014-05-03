@@ -9,6 +9,7 @@
 		<input name="overlayMap" type="texture" address="wrap">models/misc/infestation/infestation.dds</input>
         <input name="hiddenAmount" type="float">0.0</input>
 		<input name="glowIntensity" type="float">1.0</input>
+		<input name="highlight" type="float">1.0</input>
 	</inputs>
 	
 	<params>
@@ -36,7 +37,7 @@
 		{
 		
 			float f             = 1 - hiddenAmount;
-
+			float highlightId   = highlight;
 			float param         = tex2D(blendMap, input.texCoord).a; // speading parameter
 			float textureSpeed  = 2;
 			float destroySpeed  = 2.5;
@@ -62,7 +63,7 @@
 			material.opacity = opacity + f - 0.5;
 			material.emissive   = tex2D(emissiveMap, input.texCoord).rgb * f * glowIntensity;
 			
-			material.id = 1; // To make it show up on alien vision
+			material.id = 1*highlightId; // To make it show up on alien vision
 			
 		}
 	]]>

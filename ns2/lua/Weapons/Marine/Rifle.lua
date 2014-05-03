@@ -12,6 +12,7 @@ Script.Load("lua/PickupableWeaponMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
+Script.Load("lua/RifleVariantMixin.lua")
 
 class 'Rifle' (ClipWeapon)
 
@@ -58,6 +59,7 @@ local networkVars =
 }
 
 AddMixinNetworkVars(LiveMixin, networkVars)
+AddMixinNetworkVars(RifleVariantMixin, networkVars)
 
 local kMuzzleEffect = PrecacheAsset("cinematics/marine/rifle/muzzle_flash.cinematic")
 local kMuzzleAttachPoint = "fxnode_riflemuzzle"
@@ -143,6 +145,7 @@ function Rifle:OnCreate()
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LiveMixin)
+    InitMixin(self, RifleVariantMixin)
     
     if Client then
         InitMixin(self, ClientWeaponEffectsMixin)
@@ -160,6 +163,13 @@ function Rifle:OnDestroy()
     DestroyMuzzleEffect(self)
     DestroyShellEffect(self)
     
+end
+
+function Rifle:OnInitialized()
+
+	//Rifle is starting with 0 ammo for some reason now that there are rifle variants, need to fill weapon ammo here.
+	self:GiveAmmo(self:GetNumStartClips() * self:GetClipSize(), true)
+
 end
 
 local function UpdateSoundType(self, player)
@@ -205,7 +215,7 @@ function Rifle:OnHolsterClient()
 end
 
 function Rifle:GetAnimationGraphName()
-    return kAnimationGraph
+    return RifleVariantMixin.kRifleAnimationGraph
 end
 
 function Rifle:GetViewModelName(sex, variant)
@@ -304,7 +314,7 @@ function Rifle:OnUpdateAnimationInput(modelMixin)
     ClipWeapon.OnUpdateAnimationInput(self, modelMixin)
     
     modelMixin:SetAnimationInput("gl", false)
-    
+
 end
 
 function Rifle:GetAmmoPackMapName()
@@ -423,7 +433,7 @@ if Client then
     end
     
     function Rifle:GetUIDisplaySettings()
-        return { xSize = 256, ySize = 417, script = "lua/GUIRifleDisplay.lua" }
+        return { xSize = 256, ySize = 417, script = "lua/GUIRifleDisplay.lua", variant = self:GetVariant() }
     end
     
 end

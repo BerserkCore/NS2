@@ -433,6 +433,10 @@ function DropStructureAbility:GetPositionForStructure(startPosition, direction, 
     if not structureAbility:GetIsPositionValid(displayOrigin, player, trace.normal, lastClickedPosition, trace.entity) then
         validPosition = false
     end    
+	
+	if trace.surface == "nocling" then          
+		validPosition = false
+	end
     
     // Don't allow placing above or below us and don't draw either
     local structureFacing = Vector(direction)

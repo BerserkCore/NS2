@@ -26,6 +26,7 @@ function GUIMainMenu:CreateModsWindow()
 
     self.modsWindow = self:CreateWindow()
     self.modsWindow:DisableCloseButton()
+	self.modsWindow:ResetSlideBar()
     self:SetupWindow(self.modsWindow, "MODS")
     self.modsWindow:GetContentBox():SetCSSClass("mod_list")
     

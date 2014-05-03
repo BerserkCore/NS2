@@ -57,6 +57,7 @@ MarineVariantMixin.networkVars =
     shoulderPadIndex = string.format("integer (0 to %d)",  #kShoulderPad2ProductId),
     isMale = "boolean",
     variant = "enum kMarineVariant",
+	rifleVariant = "enum kRifleVariant",
 }
 
 function MarineVariantMixin:__initmixin()
@@ -64,6 +65,7 @@ function MarineVariantMixin:__initmixin()
     self.isMale = true
     self.variant = kDefaultMarineVariant
     self.shoulderPadIndex = 0
+	self.rifleVariant = kDefaultRifleVariant
     
 end
 
@@ -120,7 +122,14 @@ if Server then
         else
             Print("ERROR: Client tried to request marine variant they do not have yet")
         end
-
+		
+        if GetHasVariant(kRifleVariantData, data.rifleVariant, client) then
+            // Cleared, pass info to clients.
+            self.rifleVariant = data.rifleVariant
+        else
+            Print("ERROR: Client tried to request Rifle variant they do not have yet")
+        end
+		
         self.shoulderPadIndex = 0
         
         local selectedIndex = client.variantData.shoulderPadIndex
@@ -128,13 +137,19 @@ if Server then
         if GetHasShoulderPad(selectedIndex, client) then
             self.shoulderPadIndex = selectedIndex
         end
-        
+        // Trigger a weapon skin update, to update the view model
+		if self:GetActiveWeapon() ~= nil then
+			self:UpdateWeaponSkin(client)
+		end
+		
         if changed then
         
             // Trigger a weapon switch, to update the view model
             if self:GetActiveWeapon() ~= nil then
                 self:GetActiveWeapon():OnDraw(self)
+				self:UpdateWeaponSkin(client)
             end
+						
             
         end
         
@@ -148,17 +163,9 @@ if Client then
 
         // update player patch
         if self:GetRenderModel() ~= nil then
-        
             self:GetRenderModel():SetMaterialParameter("patchIndex", self.shoulderPadIndex-2)
-
-            // TEMP
-            //self:GetRenderModel():SetMaterialParameter("patchIndex", self:GetClientIndex()%3 - 1 )
-
-            // TEMP
-            //self:GetRenderModel():SetMaterialParameter("patchIndex", 6)
-            
         end
-    
+
     end
 
 end

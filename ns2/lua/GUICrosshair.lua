@@ -94,7 +94,7 @@ function GUICrosshair:Update(deltaTime)
     local xCoord = PlayerUI_GetCrosshairX()
     local yCoord = PlayerUI_GetCrosshairY()
     
-    local showCrossHair = not PlayerUI_GetIsDead() and PlayerUI_GetIsPlaying() and not PlayerUI_GetIsThirdperson() and not PlayerUI_IsACommander() and not PlayerUI_GetBuyMenuDisplaying()
+    local showCrossHair = not PlayerUI_GetIsDead() and PlayerUI_GetIsPlaying() and not PlayerUI_GetIsThirdperson() and not PlayerUI_IsACommander() and not PlayerUI_GetBuyMenuDisplaying() and not MainMenu_GetIsOpened()
                           //and not PlayerUI_GetIsConstructing() and not PlayerUI_GetIsRepairing()
     
     self.crosshairs:SetIsVisible(showCrossHair)

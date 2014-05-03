@@ -15,6 +15,23 @@ class 'GUIMinimap' (GUIScript)
 GUIMinimap.kBackgroundWidth = GUIScale(300)
 GUIMinimap.kBackgroundHeight = GUIMinimap.kBackgroundWidth
 
+local kPlayerNameLayer = 7
+local kPlayerNameFontSize = 8
+local kPlayerNameFontName = "fonts/AgencyFB_tiny.fnt"
+local kPlayerNameOffset = 5
+local kPlayerNameColorAlien = Color(1, 189/255, 111/255, 1)
+local kPlayerNameColorMarine = Color(164/255, 241/255, 1, 1)
+
+local kMinimapBlipTeamMapping =
+{
+	[kMinimapBlipTeam.Alien]		  = { team = kMinimapBlipTeam.Alien,	active = true },
+	[kMinimapBlipTeam.InactiveAlien]  = { team = kMinimapBlipTeam.Alien, 	active = false },
+	[kMinimapBlipTeam.FriendAlien]	  = { team = kMinimapBlipTeam.Alien, 	active = true },
+	[kMinimapBlipTeam.Marine]		  = { team = kMinimapBlipTeam.Marine, 	active = true },
+	[kMinimapBlipTeam.InactiveMarine] = { team = kMinimapBlipTeam.Marine, 	active = false },
+	[kMinimapBlipTeam.FriendMarine]	  = { team = kMinimapBlipTeam.Marine, 	active = true }
+}
+
 local kBlipSize = GUIScale(30)
 
 local kWaypointColor = Color(1, 1, 1, 1)
@@ -157,6 +174,9 @@ function GUIMinimap:Initialize()
     self.blipSizeTable = { }
     self.minimapConnections = { }
 
+	self.playerNameItems = {}
+	self.playerNameItemsLookup = {}
+	
     self:SetScale(1) // Compute plot to map transformation
     self:SetBlipScale(1) // Compute blipSizeTable
     self.blipSizeTable[kBlipSizeType.Scan] = self.scanSize
@@ -473,6 +493,19 @@ local function UpdatePlayerIcon(self)
     
 end
 
+function GUIMinimap:LargeMapIsVisible()
+	return self.background:GetIsVisible() and self.comMode == GUIMinimapFrame.kModeBig
+end 
+
+
+local function MixColor(dst, src, scalar)
+	local invscalar = 1 - scalar
+	dst.r =  dst.r * scalar + src.r * invscalar
+	dst.g =  dst.g * scalar + src.g * invscalar
+	dst.b =  dst.b * scalar + src.b * invscalar
+	return dst
+end
+
 local function PulseRed()
 
     local anim = (math.cos(Shared.GetTime() * 10) + 1) * 0.5
@@ -484,6 +517,140 @@ local function PulseRed()
     
     return color
 
+end
+
+local function PulseDarkRed(blipColor)
+	
+    local anim = (math.cos(Shared.GetTime() * 10) + 1) * 0.5
+	local color = Color(1/3, 0, 0)
+	
+	MixColor(color, blipColor, anim)
+	
+	return color
+end
+
+
+local function OnSameMinimapBlipTeam(blipTeam1, blipTeam2)
+	return  
+		(kMinimapBlipTeamMapping[blipTeam1] and kMinimapBlipTeamMapping[blipTeam2]) and
+		(kMinimapBlipTeamMapping[blipTeam1].team == kMinimapBlipTeamMapping[blipTeam2].team)
+end
+
+
+local function MinimapBlipTeamIsActive(blipTeam)
+    return (kMinimapBlipTeamMapping[blipTeam] and kMinimapBlipTeamMapping[blipTeam].active)
+end
+
+
+local function BuildNewPlayerNames(self)
+	local nameItem = GUIManager:CreateTextItem()
+	
+	nameItem:SetFontSize(kPlayerNameFontSize)
+	nameItem:SetFontIsBold(false)
+	nameItem:SetFontName(kPlayerNameFontName)
+	nameItem:SetAnchor(GUIItem.Middle, GUIItem.Center)
+	nameItem:SetTextAlignmentX(GUIItem.Align_Center)
+	nameItem:SetTextAlignmentY(GUIItem.Align_Center)
+	nameItem:SetLayer(kPlayerNameLayer)
+	nameItem:SetIsVisible(false)
+	
+	self.minimap:AddChild(nameItem)
+	
+	return nameItem
+end
+
+
+local function GetUnusedNames(self, clientIndex)
+	
+	local nameItems = self.playerNameItems
+	for _,v in ipairs(nameItems) do
+		if not v.inuse then
+			return v
+		end
+	end
+	nameItem = BuildNewPlayerNames(self)
+	nameItems[#nameItems+1] = nameItem
+	
+	return nameItem
+end
+
+
+local function UpdateNamePool(self)	
+	local nameItems = self.playerNameItems
+	local nameItemsLookup = self.playerNameItemsLookup
+	for _,nameItem in ipairs(nameItems) do
+		if nameItem.inuse then			
+			if not nameItem:GetIsVisible() then
+				nameItem.inuse = false
+				nameItemsLookup[nameItem.clientIndex] = nil
+			end
+			
+			nameItem:SetIsVisible(false)	
+		end
+	end
+	
+end
+
+
+local function GetNamePool(self, clientIndex)
+	local nameItem = self.playerNameItemsLookup[clientIndex]
+	
+	if not nameItem then
+		nameItem = GetUnusedNames(self)
+		
+		self.playerNameItemsLookup[clientIndex] = nameItem
+		nameItem.clientIndex = clientIndex
+		nameItem.inuse = true
+	end
+	
+	return nameItem
+end
+
+
+local function UpdateMinimapNames(self)
+	local largeMapIsVisible = self:LargeMapIsVisible()
+	local optionsMinimapNames = Client.GetOptionBoolean("minimapNames", true)
+	local shouldShowPlayerNames = optionsMinimapNames == true and largeMapIsVisible
+	
+	// Clear out unused nameItems
+	UpdateNamePool(self)
+	
+	return largeMapIsVisible, shouldShowPlayerNames	
+end
+
+
+local namePos = Vector(0, 0, 0)
+local function DrawMinimapNames(self, shouldShowPlayerNames, clientIndex, spectating, blipTeam, xPos, yPos, isParasited)
+
+	if clientIndex > 0 and shouldShowPlayerNames then
+		
+		local nameItem = GetNamePool(self, clientIndex)				
+		local name = Scoreboard_GetPlayerData(clientIndex, "Name")
+						
+		nameItem:SetIsVisible(true)	
+		nameItem:SetText(name)
+		
+		local nameColor = Color(1, 1, 1)
+		if isParasited then
+			nameColor.b = 0
+		else
+			if spectating then
+				if OnSameMinimapBlipTeam(kMinimapBlipTeam.Marine, blipTeam) then
+					nameColor = kPlayerNameColorMarine
+				else
+					nameColor = kPlayerNameColorAlien
+				end
+				//MixColor(nameColor, blipColor, 0.75)
+			end
+		end
+		
+		nameItem:SetColor(nameColor)
+		
+		namePos.x = xPos
+		namePos.y = yPos - kPlayerNameOffset
+		nameItem:SetPosition(namePos)
+
+	end
 end
 
 // Simple optimization to prevent unnecessary Vector creation inside the function.
@@ -521,6 +688,8 @@ local function UpdateStaticBlips(self, deltaTime)
         staticBlipItems[i]:SetIsVisible(true)
     end
     
+	// Build Player Name Text elements	
+	largeMapIsVisible, shouldShowPlayerNames = UpdateMinimapNames(self)
     // Update scan blip size and color.
     local scanAnimFraction = (Shared.GetTime() % kScanAnimDuration) / kScanAnimDuration
     // do not change table reference
@@ -573,12 +742,14 @@ local function UpdateStaticBlips(self, deltaTime)
 
         local xPos, yPos = PlotToMap(self, staticBlips[currentIndex], staticBlips[currentIndex + 1])
         local rotation = staticBlips[currentIndex + 2]
+        local clientIndex = staticBlips[currentIndex + 3]
+        local isParasited = staticBlips[currentIndex + 4]
         local blipType = staticBlips[currentIndex + 5]
         local blipTeam = staticBlips[currentIndex + 6]
         local underAttack = staticBlips[currentIndex + 7]
         local isSteamFriend = staticBlips[currentIndex + 8]
         local isHallucination = staticBlips[currentIndex + 9]
-        
+
         local blip = staticBlipItems[i]
         local blipInfo = blipInfoTable[blipType]
         
@@ -594,14 +765,20 @@ local function UpdateStaticBlips(self, deltaTime)
         GUIItemSetRotation(blip, blipRotation)
         local blipColor = blipColorTable[blipTeam][blipInfo[2]]
         
-        if blipTeam == playerTeam or spectating then
-        
-            if isHallucination then
+		if OnSameMinimapBlipTeam(playerTeam, blipTeam) or spectating then
+
+			DrawMinimapNames(self, shouldShowPlayerNames, clientIndex, spectating, blipTeam, xPos, blipPos.y, isParasited)
+
+		    if isHallucination then
                 blipColor = kHallucinationColor
             elseif underAttack then
-                blipColor = PulseRed()
-            end
-            
+				if MinimapBlipTeamIsActive(blipTeam) then
+					blipColor = PulseRed(1.0)
+				else
+					blipColor = PulseDarkRed(blipColor)
+				end
+            end  
+			
         end
         
         GUIItemSetColor(blip, blipColor)
@@ -622,7 +799,6 @@ local function GetFreeDynamicBlip(self, xPos, yPos, blipType)
         table.insert(self.inuseDynamicBlips, returnBlip)
         
     else
-    
         
         local returnBlipItem = GUIManager:CreateGraphicItem()
         returnBlipItem:SetLayer(kDynamicBlipsLayer) // Make sure these draw a layer above the minimap so they are on top.
@@ -1053,7 +1229,17 @@ function GUIMinimap:SetIconFileName(fileName)
     for _, blip in ipairs(self.staticBlips) do
         blip:SetTexture(iconFileName)
     end
-    
 end
 
+function OnToggleMinimapNames()
+	if Client.GetOptionInteger("minimapNames", true) == true then
+		Client.GetOptionBoolean("minimapNames", true)
+		Shared.Message("Minimap Names is now set to OFF")
+	else
+		Client.GetOptionBoolean("minimapNames", false)
+		Shared.Message("Minimap Names is now set to ON")		
+	end
+end
+
+Event.Hook("Console_minimapnames", OnToggleMinimapNames)
 Event.Hook("Console_setmaplocationcolor", OnCommandSetMapLocationColor)

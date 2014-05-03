@@ -21,6 +21,7 @@ local networkVars =
     mapBlipType = "enum kMinimapBlipType",
     mapBlipTeam = "integer (" .. ToString(kTeamInvalid) .. " to " .. ToString(kSpectatorIndex) .. ")",
     isInCombat = "boolean",
+	isParasited = "boolean",
     ownerEntityId = "entityid",
     isHallucination = "boolean",
     active = "boolean"
@@ -40,6 +41,7 @@ function MapBlip:OnCreate()
     self.mapBlipTeam = kTeamReadyRoom
     self.ownerEntityId = Entity.invalidId
     self.isInCombat = false
+	self.isParasited = false
     
     self:SetPropagate(Entity.Propagate_Mask)
     self:UpdateRelevancy()
@@ -123,6 +125,10 @@ function MapBlip:GetIsInCombat()
     return self.isInCombat
 end
 
+function MapBlip:GetIsParasited()
+	return self.isParasited
+end
+
 // Called (server side) when a mapblips owner has changed its map-blip dependent state
 function MapBlip:Update()
 
@@ -155,12 +161,12 @@ function MapBlip:Update()
             
             if HasMixin(owner, "MapBlip") then
             
-                local success, blipType, blipTeam, isInCombat = owner:GetMapBlipInfo()
+                local success, blipType, blipTeam, isInCombat, isParasited = owner:GetMapBlipInfo()
 
                 self.mapBlipType = blipType
                 self.mapBlipTeam = blipTeam
                 self.isInCombat = isInCombat    
-                
+                self.isParasited = isParasited
             end 
             
             if owner:isa("Player") then

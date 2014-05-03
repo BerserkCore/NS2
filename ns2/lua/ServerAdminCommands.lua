@@ -124,6 +124,9 @@ CreateServerAdminCommand("Console_sv_reset", function() GetGamerules():ResetGame
 
 CreateServerAdminCommand("Console_sv_rrall", AllPlayers(function(player) GetGamerules():JoinTeam(player, kTeamReadyRoom) end), "Forces all players to go to the Ready Room")
 CreateServerAdminCommand("Console_sv_randomall", AllPlayers(function(player) JoinRandomTeam(player) end), "Forces all players to join a random team")
+CreateServerAdminCommand("Console_sv_forceeventeams", function() ForceEvenTeams() end, "Balances teams based on previous round and Hive skill")
+
+
 
 local function SwitchTeam(client, playerId, team)
 

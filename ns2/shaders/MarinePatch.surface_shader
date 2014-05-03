@@ -7,7 +7,9 @@
 		<input name="atlas" type="texture" address="wrap"/>
 		<input name="opacityMap" type="texture" address="wrap"/>
 		<input name="emissiveMap" type="texture" address="wrap"/>
-
+		<input name="hiddenAmount" type="float">0.0</input>
+		<input name="highlight" type="float">1.0</input>
+		
         <!-- should be specified via game -->
         <!-- Row major index. 0 is the top-left rect -->
         <!-- pass in -1 for no patch -->
@@ -22,8 +24,10 @@
 	<![CDATA[
 		void MaterialShader( in Material_Input input, inout Material material )
 		{
+			float highlightId   = highlight;
             if( patchIndex >= 0 )
-            {
+            {	
+				float f   = 1 - hiddenAmount;
                 float2 uv = input.texCoord;
                 float row = floor(patchIndex / numColumns);
                 float col = patchIndex - row*numColumns;
@@ -31,7 +35,7 @@
                 uv.y = (row+uv.y) / numRows;
                 material.albedo	= tex2D(atlas, uv).rgb;
 
-                material.opacity = tex2D(opacityMap, uv).r;
+                material.opacity = tex2D(opacityMap, uv).r *f;
 
                 material.emissive = tex2D(emissiveMap, uv).rgb;
 
@@ -41,7 +45,7 @@
                 material.albedo = float3(1,0,0);
                 material.opacity = 0;
             }
-            material.id = 1;    // for alien vision
+            material.id = 1*highlightId;    // for alien vision
 		}
 	]]>
 	</code>

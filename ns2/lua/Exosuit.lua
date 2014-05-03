@@ -18,6 +18,7 @@ Script.Load("lua/HiveVisionMixin.lua")
 Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/GameEffectsMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
+Script.Load("lua/ExoVariantMixin.lua")
 
 class 'Exosuit' (ScriptActor)
 
@@ -48,6 +49,7 @@ AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(HiveVisionMixin, networkVars)
 AddMixinNetworkVars(GameEffectsMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+AddMixinNetworkVars(ExoVariantMixin, networkVars)
 
 function Exosuit:OnCreate ()
 
@@ -61,6 +63,7 @@ function Exosuit:OnCreate ()
     InitMixin(self, ParasiteMixin)
     InitMixin(self, GameEffectsMixin)
     InitMixin(self, CorrodeMixin)
+	InitMixin(self, ExoVariantMixin)
     
     InitMixin(self, PickupableMixin, { kRecipientType = "Marine" })
 
@@ -88,7 +91,7 @@ function Exosuit:OnInitialized()
         self:SetIgnoreHealth(true)
         self:SetMaxArmor(kExosuitArmor)
         self:SetArmor(kExosuitArmor)
-    
+		
     end
     
     InitMixin(self, HiveVisionMixin)
@@ -134,7 +137,7 @@ function Exosuit:SetLayout(layout)
     local model = kLayoutModels[layout] or Exosuit.kModelName
     self:SetModel(model, kAnimationGraphEject)
     self.layout = layout
-    
+	
 end
 
 function Exosuit:OnOwnerChanged(prevOwner, newOwner)

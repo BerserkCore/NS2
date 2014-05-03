@@ -58,6 +58,12 @@ function DropDown:Initialize()
     self.scrollRightButton:SetCSSClass("dropdownarrow")
     self.scrollRightButton:AddEventCallbacks({ OnClick = function(self) self:GetParent():SelectNext() end })
     self.scrollRightButton:SetIsVisible(false)
+	
+	self.label = CreateMenuElement(self, "Font", true)
+	self.label:SetCSSClass("dropdown_label")
+	self.label:SetText("")
+	self.label:SetTopOffset(-35)
+	self.label:SetIgnoreEvents(false)
     
     self.options = { }
     
@@ -110,6 +116,11 @@ function DropDown:SetValue(value)
     end
     
 end
+
+function DropDown:SetLabel(text)
+    self.label:SetText(text)
+end
+
 
 local function UpdateButtonVisibility(self)
 

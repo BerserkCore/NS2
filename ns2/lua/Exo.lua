@@ -25,7 +25,7 @@ Script.Load("lua/NanoShieldMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
 Script.Load("lua/MarineActionFinderMixin.lua")
 Script.Load("lua/WebableMixin.lua")
-Script.Load("lua/MarineVariantMixin.lua")
+Script.Load("lua/ExoVariantMixin.lua")
 
 local kExoFirstPersonHitEffectName = PrecacheAsset("cinematics/marine/exo/hit_view.cinematic")
 
@@ -134,7 +134,7 @@ AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(ScoringMixin, networkVars)
 AddMixinNetworkVars(WebableMixin, networkVars)
-AddMixinNetworkVars(MarineVariantMixin, networkVars)
+AddMixinNetworkVars(ExoVariantMixin, networkVars)
 
 local function SmashNearbyEggs(self)
 
@@ -177,7 +177,7 @@ function Exo:OnCreate()
     InitMixin(self, ParasiteMixin)
     InitMixin(self, MarineActionFinderMixin)
     InitMixin(self, WebableMixin)
-    InitMixin(self, MarineVariantMixin)
+	InitMixin(self, ExoVariantMixin)
     
     self:SetIgnoreHealth(true)
     
@@ -336,12 +336,12 @@ local function ShowHUD(self, show)
     if ClientUI.GetScript("Hud/Marine/GUIExoHUD") then
         ClientUI.GetScript("Hud/Marine/GUIExoHUD"):SetIsVisible(show)
     end
-    
+
 end
 
 -- The Exo doesn't want the model to change. Only cares about the sex of the Marine inside.
 function Exo:GetIgnoreVariantModels()
-    return true
+	return false
 end
 
 function Exo:GetHasDualGuns()
@@ -734,6 +734,7 @@ if Server then
             exosuit:SetCoords(self:GetCoords())
             exosuit:SetMaxArmor(self:GetMaxArmor())
             exosuit:SetArmor(self:GetArmor())
+			exosuit:SetExoVariant(self:GetVariant())
             
             local reuseWeapons = self.storedWeaponsIds ~= nil
         

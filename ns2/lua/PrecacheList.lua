@@ -1286,7 +1286,7 @@ local precacheList = {
 "models/marine/rifle/rifle_view_spec.dds",
 "models/marine/rifle/rifle_view_spec_new.dds",
 "models/marine/rifle/rifleammo.dds",
-"ui/rifledisplay.dds",
+"ui/rifledisplay0.dds",
 "ui/rightbox.dds",
 "ui/rightbox_mouseover.dds",
 "models/marine/robotics_factory/robotics_factory.dds",

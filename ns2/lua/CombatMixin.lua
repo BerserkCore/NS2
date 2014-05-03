@@ -175,9 +175,14 @@ if Server then
 
     function CombatMixin:OnTakeDamage(damage, attacker, doer, point, direction, damageType, preventAlert)
 
-        local notifiyTarget = not doer or not doer.GetNotifiyTarget or doer:GetNotifiyTarget(self)
+		local notifiyTarget = not doer or not doer.GetNotifiyTarget or doer:GetNotifiyTarget(self)
+		local isHallucination = false
 
-        if notifiyTarget and GetAreEnemies(doer, self) then
+		if attacker then
+			isHallucination = attacker:isa("Hallucination") or attacker.isHallucination
+		end
+
+        if notifiyTarget and (damage > 0 or isHallucination) then
         
             local team = self:GetTeam()
             if team and team.TriggerAlert and not preventAlert then

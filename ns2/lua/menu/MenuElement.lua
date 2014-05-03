@@ -268,6 +268,10 @@ function MenuElement:GetParent()
     return self.parent
 end   
 
+function MenuElement:GetChildren()
+    return self.children
+end 
+
 // searches recursively for the 'deepest' child at that point
 function MenuElement:GetChildAtPos(pos)
 
