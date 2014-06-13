@@ -4,7 +4,7 @@
 		<input name="albedoMap" type="texture" address="wrap" />
 		<input name="normalMap" type="texture" address="wrap" />
 		<input name="specularMap" type="texture" address="wrap" />
-		<input name="highlight" type="float">0</input>
+		<input name="highlight" type="float">1.0</input>
 	</inputs>
 	
 	<code>

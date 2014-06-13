@@ -77,10 +77,7 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
     /// allow only on even surfaces
     if surfaceNormal then
     
-        if not IsPathable(position) then
-            valid = false
-    
-        elseif surfaceNormal:DotProduct(kUpVector) > 0.9 then
+        if surfaceNormal:DotProduct(kUpVector) > 0.9 then
         
             valid = true
         
@@ -92,6 +89,14 @@ function GorgeTunnelAbility:GetIsPositionValid(position, player, surfaceNormal)
             
                 local trace = Shared.TraceRay(traceStart, traceStart - Vector(0, kVerticalOffset + 0.1, 0), CollisionRep.Default, PhysicsMask.AllButPCsAndRagdolls, EntityFilterOneAndIsa(player, "Babbler"))
             
+				if not IsPathable(position) then
+					valid = false
+				end
+				
+				if trace.surface == "tunnel_allowed" then
+                    valid = true
+                end
+				
                 if trace.fraction < 0.60 or trace.fraction >= 1.0 then //the max splope a tunnel can be placed on. Previously 0.65, lowered to make it easier to place tunnels in places like Cave
                     valid = false
                     break

@@ -309,14 +309,18 @@ end
 
 function GUIInsight_TopBar:Update(deltaTime)
 
-    local startTime = PlayerUI_GetGameStartTime()
+	local startTime = PlayerUI_GetGameStartTime()
+        
+	if startTime ~= 0 then
+		startTime = math.floor(Shared.GetTime()) - PlayerUI_GetGameStartTime()
+	end
 
-    if startTime ~= 0 then
-        startTime = Shared.GetTime() - startTime
-    end
-
-    local minutes = math.floor(startTime/60)
-    local seconds = startTime - minutes*60
+	local seconds = math.round(startTime)
+	local minutes = math.floor(seconds / 60)
+	local hours = math.floor(minutes / 60)
+	minutes = minutes - hours * 60
+	seconds = seconds - minutes * 60 - hours * 3600
+	
     local gameTimeText = string.format("%d:%02d", minutes, seconds)
 
     gameTime:SetText(gameTimeText)

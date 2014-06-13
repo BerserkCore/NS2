@@ -232,9 +232,10 @@ function AiAttacksMixin:OnTag(tagName)
                     self:SetEnergy(self:GetEnergy() - self.currentAttack.energyCost)
                 end
                 
-                if self.OnAiAttackStart then
+				// AI attack mixin already handles this
+                /*if self.OnAiAttackStart then
                     self:OnAiAttackStart(self.currentAttack)
-                end
+                end*/
                 
                 self.currentAttack:OnStart()
                 
@@ -267,9 +268,10 @@ function AiAttacksMixin:OnTag(tagName)
         
             self:UpdateNextAiAttackTime()
             
-            if self.OnAiAttackEnd then
+			// AI attack mixin already handles this
+            /*if self.OnAiAttackEnd then
                 self:OnAiAttackEnd(self.currentAttack)
-            end
+            end*/
             
             self.currentAttack:OnEnd()
             

@@ -1231,7 +1231,8 @@ function GetCanSeeEntity(seeingEntity, targetEntity, considerObstacles)
         
             local filter = EntityFilterAllButIsa("Door") // EntityFilterAll()
             if considerObstacles then
-                filter = EntityFilterTwo(seeingEntity, targetEntity)
+				// Weapons don't block FOV
+                filter = EntityFilterTwoAndIsa(seeingEntity, targetEntity, "Weapon")
             end
         
             // See if there's something blocking our view of the entity.
@@ -1240,9 +1241,9 @@ function GetCanSeeEntity(seeingEntity, targetEntity, considerObstacles)
             if trace.fraction == 1 then
                 seen = true
             end
-            
+
         end
-        
+
     end
     
     return seen

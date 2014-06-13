@@ -90,6 +90,7 @@ function Scoreboard_OnResetGame()
         playerRecord.Resources = 0
         playerRecord.Status = ""
         playerRecord.IsSpectator = false
+        playerRecord.Tech = 0
         
     end 
 
@@ -102,7 +103,7 @@ function Scoreboard_OnClientDisconnect(clientIndex)
     
 end
 
-function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists, steamId, playerSkill )
+function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber, score, kills, deaths, resources, isCommander, isRookie, status, isSpectator, assists, steamId, playerSkill, currentTech )
 
     // Lookup record for player and update it
     for i = 1, table.maxn(playerData) do
@@ -125,6 +126,7 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
             playerRecord.Status = status
             playerRecord.IsSpectator = isSpectator
             playerRecord.Skill = playerSkill
+            playerRecord.Tech = currentTech
             
             Scoreboard_Sort()
             
@@ -153,6 +155,7 @@ function Scoreboard_SetPlayerData(clientIndex, entityId, playerName, teamNumber,
     playerRecord.Status = status
     playerRecord.IsSpectator = isSpectator
     playerRecord.Skill = playerSkill
+    playerRecord.Tech = currentTech
     
     table.insert(playerData, playerRecord )
     
@@ -546,7 +549,7 @@ local function UpdatePlayerRecords()
         
         Scoreboard_SetPlayerData(playerInfo.clientId, playerInfo.playerId, playerInfo.playerName, playerInfo.teamNumber, playerInfo.score,
                                  playerInfo.kills, playerInfo.deaths, math.floor(playerInfo.resources), playerInfo.isCommander, playerInfo.isRookie,
-                                 status, playerInfo.isSpectator, playerInfo.assists, playerInfo.steamId, playerInfo.playerSkill)
+                                 status, playerInfo.isSpectator, playerInfo.assists, playerInfo.steamId, playerInfo.playerSkill, playerInfo.currentTech)
     
     end
 

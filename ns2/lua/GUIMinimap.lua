@@ -995,6 +995,8 @@ local function UpdateConnections(self)
         
         self.minimapConnections[index]:Setup(startPoint, endPoint, self.minimap)
         
+        self.minimapConnections[index]:UpdateAnimation(connector:GetTeamNumber(), self.comMode == GUIMinimapFrame.kModeMini)
+        
         numConnectors = numConnectors + 1
         
     end

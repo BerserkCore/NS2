@@ -227,10 +227,10 @@ function Commander:SelectHotkeyGroup(number)
     
     local selection = false
 
-    // select entities which match hotgroup, unselect all others
-    for _, entity in ipairs(GetEntitiesWithMixinForTeam("Selectable", self:GetTeamNumber())) do
+    // select entities which match hotgroup and team, unselect all others
+    for _, entity in ipairs(GetEntitiesWithMixin("Selectable")) do
         
-        if entity:GetHotGroupNumber() == number then
+        if entity:GetHotGroupNumber() == number and not GetAreEnemies(self, entity) then
             entity:SetSelected(self:GetTeamNumber(), true, true, false)
             selection = true
         else

@@ -10,7 +10,27 @@
 
 class 'GUIMinimapConnection'
 
-local kLineColor = Color(1, 1, 1, 0.3)
+local kLineTexture = "ui/mapconnector_line.dds"
+local kLineTextureCoord = {0, 0, 64, 16}
+
+function GUIMinimapConnection:UpdateAnimation(teamNumber, modeIsMini)
+
+    local animatedArrows = not modeIsMini and teamNumber == kTeam1Index and #GetEntitiesForTeam("MapConnector", kTeam1Index) > 2
+
+    local animation = ConditionalValue(animatedArrows, (Shared.GetTime() % 1) / 1, 0)
+                
+    local x1Coord = kLineTextureCoord[1] - animation * (kLineTextureCoord[3] - kLineTextureCoord[1])
+    local x2Coord = x1Coord + (self.length or 0)
+    
+    // Don't draw arrows for just 2 PGs, the direction is clear here
+    // Gorge tunnels also don't need this since it is limited to entrance/exit
+    local textureIndex = ConditionalValue(animatedArrows, 1, 0) * 16
+    
+    self.line:SetTexturePixelCoordinates(x1Coord, textureIndex, x2Coord, textureIndex + 16)
+    self.line:SetColor(ConditionalValue(teamNumber == kTeam1Index, kMarineFontColor, kAlienFontColor))
+    self.line:SetSize(Vector(self.length, GUIScale(ConditionalValue(modeIsMini, 6, 10)), 0))
+
+end
 
 function GUIMinimapConnection:Setup(startPoint, endPoint, parent)
 
@@ -19,6 +39,10 @@ function GUIMinimapConnection:Setup(startPoint, endPoint, parent)
     assert(parent)
     
     if startPoint ~= self.startPoint or endPoint ~= self.endPoint or self.parent ~= parent then
+    
+        // Since we're using a texture we need to move the points up a bit so it gets aligned properly
+        startPoint = startPoint-(Vector(0,4,0))
+        endPoint = endPoint-(Vector(0,4,0))
 
         local direction = GetNormalizedVector(startPoint - endPoint)
         local rotation = math.atan2(direction.x, direction.y)
@@ -65,8 +89,8 @@ function GUIMinimapConnection:Render()
 
     if not self.line then
 
-        self.line = GetGUIManager():CreateGraphicItem()
-        self.line:SetColor(kLineColor)
+        self.line = GUI.CreateItem()
+        self.line:SetTexture(kLineTexture)
         self.line:SetAnchor(GUIItem.Center, GUIItem.Middle)
         self.line:SetStencilFunc(self.stencilFunc)
         
@@ -76,7 +100,7 @@ function GUIMinimapConnection:Render()
         
     end
     
-    self.line:SetSize(Vector(self.length, 2, 0))
+    self.line:SetSize(Vector(self.length, GUIScale(10), 0))
     self.line:SetPosition(self.startPoint)
     self.line:SetRotationOffset(Vector(-self.length, 0, 0))
     self.line:SetRotation(self.rotationVec)

@@ -531,6 +531,13 @@ function PlayerUI_GetUnitStatusInfo()
                     if unit.GetTeamType then
                         unitState.TeamType = unit:GetTeamType()
                     end
+
+                    if unit:isa("Player") and unit:isa("Marine") and HasMixin(unit, "WeaponOwner") and not GetAreEnemies(player, unit) then
+                        local primaryWeapon = unit:GetWeaponInHUDSlot(1)
+                        if primaryWeapon and primaryWeapon:isa("ClipWeapon") then
+                            unitState.PrimaryWeapon = primaryWeapon:GetTechId()
+                        end
+                    end
                     
                     table.insert(unitStates, unitState)
                 

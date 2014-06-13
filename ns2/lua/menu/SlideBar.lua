@@ -263,6 +263,10 @@ function SlideBar:SetValue(value)
     
 end
 
+function SlideBar:HideButton(value)
+	self.slideButton:SetIsVisible(value)
+end  
+
 function SlideBar:GetValue()
     return self.scrollValue
 end

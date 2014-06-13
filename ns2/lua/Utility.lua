@@ -38,6 +38,10 @@ function EntityFilterTwo(entity1, entity2)
     return function (test) return test == entity1 or test == entity2 end
 end
 
+function EntityFilterTwoAndIsa(entity1, entity2, classname)
+    return function (test) return test == entity1 or test == entity2 or test:isa(classname) end
+end
+
 function EntityFilterOnly(entity)
     return function(test) return entity ~= test end
 end

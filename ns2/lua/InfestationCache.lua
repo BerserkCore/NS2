@@ -35,7 +35,7 @@ local function GetBlobPlacement(x, z, xRadius, hostCoords)
     local trace = TraceBlobSpaceRay(x, z, hostCoords)
     
     // No geometry to place the blob on
-    if trace.fraction == 1 then
+    if trace.fraction == 1 or trace.surface == "nocling" then
         return nil
     end
     

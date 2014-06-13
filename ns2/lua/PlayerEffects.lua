@@ -13,7 +13,7 @@ kPlayerEffectData =
     {
         effects =
         {
-            {player_sound = "sound/NS2.fev/marine/common/pickup_heavy", done = true}
+            {private_sound = "sound/NS2.fev/marine/common/pickup_heavy", done = true}
         }
     },
 

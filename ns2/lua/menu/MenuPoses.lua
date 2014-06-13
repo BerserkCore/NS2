@@ -296,7 +296,7 @@ function MenuPoses_Destroy()
 end
 
 function MenuPoses_SetModelAngle(yaw)
-	modelYaw = yaw*2 or 0
+	modelYaw = (yaw-0.5)*2 or 0
 end
 
 function MenuPoses_GetCameraOffset()

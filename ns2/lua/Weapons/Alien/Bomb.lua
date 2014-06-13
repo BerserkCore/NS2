@@ -71,7 +71,7 @@ if Server then
 
     function Bomb:ProcessHit(targetHit, surface, normal)
 
-        if (not self:GetOwner() or targetHit ~= self:GetOwner()) and not self.detonated then
+        if not self.detonated then
             
             local dotMarker = CreateEntity(DotMarker.kMapName, self:GetOrigin() + normal * 0.2, self:GetTeamNumber())
             dotMarker:SetDamageType(kBileBombDamageType)

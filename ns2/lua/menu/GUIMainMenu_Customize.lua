@@ -311,8 +311,10 @@ function GUIMainMenu:CreateCustomizeWindow()
 
 	self.sliderAngleBar = CreateMenuElement(self.mainWindow, "SlideBar", false)
 	self.sliderAngleBar:SetCSSClass("customize_slider")
-    self.sliderAngleBar:SetBackgroundSize(Vector(750, 32, 0), true)
+    self.sliderAngleBar:SetBackgroundSize(Vector(900, 950, 0), true)
+	self.sliderAngleBar:HideButton(false)
     self.sliderAngleBar:ScrollMax()
+	self.sliderAngleBar:SetValue(0.5)
 	self.sliderAngleBar:Register( self.customizeFrame:GetContentBox(), SLIDE_HORIZONTAL)
 	
 	self.sliderAngleBarLabel = CreateMenuElement(self.mainWindow, "Font", false)
@@ -348,7 +350,7 @@ function GUIMainMenu:CreateCustomizeWindow()
             self.scriptHandle.tweetText:SetIsVisible(false)
 			MenuPoses_OnMenuOpened()
 			if self.scriptHandle.sliderAngleBar then
-				self.scriptHandle.sliderAngleBar:SetValue(0)
+				self.scriptHandle.sliderAngleBar:SetValue(0.5)
 			end
 			menuRefresed = true
         end,
@@ -460,7 +462,7 @@ function GUIMainMenu:CreateCustomizeWindow()
             },
 			{
                 name    = "RifleVariantName",
-                label   = "Rifle Skin",
+                label   = "RIFLE SKIN",
                 type    = "select",
 				side 	= "left",
                 values  = rifleVariantNames,

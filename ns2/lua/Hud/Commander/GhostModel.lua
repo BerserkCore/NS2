@@ -25,8 +25,19 @@ local kMaterialInvalid = "cinematics/vfx_materials/placement_invalid.material"
 local kArrowTexture = "ui/marinewaypoint_arrow.dds"
 local kArrowSize = Vector(24, 24, 0)
 
+local kCircleModelMarine = PrecacheAsset("models/misc/circle/circle.model")
+local kCircleModelAlien = PrecacheAsset("models/misc/circle/circle_alien.model")
+
 // children can override, but make sure to call this function as well
 function GhostModel:Initialize()
+
+    if not self.circleRangeModel then
+        local player = Client.GetLocalPlayer()
+        local kCircleModelName = ConditionalValue(player:isa("MarineCommander"), kCircleModelMarine, kCircleModelAlien)
+        
+        self.circleRangeModel = Client.CreateRenderModel(RenderScene.Zone_Default)
+        self.circleRangeModel:SetModel(kCircleModelName)
+    end
 
     if not self.renderModel then    
         self.renderModel = Client.CreateRenderModel(RenderScene.Zone_Default)    
@@ -52,7 +63,12 @@ function GhostModel:Initialize()
 end
 
 // children can override, but make sure to call this function as well
-function GhostModel:Destroy()    
+function GhostModel:Destroy()
+
+    if self.circleRangeModel then
+        Client.DestroyRenderModel(self.circleRangeModel)
+        self.circleRangeModel = nil
+    end
 
     if self.renderModel then
     
@@ -73,7 +89,17 @@ end
 
 // children can override, but make sure to call this function as well
 function GhostModel:SetIsVisible(isVisible)
+    local player = Client.GetLocalPlayer()
+    
     self.renderModel:SetIsVisible(isVisible)
+    self.circleRangeModel:SetIsVisible(isVisible)
+
+    if isVisible and player and player.currentTechId then
+        // Handle the cyst on its own file, with this generic method it won't always align with the last cyst in the chain
+        if player.currentTechId == kTechId.Cyst then
+            self.circleRangeModel:SetIsVisible(false)
+        end
+    end
 end
 
 // children can override, but make sure to call this function as well
@@ -90,10 +116,12 @@ end
 // children can override, but make sure to call this function as well
 function GhostModel:Update()
 
+    local player = Client.GetLocalPlayer()
+
     self.attachArrow:SetIsVisible(false)
     self:SetIsVisible(true)
     
-    if Client.GetLocalPlayer():isa("Commander") then
+    if player:isa("Commander") then
         self.renderMaterial:SetParameter("edge", 0)
     else
         self.renderMaterial:SetParameter("edge", 3)
@@ -150,6 +178,23 @@ function GhostModel:Update()
             arrowDist = arrowDist + ((math.cos(Shared.GetTime() * 8) + 1) / 2)
             self.attachArrow:SetPosition(Client.WorldToScreen(modelCoords.origin + direction * arrowDist) - kArrowSize / 2)
             self.attachArrow:SetRotation(Vector(0, 0, GetYawFromVector(direction) + math.pi / 2))
+            
+        end
+        
+        if player and player.currentTechId then
+        
+            local radius = LookupTechData(player.currentTechId, kVisualRange, nil)
+            
+            if radius then
+            
+                local ringCoords = CopyCoords(modelCoords)
+                ringCoords:Scale(radius*2)
+                // Raise a bit to avoid Z-Fighting
+                ringCoords.origin.y = ringCoords.origin.y+0.01
+                
+                self.circleRangeModel:SetCoords(ringCoords)
+                
+            end
             
         end
         

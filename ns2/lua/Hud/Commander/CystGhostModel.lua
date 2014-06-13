@@ -32,6 +32,8 @@ local kHalfFrameSize = kFrameSize * 0.5
 local kTextName = "fonts/AgencyFB_small.fnt"
 local kTextScale = GUIScale(Vector(1,1,1))
 
+local kCircleModelName = PrecacheAsset("models/misc/circle/circle_alien.model")
+
 local function CreateCostDisplay()
 
     local frame = GUI.CreateItem()
@@ -77,6 +79,11 @@ function CystGhostModel:Initialize()
         self.costDisplay = CreateCostDisplay()        
     end
     
+    if not self.circleModel then
+        self.circleModel = Client.CreateRenderModel(RenderScene.Zone_Default)
+        self.circleModel:SetModel(kCircleModelName)
+    end
+    
 end
 
 function CystGhostModel:Destroy() 
@@ -100,6 +107,11 @@ function CystGhostModel:Destroy()
         self.costDisplay = nil
     end
     
+    if self.circleModel then
+        Client.DestroyRenderModel(self.circleModel)
+        self.circleModel = nil
+    end
+    
 end
 
 function CystGhostModel:SetIsVisible(isVisible)
@@ -119,6 +131,8 @@ function CystGhostModel:SetIsVisible(isVisible)
     if self.costDisplay then
         self.costDisplay.Frame:SetIsVisible(isVisible)
     end
+    
+    self.circleModel:SetIsVisible(isVisible)
     
 end
 
@@ -246,6 +260,18 @@ local function UpdateCystModels(self, cystPoints)
             
             model:SetCoords(Coords.GetTranslation(point))
         
+        end
+        
+        if #cystPoints > 0 then
+        
+            local lastcyst = Coords.GetTranslation(cystPoints[#cystPoints])
+            
+            lastcyst:Scale(kInfestationRadius*2)
+            // Raise a bit to avoid Z-Fighting
+            lastcyst.origin.y = lastcyst.origin.y+0.01
+            
+            self.circleModel:SetCoords(lastcyst)
+            
         end
     
     end

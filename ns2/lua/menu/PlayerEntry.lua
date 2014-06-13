@@ -59,12 +59,14 @@ function PlayerEntry:SetTextColor(color)
     
 end
 
-local function FormatTime(seconds)
+local function FormatTime(time)
 
+    local seconds = math.round(time)
     local minutes = math.floor(seconds / 60)
     local hours = math.floor(minutes / 60)
-    minutes = minutes - (hours * 60)
-    return string.format("%d:%.2d:%.2d", hours, minutes, seconds % 60)
+    minutes = minutes - hours * 60
+    seconds = seconds - minutes * 60 - hours * 3600
+    return string.format("%d:%.2d:%.2d", hours, minutes, seconds)
     
 end
 

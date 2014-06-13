@@ -38,11 +38,11 @@ local function OnClientConnect(client)
                     end
                     
                     // Build reverse table.
-                    local badge2has = { }
+                    local ownedBadges = { }
                     if obj.badges ~= nil then
                     
                         for i,name in ipairs(obj.badges) do
-                            badge2has[name] = true
+                            ownedBadges[name] = i
                         end
                         
                     end
@@ -52,13 +52,11 @@ local function OnClientConnect(client)
                     // Go through each badge to see if the client has it
                     for i,info in ipairs(gBadgesData) do
                     
-                        local hasBadge = false
                         if info.productId ~= nil then
-                            hasBadge = GetHasDLC(info.productId, responseClient)
+                            hasBadge = GetHasDLC(info.productId, responseClient) and 10
                         else
-                            hasBadge = (badge2has[info.name] == true)
+                            hasBadge = ownedBadges[info.name] or -1
                         end
-                        
                         msg[Badge2NetworkVarName(info.name)] = hasBadge
                         
                     end

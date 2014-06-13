@@ -26,6 +26,7 @@ local kBackgroundTexture = "ui/%s_HUD_presbg.dds"
 GUIVoiceChat.kCommanderFontColor = Color(1, 1, 0, 1)
 GUIVoiceChat.kMarineFontColor = Color(147/255, 206/255, 1, 1)
 GUIVoiceChat.kAlienFontColor = Color(207/255, 139/255, 41/255, 1)
+GUIVoiceChat.kSpectatorFontColor = Color(1, 1, 1, 1)
 
 local loggedIn = false
 
@@ -128,17 +129,33 @@ function GUIVoiceChat:Update(deltaTime)
         if clientIndex and ChatUI_GetIsClientSpeaking(clientIndex) then
         
             local chatBar = GetFreeBar(self)
+            local isSpectator = false
             
             chatBar.Background:SetIsVisible(true)
             
-            local textureSet = "marine"
-            local fontColor = GUIVoiceChat.kMarineFontColor
-            if PlayerUI_IsOnAlienTeam() then
+            //Show voice chat over Insight frames
+            chatBar.Background:SetLayer(kGUILayerInsight+1)
+            
+            local textureSet, fontColor
+            if clientTeam == kTeam1Index then
+                textureSet = "marine"
+                fontColor = GUIVoiceChat.kMarineFontColor
+            elseif clientTeam == kTeam2Index then
                 textureSet = "alien"
                 fontColor = GUIVoiceChat.kAlienFontColor
-            end    
+            else
+                textureSet = "marine"
+                fontColor = GUIVoiceChat.kSpectatorFontColor
+                isSpectator = true
+            end
 
             chatBar.Background:SetTexture(string.format(kBackgroundTexture, textureSet))
+            // Apply a tint to the marine background for spectator so it looks a bit more different
+            if isSpectator then
+                chatBar.Background:SetColor(Color(1, 200/255, 150/255, 1))
+            else
+                chatBar.Background:SetColor(Color(1, 1, 1, 1))
+            end
             
             chatBar.Name:SetText(playerName)
             chatBar.Name:SetColor( ConditionalValue(allPlayers[i].IsCommander, GUIVoiceChat.kCommanderFontColor, ConditionalValue(allPlayers[i].IsRookie, kNewPlayerColorFloat, fontColor) ) )

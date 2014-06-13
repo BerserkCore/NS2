@@ -42,7 +42,7 @@ function LayMines:OnInitialized()
 
     Weapon.OnInitialized(self)
     
-    self:SetModel(kHeldModelName)
+    self:SetModel(kDropModelName)
     
 end
 

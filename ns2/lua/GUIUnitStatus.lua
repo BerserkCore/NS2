@@ -609,6 +609,21 @@ local function UpdateUnitStatusList(self, activeBlips, deltaTime)
             
             updateBlip.AbilityBar:SetSize(Vector(kArmorBarWidth * blipData.AbilityFraction, kArmorBarHeight * 2, 0))
             updateBlip.AbilityBar:SetTexturePixelCoordinates(GetPixelCoordsForFraction(blipData.AbilityFraction)) 
+            
+            if blipData.PrimaryWeapon then
+            
+                local kAmmoColors = {
+                    [kTechId.Rifle] = Color(0,1,1,1), // teal
+                    [kTechId.Shotgun] = Color(0,1,0,1), // green
+                    [kTechId.Flamethrower] = Color(1,1,0,1), // yellow
+                    [kTechId.GrenadeLauncher] = Color(1,0,1,1), // magenta
+                }
+            
+                if kAmmoColors[blipData.PrimaryWeapon] then
+                    updateBlip.AbilityBar:SetColor(kAmmoColors[blipData.PrimaryWeapon])
+                end
+            
+            end
                 
         end
 

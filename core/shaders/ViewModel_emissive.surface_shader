@@ -5,7 +5,7 @@
 		<input name="normalMap" type="texture" address="wrap" />
 		<input name="specularMap" type="texture" address="wrap" />
 		<input name="emissiveMap" type="texture" address="wrap" srgb="true"/>
-		<input name="highlight" type="float">0</input>
+		<input name="highlight" type="float">1.0</input>
 	</inputs>
 	
 	<code>

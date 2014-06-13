@@ -181,7 +181,7 @@ local function CreateTeamBackground(self, teamNumber)
     killsItem:SetTextAlignmentX(GUIItem.Align_Min)
     killsItem:SetTextAlignmentY(GUIItem.Align_Min)
     killsItem:SetPosition(Vector(currentColumnX, playerDataRowY, 0))
-	killsItem:SetColor(color)
+    killsItem:SetColor(color)
     killsItem:SetText("K")
     teamItem:AddChild(killsItem)
     
@@ -412,9 +412,13 @@ function GUIScoreboard:Update(deltaTime)
         if gameTime ~= 0 then
             gameTime = math.floor(Shared.GetTime()) - PlayerUI_GetGameStartTime()
         end
-        
-        local minutes = math.floor(gameTime / 60)
-        local seconds = gameTime - minutes * 60
+
+        local seconds = math.round(gameTime)
+        local minutes = math.floor(seconds / 60)
+        local hours = math.floor(minutes / 60)
+        minutes = minutes - hours * 60
+        seconds = seconds - minutes * 60 - hours * 3600
+
         local serverName = Client.GetServerIsHidden() and "Hidden" or Client.GetConnectedServerName()
         local gameTimeText = serverName .. " | " .. Shared.GetMapName() .. string.format( " - %d:%02d", minutes, seconds)
         
@@ -531,7 +535,7 @@ function GUIScoreboard:UpdateTeam(updateTeam)
     
         local teamNum = player:GetTeamNumber()
         // Can see secret information if the player is on the team or is a spectator.
-        if teamNum == updateTeam["TeamNumber"] or teamNum == kSpectatorIndex then
+        if updateTeam["TeamNumber"] == kTeamReadyRoom or teamNum == updateTeam["TeamNumber"] or teamNum == kSpectatorIndex then
             isVisibleTeam = true
         end
         

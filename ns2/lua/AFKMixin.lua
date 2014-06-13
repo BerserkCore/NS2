@@ -44,7 +44,7 @@ function AFKMixin:OnProcessMove(input)
     
     local client = Server.GetOwner(self)
     
-    if client and autoKickOnAFKEnabled then
+    if client then
     
         local inputMove = input.move
         if not (inputMove.x == 0 and inputMove.y == 0 and inputMove.z == 0 and
@@ -58,19 +58,23 @@ function AFKMixin:OnProcessMove(input)
         client.lastAFKInputYaw = input.yaw
         client.lastAFKInputPitch = input.pitch
         
-        local playerAFKTime = self:GetAFKTime()
-        if playerAFKTime >= serverAFKTime then
-        
-            Server.DisconnectClient(client)
-            Shared.Message("Player " .. self:GetName() .. " kicked for being AFK for " .. serverAFKTime .. " seconds")
-            TEST_EVENT("AFK Player auto-kicked")
+        if autoKickOnAFKEnabled then
             
-        elseif playerAFKTime >= serverAFKTime * 0.75 then
-        
-            if not self.warnedAtTime or (Shared.GetTime() - self.warnedAtTime) > (serverAFKTime * 0.75) then
+            local playerAFKTime = self:GetAFKTime()
+            if playerAFKTime >= serverAFKTime then
             
-                Server.SendNetworkMessage(client, "AFKWarning", { timeAFK = playerAFKTime, maxAFKTime = serverAFKTime }, true)
-                self.warnedAtTime = Shared.GetTime()
+                Server.DisconnectClient(client)
+                Shared.Message("Player " .. self:GetName() .. " kicked for being AFK for " .. serverAFKTime .. " seconds")
+                TEST_EVENT("AFK Player auto-kicked")
+                
+            elseif playerAFKTime >= serverAFKTime * 0.75 then
+            
+                if not self.warnedAtTime or (Shared.GetTime() - self.warnedAtTime) > (serverAFKTime * 0.75) then
+                
+                    Server.SendNetworkMessage(client, "AFKWarning", { timeAFK = playerAFKTime, maxAFKTime = serverAFKTime }, true)
+                    self.warnedAtTime = Shared.GetTime()
+                    
+                end
                 
             end
             
